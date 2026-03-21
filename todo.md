@@ -118,3 +118,13 @@
 - [ ] A8 — Publicidade (upload S3, posições, métricas)
 - [ ] A9 — Configurações completas (GA4, Pixel, limites)
 - [ ] A10 — Logs de auditoria
+
+## Fase 4 — Painel do Organizador (sprint 21/03/2026) ✅
+- [x] O1 — Criar Bolão: 4 seções visuais, banner de limite, botão sticky mobile
+- [x] O2 — Dashboard do Organizador: 4 métricas, membros inativos, top 5, barra de plano
+- [x] O3 — Gestão de Membros: busca, filtros, AlertDialogs destrutivos, transferência de propriedade
+- [x] O4 — Controle de Acesso: código JetBrains Mono 24px, copiar/regenerar com confirmação
+- [x] O5 — Identidade Visual: upload de logo (drag-and-drop), preview em tempo real
+- [x] O6 — Regras de Pontuação: simulador integrado, bloqueio automático pós-início
+- [x] OrganizerLayout: sidebar 240px fixa, mobile hambúrguer, banner Pro expirado, rotas O2-O6
+- [x] Rotas App.tsx: /create-pool, /pool/:slug/manage, /members, /access, /identity, /rules

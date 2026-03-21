@@ -31,7 +31,7 @@ import {
 
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
 
-const LAST_UPDATE = "21 de março de 2026 — Fase 3 concluída";
+const LAST_UPDATE = "21 de março de 2026 — Fase 4 em andamento (Painel do Organizador concluído)";
 const APP_URL = "https://apostai-bolao-djv8mgeh.manus.space";
 
 // ─── PHASE DATA ───────────────────────────────────────────────────────────────
@@ -91,13 +91,16 @@ const PHASES = [
     status: "in_progress" as const,
     icon: Star,
     items: [
-      { label: "Painel do Organizador — configurações e gestão do bolão", done: true },
-      { label: "Gestão de membros: remoção e transferência de propriedade", done: true },
-      { label: "Regras de pontuação customizadas (exclusivo Pro)", done: true },
-      { label: "Painel Super Admin — campeonatos, usuários, planos, configurações", done: true },
+      { label: "O1 — Criar Bolão: 4 seções, banner de limite, botão sticky mobile", done: true },
+      { label: "O2 — Dashboard do Organizador: 4 métricas, inativos, top 5, barra de plano", done: true },
+      { label: "O3 — Gestão de Membros: busca, filtros, AlertDialogs destrutivos, transferência", done: true },
+      { label: "O4 — Controle de Acesso: código JetBrains Mono 24px, copiar/regenerar", done: true },
+      { label: "O5 — Identidade Visual: upload de logo, preview em tempo real", done: true },
+      { label: "O6 — Regras de Pontuação: simulador integrado, bloqueio pós-início", done: true },
+      { label: "SidebarLayout do Organizador: 240px fixo, mobile hambúrguer, banner Pro expirado", done: true },
       { label: "Integração Stripe (checkout + webhooks de ativação/cancelamento)", done: false },
-      { label: "Campeonatos personalizados — fluxo completo (Pro)", done: false },
-      { label: "Importação CSV de jogos (Super Admin)", done: false },
+      { label: "Campeonatos personalizados — fluxo completo O7/O8 (Pro)", done: false },
+      { label: "Importação CSV/Google Sheets de jogos (Super Admin A3)", done: false },
     ],
   },
   {
@@ -135,10 +138,10 @@ const TECH_STACK = [
 const METRICS = [
   { label: "Tabelas no banco", value: "19", icon: Database, color: "text-brand-400" },
   { label: "Procedures tRPC", value: "45+", icon: Code2, color: "text-green-400" },
-  { label: "Páginas", value: "10", icon: Layers, color: "text-blue-400" },
+  { label: "Páginas", value: "16", icon: Layers, color: "text-blue-400" },
   { label: "Testes Vitest", value: "19 ✓", icon: FlaskConical, color: "text-yellow-400" },
   { label: "Erros TypeScript", value: "0", icon: Shield, color: "text-emerald-400" },
-  { label: "Progresso geral", value: "82%", icon: TrendingUp, color: "text-purple-400" },
+  { label: "Progresso geral", value: "72%", icon: TrendingUp, color: "text-purple-400" },
 ];
 
 // ─── RISKS ────────────────────────────────────────────────────────────────────
