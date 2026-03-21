@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { startScoringWorker } from "../scoring";
+import { startArchivalCron } from "../archival";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -60,6 +62,10 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+
+  // Start background workers
+  startScoringWorker();
+  startArchivalCron();
 }
 
 startServer().catch(console.error);
