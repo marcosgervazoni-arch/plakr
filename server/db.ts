@@ -269,6 +269,13 @@ export async function getPoolByInviteToken(token: string): Promise<Pool | undefi
   return result[0];
 }
 
+export async function getPoolByInviteCode(code: string): Promise<Pool | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(pools).where(eq(pools.inviteCode, code.toUpperCase())).limit(1);
+  return result[0];
+}
+
 export async function getPoolsByUser(userId: number) {
   const db = await getDb();
   if (!db) return [];

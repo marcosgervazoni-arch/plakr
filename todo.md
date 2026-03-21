@@ -88,3 +88,33 @@
 - [ ] Testes de carga no motor de pontuação
 - [ ] Configuração Redis para BullMQ em produção
 - [ ] Testes de isolamento multi-tenant
+
+## Fase 3 — Conclusão ✅
+- [x] Design system: fontes Syne + JetBrains Mono + tokens de cor exatos da spec
+- [x] P3 — Tela de entrada por código manual (campo monoespaçado, busca inline, confirmação)
+- [x] P4 — Tela de confirmação de convite com logo, nome, campeonato, participantes, organizador
+- [x] U1 — Gráfico de evolução de pontos (Recharts, linha brand, área gradiente)
+- [x] U1 — Palpites recentes (últimos 5, ícones verde/amarelo/vermelho) — sempre visível
+- [x] U1 — Estatísticas globais (total pontos, exatos, bolões) em JetBrains Mono
+- [x] U2 — Bolões Públicos: busca, filtros por campeonato, grade de cards
+- [x] Refinamento P4/JoinPool: tela de confirmação rica antes do join automático
+- [x] procedures adicionados: previewByToken, searchByCode, joinByCode, listPublic, myStats, recentBets
+
+## Fase 4 — Gestão e Monetização
+- [ ] O1 — Modal/formulário de criação de bolão aprimorado
+- [ ] O2 — Dashboard do Organizador com sidebar colapsável
+- [ ] O3 — Gestão de membros com busca e paginação
+- [ ] O4 — Convites: link, código, QR Code
+- [ ] O5 — Configuração de regras de pontuação (Pro)
+- [ ] O6 — Registro de resultados de jogos (Pro)
+- [ ] Campeonatos personalizados Pro (fluxo completo 4 etapas)
+- [ ] Integração Stripe (checkout + webhooks + portal)
+- [ ] A1 — Dashboard Global Super Admin com métricas e gráficos
+- [ ] A2/A3 — Campeonatos globais + times + jogos + importação CSV
+- [ ] A4 — Gestão de usuários completa com anonimização
+- [ ] A5 — Gestão de bolões com contagem regressiva de exclusão
+- [ ] A6 — Assinaturas Stripe (MRR, churn, ações)
+- [ ] A7 — Broadcasts segmentados
+- [ ] A8 — Publicidade (upload S3, posições, métricas)
+- [ ] A9 — Configurações completas (GA4, Pixel, limites)
+- [ ] A10 — Logs de auditoria

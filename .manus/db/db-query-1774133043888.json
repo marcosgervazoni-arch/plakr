@@ -1,0 +1,70 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "ad_clicks"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "admin_logs"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "ads"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "bets"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "email_queue"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "games"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "notification_preferences"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "notifications"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "platform_settings"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "pool_member_stats"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "pool_members"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "pool_scoring_rules"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "pools"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "sheets_sync_log"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "teams"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "tournament_phases"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "tournaments"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "user_plans"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW": "users"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_dJv8mGehu4r2vn8N2SWpLW\n__drizzle_migrations\nad_clicks\nadmin_logs\nads\nbets\nemail_queue\ngames\nnotification_preferences\nnotifications\nplatform_settings\npool_member_stats\npool_members\npool_scoring_rules\npools\nsheets_sync_log\nteams\ntournament_phases\ntournaments\nuser_plans\nusers\n",
+  "stderr": "",
+  "execution_time_ms": 389
+}

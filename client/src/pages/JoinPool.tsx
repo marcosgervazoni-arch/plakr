@@ -1,80 +1,241 @@
+/**
+ * P4 — Aceitar Convite (via link)
+ * Especificação: tela intermediária com dados completos do bolão antes de confirmar ingresso.
+ * Logo 64px circular com borda brand, nome Syne 24px, campeonato/participantes/organizador.
+ * Botão "Entrar" largo na cor brand. Animação sutil ao confirmar.
+ * Se já membro: mensagem + botão "Ir para o bolão".
+ */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Trophy, Users } from "lucide-react";
-import { useEffect } from "react";
-import { useLocation, useParams } from "wouter";
+import { getLoginUrl } from "@/const";
+import {
+  Trophy,
+  Users,
+  User,
+  CheckCircle2,
+  Loader2,
+  XCircle,
+  Crown,
+} from "lucide-react";
+import { useState } from "react";
+import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 
 export default function JoinPool() {
   const { token } = useParams<{ token: string }>();
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
+  const [joined, setJoined] = useState(false);
+  const [alreadyMember, setAlreadyMember] = useState(false);
+  const [targetSlug, setTargetSlug] = useState("");
 
-  const joinPool = trpc.pools.joinByToken.useMutation({
-    onSuccess: (data) => {
+  // Fetch pool preview by token
+  const { data: preview, isLoading: loadingPreview, error: previewError } =
+    trpc.pools.previewByToken.useQuery(
+      { token: token ?? "" },
+      { enabled: !!token && isAuthenticated, retry: false }
+    );
+
+  const joinMutation = trpc.pools.joinByToken.useMutation({
+    onSuccess: (data: { poolId: number; slug: string; alreadyMember: boolean }) => {
       if (data.alreadyMember) {
-        toast.info("Você já é membro deste bolão.");
+        setAlreadyMember(true);
+        setTargetSlug(data.slug);
       } else {
-        toast.success("Você entrou no bolão!");
+        setJoined(true);
+        setTargetSlug(data.slug);
+        setTimeout(() => navigate(`/pool/${data.slug}`), 1800);
       }
-      navigate(`/pool/${data.slug}`);
     },
-    onError: (err) => {
-      toast.error("Erro ao entrar no bolão", { description: err.message });
+    onError: (err: { message?: string }) => {
+      toast.error(err.message || "Erro ao entrar no bolão.");
     },
   });
 
-  useEffect(() => {
-    if (isAuthenticated && token && !joinPool.isPending && !joinPool.isSuccess) {
-      joinPool.mutate({ token });
-    }
-  }, [isAuthenticated, token]);
-
+  // Loading auth
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
+  // Not authenticated
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <Card className="bg-card border-border max-w-sm w-full">
-          <CardContent className="py-10 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mx-auto mb-6">
-              <Trophy className="w-8 h-8 text-brand-400" />
-            </div>
-            <h2 className="text-xl font-bold mb-2">Você foi convidado!</h2>
-            <p className="text-muted-foreground text-sm mb-6">
-              Faça login para entrar no bolão e começar a fazer seus palpites.
-            </p>
-            <a href={getLoginUrl()}>
-              <Button className="bg-brand-600 hover:bg-brand-700 text-white w-full">
-                Entrar com Manus
-              </Button>
-            </a>
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-sm bg-card border border-border/50 rounded-xl p-8 text-center space-y-5">
+          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
+            <Trophy className="w-7 h-7 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Você foi convidado para um bolão.</p>
+            <h1 className="font-bold text-xl">Entre para confirmar seu ingresso</h1>
+          </div>
+          <a href={getLoginUrl()}>
+            <Button className="w-full" size="lg">Entrar com Manus</Button>
+          </a>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <Card className="bg-card border-border max-w-sm w-full">
-        <CardContent className="py-10 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mx-auto mb-6">
-            <Users className="w-8 h-8 text-brand-400" />
+  // Loading preview
+  if (loadingPreview) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+          <p className="text-sm text-muted-foreground">Carregando informações do bolão...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Invalid token
+  if (previewError || !preview) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="w-full max-w-sm bg-card border border-border/50 rounded-xl p-8 text-center space-y-5">
+          <div className="w-14 h-14 rounded-xl bg-destructive/10 flex items-center justify-center mx-auto">
+            <XCircle className="w-7 h-7 text-destructive" />
           </div>
-          <h2 className="text-xl font-bold mb-2">Entrando no bolão...</h2>
-          <Loader2 className="w-6 h-6 animate-spin text-brand-400 mx-auto mt-4" />
-        </CardContent>
-      </Card>
+          <div>
+            <h1 className="font-bold text-xl mb-1">Link inválido</h1>
+            <p className="text-sm text-muted-foreground">Este link de convite é inválido ou expirou.</p>
+          </div>
+          <Link href="/dashboard">
+            <Button variant="outline" className="w-full">Ir para o painel</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Already member state
+  if (alreadyMember) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="w-full max-w-sm bg-card border border-border/50 rounded-xl p-8 text-center space-y-5">
+          <div className="w-14 h-14 rounded-xl bg-green-500/10 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-7 h-7 text-green-400" />
+          </div>
+          <div>
+            <h1 className="font-bold text-xl mb-1">Você já faz parte deste bolão</h1>
+            <p className="text-sm text-muted-foreground">{preview.name}</p>
+          </div>
+          <Button onClick={() => navigate(`/pool/${targetSlug}`)} className="w-full" size="lg">
+            Ir para o bolão →
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Success / joined state
+  if (joined) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="w-full max-w-sm bg-card border border-border/50 rounded-xl p-8 text-center space-y-5 animate-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 rounded-full bg-green-500/10 border-2 border-green-500/30 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-8 h-8 text-green-400" />
+          </div>
+          <div>
+            <h1 className="font-bold text-xl mb-1">Você entrou no bolão!</h1>
+            <p className="text-sm text-muted-foreground">Redirecionando para {preview.name}...</p>
+          </div>
+          <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  // Main confirmation screen
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm space-y-4">
+
+        <div className="bg-card border border-border/50 rounded-xl overflow-hidden">
+
+          {/* Pool identity header */}
+          <div className="p-6 text-center border-b border-border/30 space-y-3">
+            {/* Logo 64px circular com borda brand */}
+            <div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center mx-auto overflow-hidden">
+              {preview.logoUrl ? (
+                <img src={preview.logoUrl} alt={preview.name} className="w-full h-full object-cover" />
+              ) : (
+                <Trophy className="w-8 h-8 text-primary" />
+              )}
+            </div>
+
+            {/* Nome em Syne 24px */}
+            <div>
+              <h1 className="font-bold text-2xl leading-tight" style={{ fontFamily: "'Syne', sans-serif" }}>
+                {preview.name}
+              </h1>
+              {preview.tournament && (
+                <p className="text-sm text-muted-foreground mt-0.5">{preview.tournament.name}</p>
+              )}
+              {preview.plan === "pro" && (
+                <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2.5 py-0.5 rounded-full mt-1.5">
+                  <Crown className="w-3 h-3" /> Plano Pro
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Pool stats */}
+          <div className="grid grid-cols-2 divide-x divide-border/30 border-b border-border/30">
+            <div className="p-4 text-center">
+              <div className="flex items-center justify-center gap-1.5 text-muted-foreground mb-1">
+                <Users className="w-3.5 h-3.5" />
+                <span className="text-xs">Participantes</span>
+              </div>
+              <p className="font-mono font-bold text-lg text-foreground">{preview.memberCount}</p>
+            </div>
+            <div className="p-4 text-center">
+              <div className="flex items-center justify-center gap-1.5 text-muted-foreground mb-1">
+                <User className="w-3.5 h-3.5" />
+                <span className="text-xs">Organizador</span>
+              </div>
+              <p className="font-bold text-sm text-foreground truncate">{preview.ownerName ?? "—"}</p>
+            </div>
+          </div>
+
+          {/* Invite context */}
+          <div className="px-6 py-3 bg-primary/5 border-b border-border/30">
+            <p className="text-sm text-center text-muted-foreground">
+              Você foi convidado para participar deste bolão.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="p-6 space-y-3">
+            <Button
+              onClick={() => joinMutation.mutate({ token: token ?? "" })}
+              disabled={joinMutation.isPending}
+              className="w-full"
+              size="lg"
+            >
+              {joinMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Entrando...</>
+              ) : (
+                "Entrar no bolão"
+              )}
+            </Button>
+            <Link href="/dashboard" className="block text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Recusar convite
+            </Link>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-muted-foreground">
+          Ao entrar, você concorda com os{" "}
+          <Link href="/" className="hover:underline">Termos de Uso</Link>
+        </p>
+      </div>
     </div>
   );
 }

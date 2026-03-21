@@ -11,6 +11,8 @@ import PoolSettings from "./pages/PoolSettings";
 import JoinPool from "./pages/JoinPool";
 import AdminPanel from "./pages/AdminPanel";
 import ProjectDashboard from "./pages/ProjectDashboard";
+import EnterPool from "./pages/EnterPool";
+import PublicPools from "./pages/PublicPools";
 
 function Router() {
   return (
@@ -20,6 +22,8 @@ function Router() {
       <Route path="/pool/:slug/settings" component={PoolSettings} />
       <Route path="/pool/:slug" component={PoolPage} />
       <Route path="/join/:token" component={JoinPool} />
+      <Route path="/enter-pool" component={EnterPool} />
+      <Route path="/pools/public" component={PublicPools} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/project-status" component={ProjectDashboard} />
       <Route path="/404" component={NotFound} />

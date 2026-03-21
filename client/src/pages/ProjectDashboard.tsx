@@ -31,7 +31,7 @@ import {
 
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
 
-const LAST_UPDATE = "21 de março de 2026";
+const LAST_UPDATE = "21 de março de 2026 — Fase 3 concluída";
 const APP_URL = "https://apostai-bolao-djv8mgeh.manus.space";
 
 // ─── PHASE DATA ───────────────────────────────────────────────────────────────
@@ -75,10 +75,13 @@ const PHASES = [
     items: [
       { label: "Landing Page com seções de hero, features, planos e CTA", done: true },
       { label: "Fluxo de login OAuth com redirecionamento pós-autenticação", done: true },
-      { label: "Dashboard do participante com bolões ativos", done: true },
-      { label: "Página do bolão: lista de jogos, formulário de palpites e ranking", done: true },
-      { label: "Entrada via link de convite (/join/:token)", done: true },
+      { label: "U1 — Dashboard/Perfil: gráfico Recharts, palpites recentes, stats JetBrains Mono", done: true },
+      { label: "U2 — Bolões Públicos: busca por nome + filtro por campeonato + cards", done: true },
+      { label: "U3/U4 — Página do bolão: jogos, formulário de palpites e ranking", done: true },
+      { label: "P3 — Entrada por código manual com preview inline do bolão", done: true },
+      { label: "P4 — Confirmação de convite via link com dados completos do bolão", done: true },
       { label: "Sino de notificações in-app com polling a cada 30s", done: true },
+      { label: "Design system: fontes Syne + JetBrains Mono + tokens brand", done: true },
     ],
   },
   {
@@ -131,11 +134,11 @@ const TECH_STACK = [
 
 const METRICS = [
   { label: "Tabelas no banco", value: "19", icon: Database, color: "text-brand-400" },
-  { label: "Procedures tRPC", value: "40+", icon: Code2, color: "text-green-400" },
-  { label: "Páginas", value: "8", icon: Layers, color: "text-blue-400" },
+  { label: "Procedures tRPC", value: "45+", icon: Code2, color: "text-green-400" },
+  { label: "Páginas", value: "10", icon: Layers, color: "text-blue-400" },
   { label: "Testes Vitest", value: "19 ✓", icon: FlaskConical, color: "text-yellow-400" },
   { label: "Erros TypeScript", value: "0", icon: Shield, color: "text-emerald-400" },
-  { label: "Progresso geral", value: "74%", icon: TrendingUp, color: "text-purple-400" },
+  { label: "Progresso geral", value: "82%", icon: TrendingUp, color: "text-purple-400" },
 ];
 
 // ─── RISKS ────────────────────────────────────────────────────────────────────

@@ -23,6 +23,7 @@ import {
   getGlobalTournaments,
   getPlatformSettings,
   getPoolById,
+  getPoolByInviteCode,
   getPoolByInviteToken,
   getPoolBySlug,
   getPoolMember,
@@ -158,6 +159,86 @@ export const appRouter = router({
 
     myPools: protectedProcedure.query(async ({ ctx }) => {
       return getPoolsByUser(ctx.user.id);
+    }),
+
+    myStats: protectedProcedure.query(async ({ ctx }) => {
+      const db = await (await import("./db")).getDb();
+      if (!db) return { totalPoints: 0, exactScores: 0, poolsCount: 0, pointsHistory: [] };
+      const { sql, eq, and } = await import("drizzle-orm");
+      const { poolMembers, poolMemberStats, bets, games } = await import("../drizzle/schema");
+
+      // Total stats across all pools
+      const statsRows = await db
+        .select({
+          totalPoints: sql<number>`COALESCE(SUM(total_points), 0)`,
+          exactScores: sql<number>`COALESCE(SUM(exact_scores), 0)`,
+          poolsCount: sql<number>`COUNT(DISTINCT pool_id)`,
+        })
+        .from(poolMemberStats)
+        .where(eq(poolMemberStats.userId, ctx.user.id));
+
+      const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, poolsCount: 0 };
+
+      // Points history: last 10 scored bets ordered by game date
+      const history = await db
+        .select({
+          matchDate: games.matchDate,
+          pointsEarned: bets.pointsEarned,
+        })
+        .from(bets)
+        .innerJoin(games, eq(bets.gameId, games.id))
+        .where(and(eq(bets.userId, ctx.user.id), sql`${bets.pointsEarned} IS NOT NULL`))
+        .orderBy(games.matchDate)
+        .limit(20);
+
+      return {
+        totalPoints: Number(stats.totalPoints),
+        exactScores: Number(stats.exactScores),
+        poolsCount: Number(stats.poolsCount),
+        pointsHistory: history.map((h, i) => ({
+          label: new Date(h.matchDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+          points: Number(h.pointsEarned ?? 0),
+          cumulative: 0, // will be computed client-side
+        })),
+      };
+    }),
+
+    recentBets: protectedProcedure.query(async ({ ctx }) => {
+      const db = await (await import("./db")).getDb();
+      if (!db) return [];
+      const { eq, and, isNotNull, desc } = await import("drizzle-orm");
+      const { bets, games } = await import("../drizzle/schema");
+
+      const rows = await db
+        .select({ bet: bets, game: games })
+        .from(bets)
+        .innerJoin(games, eq(bets.gameId, games.id))
+        .where(and(eq(bets.userId, ctx.user.id), isNotNull(games.scoreA)))
+        .orderBy(desc(games.matchDate))
+        .limit(5);
+
+      return rows.map(({ bet, game }) => {
+        const realA = game.scoreA ?? 0;
+        const realB = game.scoreB ?? 0;
+        const betA = bet.predictedScoreA ?? 0;
+        const betB = bet.predictedScoreB ?? 0;
+        const realResult = realA > realB ? "A" : realA < realB ? "B" : "D";
+        const betResult = betA > betB ? "A" : betA < betB ? "B" : "D";
+        const isExact = realA === betA && realB === betB;
+        const isCorrect = !isExact && realResult === betResult;
+        return {
+          gameId: game.id,
+          teamAName: game.teamAName ?? "Time A",
+          teamBName: game.teamBName ?? "Time B",
+          realScoreA: realA,
+          realScoreB: realB,
+          betScoreA: betA,
+          betScoreB: betB,
+          pointsEarned: bet.pointsEarned ?? 0,
+          result: isExact ? "exact" : isCorrect ? "correct" : "wrong",
+          matchDate: game.matchDate,
+        };
+      });
     }),
 
     // Admin: listar todos os usuários
@@ -341,6 +422,128 @@ export const appRouter = router({
         const rules = await getPoolScoringRules(pool.id);
         const memberCount = await countPoolMembers(pool.id);
         return { pool, tournament, games: gameList, rules, memberCount, myRole: member?.role };
+      }),
+
+    listPublic: protectedProcedure
+      .input(z.object({
+        search: z.string().optional(),
+        tournamentId: z.number().optional(),
+        limit: z.number().default(20),
+        offset: z.number().default(0),
+      }))
+      .query(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return { pools: [], total: 0 };
+        const { sql, eq, and, like, desc } = await import("drizzle-orm");
+        const { pools: poolsTable, tournaments, users: usersTable } = await import("../drizzle/schema");
+
+        const conditions = [
+          eq(poolsTable.status, "active"),
+          eq(poolsTable.accessType, "public"),
+        ];
+        if (input.search) {
+          conditions.push(like(poolsTable.name, `%${input.search}%`));
+        }
+        if (input.tournamentId) {
+          conditions.push(eq(poolsTable.tournamentId, input.tournamentId));
+        }
+
+        const rows = await db
+          .select({
+            pool: poolsTable,
+            tournamentName: tournaments.name,
+            ownerName: usersTable.name,
+            memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = ${poolsTable.id})`,
+          })
+          .from(poolsTable)
+          .leftJoin(tournaments, eq(poolsTable.tournamentId, tournaments.id))
+          .leftJoin(usersTable, eq(poolsTable.ownerId, usersTable.id))
+          .where(and(...conditions))
+          .orderBy(desc(poolsTable.createdAt))
+          .limit(input.limit)
+          .offset(input.offset);
+
+        return {
+          pools: rows.map((r) => ({
+            id: r.pool.id,
+            slug: r.pool.slug,
+            name: r.pool.name,
+            logoUrl: r.pool.logoUrl,
+            plan: r.pool.plan,
+            tournamentName: r.tournamentName ?? null,
+            ownerName: r.ownerName ?? null,
+            memberCount: Number(r.memberCount),
+          })),
+          total: rows.length,
+        };
+      }),
+
+    previewByToken: protectedProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input, ctx }) => {
+        const pool = await getPoolByInviteToken(input.token);
+        if (!pool || pool.status !== "active") return null;
+        const tournament = await getTournamentById(pool.tournamentId);
+        const owner = await getUserById(pool.ownerId);
+        const memberCount = await countPoolMembers(pool.id);
+        return {
+          slug: pool.slug,
+          name: pool.name,
+          logoUrl: pool.logoUrl,
+          tournament: tournament ? { name: tournament.name } : null,
+          memberCount,
+          ownerName: owner?.name ?? null,
+          plan: pool.plan,
+        };
+      }),
+
+    searchByCode: protectedProcedure
+      .input(z.object({ code: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const pool = await getPoolByInviteCode(input.code);
+        if (!pool || pool.status !== "active") return null;
+        const tournament = await getTournamentById(pool.tournamentId);
+        const owner = await getUserById(pool.ownerId);
+        const memberCount = await countPoolMembers(pool.id);
+        const existing = await getPoolMember(pool.id, ctx.user.id);
+        return {
+          slug: pool.slug,
+          name: pool.name,
+          logoUrl: pool.logoUrl,
+          tournament: tournament ? { name: tournament.name } : null,
+          memberCount,
+          ownerName: owner?.name ?? null,
+          plan: pool.plan,
+          alreadyMember: !!existing,
+        };
+      }),
+
+    joinByCode: protectedProcedure
+      .input(z.object({ code: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const pool = await getPoolByInviteCode(input.code);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND", message: "Código de convite inválido." });
+        if (pool.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Este bolão não está mais ativo." });
+
+        const existing = await getPoolMember(pool.id, ctx.user.id);
+        if (existing) return { poolId: pool.id, slug: pool.slug, alreadyMember: true };
+
+        const settings = await getPlatformSettings();
+        const freeMax = settings?.freeMaxParticipants ?? 50;
+        const memberCount = await countPoolMembers(pool.id);
+        if (pool.plan === "free" && memberCount >= freeMax) {
+          throw new TRPCError({ code: "FORBIDDEN", message: `Este bolão atingiu o limite de ${freeMax} participantes.` });
+        }
+
+        await addPoolMember(pool.id, ctx.user.id, "participant");
+        await createNotification({
+          userId: pool.ownerId,
+          poolId: pool.id,
+          type: "system",
+          title: "Novo participante",
+          message: `${ctx.user.name ?? "Um usuário"} entrou no bolão "${pool.name}".`,
+        });
+        return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
       }),
 
     joinByToken: protectedProcedure
