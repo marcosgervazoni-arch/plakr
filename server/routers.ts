@@ -51,6 +51,13 @@ import {
   upsertPoolMemberStats,
   upsertPoolScoringRules,
   upsertUserPlan,
+  anonymizeUser,
+  getOldestMember,
+  getPoolsWhereOnlyOrganizer,
+  getBetsByGameAllPools,
+  getPoolsByTournament,
+  getGamesByPool,
+  recalculateMemberStats,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -282,17 +289,55 @@ export const appRouter = router({
         return { tournament: t, phases, teams: teamList, games: gameList };
       }),
 
+    list: adminProcedure.query(async () => {
+      return getGlobalTournaments();
+    }),
     create: adminProcedure
       .input(z.object({
         name: z.string().min(3),
         slug: z.string().min(3),
         isGlobal: z.boolean().default(true),
         logoUrl: z.string().optional(),
+        country: z.string().optional(),
+        season: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const id = await createTournament({ ...input, createdBy: ctx.user.id });
         await createAdminLog(ctx.user.id, "create_tournament", "tournament", id);
         return { id };
+      }),
+    // Importar jogos via CSV
+    importGames: adminProcedure
+      .input(z.object({
+        tournamentId: z.number(),
+        csvData: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const lines = input.csvData.trim().split("\n").slice(1); // skip header
+        let imported = 0;
+        for (const line of lines) {
+          const parts = line.split(",").map((p) => p.trim());
+          if (parts.length < 4) continue;
+          const [teamAName, teamBName, matchDateStr, deadlineStr, phase, venue] = parts;
+          if (!teamAName || !teamBName || !matchDateStr) continue;
+          try {
+            await createGame({
+              tournamentId: input.tournamentId,
+              teamAName: teamAName.replace(/"/g, ""),
+              teamBName: teamBName.replace(/"/g, ""),
+              matchDate: new Date(matchDateStr.replace(/"/g, "")),
+              phase: (phase ?? "Fase de Grupos").replace(/"/g, ""),
+              venue: venue?.replace(/"/g, "") || undefined,
+            });
+            imported++;
+          } catch (err) {
+            console.warn("[importGames] Skipping invalid row:", line, err);
+          }
+        }
+        await createAdminLog(ctx.user.id, "import_games", "tournament", input.tournamentId, { imported });
+        return { imported };
       }),
 
     update: adminProcedure
@@ -341,12 +386,54 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const game = await getGameById(input.gameId);
         if (!game) throw new TRPCError({ code: "NOT_FOUND" });
+        const wasAlreadyFinished = game.status === "finished";
         await updateGameResult(input.gameId, input.scoreA, input.scoreB, input.isZebra);
         await createAdminLog(ctx.user.id, "set_result", "game", input.gameId, {
-          scoreA: input.scoreA, scoreB: input.scoreB,
+          scoreA: input.scoreA, scoreB: input.scoreB, isZebra: input.isZebra,
         });
-        // TODO: enqueue BullMQ job for score recalculation
-        return { success: true };
+
+        // Recalcular pontos de todos os palpites deste jogo (retroativo se já estava finalizado)
+        const allBets = await getBetsByGameAllPools(input.gameId);
+        const affectedPoolsSet = new Set(allBets.map((b) => b.poolId));
+        const affectedPools = Array.from(affectedPoolsSet);
+
+        for (const poolId of affectedPools) {
+          const rules = await getPoolScoringRules(poolId);
+          const defaultSettings = await getPlatformSettings();
+          const effectiveRules = {
+            exactScorePoints: rules?.exactScorePoints ?? defaultSettings?.defaultScoringExact ?? 10,
+            correctResultPoints: rules?.correctResultPoints ?? defaultSettings?.defaultScoringCorrect ?? 5,
+            totalGoalsPoints: rules?.totalGoalsPoints ?? defaultSettings?.defaultScoringBonusGoals ?? 2,
+            goalDiffPoints: rules?.goalDiffPoints ?? defaultSettings?.defaultScoringBonusDiff ?? 2,
+            zebraPoints: rules?.zebraPoints ?? defaultSettings?.defaultScoringBonusUpset ?? 3,
+            zebraEnabled: rules?.zebraEnabled ?? true,
+          };
+          const poolBets = allBets.filter((b) => b.poolId === poolId);
+          const affectedUsersSet = new Set<number>();
+          for (const bet of poolBets) {
+            const score = calculateBetScore(
+              bet.predictedScoreA, bet.predictedScoreB,
+              input.scoreA, input.scoreB,
+              effectiveRules, input.isZebra
+            );
+            await (await import("./db")).updateBetScore(bet.id, {
+              pointsEarned: score.points,
+              pointsExactScore: score.pointsExact,
+              pointsCorrectResult: score.pointsCorrect,
+              pointsTotalGoals: score.pointsGoals,
+              pointsGoalDiff: score.pointsDiff,
+              pointsZebra: score.pointsZebra,
+              resultType: score.resultType,
+            });
+            affectedUsersSet.add(bet.userId);
+          }
+          // Recalcular stats de todos os membros afetados
+          const affectedUsers = Array.from(affectedUsersSet);
+          for (const userId of affectedUsers) {
+            await recalculateMemberStats(poolId, userId);
+          }
+        }
+        return { success: true, affectedBets: allBets.length };
       }),
 
     addTeam: adminProcedure
@@ -365,6 +452,16 @@ export const appRouter = router({
 
   // ─── POOLS ─────────────────────────────────────────────────────────────────
   pools: router({
+    // Admin: listar todos os bolões
+    adminList: adminProcedure
+      .input(z.object({ limit: z.number().default(100) }))
+      .query(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return [];
+        const { pools: poolsTable } = await import("../drizzle/schema");
+        const { desc } = await import("drizzle-orm");
+        return db.select().from(poolsTable).orderBy(desc(poolsTable.createdAt)).limit(input.limit);
+      }),
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(3).max(100),
@@ -606,13 +703,49 @@ export const appRouter = router({
       }),
 
     removeMember: protectedProcedure
-      .input(z.object({ poolId: z.number(), userId: z.number() }))
+      .input(z.object({
+        poolId: z.number(),
+        userId: z.number(),
+        anonymize: z.boolean().default(false),
+      }))
       .mutation(async ({ input, ctx }) => {
         const member = await getPoolMember(input.poolId, ctx.user.id);
         if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
+        const targetMember = await getPoolMember(input.poolId, input.userId);
+        if (!targetMember) throw new TRPCError({ code: "NOT_FOUND", message: "Membro não encontrado." });
+
+        // Se o membro removido é organizador, transferir automaticamente
+        if (targetMember.role === "organizer") {
+          const oldest = await getOldestMember(input.poolId, input.userId);
+          if (oldest) {
+            await updatePoolMemberRole(input.poolId, oldest.userId, "organizer");
+            await updatePool(input.poolId, { ownerId: oldest.userId });
+            // Notificar novo organizador
+            await createNotification({
+              userId: oldest.userId,
+              type: "system",
+              title: "Você é o novo organizador",
+              message: "A propriedade do bolão foi transferida para você automaticamente.",
+            });
+          } else {
+            // Sem outros participantes — encerrar bolão
+            await updatePool(input.poolId, { status: "finished" });
+          }
+        }
+
         await removePoolMember(input.poolId, input.userId);
+
+        // Anonimizar dados globais se solicitado (apenas Super Admin)
+        if (input.anonymize && ctx.user.role === "admin") {
+          // Verificar se usuário tem outros bolões; se não, anonimizar globalmente
+          const otherPools = await getPoolsByUser(input.userId);
+          if (otherPools.length === 0) {
+            await anonymizeUser(input.userId);
+          }
+        }
+
         return { success: true };
       }),
 
@@ -653,11 +786,99 @@ export const appRouter = router({
             message: "Regras de pontuação customizadas são exclusivas do Plano Pro.",
           });
         }
-        await upsertPoolScoringRules(poolId, data, ctx.user.id);
+         await upsertPoolScoringRules(poolId, data, ctx.user.id);
         return { success: true };
       }),
-  }),
 
+    // Listar jogos do bolão (para tela de palpites e resultados)
+    getGames: protectedProcedure
+      .input(z.object({ poolId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        if (!member && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return getGamesByPool(input.poolId);
+      }),
+
+    // Registrar resultado de jogo — exclusivo Organizador Pro (campeonato personalizado)
+    setGameResult: protectedProcedure
+      .input(z.object({
+        poolId: z.number(),
+        gameId: z.number(),
+        scoreA: z.number().min(0).max(99),
+        scoreB: z.number().min(0).max(99),
+        isZebra: z.boolean().default(false),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador pode registrar resultados." });
+        }
+        // Verificar plano Pro
+        const pool = await getPoolById(input.poolId);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+        if (pool.plan !== "pro" && ctx.user.role !== "admin") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Registro de resultados pelo organizador é exclusivo do Plano Pro.",
+          });
+        }
+        // Verificar que o jogo pertence ao campeonato do bolão
+        const game = await getGameById(input.gameId);
+        if (!game || game.tournamentId !== pool.tournamentId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Jogo não encontrado neste bolão." });
+        }
+        await updateGameResult(input.gameId, input.scoreA, input.scoreB, input.isZebra);
+        await createAdminLog(ctx.user.id, "set_result", "game", input.gameId, {
+          poolId: input.poolId, scoreA: input.scoreA, scoreB: input.scoreB,
+        });
+        // Recalcular pontos de todos os palpites deste jogo neste bolão
+        const allBets = await getBetsByGameAllPools(input.gameId);
+        const poolBets = allBets.filter((b) => b.poolId === input.poolId);
+        const rules = await getPoolScoringRules(input.poolId);
+        const defaultSettings = await getPlatformSettings();
+        const effectiveRules = {
+          exactScorePoints: rules?.exactScorePoints ?? defaultSettings?.defaultScoringExact ?? 10,
+          correctResultPoints: rules?.correctResultPoints ?? defaultSettings?.defaultScoringCorrect ?? 5,
+          totalGoalsPoints: rules?.totalGoalsPoints ?? defaultSettings?.defaultScoringBonusGoals ?? 2,
+          goalDiffPoints: rules?.goalDiffPoints ?? defaultSettings?.defaultScoringBonusDiff ?? 2,
+          zebraPoints: rules?.zebraPoints ?? defaultSettings?.defaultScoringBonusUpset ?? 3,
+          zebraEnabled: rules?.zebraEnabled ?? true,
+        };
+        const affectedUsersSet = new Set<number>();
+        for (const bet of poolBets) {
+          const score = calculateBetScore(
+            bet.predictedScoreA, bet.predictedScoreB,
+            input.scoreA, input.scoreB,
+            effectiveRules, input.isZebra
+          );
+          await (await import("./db")).updateBetScore(bet.id, {
+            pointsEarned: score.points,
+            pointsExactScore: score.pointsExact,
+            pointsCorrectResult: score.pointsCorrect,
+            pointsTotalGoals: score.pointsGoals,
+            pointsGoalDiff: score.pointsDiff,
+            pointsZebra: score.pointsZebra,
+            resultType: score.resultType,
+          });
+          affectedUsersSet.add(bet.userId);
+        }
+        const affectedUsers = Array.from(affectedUsersSet);
+        for (const userId of affectedUsers) {
+          await recalculateMemberStats(input.poolId, userId);
+        }
+        // Notificar membros que o resultado foi registrado
+        const members = await getPoolMembers(input.poolId);
+        for (const m of members) {
+          await createNotification({
+            userId: m.member.userId,
+            type: "result_available",
+            title: "Resultado registrado",
+            message: `O resultado do jogo foi registrado: ${input.scoreA} × ${input.scoreB}. Confira sua pontuação!`,
+          });
+        }
+        return { success: true, affectedBets: poolBets.length };
+      }),
+  }),
   // ─── BETS ──────────────────────────────────────────────────────────────────
   bets: router({
     myBets: protectedProcedure
@@ -735,10 +956,66 @@ export const appRouter = router({
       await markAllNotificationsRead(ctx.user.id);
       return { success: true };
     }),
+    broadcast: adminProcedure
+      .input(z.object({
+        title: z.string().min(1).max(100),
+        content: z.string().min(1).max(500),
+        audience: z.enum(["all", "pro", "free"]).default("all"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new Error("DB not available");
+        const { users: usersT, userPlans, pools: poolsT } = await import("../drizzle/schema");
+        const { eq, inArray } = await import("drizzle-orm");
+        let userIds: number[] = [];
+        if (input.audience === "all") {
+          const rows = await db.select({ id: usersT.id }).from(usersT);
+          userIds = rows.map((r) => r.id);
+        } else if (input.audience === "pro") {
+          const rows = await db.select({ userId: userPlans.userId }).from(userPlans).where(eq(userPlans.plan, "pro"));
+          userIds = rows.map((r) => r.userId);
+        } else {
+          const proRows = await db.select({ userId: userPlans.userId }).from(userPlans).where(eq(userPlans.plan, "pro"));
+          const proIds = new Set(proRows.map((r) => r.userId));
+          const allRows = await db.select({ id: usersT.id }).from(usersT);
+          userIds = allRows.filter((r) => !proIds.has(r.id)).map((r) => r.id);
+        }
+        const { createNotification, createAdminLog } = await import("./db");
+        let sent = 0;
+        for (const uid of userIds) {
+          await createNotification({ userId: uid, type: "system", title: input.title, message: input.content });
+          sent++;
+        }
+        await createAdminLog(ctx.user.id, "broadcast", "platform", undefined, { sent, audience: input.audience });
+        return { sent };
+      }),
   }),
 
   // ─── PLATFORM SETTINGS (Admin) ─────────────────────────────────────────────
   platform: router({
+    // Dashboard global: métricas agregadas da plataforma
+    getStats: adminProcedure.query(async () => {
+      const db = await (await import("./db")).getDb();
+      if (!db) return { totalUsers: 0, totalPools: 0, activePools: 0, proPlans: 0, totalBets: 0, totalTournaments: 0 };
+      const { users: usersT, pools: poolsT, bets: betsT, tournaments: tourT, userPlans: plansT } = await import("../drizzle/schema");
+      const { count, eq } = await import("drizzle-orm");
+      const [[usersCount], [poolsCount], [activeCount], [proCount], [betsCount], [tourCount]] = await Promise.all([
+        db.select({ c: count() }).from(usersT),
+        db.select({ c: count() }).from(poolsT),
+        db.select({ c: count() }).from(poolsT).where(eq(poolsT.status, "active")),
+        db.select({ c: count() }).from(poolsT).where(eq(poolsT.plan, "pro")),
+        db.select({ c: count() }).from(betsT),
+        db.select({ c: count() }).from(tourT),
+      ]);
+      return {
+        totalUsers: Number(usersCount?.c ?? 0),
+        totalPools: Number(poolsCount?.c ?? 0),
+        activePools: Number(activeCount?.c ?? 0),
+        proPlans: Number(proCount?.c ?? 0),
+        totalBets: Number(betsCount?.c ?? 0),
+        totalTournaments: Number(tourCount?.c ?? 0),
+      };
+    }),
     getSettings: adminProcedure.query(async () => {
       return getPlatformSettings();
     }),
@@ -761,14 +1038,154 @@ export const appRouter = router({
         await createAdminLog(ctx.user.id, "update_platform_settings", "platform_settings", 1);
         return { success: true };
       }),
+    getAuditLogs: adminProcedure
+      .input(z.object({ limit: z.number().default(100) }))
+      .query(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return [];
+        const { adminLogs } = await import("../drizzle/schema");
+        const { desc } = await import("drizzle-orm");
+        return db.select().from(adminLogs).orderBy(desc(adminLogs.createdAt)).limit(input.limit);
+      }),
   }),
 
-  // ─── ADS ───────────────────────────────────────────────────────────────────
+   // ─── STRIPE ───────────────────────────────────────────────────────────────
+  stripe: router({
+    // Criar sessão de checkout para ativar o Plano Pro num bolão
+    createCheckout: protectedProcedure
+      .input(z.object({
+        poolId: z.number(),
+        origin: z.string().url(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const pool = await getPoolById(input.poolId);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        if (!member || member.role !== "organizer") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador pode assinar o Plano Pro." });
+        }
+        if (pool.plan === "pro") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Este bolão já possui o Plano Pro." });
+        }
+
+        const Stripe = (await import("stripe")).default;
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+          apiVersion: "2026-02-25.clover" as "2026-02-25.clover",
+        });
+
+        const priceId = process.env.STRIPE_PRO_PRICE_ID;
+        if (!priceId) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Preço do Plano Pro não configurado. Contate o administrador.",
+          });
+        }
+
+        const session = await stripe.checkout.sessions.create({
+          mode: "subscription",
+          line_items: [{ price: priceId, quantity: 1 }],
+          customer_email: ctx.user.email ?? undefined,
+          client_reference_id: ctx.user.id.toString(),
+          metadata: {
+            user_id: ctx.user.id.toString(),
+            pool_id: input.poolId.toString(),
+            customer_email: ctx.user.email ?? "",
+            customer_name: ctx.user.name ?? "",
+          },
+          subscription_data: {
+            metadata: {
+              user_id: ctx.user.id.toString(),
+              pool_id: input.poolId.toString(),
+            },
+          },
+          allow_promotion_codes: true,
+          success_url: `${input.origin}/organizer/${input.poolId}?checkout=success`,
+          cancel_url: `${input.origin}/organizer/${input.poolId}?checkout=cancelled`,
+        });
+
+        return { checkoutUrl: session.url };
+      }),
+
+    // Abrir portal de gestão de assinatura Stripe
+    createPortalSession: protectedProcedure
+      .input(z.object({
+        poolId: z.number(),
+        origin: z.string().url(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const plan = await getUserPlan(ctx.user.id);
+        if (!plan?.stripeCustomerId) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Nenhuma assinatura ativa encontrada.",
+          });
+        }
+
+        const Stripe = (await import("stripe")).default;
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+          apiVersion: "2026-02-25.clover" as "2026-02-25.clover",
+        });
+
+        const session = await stripe.billingPortal.sessions.create({
+          customer: plan.stripeCustomerId,
+          return_url: `${input.origin}/organizer/${input.poolId}`,
+        });
+
+        return { portalUrl: session.url };
+      }),
+  }),
+  // ─── ADS ──────────────────────────────────────────────────────────────────
   ads: router({
     getActive: publicProcedure
       .input(z.object({ position: z.string().optional() }))
       .query(async ({ input }) => {
         return getActiveAds(input.position);
+      }),
+    list: adminProcedure.query(async () => {
+      const db = await (await import("./db")).getDb();
+      if (!db) return [];
+      const { ads: adsT, adClicks } = await import("../drizzle/schema");
+      const { desc, count, eq } = await import("drizzle-orm");
+      const rows = await db.select().from(adsT).orderBy(desc(adsT.createdAt));
+      const clickCounts = await db.select({ adId: adClicks.adId, clicks: count() }).from(adClicks).groupBy(adClicks.adId);
+      const clickMap = new Map(clickCounts.map((c) => [c.adId, Number(c.clicks)]));
+      return rows.map((a) => ({ ...a, clicks: clickMap.get(a.id) ?? 0 }));
+    }),
+    create: adminProcedure
+      .input(z.object({
+        title: z.string().min(1).max(255),
+        assetUrl: z.string().optional(),
+        linkUrl: z.string().optional(),
+        type: z.enum(["banner", "video", "script"]).default("banner"),
+        position: z.enum(["sidebar", "top", "between_sections", "bottom", "popup"]).default("sidebar"),
+        isActive: z.boolean().default(true),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new Error("DB not available");
+        const { ads: adsT } = await import("../drizzle/schema");
+        await db.insert(adsT).values({ title: input.title, assetUrl: input.assetUrl, linkUrl: input.linkUrl, type: input.type, position: input.position, isActive: input.isActive, createdBy: ctx.user.id });
+        return { success: true };
+      }),
+    toggle: adminProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new Error("DB not available");
+        const { ads: adsT } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.update(adsT).set({ isActive: input.isActive }).where(eq(adsT.id, input.id));
+        return { success: true };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new Error("DB not available");
+        const { ads: adsT } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.delete(adsT).where(eq(adsT.id, input.id));
+        return { success: true };
       }),
   }),
 });

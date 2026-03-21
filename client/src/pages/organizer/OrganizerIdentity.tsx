@@ -2,28 +2,22 @@
  * O5 — Identidade Visual
  * Especificação: formulário de nome, subtítulo e logo com preview em tempo real.
  * Layout duas colunas no desktop: formulário à esquerda, preview à direita.
+ * Upload real via S3 usando ImageUploader + useImageUpload hook.
  */
 import OrganizerLayout from "@/components/OrganizerLayout";
+import ImageUploader from "@/components/ImageUploader";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Upload,
-  X,
-  Trophy,
-  Users,
-  Loader2,
-  ImageIcon,
-} from "lucide-react";
+import { Trophy, Users, Loader2 } from "lucide-react";
 import { useParams } from "wouter";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 export default function OrganizerIdentity() {
   const { slug } = useParams<{ slug: string }>();
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: poolData, refetch } = trpc.pools.getBySlug.useQuery(
     { slug: slug ?? "" },
@@ -33,15 +27,13 @@ export default function OrganizerIdentity() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (pool) {
       setName(pool.name ?? "");
       setDescription(pool.description ?? "");
-      setLogoPreview(pool.logoUrl ?? null);
+      setLogoUrl(pool.logoUrl ?? null);
     }
   }, [pool]);
 
@@ -53,36 +45,13 @@ export default function OrganizerIdentity() {
     onError: (err) => toast.error(err.message || "Erro ao salvar."),
   });
 
-  const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Apenas imagens são aceitas (JPG, PNG, GIF, WebP).");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Tamanho máximo: 5MB.");
-      return;
-    }
-    setLogoFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => setLogoPreview(e.target?.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
-  };
-
   const handleSave = () => {
     if (!pool?.id || !name.trim()) return;
-    // Logo upload would go through S3 in production; using preview URL for now
     updateMutation.mutate({
       poolId: pool.id,
       name: name.trim(),
       description: description.trim() || undefined,
-      logoUrl: logoPreview ?? undefined,
+      logoUrl: logoUrl ?? undefined,
     });
   };
 
@@ -93,7 +62,7 @@ export default function OrganizerIdentity() {
     <OrganizerLayout
       slug={slug ?? ""}
       poolName={pool?.name ?? "Bolão"}
-      poolStatus={(pool?.status as any) ?? "active"}
+      poolStatus={(pool?.status as "active" | "closed" | "draft") ?? "active"}
       isPro={isPro}
       activeSection="identity"
     >
@@ -110,57 +79,15 @@ export default function OrganizerIdentity() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Form */}
           <div className="space-y-5">
-            {/* Logo upload */}
-            <div className="space-y-2">
-              <Label>Logo do bolão</Label>
-              <div
-                className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-border/50 hover:border-primary/40 bg-card"
-                }`}
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => fileRef.current?.click()}
-              >
-                {logoPreview ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <img
-                      src={logoPreview}
-                      alt="Logo preview"
-                      className="w-20 h-20 rounded-full object-cover border-2 border-border/30"
-                    />
-                    <p className="text-xs text-muted-foreground">Clique ou arraste para trocar</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-2 py-2">
-                    <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center">
-                      <Upload className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium">Arraste ou clique para fazer upload</p>
-                    <p className="text-xs text-muted-foreground">JPG, PNG, GIF, WebP — máx. 5MB</p>
-                  </div>
-                )}
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                />
-              </div>
-              {logoPreview && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-red-400 hover:text-red-300"
-                  onClick={() => { setLogoPreview(null); setLogoFile(null); }}
-                >
-                  <X className="w-3.5 h-3.5 mr-1.5" /> Remover logo
-                </Button>
-              )}
-            </div>
+            {/* Logo upload — real S3 */}
+            <ImageUploader
+              value={logoUrl}
+              onChange={setLogoUrl}
+              folder="pool-logos"
+              label="Logo do bolão"
+              hint="PNG, JPG ou WebP até 5MB. Recomendado: 400×400px"
+              aspectRatio="square"
+            />
 
             {/* Name */}
             <div className="space-y-2">
@@ -208,12 +135,14 @@ export default function OrganizerIdentity() {
 
           {/* Live preview */}
           <div className="space-y-3">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Preview — como aparece para os participantes</Label>
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">
+              Preview — como aparece para os participantes
+            </Label>
             <div className="bg-card border border-border/30 rounded-xl p-4 space-y-3">
               <div className="flex items-center gap-3">
-                {logoPreview ? (
+                {logoUrl ? (
                   <img
-                    src={logoPreview}
+                    src={logoUrl}
                     alt="Logo"
                     className="w-12 h-12 rounded-full object-cover border border-border/30 shrink-0"
                   />

@@ -31,7 +31,7 @@ import {
 
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
 
-const LAST_UPDATE = "21 de março de 2026 — Fase 4 em andamento (Painel do Organizador concluído)";
+const LAST_UPDATE = "21 de março de 2026 — Fases 1–4 concluídas. Fase 5 em andamento (upload S3 ativo)";
 const APP_URL = "https://apostai-bolao-djv8mgeh.manus.space";
 
 // ─── PHASE DATA ───────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ const PHASES = [
     id: 4,
     name: "Gestão e Monetização",
     weeks: "Semanas 9–11",
-    status: "in_progress" as const,
+    status: "completed" as const,
     icon: Star,
     items: [
       { label: "O1 — Criar Bolão: 4 seções, banner de limite, botão sticky mobile", done: true },
@@ -98,21 +98,24 @@ const PHASES = [
       { label: "O5 — Identidade Visual: upload de logo, preview em tempo real", done: true },
       { label: "O6 — Regras de Pontuação: simulador integrado, bloqueio pós-início", done: true },
       { label: "SidebarLayout do Organizador: 240px fixo, mobile hambúrguer, banner Pro expirado", done: true },
-      { label: "Integração Stripe (checkout + webhooks de ativação/cancelamento)", done: false },
-      { label: "Campeonatos personalizados — fluxo completo O7/O8 (Pro)", done: false },
-      { label: "Importação CSV/Google Sheets de jogos (Super Admin A3)", done: false },
+      { label: "Integração Stripe (checkout + webhooks de ativação/cancelamento)", done: true },
+      { label: "Campeonatos personalizados — fluxo 4 etapas O7/O8 (Pro)", done: true },
+      { label: "Super Admin A1–A10: dashboard global, campeonatos, usuários, assinaturas, broadcasts, anúncios, auditoria", done: true },
+      { label: "Importação de jogos via CSV no Super Admin (A3)", done: true },
     ],
   },
   {
     id: 5,
     name: "Polimento, Notificações e Lançamento",
     weeks: "Semanas 12–13",
-    status: "pending" as const,
+    status: "in_progress" as const,
     icon: Rocket,
     items: [
-      { label: "Notificações por e-mail: lembretes, resultados, expiração de plano", done: false },
+      { label: "Upload de logos de bolões e fotos de times via S3 (real)", done: true },
+      { label: "Componente ImageUploader com drag-and-drop + progress bar", done: true },
+      { label: "Rota /api/upload com validação de tipo e tamanho (5MB)", done: true },
       { label: "Exclusão automática de bolões encerrados (cron 1h — 10 dias)", done: true },
-      { label: "Upload de logos e fotos de times via S3", done: false },
+      { label: "Notificações por e-mail: lembretes, resultados, expiração de plano", done: false },
       { label: "Analytics GA4 + Facebook Pixel (exclusivo Super Admin)", done: false },
       { label: "Testes de carga no motor de pontuação", done: false },
       { label: "Deploy em produção (Manus Hosting)", done: false },
@@ -129,7 +132,7 @@ const TECH_STACK = [
   { label: "Autenticação", value: "Manus OAuth + JWT em cookies HttpOnly" },
   { label: "Jobs Assíncronos", value: "BullMQ + Redis (fallback síncrono ativo)" },
   { label: "Armazenamento", value: "S3 (Manus Storage) via CDN" },
-  { label: "Pagamentos", value: "Stripe (integração pendente)" },
+  { label: "Pagamentos", value: "Stripe (checkout + webhooks ativos)" },
   { label: "Hospedagem", value: "Manus Hosting — apostai-bolao-djv8mgeh.manus.space" },
 ];
 
@@ -137,20 +140,20 @@ const TECH_STACK = [
 
 const METRICS = [
   { label: "Tabelas no banco", value: "19", icon: Database, color: "text-brand-400" },
-  { label: "Procedures tRPC", value: "45+", icon: Code2, color: "text-green-400" },
-  { label: "Páginas", value: "16", icon: Layers, color: "text-blue-400" },
+  { label: "Procedures tRPC", value: "50+", icon: Code2, color: "text-green-400" },
+  { label: "Páginas / Telas", value: "28", icon: Layers, color: "text-blue-400" },
   { label: "Testes Vitest", value: "19 ✓", icon: FlaskConical, color: "text-yellow-400" },
   { label: "Erros TypeScript", value: "0", icon: Shield, color: "text-emerald-400" },
-  { label: "Progresso geral", value: "72%", icon: TrendingUp, color: "text-purple-400" },
+  { label: "Progresso geral", value: "88%", icon: TrendingUp, color: "text-purple-400" },
 ];
 
 // ─── RISKS ────────────────────────────────────────────────────────────────────
 
 const RISKS = [
   {
-    level: "high",
-    title: "Stripe não integrado",
-    desc: "Monetização Pro bloqueada. Checkout e webhooks de ativação/cancelamento de plano precisam ser implementados antes do lançamento.",
+    level: "low",
+    title: "Stripe integrado — aguarda configuração de produto",
+    desc: "Checkout e webhooks implementados. Falta criar o produto/preço no Stripe Dashboard e coletar o Price ID para ativar o checkout real.",
   },
   {
     level: "medium",
@@ -173,14 +176,6 @@ const RISKS = [
 
 const NEXT_STEPS = [
   {
-    priority: "Crítico",
-    color: "border-red-500/40 text-red-400",
-    icon: CreditCard,
-    title: "Integração Stripe",
-    desc: "Checkout de assinatura Pro, webhooks de ativação/cancelamento e portal de gestão de plano.",
-    eta: "~3 dias",
-  },
-  {
     priority: "Alta",
     color: "border-yellow-500/40 text-yellow-400",
     icon: Bell,
@@ -189,11 +184,19 @@ const NEXT_STEPS = [
     eta: "~2 dias",
   },
   {
+    priority: "Alta",
+    color: "border-orange-500/40 text-orange-400",
+    icon: CreditCard,
+    title: "Configurar produto Stripe",
+    desc: "Criar produto Pro no Stripe Dashboard, obter Price ID e configurar no servidor para ativar checkout real.",
+    eta: "~1 dia",
+  },
+  {
     priority: "Média",
     color: "border-blue-500/40 text-blue-400",
     icon: BarChart3,
-    title: "Analytics e Upload S3",
-    desc: "GA4 + Facebook Pixel (Super Admin) e upload de logos de bolões e fotos de times.",
+    title: "Analytics GA4 + Facebook Pixel",
+    desc: "Integração exclusiva no Super Admin para rastreamento de conversões e análise de comportamento.",
     eta: "~2 dias",
   },
 ];

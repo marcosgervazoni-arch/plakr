@@ -601,3 +601,146 @@ export async function getPoolsDueForDeletion() {
       )
     );
 }
+
+// ─── FASE 2 GAPS — Anonimização, Transferência Automática, Recálculo ──────────
+
+/**
+ * Anonimiza o nome de um usuário removido, preservando palpites e rankings históricos.
+ * Formato: "Usuário_Removido_[ID_Curto]"
+ */
+export async function anonymizeUser(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const shortId = userId.toString(36).toUpperCase().slice(-6);
+  await db
+    .update(users)
+    .set({ name: `Usuário_Removido_${shortId}`, email: null, isBlocked: true })
+    .where(eq(users.id, userId));
+}
+
+/**
+ * Busca o membro mais antigo de um bolão (excluindo o organizador atual) para transferência automática.
+ */
+export async function getOldestMember(poolId: number, excludeUserId: number): Promise<PoolMember | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(poolMembers)
+    .where(
+      and(
+        eq(poolMembers.poolId, poolId),
+        eq(poolMembers.role, "participant"),
+        sql`${poolMembers.userId} != ${excludeUserId}`
+      )
+    )
+    .orderBy(asc(poolMembers.joinedAt))
+    .limit(1);
+  return result[0];
+}
+
+/**
+ * Retorna todos os bolões onde o usuário é o único organizador.
+ */
+export async function getPoolsWhereOnlyOrganizer(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // Bolões onde este usuário é organizador
+  const ownedPools = await db
+    .select({ poolId: poolMembers.poolId })
+    .from(poolMembers)
+    .where(and(eq(poolMembers.userId, userId), eq(poolMembers.role, "organizer")));
+
+  const result = [];
+  for (const { poolId } of ownedPools) {
+    // Verificar se há outro organizador
+    const otherOrganizers = await db
+      .select()
+      .from(poolMembers)
+      .where(
+        and(
+          eq(poolMembers.poolId, poolId),
+          eq(poolMembers.role, "organizer"),
+          sql`${poolMembers.userId} != ${userId}`
+        )
+      )
+      .limit(1);
+    if (otherOrganizers.length === 0) {
+      result.push(poolId);
+    }
+  }
+  return result;
+}
+
+/**
+ * Busca todos os palpites de um jogo em TODOS os bolões que usam aquele campeonato.
+ * Usado para recálculo retroativo quando o resultado de um jogo é corrigido.
+ */
+export async function getBetsByGameAllPools(gameId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(bets)
+    .where(eq(bets.gameId, gameId));
+}
+
+/**
+ * Retorna todos os bolões que contêm jogos de um determinado campeonato.
+ */
+export async function getPoolsByTournament(tournamentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({ id: pools.id, slug: pools.slug, plan: pools.plan, ownerId: pools.ownerId })
+    .from(pools)
+    .where(and(eq(pools.tournamentId, tournamentId), eq(pools.status, "active")));
+}
+
+/**
+ * Registra resultado de jogo por organizador Pro (apenas bolões com campeonato personalizado).
+ */
+export async function getGamesByPool(poolId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // Busca o campeonato do bolão e retorna os jogos
+  const pool = await getPoolById(poolId);
+  if (!pool) return [];
+  return db
+    .select()
+    .from(games)
+    .where(eq(games.tournamentId, pool.tournamentId))
+    .orderBy(asc(games.matchDate));
+}
+
+/**
+ * Recalcula os stats de um membro específico num bolão com base em todos os seus palpites.
+ */
+export async function recalculateMemberStats(poolId: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const memberBets = await db
+    .select()
+    .from(bets)
+    .where(and(eq(bets.poolId, poolId), eq(bets.userId, userId)));
+
+  let totalPoints = 0;
+  let exactScoreCount = 0;
+  let correctResultCount = 0;
+  let wrongCount = 0;
+
+  for (const bet of memberBets) {
+    totalPoints += bet.pointsEarned ?? 0;
+    if (bet.resultType === "exact") exactScoreCount++;
+    else if (bet.resultType === "correct_result") correctResultCount++;
+    else if (bet.resultType === "wrong") wrongCount++;
+  }
+
+  await upsertPoolMemberStats(poolId, userId, {
+    totalPoints,
+    exactScoreCount,
+    correctResultCount,
+    totalBets: memberBets.length,
+  });
+}

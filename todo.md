@@ -128,3 +128,37 @@
 - [x] O6 — Regras de Pontuação: simulador integrado, bloqueio automático pós-início
 - [x] OrganizerLayout: sidebar 240px fixa, mobile hambúrguer, banner Pro expirado, rotas O2-O6
 - [x] Rotas App.tsx: /create-pool, /pool/:slug/manage, /members, /access, /identity, /rules
+
+## Fase 4 — Monetização e Super Admin (sprint 21/03/2026) ✅
+- [x] Stripe: server/products.ts, server/stripe-webhook.ts, checkout + webhooks de ativação/cancelamento
+- [x] Router trpc.stripe.createCheckout e trpc.stripe.createPortalSession
+- [x] SubscriptionPage.tsx — tela de upgrade Pro com features e botão de checkout
+- [x] O7/O8 — CustomTournament.tsx — wizard 4 etapas para campeonatos personalizados Pro
+- [x] AdminLayout.tsx — sidebar com 10 seções (A1–A10)
+- [x] A1 — AdminDashboard.tsx — métricas globais: MRR, usuários, bolões, palpites, gráficos Recharts
+- [x] A2/A3 — AdminTournaments.tsx — lista, criar, editar, importar jogos via CSV
+- [x] A4 — AdminUsers.tsx — busca, bloquear/desbloquear, promover admin, anonimizar
+- [x] A5 — AdminPools.tsx — lista global de bolões com contagem regressiva de exclusão
+- [x] A6 — AdminSubscriptions.tsx — MRR, churn, ações de assinatura
+- [x] A7 — AdminBroadcasts.tsx — broadcasts segmentados por plano/status
+- [x] A8 — AdminAds.tsx — upload de banners, posições, toggle ativo/inativo
+- [x] A9 — AdminSettings.tsx — configurações globais da plataforma
+- [x] A10 — AdminAudit.tsx — logs de auditoria com filtros
+- [x] Procedure platform.getStats (MRR, usuários, bolões, palpites, crescimento)
+- [x] Procedure notifications.broadcast (admin segmentado)
+- [x] Procedures ads.list, ads.create, ads.toggle, ads.delete
+- [x] Procedure platform.getAuditLogs
+- [x] Procedure pools.adminList
+- [x] Migração SQL: colunas country, season, startDate, endDate na tabela tournaments
+- [x] Fase 2 fechada: recálculo retroativo, anonimização, transferência automática, setGameResult Pro
+
+## Fase 5 — Polimento e S3 (sprint 21/03/2026) — Em andamento
+- [x] server/upload.ts — rota POST /api/upload com validação de tipo/tamanho (5MB)
+- [x] client/src/hooks/useImageUpload.ts — hook de upload base64 → S3
+- [x] client/src/components/ImageUploader.tsx — componente drag-and-drop com progress bar
+- [x] O5 OrganizerIdentity.tsx — integrado com upload real S3 (substituiu preview local)
+- [ ] Notificações por e-mail (lembretes de palpites, resultados, expiração de plano)
+- [ ] Analytics GA4 + Facebook Pixel (exclusivo Super Admin)
+- [ ] Testes de carga no motor de pontuação
+- [ ] Redis em produção para BullMQ
+- [ ] Deploy em produção (Manus Hosting)

@@ -85,6 +85,10 @@ export const tournaments = mysqlTable("tournaments", {
   poolId: int("poolId"), // null = global, set = personalizado
   createdBy: int("createdBy").references(() => users.id),
   status: mysqlEnum("status", ["active", "finished", "archived"]).default("active").notNull(),
+  country: varchar("country", { length: 10 }),
+  season: varchar("season", { length: 10 }),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
