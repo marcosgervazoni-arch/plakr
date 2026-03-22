@@ -75,6 +75,7 @@ export interface ScoringRules {
   goalDiffPoints: number;
   oneTeamGoalsPoints: number;
   landslidePoints: number;
+  landslideMinDiff: number;  // diferença mínima de gols para goleada (padrão: 4)
   zebraPoints: number;
   zebraThreshold: number;   // % inteiro (ex: 75 = 75%)
   zebraCountDraw: boolean;
@@ -189,10 +190,11 @@ export function calculateBetScore(
       breakdown.pointsTotalGoals = rules.totalGoalsPoints;
     }
 
-    // Critério 6: Goleada (diff≥4 no resultado real E no palpite, conforme SISTEMA-PONTUACAO-APOSTAI.md §3.4)
+    // Critério 6: Goleada (diff >= landslideMinDiff no resultado real E no palpite, conforme SISTEMA-PONTUACAO-APOSTAI.md §3.4)
+    const minDiff = rules.landslideMinDiff;
     if (
-      Math.abs(actualA - actualB) >= 4 &&
-      Math.abs(predictedA - predictedB) >= 4
+      Math.abs(actualA - actualB) >= minDiff &&
+      Math.abs(predictedA - predictedB) >= minDiff
     ) {
       breakdown.pointsLandslide = rules.landslidePoints;
     }
@@ -295,6 +297,7 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
       goalDiffPoints:      rulesRow?.goalDiffPoints      ?? 3,
       oneTeamGoalsPoints:  rulesRow?.oneTeamGoalsPoints  ?? 2,
       landslidePoints:     rulesRow?.landslidePoints     ?? 5,
+      landslideMinDiff:    rulesRow?.landslideMinDiff    ?? 4,
       zebraPoints:         rulesRow?.zebraPoints         ?? 1,
       zebraThreshold:      rulesRow?.zebraThreshold      ?? 75,
       zebraCountDraw:      rulesRow?.zebraCountDraw      ?? false,
@@ -305,7 +308,7 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
     const bets = await getBetsByGame(gameId, pool.id);
 
     // Calcular contexto zebra uma única vez para este jogo/bolão
-    const zebraCtx = calculateZebraContext(bets, scoreA, scoreB);
+    const zebraCtx = calculateZebraContext(bets, scoreA, scoreB, rules.zebraThreshold);
 
     for (const bet of bets) {
       const breakdown = calculateBetScore(

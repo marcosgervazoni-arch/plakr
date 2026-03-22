@@ -95,8 +95,9 @@ function buildEffectiveRules(rules: Awaited<ReturnType<typeof getPoolScoringRule
     goalDiffPoints:      rules?.goalDiffPoints      ?? defaultSettings?.defaultScoringBonusDiff       ?? 3,
     oneTeamGoalsPoints:  rules?.oneTeamGoalsPoints  ?? defaultSettings?.defaultScoringBonusOneTeam    ?? 2,
     landslidePoints:     rules?.landslidePoints     ?? defaultSettings?.defaultScoringBonusLandslide  ?? 5,
+    landslideMinDiff:    (rules as any)?.landslideMinDiff ?? (defaultSettings as any)?.defaultLandslideMinDiff ?? 4,
     zebraPoints:         rules?.zebraPoints         ?? defaultSettings?.defaultScoringBonusUpset      ?? 1,
-    zebraThreshold:      rules?.zebraThreshold      ?? 75,
+    zebraThreshold:      rules?.zebraThreshold      ?? (defaultSettings as any)?.defaultZebraThreshold ?? 75,
     zebraCountDraw:      rules?.zebraCountDraw      ?? false,
     zebraEnabled:        rules?.zebraEnabled        ?? true,
   };
@@ -921,12 +922,17 @@ export const appRouter = router({
     updateScoringRules: protectedProcedure
       .input(z.object({
         poolId: z.number(),
-        exactScorePoints: z.number().optional(),
-        correctResultPoints: z.number().optional(),
-        totalGoalsPoints: z.number().optional(),
-        goalDiffPoints: z.number().optional(),
-        zebraPoints: z.number().optional(),
+        exactScorePoints: z.number().min(0).max(50).optional(),
+        correctResultPoints: z.number().min(0).max(50).optional(),
+        totalGoalsPoints: z.number().min(0).max(50).optional(),
+        goalDiffPoints: z.number().min(0).max(50).optional(),
+        oneTeamGoalsPoints: z.number().min(0).max(50).optional(),
+        landslidePoints: z.number().min(0).max(50).optional(),
+        landslideMinDiff: z.number().min(1).max(10).optional(),
+        zebraPoints: z.number().min(0).max(50).optional(),
+        zebraThreshold: z.number().min(50).max(100).optional(),
         zebraEnabled: z.boolean().optional(),
+        zebraCountDraw: z.boolean().optional(),
         bettingDeadlineMinutes: z.number().optional(),
         tiebreakOrder: z.array(z.string()).optional(),
       }))
@@ -944,7 +950,7 @@ export const appRouter = router({
             message: "Regras de pontuação customizadas são exclusivas do Plano Pro.",
           });
         }
-         await upsertPoolScoringRules(poolId, data, ctx.user.id);
+        await upsertPoolScoringRules(poolId, data, ctx.user.id);
         return { success: true };
       }),
 
@@ -1375,6 +1381,8 @@ export const appRouter = router({
         defaultScoringBonusUpset: z.number().optional(),
         defaultScoringBonusOneTeam: z.number().optional(),
         defaultScoringBonusLandslide: z.number().optional(),
+        defaultLandslideMinDiff: z.number().min(1).max(10).optional(),
+        defaultZebraThreshold: z.number().min(50).max(100).optional(),
         gaMeasurementId: z.string().optional(),
         fbPixelId: z.string().optional(),
         stripePriceIdPro: z.string().optional(),

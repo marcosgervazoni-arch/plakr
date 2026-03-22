@@ -1,0 +1,194 @@
+{
+  "query": "SHOW COLUMNS FROM pool_scoring_rules;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW COLUMNS FROM pool_scoring_rules;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "poolId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "UNI",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "exactScorePoints",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "10",
+      "Extra": ""
+    },
+    {
+      "Field": "correctResultPoints",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "5",
+      "Extra": ""
+    },
+    {
+      "Field": "totalGoalsPoints",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "3",
+      "Extra": ""
+    },
+    {
+      "Field": "goalDiffPoints",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "3",
+      "Extra": ""
+    },
+    {
+      "Field": "oneTeamGoalsPoints",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "2",
+      "Extra": ""
+    },
+    {
+      "Field": "landslidePoints",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "5",
+      "Extra": ""
+    },
+    {
+      "Field": "zebraPoints",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "zebraThreshold",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "75",
+      "Extra": ""
+    },
+    {
+      "Field": "zebraCountDraw",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "zebraEnabled",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "bettingDeadlineMinutes",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "60",
+      "Extra": ""
+    },
+    {
+      "Field": "tiebreakOrder",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "publicProfilesEnabled",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "groupLinksEnabled",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "whatsappGroupLink",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "telegramGroupLink",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "groupLinksText",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "poolSubtitle",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "updatedBy",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "landslideMinDiff",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "4",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\npoolId\tint\tNO\tUNI\tNULL\t\nexactScorePoints\tint\tNO\t\t10\t\ncorrectResultPoints\tint\tNO\t\t5\t\ntotalGoalsPoints\tint\tNO\t\t3\t\ngoalDiffPoints\tint\tNO\t\t3\t\noneTeamGoalsPoints\tint\tNO\t\t2\t\nlandslidePoints\tint\tNO\t\t5\t\nzebraPoints\tint\tNO\t\t1\t\nzebraThreshold\tint\tNO\t\t75\t\nzebraCountDraw\ttinyint(1)\tNO\t\t0\t\nzebraEnabled\ttinyint(1)\tNO\t\t1\t\nbettingDeadlineMinutes\tint\tNO\t\t60\t\ntiebreakOrder\tjson\tYES\t\tNULL\t\npublicProfilesEnabled\ttinyint(1)\tNO\t\t1\t\ngroupLinksEnabled\ttinyint(1)\tNO\t\t0\t\nwhatsappGroupLink\tvarchar(255)\tYES\t\tNULL\t\ntelegramGroupLink\tvarchar(255)\tYES\t\tNULL\t\ngroupLinksText\tvarchar(255)\tYES\t\tNULL\t\npoolSubtitle\tvarchar(255)\tYES\t\tNULL\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nupdatedBy\tint\tYES\tMUL\tNULL\t\nlandslideMinDiff\tint\tNO\t\t4\t\n",
+  "stderr": "",
+  "execution_time_ms": 370
+}

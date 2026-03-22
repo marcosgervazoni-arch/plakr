@@ -1,0 +1,26 @@
+{
+  "query": "SHOW COLUMNS FROM pool_scoring_rules LIKE 'landslide%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW COLUMNS FROM pool_scoring_rules LIKE 'landslide%';",
+  "rows": [
+    {
+      "Field": "landslidePoints",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "5",
+      "Extra": ""
+    },
+    {
+      "Field": "landslideMinDiff",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "4",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nlandslidePoints\tint\tNO\t\t5\t\nlandslideMinDiff\tint\tNO\t\t4\t\n",
+  "stderr": "",
+  "execution_time_ms": 489
+}

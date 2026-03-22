@@ -1,0 +1,90 @@
+{
+  "query": "SHOW COLUMNS FROM platform_settings LIKE 'default%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW COLUMNS FROM platform_settings LIKE 'default%';",
+  "rows": [
+    {
+      "Field": "defaultScoringExact",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "10",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringCorrect",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "5",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringBonusGoals",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "3",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringBonusDiff",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "3",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringBonusUpset",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultTiebreakOrder",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringBonusOneTeam",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "2",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringBonusLandslide",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "5",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultLandslideMinDiff",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "4",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultZebraThreshold",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "75",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\ndefaultScoringExact\tint\tNO\t\t10\t\ndefaultScoringCorrect\tint\tNO\t\t5\t\ndefaultScoringBonusGoals\tint\tNO\t\t3\t\ndefaultScoringBonusDiff\tint\tNO\t\t3\t\ndefaultScoringBonusUpset\tint\tNO\t\t1\t\ndefaultTiebreakOrder\tjson\tYES\t\tNULL\t\ndefaultScoringBonusOneTeam\tint\tNO\t\t2\t\ndefaultScoringBonusLandslide\tint\tNO\t\t5\t\ndefaultLandslideMinDiff\tint\tNO\t\t4\t\ndefaultZebraThreshold\tint\tNO\t\t75\t\n",
+  "stderr": "",
+  "execution_time_ms": 369
+}

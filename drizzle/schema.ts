@@ -45,6 +45,8 @@ export const platformSettings = mysqlTable("platform_settings", {
   defaultScoringBonusUpset: int("defaultScoringBonusUpset").default(1).notNull(),
   defaultScoringBonusOneTeam: int("defaultScoringBonusOneTeam").default(2).notNull(),
   defaultScoringBonusLandslide: int("defaultScoringBonusLandslide").default(5).notNull(),
+  defaultLandslideMinDiff: int("defaultLandslideMinDiff").default(4).notNull(), // diferença mínima de gols para goleada (padrão da plataforma)
+  defaultZebraThreshold: int("defaultZebraThreshold").default(75).notNull(), // % mínimo de apostas no favorito para zebra (padrão da plataforma)
   defaultTiebreakOrder: json("defaultTiebreakOrder")
     .$type<string[]>()
     .default(["points", "exact", "correct", "wrong", "registration_date"]),
@@ -256,7 +258,8 @@ export const poolScoringRules = mysqlTable("pool_scoring_rules", {
   oneTeamGoalsPoints: int("oneTeamGoalsPoints").default(2).notNull(),
   landslidePoints: int("landslidePoints").default(5).notNull(),
   zebraPoints: int("zebraPoints").default(1).notNull(),
-  zebraThreshold: int("zebraThreshold").default(75).notNull(), // % de chance do favorito (>= 75% = favorito)
+  zebraThreshold: int("zebraThreshold").default(75).notNull(), // % mínimo de apostas no favorito para considerar zebra
+  landslideMinDiff: int("landslideMinDiff").default(4).notNull(), // diferença mínima de gols para goleada
   zebraCountDraw: boolean("zebraCountDraw").default(false).notNull(),
   zebraEnabled: boolean("zebraEnabled").default(true).notNull(),
   bettingDeadlineMinutes: int("bettingDeadlineMinutes").default(60).notNull(), // minutos antes do jogo

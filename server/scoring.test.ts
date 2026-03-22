@@ -29,6 +29,7 @@ const DEFAULT_RULES: ScoringRules = {
   goalDiffPoints: 3,
   oneTeamGoalsPoints: 2,
   landslidePoints: 5,
+  landslideMinDiff: 4,  // padrão: diff >= 4 para goleada (conforme §3.4)
   zebraPoints: 1,
   zebraThreshold: 75,
   zebraCountDraw: false,
@@ -412,6 +413,72 @@ describe("calculateZebraContext — deteccao automatica de zebra", () => {
     expect(ctx.favoriteWon).toBe(false);
     // losingRatio = 85/100 = 0.85 (85% apostaram no perdedor)
     expect(ctx.losingRatio).toBeCloseTo(0.85);
+  });
+});
+
+// ─── LANDSLIDE MIN DIFF CONFIGURÁVEL ───────────────────────────────────────
+
+describe("Critério 6 — Goleada com landslideMinDiff configurável", () => {
+  it("goleada com limiar=3: diff=3 é suficiente", () => {
+    const rules3 = { ...DEFAULT_RULES, landslideMinDiff: 3 };
+    const r = calculateBetScore(3, 0, 3, 0, rules3, NO_ZEBRA_CTX);
+    expect(r.pointsLandslide).toBe(5); // diff=3 >= limiar=3
+  });
+
+  it("goleada com limiar=3: diff=2 nao e suficiente", () => {
+    const rules3 = { ...DEFAULT_RULES, landslideMinDiff: 3 };
+    const r = calculateBetScore(2, 0, 2, 0, rules3, NO_ZEBRA_CTX);
+    expect(r.pointsLandslide).toBe(0); // diff=2 < limiar=3
+  });
+
+  it("goleada com limiar=5: diff=4 nao e suficiente", () => {
+    const rules5 = { ...DEFAULT_RULES, landslideMinDiff: 5 };
+    const r = calculateBetScore(4, 0, 4, 0, rules5, NO_ZEBRA_CTX);
+    expect(r.pointsLandslide).toBe(0); // diff=4 < limiar=5
+  });
+
+  it("goleada com limiar=5: diff=5 e suficiente", () => {
+    const rules5 = { ...DEFAULT_RULES, landslideMinDiff: 5 };
+    const r = calculateBetScore(5, 0, 5, 0, rules5, NO_ZEBRA_CTX);
+    expect(r.pointsLandslide).toBe(5); // diff=5 >= limiar=5
+  });
+
+  it("limiar padrao=4 quando nao especificado: diff=3 nao e goleada", () => {
+    const rulesNoMin = { ...DEFAULT_RULES }; // landslideMinDiff=4 por padrão
+    const r = calculateBetScore(3, 0, 3, 0, rulesNoMin, NO_ZEBRA_CTX);
+    expect(r.pointsLandslide).toBe(0);
+  });
+});
+
+// ─── ZEBRA THRESHOLD CONFIGURÁVEL ───────────────────────────────────────────
+
+describe("Critério 7 — Zebra com zebraThreshold configurável", () => {
+  it("threshold=60: 65% no perdedor é zebra", () => {
+    const bets65 = [
+      ...Array(65).fill({ predictedScoreA: 1, predictedScoreB: 0 }),
+      ...Array(35).fill({ predictedScoreA: 0, predictedScoreB: 1 }),
+    ];
+    const ctx = calculateZebraContext(bets65, 0, 1, 60);
+    expect(ctx.isZebraGame).toBe(true);
+    expect(ctx.losingRatio).toBeCloseTo(0.65);
+  });
+
+  it("threshold=80: 75% no perdedor NAO e zebra", () => {
+    const bets75 = [
+      ...Array(75).fill({ predictedScoreA: 1, predictedScoreB: 0 }),
+      ...Array(25).fill({ predictedScoreA: 0, predictedScoreB: 1 }),
+    ];
+    const ctx = calculateZebraContext(bets75, 0, 1, 80);
+    expect(ctx.isZebraGame).toBe(false);
+  });
+
+  it("threshold=80: 85% no perdedor e zebra", () => {
+    const bets85 = [
+      ...Array(85).fill({ predictedScoreA: 1, predictedScoreB: 0 }),
+      ...Array(15).fill({ predictedScoreA: 0, predictedScoreB: 1 }),
+    ];
+    const ctx = calculateZebraContext(bets85, 0, 1, 80);
+    expect(ctx.isZebraGame).toBe(true);
   });
 });
 

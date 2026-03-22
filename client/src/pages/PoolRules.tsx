@@ -135,11 +135,45 @@ export default function PoolRules() {
                       </div>
                       <div>
                         <p className="text-sm font-medium">Saldo de gols</p>
-                        <p className="text-xs text-muted-foreground">Acertou a diferença de gols</p>
+                        <p className="text-xs text-muted-foreground">Acertou a diferença de gols (independente do resultado)</p>
                       </div>
                     </div>
                     <Badge variant="outline" className="text-orange-400 border-orange-500/20 font-bold">
                       +{rules.goalDiffPoints} pts
+                    </Badge>
+                  </div>
+                )}
+                {(rules as any).oneTeamGoalsPoints > 0 && (
+                  <div className="px-5 py-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                        <Target className="w-3.5 h-3.5 text-cyan-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Gols de um time</p>
+                        <p className="text-xs text-muted-foreground">Acertou os gols de pelo menos um time (independente do resultado)</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-cyan-400 border-cyan-500/20 font-bold">
+                      +{(rules as any).oneTeamGoalsPoints} pts
+                    </Badge>
+                  </div>
+                )}
+                {(rules as any).landslidePoints > 0 && (
+                  <div className="px-5 py-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-red-500/10 flex items-center justify-center">
+                        <Star className="w-3.5 h-3.5 text-red-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Goleada</p>
+                        <p className="text-xs text-muted-foreground">
+                          Previu e ocorreu goleada (≥{(rules as any).landslideMinDiff ?? 4} gols de diferença)
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-red-400 border-red-500/20 font-bold">
+                      +{(rules as any).landslidePoints} pts
                     </Badge>
                   </div>
                 )}

@@ -32,11 +32,13 @@ export default function AdminSettings() {
     // Pontuação padrão
     defaultScoringExact: 10,
     defaultScoringCorrect: 5,
-    defaultScoringBonusGoals: 2,
-    defaultScoringBonusDiff: 2,
-    defaultScoringBonusUpset: 3,
+    defaultScoringBonusGoals: 3,
+    defaultScoringBonusDiff: 3,
+    defaultScoringBonusUpset: 1,
     defaultScoringBonusOneTeam: 2,
     defaultScoringBonusLandslide: 5,
+    defaultLandslideMinDiff: 4,
+    defaultZebraThreshold: 75,
     // Stripe
     stripePriceIdPro: "",
     stripeMonthlyPrice: 2990,
@@ -55,6 +57,8 @@ export default function AdminSettings() {
         defaultScoringBonusUpset: settings.defaultScoringBonusUpset,
         defaultScoringBonusOneTeam: (settings as any).defaultScoringBonusOneTeam ?? 2,
         defaultScoringBonusLandslide: (settings as any).defaultScoringBonusLandslide ?? 5,
+        defaultLandslideMinDiff: (settings as any).defaultLandslideMinDiff ?? 4,
+        defaultZebraThreshold: (settings as any).defaultZebraThreshold ?? 75,
         stripePriceIdPro: settings.stripePriceIdPro ?? "",
         stripeMonthlyPrice: settings.stripeMonthlyPrice ?? 2990,
       });
@@ -266,7 +270,23 @@ export default function AdminSettings() {
                     <div className="space-y-1.5">
                       <Label>Bônus Goleada</Label>
                       <Input {...numField("defaultScoringBonusLandslide")} />
-                      <p className="text-xs text-muted-foreground">Acertou goleada (≥3 gols diff)</p>
+                      <p className="text-xs text-muted-foreground">Acertou resultado de goleada</p>
+                    </div>
+                  </div>
+                </div>
+                <Separator />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Limiares de Critérios Especiais</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Diff. mínima para Goleada (gols)</Label>
+                      <Input {...numField("defaultLandslideMinDiff")} min={1} max={10} />
+                      <p className="text-xs text-muted-foreground">Diferença de gols para ativar bônus goleada (padrão: 4)</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Limiar de Zebra (%)</Label>
+                      <Input {...numField("defaultZebraThreshold")} min={50} max={100} />
+                      <p className="text-xs text-muted-foreground">% de apostadores no favorito para considerar zebra (padrão: 75%)</p>
                     </div>
                   </div>
                 </div>

@@ -303,3 +303,17 @@
 - [x] Fix processGameScoring: calculateZebraContext já calcula losingRatio dinamicamente
 - [x] Fix ranking: critério de desempate corrigido (removido totalBets, ordem: totalPoints → exactScoreCount → correctResultCount → createdAt)
 - [x] Atualizar scoring.test.ts: 51 testes cobrindo todos os 7 critérios + 6 exemplos do documento (82 testes no total)
+
+## Personalização de Zebra e Goleada (22/03/2026) ✅
+- [x] Schema: adicionar coluna `landslideMinDiff` (int, default 4) em `pool_scoring_rules`
+- [x] Schema: adicionar coluna `defaultLandslideMinDiff` (int, default 4) em `platform_settings`
+- [x] Schema: adicionar coluna `defaultZebraThreshold` (int, default 75) em `platform_settings`
+- [x] Migração SQL: colunas aplicadas no banco (landslideMinDiff, defaultLandslideMinDiff, defaultZebraThreshold)
+- [x] scoring.ts: usar `rules.landslideMinDiff` no critério 6 (goleada) em vez de constante 4
+- [x] scoring.ts: `zebraThreshold` passado corretamente via calculateZebraContext
+- [x] OrganizerRules.tsx: campos `landslideMinDiff` (slider 2–8) e `zebraThreshold` (slider 50–95%) com simulador atualizado
+- [x] AdminSettings.tsx: campos `defaultLandslideMinDiff` e `defaultZebraThreshold` padrão da plataforma
+- [x] Procedure pools.updateScoringRules aceita landslideMinDiff, zebraThreshold, oneTeamGoalsPoints, landslidePoints
+- [x] Procedure platform.updateSettings aceita defaultLandslideMinDiff e defaultZebraThreshold
+- [x] scoring.test.ts: 8 novos testes cobrindo landslideMinDiff e zebraThreshold configuráveis (90 testes no total)
+- [x] PoolRules.tsx: exibe oneTeamGoalsPoints, landslidePoints e landslideMinDiff para participantes
