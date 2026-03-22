@@ -1292,10 +1292,17 @@ export const appRouter = router({
         inAppRankingUpdate: z.boolean().optional(),
         inAppResultAvailable: z.boolean().optional(),
         inAppSystem: z.boolean().optional(),
+        inAppAd: z.boolean().optional(),
+        pushGameReminder: z.boolean().optional(),
+        pushRankingUpdate: z.boolean().optional(),
+        pushResultAvailable: z.boolean().optional(),
+        pushSystem: z.boolean().optional(),
+        pushAd: z.boolean().optional(),
         emailGameReminder: z.boolean().optional(),
         emailRankingUpdate: z.boolean().optional(),
         emailResultAvailable: z.boolean().optional(),
         emailSystem: z.boolean().optional(),
+        emailAd: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const db = await (await import("./db")).getDb();
@@ -1305,38 +1312,168 @@ export const appRouter = router({
         await db.insert(notificationPreferences).values({ userId: ctx.user.id, ...input }).onDuplicateKeyUpdate({ set: input });
         return { success: true };
       }),
+    // Contagem leve de não lidas (polling eficiente)
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return { count: await countUnreadNotifications(ctx.user.id) };
+    }),
+    // Marcar múltiplas como lidas de uma vez
+    markReadMany: protectedProcedure
+      .input(z.object({ ids: z.array(z.number()).min(1) }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return { success: false };
+        const { notifications: notifT } = await import("../drizzle/schema");
+        const { and, inArray, eq } = await import("drizzle-orm");
+        await db
+          .update(notifT)
+          .set({ isRead: true })
+          .where(and(inArray(notifT.id, input.ids), eq(notifT.userId, ctx.user.id)));
+        return { success: true };
+      }),
+    // Chave pública VAPID para o Service Worker (sem auth)
+    getVapidPublicKey: publicProcedure.query(async () => {
+      const db = await (await import("./db")).getDb();
+      if (!db) return { publicKey: null, pushEnabled: false };
+      const { platformSettings: psT } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const rows = await db
+        .select({ vapidPublicKey: psT.vapidPublicKey, pushEnabled: psT.pushEnabled })
+        .from(psT)
+        .where(eq(psT.id, 1))
+        .limit(1);
+      return {
+        publicKey: rows[0]?.vapidPublicKey ?? null,
+        pushEnabled: rows[0]?.pushEnabled ?? false,
+      };
+    }),
+    // Registrar assinatura push do dispositivo
+    subscribePush: protectedProcedure
+      .input(z.object({
+        endpoint: z.string().url(),
+        p256dh: z.string(),
+        auth: z.string(),
+        userAgent: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { saveSubscription } = await import("./push");
+        await saveSubscription(
+          ctx.user.id,
+          { endpoint: input.endpoint, keys: { p256dh: input.p256dh, auth: input.auth } },
+          input.userAgent
+        );
+        return { success: true };
+      }),
+    // Remover assinatura push de um dispositivo
+    unsubscribePush: protectedProcedure
+      .input(z.object({ endpoint: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const { removeSubscription } = await import("./push");
+        await removeSubscription(ctx.user.id, input.endpoint);
+        return { success: true };
+      }),
+    // Remover todas as assinaturas push do usuário
+    unsubscribeAllPush: protectedProcedure.mutation(async ({ ctx }) => {
+      const { removeAllSubscriptions } = await import("./push");
+      await removeAllSubscriptions(ctx.user.id);
+      return { success: true };
+    }),
+    // Estatísticas de push (admin)
+    pushStats: adminProcedure.query(async () => {
+      const { getPushStats } = await import("./push");
+      return getPushStats();
+    }),
+    // Broadcast avançado: in-app + push + email por canal
     broadcast: adminProcedure
       .input(z.object({
         title: z.string().min(1).max(100),
         content: z.string().min(1).max(500),
         audience: z.enum(["all", "pro", "free"]).default("all"),
+        channels: z.object({
+          inApp: z.boolean().default(true),
+          push: z.boolean().default(false),
+          email: z.boolean().default(false),
+        }).default({ inApp: true, push: false, email: false }),
       }))
       .mutation(async ({ input, ctx }) => {
         const db = await (await import("./db")).getDb();
         if (!db) throw new Error("DB not available");
-        const { users: usersT, userPlans, pools: poolsT } = await import("../drizzle/schema");
-        const { eq, inArray } = await import("drizzle-orm");
+        const { users: usersT, userPlans } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        // Resolver audiência (excluindo usuários bloqueados)
         let userIds: number[] = [];
         if (input.audience === "all") {
-          const rows = await db.select({ id: usersT.id }).from(usersT);
-          userIds = rows.map((r) => r.id);
+          const rows = await db.select({ id: usersT.id, isBlocked: usersT.isBlocked }).from(usersT);
+          userIds = rows.filter((r) => !r.isBlocked).map((r) => r.id);
         } else if (input.audience === "pro") {
-          const rows = await db.select({ userId: userPlans.userId }).from(userPlans).where(eq(userPlans.plan, "pro"));
+          const rows = await db
+            .select({ userId: userPlans.userId })
+            .from(userPlans)
+            .innerJoin(usersT, eq(usersT.id, userPlans.userId))
+            .where(eq(userPlans.plan, "pro"));
           userIds = rows.map((r) => r.userId);
         } else {
           const proRows = await db.select({ userId: userPlans.userId }).from(userPlans).where(eq(userPlans.plan, "pro"));
           const proIds = new Set(proRows.map((r) => r.userId));
-          const allRows = await db.select({ id: usersT.id }).from(usersT);
-          userIds = allRows.filter((r) => !proIds.has(r.id)).map((r) => r.id);
+          const allRows = await db.select({ id: usersT.id, isBlocked: usersT.isBlocked }).from(usersT);
+          userIds = allRows.filter((r) => !r.isBlocked && !proIds.has(r.id)).map((r) => r.id);
         }
-        const { createNotification, createAdminLog } = await import("./db");
-        let sent = 0;
-        for (const uid of userIds) {
-          await createNotification({ userId: uid, type: "system", title: input.title, message: input.content });
-          sent++;
+        let inAppSent = 0;
+        let pushSent = 0;
+        let emailSent = 0;
+        // Canal in-app
+        if (input.channels.inApp) {
+          for (const uid of userIds) {
+            await createNotification({ userId: uid, type: "system", title: input.title, message: input.content });
+            inAppSent++;
+          }
         }
-        await createAdminLog(ctx.user.id, "broadcast", "platform", undefined, { sent, audience: input.audience });
-        return { sent };
+        // Canal push
+        if (input.channels.push) {
+          const { broadcastPush } = await import("./push");
+          const result = await broadcastPush(userIds, { title: input.title, body: input.content, url: "/notifications" }, "pushSystem");
+          pushSent = result.sent;
+        }
+        // Canal email
+        if (input.channels.email) {
+          const { enqueueEmail } = await import("./email");
+          const emailRows = await db
+            .select({ id: usersT.id, email: usersT.email, name: usersT.name })
+            .from(usersT)
+            .where(eq(usersT.isBlocked, false));
+          const emailMap = new Map(emailRows.map((r) => [r.id, r]));
+          for (const uid of userIds) {
+            const u = emailMap.get(uid);
+            if (!u?.email) continue;
+            await enqueueEmail({
+              toUserId: uid,
+              toEmail: u.email,
+              type: "welcome",
+              subject: input.title,
+              html: `<p style="font-family:sans-serif;">${input.content}</p>`,
+            });
+            emailSent++;
+          }
+        }
+        await createAdminLog(ctx.user.id, "broadcast", "platform", undefined, {
+          inAppSent, pushSent, emailSent, audience: input.audience, channels: input.channels,
+        });
+        return { inAppSent, pushSent, emailSent, total: userIds.length };
+      }),
+    // Fila de e-mails (admin)
+    emailQueue: adminProcedure
+      .input(z.object({
+        limit: z.number().default(50),
+        status: z.enum(["pending", "sent", "failed", "all"]).default("all"),
+      }))
+      .query(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return [];
+        const { emailQueue: eqT } = await import("../drizzle/schema");
+        const { desc, eq } = await import("drizzle-orm");
+        if (input.status === "all") {
+          return db.select().from(eqT).orderBy(desc(eqT.createdAt)).limit(input.limit);
+        }
+        return db.select().from(eqT).where(eq(eqT.status, input.status)).orderBy(desc(eqT.createdAt)).limit(input.limit);
       }),
   }),
 
@@ -1387,12 +1524,23 @@ export const appRouter = router({
         fbPixelId: z.string().optional(),
         stripePriceIdPro: z.string().optional(),
         stripeMonthlyPrice: z.number().optional(),
+        // VAPID / Push
+        vapidPublicKey: z.string().optional(),
+        vapidPrivateKey: z.string().optional(),
+        vapidEmail: z.string().email().optional(),
+        pushEnabled: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         await updatePlatformSettings(input, ctx.user.id);
         await createAdminLog(ctx.user.id, "update_platform_settings", "platform_settings", 1);
         return { success: true };
       }),
+    // Gerar novo par de VAPID keys (admin)
+    generateVapidKeys: adminProcedure.mutation(async () => {
+      const { generateVapidKeys } = await import("./push");
+      const keys = generateVapidKeys();
+      return keys; // retorna { publicKey, privateKey } para o admin salvar
+    }),
     getAuditLogs: adminProcedure
       .input(z.object({ limit: z.number().default(100) }))
       .query(async ({ input }) => {

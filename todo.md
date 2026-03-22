@@ -317,3 +317,36 @@
 - [x] Procedure platform.updateSettings aceita defaultLandslideMinDiff e defaultZebraThreshold
 - [x] scoring.test.ts: 8 novos testes cobrindo landslideMinDiff e zebraThreshold configuráveis (90 testes no total)
 - [x] PoolRules.tsx: exibe oneTeamGoalsPoints, landslidePoints e landslideMinDiff para participantes
+
+## Evolução do Sistema de Notificações (22/03/2026)
+
+### Fase 1 — Schema e Banco
+- [x] Schema: criar tabela `push_subscriptions` (endpoint, p256dh, auth, userAgent, userId)
+- [x] Schema: adicionar campos push em `notification_preferences` (pushGameReminder, pushRankingUpdate, pushResultAvailable, pushSystem, pushAd)
+- [x] Schema: adicionar campos `inAppAd`, `pushAd`, `emailAd` nas preferências
+- [x] Schema: adicionar campo `reminderSentAt` em `games` para controle de lembretes
+- [x] Migração SQL: aplicar todas as novas colunas e tabela no banco
+
+### Fase 2 — Backend
+- [x] Instalar dependência `web-push` para Web Push API
+- [x] VAPID keys gerenciadas pelo superadmin no AdminSettings
+- [x] Criar `server/push.ts` com helpers: sendPushToUser, broadcastPush, cleanExpiredSubscriptions
+- [x] Router notifications expandido com: vapidPublicKey, subscribePush, unsubscribePush, savePreferences, list, markRead (ids[]), unreadCount, adminSend, triggerGameReminder, emailQueue, pushStats
+- [x] Implementar `scheduleBetReminders` completo: join pool_members + users + enqueue email + in-app
+- [x] Adicionar notificação in-app + push no setResult (admin) após recalcular pontos
+- [x] Adicionar notificação in-app + push no setGameResult (organizador) após recalcular pontos
+- [x] Verificar filtro de usuários bloqueados em todos os broadcasts
+- [x] Adicionar procedure `notifications.triggerGameReminder` para lembrete manual
+
+### Fase 3 — Frontend
+- [x] Criar `client/public/sw.js` (Service Worker para push)
+- [x] Atualizar `NotificationPreferences.tsx` para 15 campos com card de ativação push
+- [x] Atualizar `Notifications.tsx`: rich text rendering, filtros por tipo, link para jogo
+- [x] Atualizar `NotificationBell.tsx`: usar `notificationsV2.unreadCount` para polling eficiente
+- [x] Registrar Service Worker no `main.tsx`
+
+### Fase 4 — Admin
+- [x] Atualizar `AdminBroadcasts.tsx`: seleção de canais (in-app/push/email), contadores de resultado
+- [x] Adicionar aba "Fila de E-mails" no AdminBroadcasts com status e tentativas
+- [x] Adicionar card "Push Stats" (assinaturas ativas) no AdminBroadcasts
+- [x] Adicionar botão "Lembrete de Jogo" no AdminTournamentDetail para disparo manual

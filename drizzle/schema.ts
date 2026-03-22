@@ -55,6 +55,11 @@ export const platformSettings = mysqlTable("platform_settings", {
   adNetworkScripts: json("adNetworkScripts").$type<Record<string, string>>(),
   stripePriceIdPro: varchar("stripePriceIdPro", { length: 128 }),
   stripeMonthlyPrice: int("stripeMonthlyPrice").default(2990),
+  // VAPID keys para Web Push — gerenciadas pelo superadmin no painel
+  vapidPublicKey: text("vapidPublicKey"),
+  vapidPrivateKey: text("vapidPrivateKey"),
+  vapidEmail: varchar("vapidEmail", { length: 320 }),
+  pushEnabled: boolean("pushEnabled").default(false).notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").references(() => users.id),
 });
@@ -166,6 +171,7 @@ export const games = mysqlTable("games", {
   isZebraResult: boolean("isZebraResult").default(false).notNull(),
   manuallyEdited: boolean("manuallyEdited").default(false).notNull(),
   importedFromSheets: boolean("importedFromSheets").default(false).notNull(),
+  reminderSentAt: timestamp("reminderSentAt"), // controle de lembretes automáticos
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -381,16 +387,44 @@ export const notificationPreferences = mysqlTable("notification_preferences", {
     .notNull()
     .unique()
     .references(() => users.id),
+  // In-App (canal base — sempre ativo por padrão)
   inAppGameReminder: boolean("inAppGameReminder").default(true).notNull(),
   inAppRankingUpdate: boolean("inAppRankingUpdate").default(true).notNull(),
   inAppResultAvailable: boolean("inAppResultAvailable").default(true).notNull(),
   inAppSystem: boolean("inAppSystem").default(true).notNull(),
-  emailGameReminder: boolean("emailGameReminder").default(true).notNull(),
+  inAppAd: boolean("inAppAd").default(true).notNull(),
+  // Push (Web Push — ativo por padrão apenas para eventos relevantes)
+  pushGameReminder: boolean("pushGameReminder").default(true).notNull(),
+  pushRankingUpdate: boolean("pushRankingUpdate").default(false).notNull(),
+  pushResultAvailable: boolean("pushResultAvailable").default(true).notNull(),
+  pushSystem: boolean("pushSystem").default(false).notNull(),
+  pushAd: boolean("pushAd").default(false).notNull(),
+  // E-mail (opt-in explícito — inativo por padrão)
+  emailGameReminder: boolean("emailGameReminder").default(false).notNull(),
   emailRankingUpdate: boolean("emailRankingUpdate").default(false).notNull(),
-  emailResultAvailable: boolean("emailResultAvailable").default(true).notNull(),
-  emailSystem: boolean("emailSystem").default(true).notNull(),
+  emailResultAvailable: boolean("emailResultAvailable").default(false).notNull(),
+  emailSystem: boolean("emailSystem").default(false).notNull(),
+  emailAd: boolean("emailAd").default(false).notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
+
+// ─── ASSINATURAS PUSH (Web Push VAPID) ──────────────────────────────────────
+
+export const pushSubscriptions = mysqlTable("push_subscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId")
+    .notNull()
+    .references(() => users.id),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: varchar("auth", { length: 128 }).notNull(),
+  userAgent: varchar("userAgent", { length: 256 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
 
 // ─── FILA DE E-MAILS ──────────────────────────────────────────────────────────
 

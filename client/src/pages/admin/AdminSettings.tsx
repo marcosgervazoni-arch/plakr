@@ -7,17 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
 import {
+  Bell,
   BookOpen,
   CheckCircle2,
   CreditCard,
   ExternalLink,
   Loader2,
+  RefreshCw,
   Save,
   Settings,
+  Smartphone,
   Target,
   Users,
   XCircle,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -29,7 +33,7 @@ export default function AdminSettings() {
     freeMaxParticipants: 50,
     freeMaxPools: 2,
     poolArchiveDays: 10,
-    // Pontuação padrão
+    // Pontução padrão
     defaultScoringExact: 10,
     defaultScoringCorrect: 5,
     defaultScoringBonusGoals: 3,
@@ -43,6 +47,15 @@ export default function AdminSettings() {
     stripePriceIdPro: "",
     stripeMonthlyPrice: 2990,
   });
+
+  // Push / VAPID (estado separado para não misturar com o form principal)
+  const [pushForm, setPushForm] = useState({
+    vapidPublicKey: "",
+    vapidPrivateKey: "",
+    vapidEmail: "",
+    pushEnabled: false,
+  });
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -61,6 +74,12 @@ export default function AdminSettings() {
         defaultZebraThreshold: (settings as any).defaultZebraThreshold ?? 75,
         stripePriceIdPro: settings.stripePriceIdPro ?? "",
         stripeMonthlyPrice: settings.stripeMonthlyPrice ?? 2990,
+      });
+      setPushForm({
+        vapidPublicKey: (settings as any).vapidPublicKey ?? "",
+        vapidPrivateKey: (settings as any).vapidPrivateKey ?? "",
+        vapidEmail: (settings as any).vapidEmail ?? "",
+        pushEnabled: (settings as any).pushEnabled ?? false,
       });
     }
   }, [settings]);
@@ -86,6 +105,25 @@ export default function AdminSettings() {
   });
 
   const stripeConfigured = form.stripePriceIdPro.startsWith("price_");
+  const pushConfigured = pushForm.vapidPublicKey.length > 10 && pushForm.vapidPrivateKey.length > 10;
+
+  const generateVapidMutation = trpc.platform.generateVapidKeys.useMutation({
+    onSuccess: (keys) => {
+      setPushForm((p) => ({ ...p, vapidPublicKey: keys.publicKey, vapidPrivateKey: keys.privateKey }));
+      toast.success("Novas VAPID keys geradas! Clique em Salvar Push para aplicar.");
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const savePushMutation = trpc.platform.updateSettings.useMutation({
+    onSuccess: () => {
+      utils.platform.getSettings.invalidate();
+      toast.success("Configurações de push salvas!");
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const utils = trpc.useUtils();
 
   return (
     <AdminLayout activeSection="settings">
@@ -290,6 +328,146 @@ export default function AdminSettings() {
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* ─── NOTIFICAÇÕES PUSH (VAPID) ─────────────────────────── */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-base">Notificações Push (Web Push)</CardTitle>
+                  </div>
+                  {pushConfigured ? (
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Keys configuradas
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 gap-1">
+                      <XCircle className="h-3 w-3" /> Sem VAPID keys
+                    </Badge>
+                  )}
+                </div>
+                <CardDescription className="text-sm">
+                  As VAPID keys permitem enviar notificações push para os navegadores dos usuários sem
+                  nenhuma configuração externa. Gere as keys abaixo e salve para ativar o canal push.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Ativar/desativar push */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-card/50">
+                  <div>
+                    <p className="text-sm font-medium">Ativar canal push</p>
+                    <p className="text-xs text-muted-foreground">
+                      Quando desativado, nenhuma notificação push será enviada mesmo com keys configuradas
+                    </p>
+                  </div>
+                  <Switch
+                    checked={pushForm.pushEnabled}
+                    onCheckedChange={(v) => setPushForm((p) => ({ ...p, pushEnabled: v }))}
+                    disabled={!pushConfigured}
+                  />
+                </div>
+
+                {/* E-mail de contato VAPID */}
+                <div className="space-y-1.5">
+                  <Label>E-mail de contato VAPID</Label>
+                  <Input
+                    type="email"
+                    placeholder="suporte@apostai.com.br"
+                    value={pushForm.vapidEmail}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setPushForm((p) => ({ ...p, vapidEmail: e.target.value }))
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Usado pelo protocolo VAPID para contato em caso de problemas. Não é exibido aos usuários.
+                  </p>
+                </div>
+
+                {/* VAPID Keys */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">VAPID Keys</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 text-xs"
+                      onClick={() => generateVapidMutation.mutate()}
+                      disabled={generateVapidMutation.isPending}
+                    >
+                      {generateVapidMutation.isPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3 w-3" />
+                      )}
+                      {pushConfigured ? "Regen. Keys" : "Gerar Keys"}
+                    </Button>
+                  </div>
+
+                  {pushConfigured ? (
+                    <div className="space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Chave Pública (compartilhada com o browser)</Label>
+                        <div className="font-mono text-xs bg-surface/50 border border-border/40 rounded p-2 break-all select-all">
+                          {pushForm.vapidPublicKey}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs text-muted-foreground">Chave Privada (confidencial)</Label>
+                          <button
+                            type="button"
+                            className="text-xs text-brand hover:underline"
+                            onClick={() => setShowPrivateKey((v) => !v)}
+                          >
+                            {showPrivateKey ? "Ocultar" : "Revelar"}
+                          </button>
+                        </div>
+                        <div className="font-mono text-xs bg-surface/50 border border-border/40 rounded p-2 break-all select-all">
+                          {showPrivateKey ? pushForm.vapidPrivateKey : "•".repeat(43)}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-border/50 p-6 text-center">
+                      <Bell className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma VAPID key configurada. Clique em <strong>Gerar Keys</strong> para criar um par.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Instruções */}
+                <div className="rounded-lg border border-border/50 bg-surface/50 p-4 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Como ativar o Push</p>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Clique em <strong>Gerar Keys</strong> para criar o par VAPID</li>
+                    <li>Informe o e-mail de contato VAPID</li>
+                    <li>Ative o toggle <strong>Ativar canal push</strong></li>
+                    <li>Clique em <strong>Salvar Push</strong></li>
+                    <li>Os usuários poderão ativar push em Preferências de Notificação</li>
+                  </ol>
+                  <p className="text-xs text-yellow-400 mt-2">
+                    ⚠️ Ao regenerar as keys, todas as assinaturas push existentes serão invalidadas.
+                    Os usuários precisarão reativar o push nas preferências.
+                  </p>
+                </div>
+
+                <Button
+                  className="bg-brand hover:bg-brand/90 gap-2"
+                  onClick={() => savePushMutation.mutate(pushForm)}
+                  disabled={savePushMutation.isPending || !pushForm.vapidEmail}
+                >
+                  {savePushMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  Salvar Push
+                </Button>
               </CardContent>
             </Card>
 
