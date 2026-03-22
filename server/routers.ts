@@ -177,9 +177,9 @@ export const appRouter = router({
       // Total stats across all pools
       const statsRows = await db
         .select({
-          totalPoints: sql<number>`COALESCE(SUM(total_points), 0)`,
-          exactScores: sql<number>`COALESCE(SUM(exact_scores), 0)`,
-          poolsCount: sql<number>`COUNT(DISTINCT pool_id)`,
+          totalPoints: sql<number>`COALESCE(SUM(${poolMemberStats.totalPoints}), 0)`,
+          exactScores: sql<number>`COALESCE(SUM(${poolMemberStats.exactScoreCount}), 0)`,
+          poolsCount: sql<number>`COUNT(DISTINCT ${poolMemberStats.poolId})`,
         })
         .from(poolMemberStats)
         .where(eq(poolMemberStats.userId, ctx.user.id));
@@ -290,11 +290,11 @@ export const appRouter = router({
         const planRows = await db.select().from(userPlans).where(eq(userPlans.userId, input.userId)).limit(1);
         const plan = planRows[0] ?? null;
         const statsRows = await db.select({
-          totalPoints: sql<number>`COALESCE(SUM(total_points), 0)`,
-          exactScores: sql<number>`COALESCE(SUM(exact_score_count), 0)`,
-          poolsCount: sql<number>`COUNT(DISTINCT pool_id)`,
-          correctScores: sql<number>`COALESCE(SUM(correct_result_count), 0)`,
-          totalBets: sql<number>`COALESCE(SUM(total_bets), 0)`,
+          totalPoints: sql<number>`COALESCE(SUM(${poolMemberStats.totalPoints}), 0)`,
+          exactScores: sql<number>`COALESCE(SUM(${poolMemberStats.exactScoreCount}), 0)`,
+          poolsCount: sql<number>`COUNT(DISTINCT ${poolMemberStats.poolId})`,
+          correctScores: sql<number>`COALESCE(SUM(${poolMemberStats.correctResultCount}), 0)`,
+          totalBets: sql<number>`COALESCE(SUM(${poolMemberStats.totalBets}), 0)`,
         }).from(poolMemberStats).where(eq(poolMemberStats.userId, input.userId));
         const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, poolsCount: 0, correctScores: 0, totalBets: 0 };
         const recentPools = await db.select({

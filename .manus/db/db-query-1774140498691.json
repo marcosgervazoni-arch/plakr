@@ -1,0 +1,146 @@
+{
+  "query": "SHOW COLUMNS FROM platform_settings;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW COLUMNS FROM platform_settings;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "freeMaxParticipants",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "50",
+      "Extra": ""
+    },
+    {
+      "Field": "freeMaxPools",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "2",
+      "Extra": ""
+    },
+    {
+      "Field": "poolArchiveDays",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "10",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringExact",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "10",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringCorrect",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "5",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringBonusGoals",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "2",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringBonusDiff",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "2",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultScoringBonusUpset",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "3",
+      "Extra": ""
+    },
+    {
+      "Field": "defaultTiebreakOrder",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "gaMeasurementId",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "fbPixelId",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "adNetworkScripts",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "updatedBy",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripePriceIdPro",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripeMonthlyPrice",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "2990",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\t1\t\nfreeMaxParticipants\tint\tNO\t\t50\t\nfreeMaxPools\tint\tNO\t\t2\t\npoolArchiveDays\tint\tNO\t\t10\t\ndefaultScoringExact\tint\tNO\t\t10\t\ndefaultScoringCorrect\tint\tNO\t\t5\t\ndefaultScoringBonusGoals\tint\tNO\t\t2\t\ndefaultScoringBonusDiff\tint\tNO\t\t2\t\ndefaultScoringBonusUpset\tint\tNO\t\t3\t\ndefaultTiebreakOrder\tjson\tYES\t\tNULL\t\ngaMeasurementId\tvarchar(64)\tYES\t\tNULL\t\nfbPixelId\tvarchar(64)\tYES\t\tNULL\t\nadNetworkScripts\tjson\tYES\t\tNULL\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nupdatedBy\tint\tYES\tMUL\tNULL\t\nstripePriceIdPro\tvarchar(128)\tYES\t\tNULL\t\nstripeMonthlyPrice\tint\tYES\t\t2990\t\n",
+  "stderr": "",
+  "execution_time_ms": 346
+}

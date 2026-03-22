@@ -192,3 +192,11 @@
 - [x] Links de perfil público nos rankings dos bolões
 - [x] Página de Ranking Global /ranking
 - [x] Nomes de usuários como links de perfil no AdminUsers
+
+## Correções de Bugs — Sprint 22/03/2026
+- [x] Fix: SQL raw com snake_case errado em users.myStats (exact_scores → exactScoreCount, total_points → totalPoints, pool_id → poolId)
+- [x] Fix: SQL raw com snake_case errado em users.getPublicProfile (exact_score_count, correct_result_count, total_bets)
+- [x] Fix: Coluna stripePriceIdPro no banco MySQL (já estava correto, erro era transitório)
+- [x] Fix: Rota /admin/tournaments/:id criada com página AdminTournamentDetail
+- [x] Fix: Item "Times & Jogos" removido do AdminLayout (rota inéxistente)
+- [x] Fix: Guard de slug vazio adicionado no OrganizerLayout (redireciona para /dashboard)

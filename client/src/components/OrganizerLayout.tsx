@@ -20,7 +20,7 @@ import {
   Lock,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 export type OrganizerSection =
@@ -58,6 +58,16 @@ export default function OrganizerLayout({
   children,
 }: OrganizerLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [, navigate] = useLocation();
+
+  // Guard: if slug is empty (malformed URL), redirect to dashboard
+  useEffect(() => {
+    if (!slug) {
+      navigate("/dashboard");
+    }
+  }, [slug, navigate]);
+
+  if (!slug) return null;
   const statusConfig = STATUS_LABELS[poolStatus] ?? STATUS_LABELS.active;
 
   const navItems: { id: OrganizerSection; label: string; icon: React.ElementType; proOnly?: boolean }[] = [

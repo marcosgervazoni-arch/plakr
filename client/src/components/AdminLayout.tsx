@@ -23,7 +23,6 @@ import { Link, useLocation } from "wouter";
 export type AdminSection =
   | "dashboard"
   | "tournaments"
-  | "teams"
   | "users"
   | "pools"
   | "subscriptions"
@@ -40,7 +39,6 @@ interface AdminLayoutProps {
 const NAV_ITEMS: { id: AdminSection; label: string; icon: React.ElementType; path: string }[] = [
   { id: "dashboard", label: "Dashboard Global", icon: BarChart3, path: "/admin" },
   { id: "tournaments", label: "Campeonatos", icon: Trophy, path: "/admin/tournaments" },
-  { id: "teams", label: "Times & Jogos", icon: Globe, path: "/admin/teams" },
   { id: "users", label: "Usuários", icon: Users, path: "/admin/users" },
   { id: "pools", label: "Bolões", icon: BookOpen, path: "/admin/pools" },
   { id: "subscriptions", label: "Assinaturas", icon: Wallet, path: "/admin/subscriptions" },

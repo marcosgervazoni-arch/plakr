@@ -30,6 +30,7 @@ import CustomTournament from "./pages/organizer/CustomTournament";
 // Admin pages A1-A10
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminTournaments from "./pages/admin/AdminTournaments";
+import AdminTournamentDetail from "./pages/admin/AdminTournamentDetail";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPools from "./pages/admin/AdminPools";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
@@ -69,6 +70,7 @@ function Router() {
       {/* Admin routes A1-A10 */}
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/tournaments" component={AdminTournaments} />
+      <Route path="/admin/tournaments/:id" component={AdminTournamentDetail} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/pools" component={AdminPools} />
       <Route path="/admin/subscriptions" component={AdminSubscriptions} />
