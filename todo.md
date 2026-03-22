@@ -274,3 +274,19 @@
 - [ ] Fix processGameScoring: passar zebraRatio e zebraCountDraw para calculateBetScore
 - [ ] Fix ranking: critério de desempate deve seguir ordem: totalPoints → exactScoreCount → correctResultCount → createdAt
 - [x] Reescrever scoring.test.ts com todos os 7 critérios e os 6 exemplos práticos do documento
+
+## Breakdown de Pontos nos Cards de Jogo (22/03/2026)
+- [x] Criar componente BetBreakdownBadges.tsx com ícones para cada critério
+- [x] Integrar BetBreakdownBadges no PoolPage (cards de jogo)
+- [x] Integrar BetBreakdownBadges no BetHistory (/pool/:slug/history)
+
+## Reestruturação do Painel Admin (22/03/2026)
+- [x] Reestruturar AdminLayout com grupos colapsáveis (Campeonato, Participantes, Comunicação, Financeiro, Configurações, Sistema)
+- [x] AdminTournamentDetail.tsx já existia e cobre o módulo de Gerenciar Campeonato
+- [x] Atualizar AdminUsers com painel lateral de detalhes (slide-in) e envio de notificação individual
+- [x] Criar AdminMonetization.tsx (módulo Financeiro — guia informativo de estratégias)
+- [x] Criar AdminIntegrations.tsx (módulo Integrações — GA4, Facebook Pixel)
+- [x] Reescrever AdminAudit.tsx com labels legíveis e mapeamento de ações
+- [x] Reescrever AdminSettings.tsx com campos de pontuação completos (oneTeam, landslide)
+- [x] Atualizar procedures: demoteFromAdmin, removeUser, sendNotification, platform.updateSettings
+- [x] Atualizar rotas no App.tsx para refletir nova estrutura

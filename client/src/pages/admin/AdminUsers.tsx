@@ -1,43 +1,130 @@
 import AdminLayout from "@/components/AdminLayout";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Ban,
+  Bell,
+  Calendar,
+  ChevronRight,
   Crown,
   Loader2,
   Mail,
   Search,
   Shield,
+  Trash2,
   User,
   UserCheck,
+  UserX,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+type UserRow = {
+  id: number;
+  name: string | null;
+  email: string | null;
+  role: "admin" | "user";
+  isBlocked: boolean | null;
+  createdAt: Date;
+  lastSignedIn: Date | null;
+  loginMethod: string | null;
+};
+
+type FilterRole = "all" | "admin" | "user" | "blocked";
+
 export default function AdminUsers() {
   const [search, setSearch] = useState("");
+  const [filterRole, setFilterRole] = useState<FilterRole>("all");
+  const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [blockTarget, setBlockTarget] = useState<{ id: number; name: string; blocked: boolean } | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<{ id: number; name: string } | null>(null);
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifMessage, setNotifMessage] = useState("");
 
-  const { data: users, isLoading, refetch } = trpc.users.list.useQuery({ limit: 50 });
+  const { data: users, isLoading, refetch } = trpc.users.list.useQuery({ limit: 100 });
 
   const blockMutation = trpc.users.blockUser.useMutation({
     onSuccess: () => {
       toast.success(blockTarget?.blocked ? "Usuário desbloqueado." : "Usuário bloqueado.");
       setBlockTarget(null);
       refetch();
+      // Update selected user if it's the same
+      if (selectedUser && blockTarget && selectedUser.id === blockTarget.id) {
+        setSelectedUser((u) => u ? { ...u, isBlocked: !blockTarget.blocked } : u);
+      }
     },
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
   const promoteAdminMutation = trpc.users.promoteToAdmin.useMutation({
-    onSuccess: () => { toast.success("Papel atualizado."); refetch(); },
+    onSuccess: () => {
+      toast.success("Usuário promovido a Admin.");
+      refetch();
+      if (selectedUser) setSelectedUser((u) => u ? { ...u, role: "admin" } : u);
+    },
     onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const demoteAdminMutation = trpc.users.demoteFromAdmin.useMutation({
+    onSuccess: () => {
+      toast.success("Admin rebaixado para usuário.");
+      refetch();
+      if (selectedUser) setSelectedUser((u) => u ? { ...u, role: "user" } : u);
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const removeMutation = trpc.users.removeUser.useMutation({
+    onSuccess: () => {
+      toast.success("Usuário anonimizado e removido.");
+      setRemoveTarget(null);
+      setSelectedUser(null);
+      refetch();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const sendNotifMutation = trpc.users.sendNotification.useMutation({
+    onSuccess: () => {
+      toast.success("Notificação enviada.");
+      setNotifTitle("");
+      setNotifMessage("");
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const filtered = (users ?? []).filter((u) => {
+    const matchSearch =
+      !search ||
+      u.name?.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase());
+    const matchRole =
+      filterRole === "all" ||
+      (filterRole === "admin" && u.role === "admin") ||
+      (filterRole === "user" && u.role === "user" && !u.isBlocked) ||
+      (filterRole === "blocked" && u.isBlocked);
+    return matchSearch && matchRole;
   });
 
   return (
@@ -46,19 +133,34 @@ export default function AdminUsers() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold font-display">Usuários</h1>
-            <p className="text-muted-foreground text-sm mt-1">Gerencie usuários da plataforma</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              {users?.length ?? 0} usuários cadastrados
+            </p>
           </div>
         </div>
 
-        {/* Busca */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome ou e-mail..."
-            value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        {/* Filtros */}
+        <div className="flex gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome ou e-mail..."
+              value={search}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={filterRole} onValueChange={(v) => setFilterRole(v as FilterRole)}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="admin">Admins</SelectItem>
+              <SelectItem value="user">Usuários</SelectItem>
+              <SelectItem value="blocked">Bloqueados</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Lista */}
@@ -68,15 +170,19 @@ export default function AdminUsers() {
           </div>
         ) : (
           <div className="space-y-2">
-            {(users ?? []).filter((u) => !search || u.name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())).map((u) => (
-              <Card key={u.id} className={`border-border/50 ${u.isBlocked ? "opacity-60" : ""}`}>
+            {filtered.map((u) => (
+              <Card
+                key={u.id}
+                className={`border-border/50 cursor-pointer hover:border-brand/30 transition-colors ${u.isBlocked ? "opacity-60" : ""}`}
+                onClick={() => setSelectedUser(u as UserRow)}
+              >
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
                     <User className="h-4 w-4 text-brand" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <a href={`/profile/${u.id}`} className="font-medium text-sm truncate hover:text-primary transition-colors">{u.name ?? "Sem nome"}</a>
+                      <span className="font-medium text-sm truncate">{u.name ?? "Sem nome"}</span>
                       {u.role === "admin" && (
                         <Badge variant="outline" className="text-xs border-brand/30 text-brand">
                           <Shield className="h-2.5 w-2.5 mr-1" />Admin
@@ -99,30 +205,11 @@ export default function AdminUsers() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => promoteAdminMutation.mutate({ userId: u.id })}
-                    >
-                      <Crown className="h-3 w-3" />
-                      {u.role === "admin" ? "Remover Admin" : "Tornar Admin"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`h-7 text-xs gap-1 ${u.isBlocked ? "border-green-400/30 text-green-400" : "border-red-400/30 text-red-400"}`}
-                      onClick={() => setBlockTarget({ id: u.id, name: u.name ?? "Usuário", blocked: u.isBlocked ?? false })}
-                    >
-                      {u.isBlocked ? <UserCheck className="h-3 w-3" /> : <Ban className="h-3 w-3" />}
-                      {u.isBlocked ? "Desbloquear" : "Bloquear"}
-                    </Button>
-                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardContent>
               </Card>
             ))}
-            {(users ?? []).length === 0 && (
+            {filtered.length === 0 && (
               <div className="text-center py-12 text-muted-foreground text-sm">
                 Nenhum usuário encontrado.
               </div>
@@ -130,6 +217,166 @@ export default function AdminUsers() {
           </div>
         )}
       </div>
+
+      {/* ─── Painel lateral de detalhes ─────────────────────────────────────── */}
+      <Sheet open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
+          {selectedUser && (
+            <>
+              <SheetHeader className="p-5 border-b border-border/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center">
+                    <User className="h-5 w-5 text-brand" />
+                  </div>
+                  <div>
+                    <SheetTitle className="text-base">{selectedUser.name ?? "Sem nome"}</SheetTitle>
+                    <p className="text-xs text-muted-foreground">{selectedUser.email ?? "Sem e-mail"}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap mt-2">
+                  {selectedUser.role === "admin" && (
+                    <Badge variant="outline" className="text-xs border-brand/30 text-brand">
+                      <Shield className="h-2.5 w-2.5 mr-1" />Admin
+                    </Badge>
+                  )}
+                  {selectedUser.isBlocked && (
+                    <Badge variant="outline" className="text-xs border-red-400/30 text-red-400">
+                      <Ban className="h-2.5 w-2.5 mr-1" />Bloqueado
+                    </Badge>
+                  )}
+                </div>
+              </SheetHeader>
+
+              <ScrollArea className="flex-1">
+                <div className="p-5 space-y-5">
+                  {/* Info */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Informações</p>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-muted-foreground">Cadastro:</span>
+                        <span>{format(new Date(selectedUser.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+                      </div>
+                      {selectedUser.lastSignedIn && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-muted-foreground">Último acesso:</span>
+                          <span>{format(new Date(selectedUser.lastSignedIn), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+                        </div>
+                      )}
+                      {selectedUser.loginMethod && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Shield className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-muted-foreground">Login via:</span>
+                          <span className="capitalize">{selectedUser.loginMethod}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Ações de papel */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Papel & Acesso</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {selectedUser.role === "admin" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/10"
+                          onClick={() => demoteAdminMutation.mutate({ userId: selectedUser.id })}
+                          disabled={demoteAdminMutation.isPending}
+                        >
+                          <Crown className="h-3.5 w-3.5" />
+                          Remover Admin
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 border-brand/30 text-brand hover:bg-brand/10"
+                          onClick={() => promoteAdminMutation.mutate({ userId: selectedUser.id })}
+                          disabled={promoteAdminMutation.isPending}
+                        >
+                          <Crown className="h-3.5 w-3.5" />
+                          Tornar Admin
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`gap-1.5 ${selectedUser.isBlocked ? "border-green-400/30 text-green-400 hover:bg-green-400/10" : "border-red-400/30 text-red-400 hover:bg-red-400/10"}`}
+                        onClick={() => setBlockTarget({ id: selectedUser.id, name: selectedUser.name ?? "Usuário", blocked: selectedUser.isBlocked ?? false })}
+                      >
+                        {selectedUser.isBlocked ? <UserCheck className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
+                        {selectedUser.isBlocked ? "Desbloquear" : "Bloquear"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Enviar notificação */}
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Enviar Notificação</p>
+                    <div className="space-y-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Título</Label>
+                        <Input
+                          value={notifTitle}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotifTitle(e.target.value)}
+                          placeholder="Ex: Aviso importante"
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Mensagem</Label>
+                        <Textarea
+                          value={notifMessage}
+                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotifMessage(e.target.value)}
+                          placeholder="Conteúdo da notificação..."
+                          className="text-sm resize-none"
+                          rows={3}
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        className="w-full gap-1.5 bg-brand hover:bg-brand/90"
+                        onClick={() => sendNotifMutation.mutate({ userId: selectedUser.id, title: notifTitle, message: notifMessage })}
+                        disabled={!notifTitle.trim() || !notifMessage.trim() || sendNotifMutation.isPending}
+                      >
+                        {sendNotifMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                        Enviar Notificação
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Zona de perigo */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-red-400">Zona de Perigo</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 border-red-400/30 text-red-400 hover:bg-red-400/10 w-full"
+                      onClick={() => setRemoveTarget({ id: selectedUser.id, name: selectedUser.name ?? "Usuário" })}
+                    >
+                      <UserX className="h-3.5 w-3.5" />
+                      Anonimizar & Remover Usuário
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Remove nome, e-mail e dados pessoais. Ação irreversível.
+                    </p>
+                  </div>
+                </div>
+              </ScrollArea>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Confirm block/unblock */}
       <AlertDialog open={!!blockTarget} onOpenChange={() => setBlockTarget(null)}>
@@ -148,9 +395,34 @@ export default function AdminUsers() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               className={blockTarget?.blocked ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
-                      onClick={() => blockTarget && blockMutation.mutate({ userId: blockTarget.id, isBlocked: !blockTarget.blocked })}
+              onClick={() => blockTarget && blockMutation.mutate({ userId: blockTarget.id, isBlocked: !blockTarget.blocked })}
             >
               {blockTarget?.blocked ? "Desbloquear" : "Bloquear"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm remove */}
+      <AlertDialog open={!!removeTarget} onOpenChange={() => setRemoveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-400">
+              <Trash2 className="h-4 w-4" />
+              Remover usuário permanentemente?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{removeTarget?.name}</strong> terá seus dados pessoais anonimizados (nome, e-mail, foto).
+              Esta ação é <strong>irreversível</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => removeTarget && removeMutation.mutate({ userId: removeTarget.id })}
+            >
+              Remover Permanentemente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

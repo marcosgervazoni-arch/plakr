@@ -22,6 +22,7 @@ import { useState } from "react";
 import { Link, useParams } from "wouter";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
+import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 
 export default function PoolPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -325,9 +326,12 @@ export default function PoolPage() {
                                     {myBet.predictedScoreA} × {myBet.predictedScoreB}
                                   </span>
                                   {finished && (
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                      +{myBet.pointsEarned} pts
-                                    </p>
+                                    <>
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        +{myBet.pointsEarned} pts
+                                      </p>
+                                      <BetBreakdownBadges bet={myBet} compact />
+                                    </>
                                   )}
                                 </div>
                               ) : (

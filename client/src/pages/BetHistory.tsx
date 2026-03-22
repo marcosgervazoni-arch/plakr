@@ -4,6 +4,7 @@
  */
 import { trpc } from "@/lib/trpc";
 import AppShell from "@/components/AppShell";
+import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Trophy, Target, TrendingUp, Star, CheckCircle2, XCircle, Clock } from "lucide-react";
@@ -182,27 +183,8 @@ export default function BetHistory() {
 
                   {/* Points breakdown — only if earned points > 0 */}
                   {isFinished && (b.pointsEarned ?? 0) > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/20">
-                      {(b.pointsExactScore ?? 0) > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-green-500/10 text-green-400 rounded-md px-2 py-0.5">
-                          <Trophy className="w-3 h-3" /> Exato +{b.pointsExactScore}
-                        </span>
-                      )}
-                      {(b.pointsCorrectResult ?? 0) > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-blue-500/10 text-blue-400 rounded-md px-2 py-0.5">
-                          <CheckCircle2 className="w-3 h-3" /> Resultado +{b.pointsCorrectResult}
-                        </span>
-                      )}
-                      {(b.pointsGoalDiff ?? 0) > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-yellow-500/10 text-yellow-400 rounded-md px-2 py-0.5">
-                          <TrendingUp className="w-3 h-3" /> Saldo +{b.pointsGoalDiff}
-                        </span>
-                      )}
-                      {(b.pointsZebra ?? 0) > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-purple-500/10 text-purple-400 rounded-md px-2 py-0.5">
-                          <Star className="w-3 h-3" /> Zebra +{b.pointsZebra}
-                        </span>
-                      )}
+                    <div className="pt-1 border-t border-border/20">
+                      <BetBreakdownBadges bet={b} />
                     </div>
                   )}
                 </div>

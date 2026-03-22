@@ -4,8 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle2, CreditCard, ExternalLink, Loader2, Save, Settings, XCircle } from "lucide-react";
+import {
+  BookOpen,
+  CheckCircle2,
+  CreditCard,
+  ExternalLink,
+  Loader2,
+  Save,
+  Settings,
+  Target,
+  Users,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -13,16 +25,19 @@ export default function AdminSettings() {
   const { data: settings, isLoading } = trpc.platform.getSettings.useQuery();
 
   const [form, setForm] = useState({
+    // Limites do plano gratuito
     freeMaxParticipants: 50,
     freeMaxPools: 2,
     poolArchiveDays: 10,
+    // Pontuação padrão
     defaultScoringExact: 10,
     defaultScoringCorrect: 5,
     defaultScoringBonusGoals: 2,
     defaultScoringBonusDiff: 2,
     defaultScoringBonusUpset: 3,
-    gaMeasurementId: "",
-    fbPixelId: "",
+    defaultScoringBonusOneTeam: 2,
+    defaultScoringBonusLandslide: 5,
+    // Stripe
     stripePriceIdPro: "",
     stripeMonthlyPrice: 2990,
   });
@@ -38,8 +53,8 @@ export default function AdminSettings() {
         defaultScoringBonusGoals: settings.defaultScoringBonusGoals,
         defaultScoringBonusDiff: settings.defaultScoringBonusDiff,
         defaultScoringBonusUpset: settings.defaultScoringBonusUpset,
-        gaMeasurementId: settings.gaMeasurementId ?? "",
-        fbPixelId: settings.fbPixelId ?? "",
+        defaultScoringBonusOneTeam: (settings as any).defaultScoringBonusOneTeam ?? 2,
+        defaultScoringBonusLandslide: (settings as any).defaultScoringBonusLandslide ?? 5,
         stripePriceIdPro: settings.stripePriceIdPro ?? "",
         stripeMonthlyPrice: settings.stripeMonthlyPrice ?? 2990,
       });
@@ -119,7 +134,6 @@ export default function AdminSettings() {
                 </div>
                 <CardDescription className="text-sm">
                   Insira o <strong>Price ID</strong> do produto "ApostAI Pro" criado no seu Stripe Dashboard.
-                  O checkout do Plano Pro só funcionará após este campo ser preenchido.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -150,19 +164,12 @@ export default function AdminSettings() {
                     </p>
                   </div>
                 </div>
-
-                {/* Instruções passo a passo */}
                 <div className="rounded-lg border border-border/50 bg-surface/50 p-4 space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Como obter o Price ID</p>
                   <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                     <li>
                       Acesse{" "}
-                      <a
-                        href="https://dashboard.stripe.com/products"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-brand hover:underline inline-flex items-center gap-1"
-                      >
+                      <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline inline-flex items-center gap-1">
                         dashboard.stripe.com/products <ExternalLink className="h-3 w-3" />
                       </a>
                     </li>
@@ -173,12 +180,7 @@ export default function AdminSettings() {
                   </ol>
                   <p className="text-xs text-muted-foreground pt-1">
                     💡 Para testes, use o{" "}
-                    <a
-                      href="https://dashboard.stripe.com/claim_sandbox/YWNjdF8xVEQ5dXRQVDFoY0ZaTEtHLDE3NzQ3Mzk4MTMv100kAUqlLlS"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brand hover:underline inline-flex items-center gap-1"
-                    >
+                    <a href="https://dashboard.stripe.com/claim_sandbox/YWNjdF8xVEQ5dXRQVDFoY0ZaTEtHLDE3NzQ3Mzk4MTMv100kAUqlLlS" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline inline-flex items-center gap-1">
                       Sandbox Stripe <ExternalLink className="h-3 w-3" />
                     </a>{" "}
                     com cartão <code className="bg-surface px-1 rounded text-xs">4242 4242 4242 4242</code>
@@ -190,7 +192,10 @@ export default function AdminSettings() {
             {/* ─── LIMITES DO PLANO GRATUITO ────────────────────────────────── */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Limites do Plano Gratuito</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-base">Limites do Plano Gratuito</CardTitle>
+                </div>
                 <CardDescription className="text-sm">Controla o que usuários sem assinatura podem fazer</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -212,47 +217,58 @@ export default function AdminSettings() {
             {/* ─── PONTUAÇÃO PADRÃO ─────────────────────────────────────────── */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Pontuação Padrão (novos bolões)</CardTitle>
-                <CardDescription className="text-sm">Valores aplicados automaticamente ao criar um bolão</CardDescription>
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-base">Pontuação Padrão (novos bolões)</CardTitle>
+                </div>
+                <CardDescription className="text-sm">Valores aplicados automaticamente ao criar um bolão. Cada bolão pode personalizar esses valores.</CardDescription>
               </CardHeader>
-              <CardContent className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Placar Exato</Label>
-                  <Input {...numField("defaultScoringExact")} />
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Pontuação Base</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Placar Exato</Label>
+                      <Input {...numField("defaultScoringExact")} />
+                      <p className="text-xs text-muted-foreground">Acertou o placar exato</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Resultado Correto</Label>
+                      <Input {...numField("defaultScoringCorrect")} />
+                      <p className="text-xs text-muted-foreground">Acertou vitória/empate/derrota</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Resultado Correto</Label>
-                  <Input {...numField("defaultScoringCorrect")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Bônus Gols</Label>
-                  <Input {...numField("defaultScoringBonusGoals")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Bônus Diferença</Label>
-                  <Input {...numField("defaultScoringBonusDiff")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Bônus Zebra</Label>
-                  <Input {...numField("defaultScoringBonusUpset")} />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* ─── ANALYTICS & RASTREAMENTO ─────────────────────────────────── */}
-            <Card className="border-border/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Analytics & Rastreamento</CardTitle>
-                <CardDescription className="text-sm">IDs de rastreamento injetados automaticamente em todas as páginas</CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Google Analytics ID</Label>
-                  <Input {...strField("gaMeasurementId")} placeholder="G-XXXXXXXXXX" className="font-mono" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Facebook Pixel ID</Label>
-                  <Input {...strField("fbPixelId")} placeholder="000000000000000" className="font-mono" />
+                <Separator />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Bônus</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Bônus Gols Totais</Label>
+                      <Input {...numField("defaultScoringBonusGoals")} />
+                      <p className="text-xs text-muted-foreground">Acertou total de gols</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Bônus Diferença</Label>
+                      <Input {...numField("defaultScoringBonusDiff")} />
+                      <p className="text-xs text-muted-foreground">Acertou saldo de gols</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Bônus Zebra</Label>
+                      <Input {...numField("defaultScoringBonusUpset")} />
+                      <p className="text-xs text-muted-foreground">Acertou resultado improvável</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Bônus Gols de 1 Time</Label>
+                      <Input {...numField("defaultScoringBonusOneTeam")} />
+                      <p className="text-xs text-muted-foreground">Acertou gols de um time</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Bônus Goleada</Label>
+                      <Input {...numField("defaultScoringBonusLandslide")} />
+                      <p className="text-xs text-muted-foreground">Acertou goleada (≥3 gols diff)</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

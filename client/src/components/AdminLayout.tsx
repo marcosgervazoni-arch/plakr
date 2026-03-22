@@ -7,9 +7,12 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  ChevronDown,
   ChevronRight,
-  FileText,
+  ClipboardList,
+  CreditCard,
   Globe,
+  Layers,
   Megaphone,
   Menu,
   Settings,
@@ -17,7 +20,9 @@ import {
   Trophy,
   Users,
   Wallet,
+  Zap,
 } from "lucide-react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
 export type AdminSection =
@@ -29,27 +34,100 @@ export type AdminSection =
   | "broadcasts"
   | "ads"
   | "settings"
-  | "audit";
+  | "audit"
+  | "monetization"
+  | "integrations";
 
-interface AdminLayoutProps {
-  activeSection: AdminSection;
-  children: React.ReactNode;
+interface NavItem {
+  id: AdminSection;
+  label: string;
+  icon: React.ElementType;
+  path: string;
 }
 
-const NAV_ITEMS: { id: AdminSection; label: string; icon: React.ElementType; path: string }[] = [
-  { id: "dashboard", label: "Dashboard Global", icon: BarChart3, path: "/admin" },
-  { id: "tournaments", label: "Campeonatos", icon: Trophy, path: "/admin/tournaments" },
-  { id: "users", label: "Usuários", icon: Users, path: "/admin/users" },
-  { id: "pools", label: "Bolões", icon: BookOpen, path: "/admin/pools" },
-  { id: "subscriptions", label: "Assinaturas", icon: Wallet, path: "/admin/subscriptions" },
-  { id: "broadcasts", label: "Broadcasts", icon: Megaphone, path: "/admin/broadcasts" },
-  { id: "ads", label: "Publicidade", icon: Bell, path: "/admin/ads" },
-  { id: "settings", label: "Configurações", icon: Settings, path: "/admin/settings" },
-  { id: "audit", label: "Auditoria", icon: FileText, path: "/admin/audit" },
+interface NavGroup {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    id: "overview",
+    label: "Visão Geral",
+    icon: BarChart3,
+    items: [
+      { id: "dashboard", label: "Dashboard Global", icon: BarChart3, path: "/admin" },
+    ],
+  },
+  {
+    id: "campeonato",
+    label: "Campeonato",
+    icon: Trophy,
+    items: [
+      { id: "tournaments", label: "Campeonatos", icon: Trophy, path: "/admin/tournaments" },
+      { id: "pools", label: "Bolões", icon: BookOpen, path: "/admin/pools" },
+    ],
+  },
+  {
+    id: "participantes",
+    label: "Participantes",
+    icon: Users,
+    items: [
+      { id: "users", label: "Usuários", icon: Users, path: "/admin/users" },
+    ],
+  },
+  {
+    id: "comunicacao",
+    label: "Comunicação",
+    icon: Megaphone,
+    items: [
+      { id: "broadcasts", label: "Broadcasts", icon: Megaphone, path: "/admin/broadcasts" },
+      { id: "ads", label: "Publicidade", icon: Bell, path: "/admin/ads" },
+    ],
+  },
+  {
+    id: "financeiro",
+    label: "Financeiro",
+    icon: Wallet,
+    items: [
+      { id: "subscriptions", label: "Assinaturas", icon: CreditCard, path: "/admin/subscriptions" },
+      { id: "monetization", label: "Monetização", icon: Wallet, path: "/admin/monetization" },
+    ],
+  },
+  {
+    id: "configuracoes",
+    label: "Configurações",
+    icon: Settings,
+    items: [
+      { id: "settings", label: "Configurações", icon: Settings, path: "/admin/settings" },
+      { id: "integrations", label: "Integrações", icon: Globe, path: "/admin/integrations" },
+    ],
+  },
+  {
+    id: "sistema",
+    label: "Sistema",
+    icon: Shield,
+    items: [
+      { id: "audit", label: "Logs de Auditoria", icon: ClipboardList, path: "/admin/audit" },
+    ],
+  },
 ];
+
+// Flat list for breadcrumb lookup
+const ALL_NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
 function NavContent({ activeSection }: { activeSection: AdminSection }) {
   const [, navigate] = useLocation();
+  // Determine which groups should be open by default (the one containing the active section)
+  const defaultOpen = NAV_GROUPS.filter((g) => g.items.some((i) => i.id === activeSection)).map((g) => g.id);
+  const [openGroups, setOpenGroups] = useState<string[]>(defaultOpen.length ? defaultOpen : ["overview"]);
+
+  const toggleGroup = (id: string) => {
+    setOpenGroups((prev) => prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Brand */}
@@ -66,23 +144,55 @@ function NavContent({ activeSection }: { activeSection: AdminSection }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const isActive = activeSection === item.id;
+      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+        {NAV_GROUPS.map((group) => {
+          const isOpen = openGroups.includes(group.id);
+          const hasActive = group.items.some((i) => i.id === activeSection);
+
           return (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left ${
-                isActive
-                  ? "bg-brand/15 text-brand font-medium"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              }`}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              <span className="flex-1">{item.label}</span>
-              {isActive && <ChevronRight className="h-3 w-3" />}
-            </button>
+            <div key={group.id}>
+              {/* Group header */}
+              <button
+                onClick={() => toggleGroup(group.id)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  hasActive
+                    ? "text-brand"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <group.icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="flex-1 text-left">{group.label}</span>
+                {isOpen ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+              </button>
+
+              {/* Group items */}
+              {isOpen && (
+                <div className="ml-2 pl-3 border-l border-border/40 space-y-0.5 mb-1">
+                  {group.items.map((item) => {
+                    const isActive = activeSection === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => navigate(item.path)}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors text-left ${
+                          isActive
+                            ? "bg-brand/15 text-brand font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        }`}
+                      >
+                        <item.icon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="flex-1">{item.label}</span>
+                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-brand" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </nav>
@@ -101,6 +211,11 @@ function NavContent({ activeSection }: { activeSection: AdminSection }) {
   );
 }
 
+interface AdminLayoutProps {
+  activeSection: AdminSection;
+  children: React.ReactNode;
+}
+
 export default function AdminLayout({ activeSection, children }: AdminLayoutProps) {
   const { user, isAuthenticated } = useAuth();
 
@@ -116,7 +231,7 @@ export default function AdminLayout({ activeSection, children }: AdminLayoutProp
     );
   }
 
-  const currentItem = NAV_ITEMS.find((i) => i.id === activeSection);
+  const currentItem = ALL_NAV_ITEMS.find((i) => i.id === activeSection);
 
   return (
     <div className="min-h-screen bg-background flex">

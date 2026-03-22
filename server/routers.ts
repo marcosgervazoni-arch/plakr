@@ -139,9 +139,9 @@ export const appRouter = router({
       // Total stats across all pools
       const statsRows = await db
         .select({
-          totalPoints: sql<number>`COALESCE(SUM(${poolMemberStats.totalPoints}), 0)`,
-          exactScores: sql<number>`COALESCE(SUM(${poolMemberStats.exactScoreCount}), 0)`,
-          poolsCount: sql<number>`COUNT(DISTINCT ${poolMemberStats.poolId})`,
+          totalPoints: sql<number>`COALESCE(SUM(\`pool_member_stats\`.\`totalPoints\`), 0)`,
+          exactScores: sql<number>`COALESCE(SUM(\`pool_member_stats\`.\`exactScoreCount\`), 0)`,
+          poolsCount: sql<number>`COUNT(DISTINCT \`pool_member_stats\`.\`poolId\`)`,
         })
         .from(poolMemberStats)
         .where(eq(poolMemberStats.userId, ctx.user.id));
@@ -230,6 +230,36 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await updateUserRole(input.userId, "admin");
         await createAdminLog(ctx.user.id, "promote_admin", "user", input.userId);
+        return { success: true };
+      }),
+
+    demoteFromAdmin: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode se rebaixar." });
+        await updateUserRole(input.userId, "user");
+        await createAdminLog(ctx.user.id, "demote_admin", "user", input.userId);
+        return { success: true };
+      }),
+
+    removeUser: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode remover a si mesmo." });
+        await anonymizeUser(input.userId);
+        await createAdminLog(ctx.user.id, "remove_user", "user", input.userId);
+        return { success: true };
+      }),
+
+    sendNotification: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        title: z.string().min(1).max(100),
+        message: z.string().min(1).max(500),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await createNotification({ userId: input.userId, type: "system", title: input.title, message: input.message });
+        await createAdminLog(ctx.user.id, "send_notification", "user", input.userId, { title: input.title });
         return { success: true };
       }),
 
@@ -1343,6 +1373,8 @@ export const appRouter = router({
         defaultScoringBonusGoals: z.number().optional(),
         defaultScoringBonusDiff: z.number().optional(),
         defaultScoringBonusUpset: z.number().optional(),
+        defaultScoringBonusOneTeam: z.number().optional(),
+        defaultScoringBonusLandslide: z.number().optional(),
         gaMeasurementId: z.string().optional(),
         fbPixelId: z.string().optional(),
         stripePriceIdPro: z.string().optional(),
