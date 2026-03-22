@@ -49,6 +49,8 @@ export const platformSettings = mysqlTable("platform_settings", {
   gaMeasurementId: varchar("gaMeasurementId", { length: 64 }),
   fbPixelId: varchar("fbPixelId", { length: 64 }),
   adNetworkScripts: json("adNetworkScripts").$type<Record<string, string>>(),
+  stripePriceIdPro: varchar("stripePriceIdPro", { length: 128 }),
+  stripeMonthlyPrice: int("stripeMonthlyPrice").default(2990),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").references(() => users.id),
 });

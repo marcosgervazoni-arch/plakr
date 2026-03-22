@@ -162,3 +162,18 @@
 - [ ] Testes de carga no motor de pontuação
 - [ ] Redis em produção para BullMQ
 - [ ] Deploy em produção (Manus Hosting)
+
+## Fase 5 — Fechamento 100% (sprint final)
+- [ ] server/email.ts — servi\u00e7o de e-mail com templates HTML (lembrete de palpite, resultado, expira\u00e7\u00e3o de plano, boas-vindas)
+- [ ] Cron job de lembretes de palpites (1h antes de cada jogo)
+- [ ] Cron job de notifica\u00e7\u00e3o de resultados (ap\u00f3s setResult)
+- [ ] Cron job de alerta de expira\u00e7\u00e3o de plano (7 dias e 1 dia antes)
+- [ ] Polimento UX: loading skeletons em todas as p\u00e1ginas principais
+- [ ] Estados vazios ilustrados (sem bol\u00f5es, sem palpites, sem membros)
+- [ ] Erros amig\u00e1veis com retry em todas as queries tRPC
+- [ ] Testes: isolamento multi-tenant (organizador n\u00e3o acessa outro bol\u00e3o)
+- [ ] Testes: limites de plano gratuito (2 bol\u00f5es, 50 participantes)
+- [ ] Testes: prazo de palpite (bloqueio server-side)
+- [ ] Testes: recalculo retroativo de pontos
+- [ ] Configura\u00e7\u00e3o Stripe: produto Pro + Price ID no products.ts
+- [ ] Dashboard atualizado para 100% em todas as fases

@@ -878,6 +878,41 @@ export const appRouter = router({
         }
         return { success: true, affectedBets: poolBets.length };
       }),
+
+    sendInviteEmail: protectedProcedure
+      .input(z.object({
+        poolId: z.number(),
+        email: z.string().email(),
+        inviteeName: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        if (!member || member.role !== "organizer") throw new TRPCError({ code: "FORBIDDEN" });
+        const pool = await getPoolById(input.poolId);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+        const { templatePoolInvite } = await import("./email");
+        const inviteUrl = `https://apostai-bolao-djv8mgeh.manus.space/join/${pool.inviteToken}`;
+        const { subject, html } = templatePoolInvite({
+          inviteeName: input.inviteeName ?? "Amigo",
+          organizerName: ctx.user.name ?? "Organizador",
+          poolName: pool.name,
+          tournamentName: "Copa",
+          memberCount: 0,
+          inviteUrl,
+        });
+        const db = await (await import("./db")).getDb();
+        if (db) {
+          const { emailQueue } = await import("../drizzle/schema");
+          await db.insert(emailQueue).values({
+            userId: ctx.user.id,
+            toEmail: input.email,
+            subject,
+            htmlBody: html,
+            status: "pending",
+          });
+        }
+        return { success: true };
+      }),
   }),
   // ─── BETS ──────────────────────────────────────────────────────────────────
   bets: router({
@@ -1032,6 +1067,8 @@ export const appRouter = router({
         defaultScoringBonusUpset: z.number().optional(),
         gaMeasurementId: z.string().optional(),
         fbPixelId: z.string().optional(),
+        stripePriceIdPro: z.string().optional(),
+        stripeMonthlyPrice: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         await updatePlatformSettings(input, ctx.user.id);
@@ -1073,11 +1110,13 @@ export const appRouter = router({
           apiVersion: "2026-02-25.clover" as "2026-02-25.clover",
         });
 
-        const priceId = process.env.STRIPE_PRO_PRICE_ID;
+        // Ler Price ID do banco (configurável via painel Admin → Configurações)
+        const platformConfig = await getPlatformSettings();
+        const priceId = platformConfig?.stripePriceIdPro || process.env.STRIPE_PRO_PRICE_ID;
         if (!priceId) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: "Preço do Plano Pro não configurado. Contate o administrador.",
+            message: "Price ID do Plano Pro não configurado. Acesse Admin → Configurações e insira o Price ID do Stripe.",
           });
         }
 

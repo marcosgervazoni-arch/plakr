@@ -59,16 +59,38 @@ export default function PoolPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-400" />
+      <div className="min-h-screen bg-background">
+        <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl bg-muted animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-6 w-48 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {[0,1,2].map(i => <div key={i} className="h-20 bg-muted rounded-xl animate-pulse" />)}
+          </div>
+          <div className="space-y-3">
+            {[0,1,2,3].map(i => <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />)}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">Bolão não encontrado ou acesso negado.</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4">
+        <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+          <Trophy className="w-7 h-7 text-red-400" />
+        </div>
+        <div className="text-center">
+          <h3 className="font-semibold text-base mb-1">Bolão não encontrado</h3>
+          <p className="text-sm text-muted-foreground max-w-xs">
+            {error ? (error as unknown as Error).message : "O bolão solicitado não existe ou você não tem acesso."}
+          </p>
+        </div>
         <Link href="/dashboard">
           <Button variant="outline">Voltar ao painel</Button>
         </Link>

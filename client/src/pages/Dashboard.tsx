@@ -29,6 +29,9 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { DashboardSkeleton } from "@/components/Skeletons";
+import { EmptyState } from "@/components/EmptyState";
+import { ErrorCard } from "@/components/ErrorCard";
 import {
   AreaChart,
   Area,
@@ -45,8 +48,8 @@ export default function Dashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { data: userData } = trpc.users.me.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: pools = [], refetch: refetchPools } = trpc.users.myPools.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: stats } = trpc.users.myStats.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: pools = [], isLoading: poolsLoading, error: poolsError, refetch: refetchPools } = trpc.users.myPools.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: stats, isLoading: statsLoading } = trpc.users.myStats.useQuery(undefined, { enabled: isAuthenticated });
   const { data: recentBets = [] } = trpc.users.recentBets.useQuery(undefined, { enabled: isAuthenticated });
 
   // Compute cumulative points for chart
@@ -59,12 +62,8 @@ export default function Dashboard() {
     });
   }, [stats?.pointsHistory]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (loading || (isAuthenticated && poolsLoading && statsLoading)) {
+    return <DashboardSkeleton />;
   }
 
   if (!isAuthenticated) {
@@ -240,14 +239,18 @@ export default function Dashboard() {
                 </Link>
               </div>
 
-              {pools.length === 0 ? (
-                <div className="bg-card border border-border/30 rounded-xl p-8 text-center space-y-3">
-                  <Trophy className="w-10 h-10 text-muted-foreground/30 mx-auto" />
-                  <p className="text-sm text-muted-foreground">Você ainda não participa de nenhum bolão.</p>
-                  <Button size="sm" onClick={() => setShowCreateModal(true)}>
-                    <Plus className="w-4 h-4 mr-1.5" /> Criar meu primeiro bolão
-                  </Button>
-                </div>
+              {poolsError ? (
+                <ErrorCard error={poolsError} onRetry={() => refetchPools()} />
+              ) : pools.length === 0 ? (
+                <EmptyState
+                  icon={Trophy}
+                  title="Nenhum bolão ainda"
+                  description="Crie seu primeiro bolão ou entre em um existente com código de convite."
+                  actionLabel="Criar bolão"
+                  onAction={() => setShowCreateModal(true)}
+                  secondaryLabel="Entrar por código"
+                  onSecondary={() => navigate("/enter-pool")}
+                />
               ) : (
                 <div className="space-y-2">
                   {pools.map(({ pool, member }: { pool: any; member: any }) => (

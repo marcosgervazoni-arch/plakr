@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { startScoringWorker } from "../scoring";
 import { startArchivalCron } from "../archival";
+import { startEmailCrons } from "../emailCron";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
 import express from "express";
@@ -78,6 +79,7 @@ async function startServer() {
   // Start background workers
   startScoringWorker();
   startArchivalCron();
+  startEmailCrons();
 }
 
 startServer().catch(console.error);

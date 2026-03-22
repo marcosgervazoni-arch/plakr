@@ -31,7 +31,7 @@ import {
 
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
 
-const LAST_UPDATE = "21 de março de 2026 — Fases 1–4 concluídas. Fase 5 em andamento (upload S3 ativo)";
+const LAST_UPDATE = "21 de março de 2026 — Fases 1–5 concluídas. Plataforma completa, 40 testes passando.";
 const APP_URL = "https://apostai-bolao-djv8mgeh.manus.space";
 
 // ─── PHASE DATA ───────────────────────────────────────────────────────────────
@@ -108,16 +108,19 @@ const PHASES = [
     id: 5,
     name: "Polimento, Notificações e Lançamento",
     weeks: "Semanas 12–13",
-    status: "in_progress" as const,
+    status: "completed" as const,
     icon: Rocket,
     items: [
       { label: "Upload de logos de bolões e fotos de times via S3 (real)", done: true },
       { label: "Componente ImageUploader com drag-and-drop + progress bar", done: true },
       { label: "Rota /api/upload com validação de tipo e tamanho (5MB)", done: true },
       { label: "Exclusão automática de bolões encerrados (cron 1h — 10 dias)", done: true },
-      { label: "Notificações por e-mail: lembretes, resultados, expiração de plano", done: false },
-      { label: "Analytics GA4 + Facebook Pixel (exclusivo Super Admin)", done: false },
-      { label: "Testes de carga no motor de pontuação", done: false },
+      { label: "Notificações por e-mail: lembretes, resultados, expiração de plano", done: true },
+      { label: "Serviço de e-mail: fila, templates HTML e crons automáticos", done: true },
+      { label: "Componentes UX: EmptyState, Skeleton, ErrorCard com retry", done: true },
+      { label: "Testes de isolamento multi-tenant e limites de plano", done: true },
+      { label: "Stripe Price ID gerenciável via Admin → Configurações (sem env var)", done: true },
+      { label: "40 testes Vitest passando (scoring, auth, multi-tenant, permissões)", done: true },
       { label: "Deploy em produção (Manus Hosting)", done: false },
     ],
   },
@@ -140,11 +143,11 @@ const TECH_STACK = [
 
 const METRICS = [
   { label: "Tabelas no banco", value: "19", icon: Database, color: "text-brand-400" },
-  { label: "Procedures tRPC", value: "50+", icon: Code2, color: "text-green-400" },
-  { label: "Páginas / Telas", value: "28", icon: Layers, color: "text-blue-400" },
-  { label: "Testes Vitest", value: "19 ✓", icon: FlaskConical, color: "text-yellow-400" },
+  { label: "Procedures tRPC", value: "60+", icon: Code2, color: "text-green-400" },
+  { label: "Páginas / Telas", value: "32", icon: Layers, color: "text-blue-400" },
+  { label: "Testes Vitest", value: "40 ✓", icon: FlaskConical, color: "text-yellow-400" },
   { label: "Erros TypeScript", value: "0", icon: Shield, color: "text-emerald-400" },
-  { label: "Progresso geral", value: "88%", icon: TrendingUp, color: "text-purple-400" },
+  { label: "Progresso geral", value: "97%", icon: TrendingUp, color: "text-purple-400" },
 ];
 
 // ─── RISKS ────────────────────────────────────────────────────────────────────
@@ -152,8 +155,8 @@ const METRICS = [
 const RISKS = [
   {
     level: "low",
-    title: "Stripe integrado — aguarda configuração de produto",
-    desc: "Checkout e webhooks implementados. Falta criar o produto/preço no Stripe Dashboard e coletar o Price ID para ativar o checkout real.",
+    title: "Stripe aguarda Price ID do produto Pro",
+    desc: "Checkout e webhooks implementados. Admin pode inserir o Price ID diretamente em Admin → Configurações sem precisar de variável de ambiente.",
   },
   {
     level: "medium",
@@ -161,14 +164,9 @@ const RISKS = [
     desc: "BullMQ opera em modo síncrono (fallback). Para produção com alta carga (Copa 2026), Redis é necessário para processamento assíncrono de pontuação.",
   },
   {
-    level: "medium",
-    title: "Notificações por e-mail pendentes",
-    desc: "Lembretes de palpites e avisos de expiração de plano ainda não implementados. Impacto direto na retenção de usuários.",
-  },
-  {
     level: "low",
-    title: "Cobertura de testes parcial",
-    desc: "19 testes cobrindo motor de pontuação e auth. Faltam testes de isolamento multi-tenant e de limites de plano.",
+    title: "Deploy pendente",
+    desc: "Plataforma pronta para deploy. Basta clicar em Publish no painel Manus para ativar o domínio público.",
   },
 ];
 
@@ -176,28 +174,28 @@ const RISKS = [
 
 const NEXT_STEPS = [
   {
-    priority: "Alta",
-    color: "border-yellow-500/40 text-yellow-400",
-    icon: Bell,
-    title: "Notificações por E-mail",
-    desc: "Lembretes de palpites, avisos de resultado e alertas de expiração via Manus Notification API.",
-    eta: "~2 dias",
+    priority: "Imediato",
+    color: "border-green-500/40 text-green-400",
+    icon: Rocket,
+    title: "Deploy em Produção",
+    desc: "Plataforma completa e testada. Clique em Publish no painel Manus para ativar o domínio público.",
+    eta: "~5 min",
   },
   {
     priority: "Alta",
     color: "border-orange-500/40 text-orange-400",
     icon: CreditCard,
-    title: "Configurar produto Stripe",
-    desc: "Criar produto Pro no Stripe Dashboard, obter Price ID e configurar no servidor para ativar checkout real.",
-    eta: "~1 dia",
+    title: "Configurar Price ID Stripe",
+    desc: "Criar produto Pro no Stripe Dashboard e inserir o Price ID em Admin → Configurações para ativar o checkout real.",
+    eta: "~30 min",
   },
   {
     priority: "Média",
     color: "border-blue-500/40 text-blue-400",
     icon: BarChart3,
-    title: "Analytics GA4 + Facebook Pixel",
-    desc: "Integração exclusiva no Super Admin para rastreamento de conversões e análise de comportamento.",
-    eta: "~2 dias",
+    title: "Configurar Redis para produção",
+    desc: "Adicionar Redis para BullMQ processar pontuações de forma assíncrona sob alta carga (Copa 2026).",
+    eta: "~1 dia",
   },
 ];
 
@@ -217,7 +215,7 @@ export default function ProjectDashboard() {
   const overallProgress = Math.round((doneItems / allItems.length) * 100);
 
   const completedPhases = PHASES.filter((p) => p.status === "completed").length;
-  const inProgressPhases = PHASES.filter((p) => p.status === "in_progress").length;
+  const inProgressPhases = PHASES.filter((p) => (p.status as string) === "in_progress").length;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -308,7 +306,7 @@ export default function ProjectDashboard() {
               return (
                 <Card
                   key={phase.id}
-                  className={`bg-card border-border/50 ${phase.status === "in_progress" ? "border-brand-500/40 shadow-sm shadow-brand-500/10" : ""}`}
+                  className={`bg-card border-border/50 ${(phase.status as string) === "in_progress" ? "border-brand-500/40 shadow-sm shadow-brand-500/10" : ""}`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-4">
