@@ -257,3 +257,20 @@
 - [x] UI no AdminSettings para configurar gaMeasurementId e fbPixelId
 - [x] Hook useAnalytics com trackEvent e fbTrack
 - [x] Procedure system.getAnalyticsConfig + instrumentação: bet_placed, ranking_viewed, result_checked
+
+## Sistema de Pontuação — Correções (22/03/2026)
+
+### Divergências identificadas vs. documento SISTEMA-PONTUACAO-APOSTAI.md
+
+- [ ] Fix engine: Critério 4 (diferença de gols) deve ser INDEPENDENTE do resultado — atualmente só pontua com resultado correto
+- [ ] Fix engine: Critério 5 (gols de um time) deve ser INDEPENDENTE do resultado — atualmente ausente na engine
+- [ ] Fix engine: Critério 6 (goleada) deve exigir diff≥4 no palpite E no resultado — atualmente ausente na engine
+- [ ] Fix engine: Critério 2 (resultado correto) deve somar JUNTO com placar exato — atualmente é else if (mutuamente exclusivo)
+- [ ] Fix engine: Zebra deve usar zebraRatio (0-1) calculado dinamicamente, não flag booleana isZebra
+- [ ] Fix engine: Zebra deve respeitar zebraCountDraw e zebraThreshold do schema
+- [ ] Fix valores padrão: totalGoalsPoints 2→3, goalDiffPoints 2→3, zebraPoints 3→1, zebraThreshold 70→75, oneTeamGoalsPoints 0→2, landslidePoints 0→5
+- [ ] Fix schema: atualizar defaults no drizzle/schema.ts e aplicar migração SQL
+- [ ] Fix processGameScoring: calcular zebraRatio dinamicamente antes de processar palpites
+- [ ] Fix processGameScoring: passar zebraRatio e zebraCountDraw para calculateBetScore
+- [ ] Fix ranking: critério de desempate deve seguir ordem: totalPoints → exactScoreCount → correctResultCount → createdAt
+- [x] Reescrever scoring.test.ts com todos os 7 critérios e os 6 exemplos práticos do documento

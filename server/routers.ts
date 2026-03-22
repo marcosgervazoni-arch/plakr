@@ -62,6 +62,7 @@ import {
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { calculateBetScore, calculateZebraContext, type ScoringRules } from "./scoring";
 
 // ─── MIDDLEWARES ──────────────────────────────────────────────────────────────
 
@@ -83,61 +84,22 @@ const organizerProcedure = protectedProcedure.use(async ({ ctx, input, next }) =
 });
 
 // ─── SCORING HELPER ───────────────────────────────────────────────────────────
+// calculateBetScore, calculateZebraContext e ScoringRules importados de ./scoring
 
-function calculateBetScore(
-  predictedA: number,
-  predictedB: number,
-  actualA: number,
-  actualB: number,
-  rules: {
-    exactScorePoints: number;
-    correctResultPoints: number;
-    totalGoalsPoints: number;
-    goalDiffPoints: number;
-    zebraPoints: number;
-    zebraEnabled: boolean;
-  },
-  isZebraGame: boolean
-) {
-  let points = 0;
-  let resultType: "exact" | "correct_result" | "wrong" = "wrong";
-  let pointsExact = 0;
-  let pointsCorrect = 0;
-  let pointsGoals = 0;
-  let pointsDiff = 0;
-  let pointsZebra = 0;
-
-  const exactMatch = predictedA === actualA && predictedB === actualB;
-  const predictedResult = Math.sign(predictedA - predictedB);
-  const actualResult = Math.sign(actualA - actualB);
-  const correctResult = predictedResult === actualResult;
-
-  if (exactMatch) {
-    pointsExact = rules.exactScorePoints;
-    resultType = "exact";
-  } else if (correctResult) {
-    pointsCorrect = rules.correctResultPoints;
-    resultType = "correct_result";
-  }
-
-  // Bônus total de gols
-  if (predictedA + predictedB === actualA + actualB) {
-    pointsGoals = rules.totalGoalsPoints;
-  }
-
-  // Bônus diferença de gols
-  if (Math.abs(predictedA - predictedB) === Math.abs(actualA - actualB)) {
-    pointsDiff = rules.goalDiffPoints;
-  }
-
-  // Bônus zebra
-  if (rules.zebraEnabled && isZebraGame && correctResult) {
-    pointsZebra = rules.zebraPoints;
-  }
-
-  points = pointsExact + pointsCorrect + pointsGoals + pointsDiff + pointsZebra;
-
-  return { points, resultType, pointsExact, pointsCorrect, pointsGoals, pointsDiff, pointsZebra };
+// Helper local: monta ScoringRules a partir das regras do bolão + defaults da plataforma
+function buildEffectiveRules(rules: Awaited<ReturnType<typeof getPoolScoringRules>>, defaultSettings: Awaited<ReturnType<typeof getPlatformSettings>>): ScoringRules {
+  return {
+    exactScorePoints:    rules?.exactScorePoints    ?? defaultSettings?.defaultScoringExact          ?? 10,
+    correctResultPoints: rules?.correctResultPoints ?? defaultSettings?.defaultScoringCorrect         ?? 5,
+    totalGoalsPoints:    rules?.totalGoalsPoints    ?? defaultSettings?.defaultScoringBonusGoals      ?? 3,
+    goalDiffPoints:      rules?.goalDiffPoints      ?? defaultSettings?.defaultScoringBonusDiff       ?? 3,
+    oneTeamGoalsPoints:  rules?.oneTeamGoalsPoints  ?? defaultSettings?.defaultScoringBonusOneTeam    ?? 2,
+    landslidePoints:     rules?.landslidePoints     ?? defaultSettings?.defaultScoringBonusLandslide  ?? 5,
+    zebraPoints:         rules?.zebraPoints         ?? defaultSettings?.defaultScoringBonusUpset      ?? 1,
+    zebraThreshold:      rules?.zebraThreshold      ?? 75,
+    zebraCountDraw:      rules?.zebraCountDraw      ?? false,
+    zebraEnabled:        rules?.zebraEnabled        ?? true,
+  };
 }
 
 // ─── ROUTER PRINCIPAL ─────────────────────────────────────────────────────────
@@ -488,53 +450,47 @@ export const appRouter = router({
         gameId: z.number(),
         scoreA: z.number().min(0),
         scoreB: z.number().min(0),
-        isZebra: z.boolean().default(false),
       }))
       .mutation(async ({ input, ctx }) => {
         const game = await getGameById(input.gameId);
         if (!game) throw new TRPCError({ code: "NOT_FOUND" });
-        const wasAlreadyFinished = game.status === "finished";
-        await updateGameResult(input.gameId, input.scoreA, input.scoreB, input.isZebra);
+        await updateGameResult(input.gameId, input.scoreA, input.scoreB, false);
         await createAdminLog(ctx.user.id, "set_result", "game", input.gameId, {
-          scoreA: input.scoreA, scoreB: input.scoreB, isZebra: input.isZebra,
+          scoreA: input.scoreA, scoreB: input.scoreB,
         });
 
-        // Recalcular pontos de todos os palpites deste jogo (retroativo se já estava finalizado)
+        // Recalcular pontos de todos os palpites deste jogo (retroativo)
         const allBets = await getBetsByGameAllPools(input.gameId);
         const affectedPoolsSet = new Set(allBets.map((b) => b.poolId));
         const affectedPools = Array.from(affectedPoolsSet);
+        const defaultSettings = await getPlatformSettings();
 
         for (const poolId of affectedPools) {
-          const rules = await getPoolScoringRules(poolId);
-          const defaultSettings = await getPlatformSettings();
-          const effectiveRules = {
-            exactScorePoints: rules?.exactScorePoints ?? defaultSettings?.defaultScoringExact ?? 10,
-            correctResultPoints: rules?.correctResultPoints ?? defaultSettings?.defaultScoringCorrect ?? 5,
-            totalGoalsPoints: rules?.totalGoalsPoints ?? defaultSettings?.defaultScoringBonusGoals ?? 2,
-            goalDiffPoints: rules?.goalDiffPoints ?? defaultSettings?.defaultScoringBonusDiff ?? 2,
-            zebraPoints: rules?.zebraPoints ?? defaultSettings?.defaultScoringBonusUpset ?? 3,
-            zebraEnabled: rules?.zebraEnabled ?? true,
-          };
+          const rulesRow = await getPoolScoringRules(poolId);
+          const effectiveRules = buildEffectiveRules(rulesRow, defaultSettings);
           const poolBets = allBets.filter((b) => b.poolId === poolId);
+
+          // Calcular contexto zebra automaticamente a partir dos palpites
+          const zebraCtx = calculateZebraContext(poolBets, input.scoreA, input.scoreB);
+
           const affectedUsersSet = new Set<number>();
           for (const bet of poolBets) {
-            const score = calculateBetScore(
+            const breakdown = calculateBetScore(
               bet.predictedScoreA, bet.predictedScoreB,
               input.scoreA, input.scoreB,
-              effectiveRules, input.isZebra
+              effectiveRules, zebraCtx
             );
             await (await import("./db")).updateBetScore(bet.id, {
-              pointsEarned: score.points,
-              pointsExactScore: score.pointsExact,
-              pointsCorrectResult: score.pointsCorrect,
-              pointsTotalGoals: score.pointsGoals,
-              pointsGoalDiff: score.pointsDiff,
-              pointsZebra: score.pointsZebra,
-              resultType: score.resultType,
+              pointsEarned: breakdown.total,
+              pointsExactScore: breakdown.pointsExactScore,
+              pointsCorrectResult: breakdown.pointsCorrectResult,
+              pointsTotalGoals: breakdown.pointsTotalGoals,
+              pointsGoalDiff: breakdown.pointsGoalDiff,
+              pointsZebra: breakdown.pointsZebra,
+              resultType: breakdown.resultType,
             });
             affectedUsersSet.add(bet.userId);
           }
-          // Recalcular stats de todos os membros afetados
           const affectedUsers = Array.from(affectedUsersSet);
           for (const userId of affectedUsers) {
             await recalculateMemberStats(poolId, userId);
@@ -978,7 +934,6 @@ export const appRouter = router({
         gameId: z.number(),
         scoreA: z.number().min(0).max(99),
         scoreB: z.number().min(0).max(99),
-        isZebra: z.boolean().default(false),
       }))
       .mutation(async ({ input, ctx }) => {
         const member = await getPoolMember(input.poolId, ctx.user.id);
@@ -999,38 +954,35 @@ export const appRouter = router({
         if (!game || game.tournamentId !== pool.tournamentId) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Jogo não encontrado neste bolão." });
         }
-        await updateGameResult(input.gameId, input.scoreA, input.scoreB, input.isZebra);
+        await updateGameResult(input.gameId, input.scoreA, input.scoreB, false);
         await createAdminLog(ctx.user.id, "set_result", "game", input.gameId, {
           poolId: input.poolId, scoreA: input.scoreA, scoreB: input.scoreB,
         });
         // Recalcular pontos de todos os palpites deste jogo neste bolão
         const allBets = await getBetsByGameAllPools(input.gameId);
         const poolBets = allBets.filter((b) => b.poolId === input.poolId);
-        const rules = await getPoolScoringRules(input.poolId);
+        const rulesRow = await getPoolScoringRules(input.poolId);
         const defaultSettings = await getPlatformSettings();
-        const effectiveRules = {
-          exactScorePoints: rules?.exactScorePoints ?? defaultSettings?.defaultScoringExact ?? 10,
-          correctResultPoints: rules?.correctResultPoints ?? defaultSettings?.defaultScoringCorrect ?? 5,
-          totalGoalsPoints: rules?.totalGoalsPoints ?? defaultSettings?.defaultScoringBonusGoals ?? 2,
-          goalDiffPoints: rules?.goalDiffPoints ?? defaultSettings?.defaultScoringBonusDiff ?? 2,
-          zebraPoints: rules?.zebraPoints ?? defaultSettings?.defaultScoringBonusUpset ?? 3,
-          zebraEnabled: rules?.zebraEnabled ?? true,
-        };
+        const effectiveRules = buildEffectiveRules(rulesRow, defaultSettings);
+
+        // Calcular contexto zebra automaticamente a partir dos palpites
+        const zebraCtx = calculateZebraContext(poolBets, input.scoreA, input.scoreB);
+
         const affectedUsersSet = new Set<number>();
         for (const bet of poolBets) {
-          const score = calculateBetScore(
+          const breakdown = calculateBetScore(
             bet.predictedScoreA, bet.predictedScoreB,
             input.scoreA, input.scoreB,
-            effectiveRules, input.isZebra
+            effectiveRules, zebraCtx
           );
           await (await import("./db")).updateBetScore(bet.id, {
-            pointsEarned: score.points,
-            pointsExactScore: score.pointsExact,
-            pointsCorrectResult: score.pointsCorrect,
-            pointsTotalGoals: score.pointsGoals,
-            pointsGoalDiff: score.pointsDiff,
-            pointsZebra: score.pointsZebra,
-            resultType: score.resultType,
+            pointsEarned: breakdown.total,
+            pointsExactScore: breakdown.pointsExactScore,
+            pointsCorrectResult: breakdown.pointsCorrectResult,
+            pointsTotalGoals: breakdown.pointsTotalGoals,
+            pointsGoalDiff: breakdown.pointsGoalDiff,
+            pointsZebra: breakdown.pointsZebra,
+            resultType: breakdown.resultType,
           });
           affectedUsersSet.add(bet.userId);
         }
