@@ -101,6 +101,12 @@ export interface ZebraContext {
   betterTeam: "A" | "B" | "draw";
   /** true se o favorito venceu (não é zebra) */
   favoriteWon: boolean;
+  /**
+   * Fração (0–1) de apostadores que apostou no lado PERDEDOR.
+   * Calculado como: (total - apostas_no_vencedor) / total
+   * Conforme SISTEMA-PONTUACAO-APOSTAI.md §3.5
+   */
+  losingRatio: number;
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -133,7 +139,7 @@ export function calculateBetScore(
   actualA: number,
   actualB: number,
   rules: ScoringRules,
-  zebraCtx: ZebraContext = { isZebraGame: false, betterTeam: "A", favoriteWon: true }
+  zebraCtx: ZebraContext = { isZebraGame: false, betterTeam: "A", favoriteWon: true, losingRatio: 0 }
 ): ScoringBreakdown {
   const breakdown: ScoringBreakdown = {
     pointsExactScore: 0,
@@ -183,10 +189,10 @@ export function calculateBetScore(
       breakdown.pointsTotalGoals = rules.totalGoalsPoints;
     }
 
-    // Critério 6: Goleada (diff≥3 no resultado real E no palpite)
+    // Critério 6: Goleada (diff≥4 no resultado real E no palpite, conforme SISTEMA-PONTUACAO-APOSTAI.md §3.4)
     if (
-      Math.abs(actualA - actualB) >= 3 &&
-      Math.abs(predictedA - predictedB) >= 3
+      Math.abs(actualA - actualB) >= 4 &&
+      Math.abs(predictedA - predictedB) >= 4
     ) {
       breakdown.pointsLandslide = rules.landslidePoints;
     }
@@ -220,6 +226,10 @@ export function calculateBetScore(
 //
 // Deve ser chamado ANTES de processar os palpites individuais.
 // Calcula a fração (0–1) dos apostadores que apostou no lado PERDEDOR.
+//
+// Conforme SISTEMA-PONTUACAO-APOSTAI.md §3.5:
+//   ratio_perdedor = (total_apostas - apostas_no_vencedor) / total_apostas
+//   é_zebra = ratio_perdedor >= zebraThreshold / 100
 
 export function calculateZebraContext(
   bets: Array<{ predictedScoreA: number; predictedScoreB: number }>,
@@ -227,7 +237,7 @@ export function calculateZebraContext(
   actualB: number,
   threshold: number = 75
 ): ZebraContext {
-  const noZebra: ZebraContext = { isZebraGame: false, betterTeam: "A", favoriteWon: true };
+  const noZebra: ZebraContext = { isZebraGame: false, betterTeam: "A", favoriteWon: true, losingRatio: 0 };
   if (bets.length === 0) return noZebra;
 
   const actualSide = getSide(actualA, actualB);
@@ -244,14 +254,15 @@ export function calculateZebraContext(
     votes.A >= votes.B && votes.A >= votes.draw ? "A" :
     votes.B >= votes.A && votes.B >= votes.draw ? "B" : "draw";
 
-  const favoriteVotes = votes[betterTeam];
-  const favoritePct = (favoriteVotes / bets.length) * 100;
+  // Calcular ratio do lado PERDEDOR (apostas que NÃO apostaram no vencedor real)
+  const winningSideVotes = votes[actualSide];
+  const losingRatio = (bets.length - winningSideVotes) / bets.length;
 
-  // Só é zebra se: >= threshold% apostou no favorito E o favorito NÃO venceu
+  // Só é zebra se: ratio_perdedor >= threshold/100 E o favorito NÃO venceu
   const favoriteWon = actualSide === betterTeam;
-  const isZebraGame = favoritePct >= threshold && !favoriteWon;
+  const isZebraGame = (losingRatio * 100) >= threshold && !favoriteWon;
 
-  return { isZebraGame, betterTeam, favoriteWon };
+  return { isZebraGame, betterTeam, favoriteWon, losingRatio };
 }
 
 // ─── CORE SCORING PROCESSOR ───────────────────────────────────────────────────

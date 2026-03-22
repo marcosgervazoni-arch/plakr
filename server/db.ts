@@ -408,11 +408,15 @@ export async function getPoolRanking(poolId: number) {
     .from(poolMemberStats)
     .innerJoin(users, eq(poolMemberStats.userId, users.id))
     .where(eq(poolMemberStats.poolId, poolId))
+    // Desempate conforme SISTEMA-PONTUACAO-APOSTAI.md §8:
+    // 1. Total de pontos (maior primeiro)
+    // 2. Placares exatos (maior primeiro)
+    // 3. Resultados corretos (maior primeiro)
+    // 4. Data de cadastro (mais antigo primeiro)
     .orderBy(
       desc(poolMemberStats.totalPoints),
       desc(poolMemberStats.exactScoreCount),
       desc(poolMemberStats.correctResultCount),
-      asc(poolMemberStats.totalBets),
       asc(users.createdAt)
     );
 }

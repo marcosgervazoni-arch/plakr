@@ -290,3 +290,16 @@
 - [x] Reescrever AdminSettings.tsx com campos de pontuação completos (oneTeam, landslide)
 - [x] Atualizar procedures: demoteFromAdmin, removeUser, sendNotification, platform.updateSettings
 - [x] Atualizar rotas no App.tsx para refletir nova estrutura
+
+## Correção do Motor de Pontuação — Sprint 22/03/2026 (v2) ✅
+- [x] Fix engine: Critério 2 (resultado correto) soma JUNTO com placar exato (já estava correto)
+- [x] Fix engine: Critério 4 (diferença de gols) é INDEPENDENTE do resultado (já estava correto)
+- [x] Fix engine: Critério 5 (gols de um time) é INDEPENDENTE do resultado (já estava correto)
+- [x] Fix engine: Critério 6 (goleada) exige diff≥4 no palpite E no resultado (corrigido: era >=3)
+- [x] Fix engine: Zebra usa losingRatio (0-1) calculado dinamicamente via calculateZebraContext
+- [x] Fix engine: Zebra respeita zebraCountDraw e zebraThreshold do schema
+- [x] Fix valores padrão: totalGoalsPoints=3, goalDiffPoints=3, zebraPoints=1, zebraThreshold=75, oneTeamGoalsPoints=2, landslidePoints=5 (já estavam corretos no schema)
+- [x] Fix schema: defaults no drizzle/schema.ts para poolScoringRules verificados e corretos
+- [x] Fix processGameScoring: calculateZebraContext já calcula losingRatio dinamicamente
+- [x] Fix ranking: critério de desempate corrigido (removido totalBets, ordem: totalPoints → exactScoreCount → correctResultCount → createdAt)
+- [x] Atualizar scoring.test.ts: 51 testes cobrindo todos os 7 critérios + 6 exemplos do documento (82 testes no total)
