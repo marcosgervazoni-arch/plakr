@@ -27,6 +27,8 @@ import {
   Users,
   Pencil,
   Flag,
+  RefreshCw,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
@@ -44,6 +46,26 @@ export default function AdminTournamentDetail() {
     { enabled: !isNaN(tournamentId) }
   );
 
+  // ── Recalculate ──
+  const recalculateMutation = trpc.tournaments.recalculatePool.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Pontuação recalculada! ${data.totalRecalculated} membros atualizados.`);
+      refetch();
+    },
+    onError: (e: { message: string }) => toast.error("Erro ao recalcular", { description: e.message }),
+  });
+  // ── Import from Sheets ──
+  const [showSheetsModal, setShowSheetsModal] = useState(false);
+  const [sheetsUrl, setSheetsUrl] = useState("");
+  const importSheetsMutation = trpc.tournaments.importFromSheets.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Importação concluída! ${data.imported} jogos importados, ${data.skipped} ignorados.`);
+      setShowSheetsModal(false);
+      setSheetsUrl("");
+      refetch();
+    },
+    onError: (e: { message: string }) => toast.error("Erro na importação", { description: e.message }),
+  });
   // ── Add Team form ──
   const [showAddTeam, setShowAddTeam] = useState(false);
   const [teamForm, setTeamForm] = useState({ name: "", code: "", flagUrl: "", groupName: "" });
@@ -161,9 +183,18 @@ export default function AdminTournamentDetail() {
               </p>
             )}
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex flex-wrap gap-2 shrink-0">
             <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowAddTeam(true)}>
               <Shield className="h-4 w-4" /> Adicionar Time
+            </Button>
+            <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowSheetsModal(true)}>
+              <FileSpreadsheet className="h-4 w-4" /> Importar Sheets
+            </Button>
+            <Button size="sm" variant="outline" className="gap-2 text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
+              disabled={recalculateMutation.isPending}
+              onClick={() => recalculateMutation.mutate({ tournamentId })}>
+              {recalculateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Recalcular Pontos
             </Button>
             <Button size="sm" className="gap-2 bg-brand hover:bg-brand/90" onClick={() => setShowAddGame(true)}>
               <Plus className="h-4 w-4" /> Adicionar Jogo
@@ -444,6 +475,37 @@ export default function AdminTournamentDetail() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* Modal: Importar via Google Sheets */}
+      <Dialog open={showSheetsModal} onOpenChange={(open) => { setShowSheetsModal(open); if (!open) setSheetsUrl(""); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-green-400" /> Importar Jogos via Google Sheets
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Cole a URL pública da planilha. A planilha deve ter as colunas nesta ordem:
+              <span className="font-mono text-xs block mt-1 bg-muted/50 px-2 py-1 rounded">Time A, Time B, Data/Hora, Prazo, Fase, Local</span>
+            </p>
+            <div className="space-y-1.5">
+              <Label>URL da Planilha</Label>
+              <Input
+                placeholder="https://docs.google.com/spreadsheets/d/..."
+                value={sheetsUrl}
+                onChange={(e) => setSheetsUrl(e.target.value)}
+              />
+            </div>
+            <Button
+              className="w-full bg-green-600 hover:bg-green-700"
+              disabled={!sheetsUrl.trim() || importSheetsMutation.isPending}
+              onClick={() => importSheetsMutation.mutate({ tournamentId, sheetsUrl: sheetsUrl.trim() })}>
+              {importSheetsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+              Importar Jogos
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </AdminLayout>

@@ -22,7 +22,7 @@ import {
   ChevronRight,
   Plus,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 
@@ -53,7 +53,7 @@ const navItems = [
     id: "profile",
     label: "Meu Perfil",
     icon: User,
-    href: "/profile/me",
+    href: "/my-profile",
   },
 ];
 
@@ -70,6 +70,14 @@ export default function AppShell({ children }: AppShellProps) {
     userData?.plan?.plan === "pro" && userData?.plan?.isActive;
   const isAdmin =
     userData?.user?.role === "admin" || user?.role === "admin";
+  const isBlocked = userData?.user?.isBlocked === true;
+
+  // Redirect blocked users to suspended page
+  useEffect(() => {
+    if (isAuthenticated && isBlocked) {
+      window.location.href = "/suspended";
+    }
+  }, [isAuthenticated, isBlocked]);
 
   const initials =
     user?.name
@@ -83,7 +91,7 @@ export default function AppShell({ children }: AppShellProps) {
     if (location === "/dashboard") return "dashboard";
     if (location.startsWith("/pools/public")) return "public";
     if (location.startsWith("/enter-pool")) return "enter";
-    if (location.startsWith("/profile")) return "profile";
+    if (location.startsWith("/my-profile")) return "profile";
     return "";
   };
   const activeSection = getActiveSection();
@@ -110,7 +118,7 @@ export default function AppShell({ children }: AppShellProps) {
       {/* User info */}
       {isAuthenticated && (
         <div className="p-3 border-b border-border/30">
-          <Link href="/profile/me" onClick={() => setSidebarOpen(false)}>
+          <Link href="/my-profile" onClick={() => setSidebarOpen(false)}>
             <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-xs font-bold text-primary">
                 {user?.avatarUrl ? (

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, router } from "./trpc";
+import { getPlatformSettings } from "../db";
 
 export const systemRouter = router({
   health: publicProcedure
@@ -26,4 +27,13 @@ export const systemRouter = router({
         success: delivered,
       } as const;
     }),
+
+  // Público: retorna apenas os IDs de analytics (sem dados sensíveis)
+  getAnalyticsConfig: publicProcedure.query(async () => {
+    const settings = await getPlatformSettings();
+    return {
+      gaMeasurementId: settings?.gaMeasurementId ?? null,
+      fbPixelId: settings?.fbPixelId ?? null,
+    };
+  }),
 });

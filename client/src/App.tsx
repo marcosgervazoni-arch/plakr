@@ -16,6 +16,14 @@ import PublicPools from "./pages/PublicPools";
 import PublicProfile from "./pages/PublicProfile";
 import GlobalRanking from "./pages/GlobalRanking";
 import UpgradePage from "./pages/UpgradePage";
+import PoolMemberProfile from "./pages/PoolMemberProfile";
+import Notifications from "./pages/Notifications";
+import NotificationPreferences from "./pages/NotificationPreferences";
+import Suspended from "./pages/Suspended";
+import BetHistory from "./pages/BetHistory";
+import PoolRules from "./pages/PoolRules";
+import PoolBracket from "./pages/PoolBracket";
+import MyProfile from "./pages/MyProfile";
 
 // Organizer pages (Fase 4)
 import CreatePool from "./pages/organizer/CreatePool";
@@ -38,8 +46,10 @@ import AdminBroadcasts from "./pages/admin/AdminBroadcasts";
 import AdminAds from "./pages/admin/AdminAds";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAudit from "./pages/admin/AdminAudit";
+import { useAnalytics } from "./hooks/useAnalytics";
 
 function Router() {
+  useAnalytics();
   return (
     <Switch>
       {/* Public routes */}
@@ -54,6 +64,14 @@ function Router() {
       {/* Participant routes */}
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/pool/:slug" component={PoolPage} />
+      <Route path="/pool/:slug/player/:userId" component={PoolMemberProfile} />
+      <Route path="/pool/:slug/history" component={BetHistory} />
+      <Route path="/pool/:slug/rules" component={PoolRules} />
+      <Route path="/pool/:slug/bracket" component={PoolBracket} />
+      <Route path="/my-profile" component={MyProfile} />
+      <Route path="/notifications" component={Notifications} />
+      <Route path="/notification-preferences" component={NotificationPreferences} />
+      <Route path="/suspended" component={Suspended} />
 
       {/* Organizer routes — O1-O6 */}
       <Route path="/create-pool" component={CreatePool} />

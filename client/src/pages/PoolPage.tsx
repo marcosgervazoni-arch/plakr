@@ -199,11 +199,30 @@ export default function PoolPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6 bg-card border border-border/50">
-            <TabsTrigger value="games">Jogos & Palpites</TabsTrigger>
-            <TabsTrigger value="ranking">Ranking</TabsTrigger>
-            <TabsTrigger value="members">Membros</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+            <TabsList className="bg-card border border-border/50">
+              <TabsTrigger value="games">Jogos & Palpites</TabsTrigger>
+              <TabsTrigger value="ranking">Ranking</TabsTrigger>
+              <TabsTrigger value="members">Membros</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
+              <Link href={`/pool/${slug}/history`}>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                  <Trophy className="w-3.5 h-3.5" /> Meus Palpites
+                </Button>
+              </Link>
+              <Link href={`/pool/${slug}/bracket`}>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                  <Trophy className="w-3.5 h-3.5" /> Chaveamento
+                </Button>
+              </Link>
+              <Link href={`/pool/${slug}/rules`}>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                  <Lock className="w-3.5 h-3.5" /> Regulamento
+                </Button>
+              </Link>
+            </div>
+          </div>
 
           {/* GAMES TAB */}
           <TabsContent value="games" className="space-y-3">
@@ -363,7 +382,7 @@ export default function PoolPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm truncate">
-                            <a href={`/profile/${rankUser.id}`} className="hover:text-primary transition-colors">
+                            <a href={`/pool/${slug}/player/${rankUser.id}`} className="hover:text-primary transition-colors">
                               {rankUser.name}
                             </a>
                             {rankUser.id === user?.id && (
@@ -402,7 +421,7 @@ export default function PoolPage() {
                           {memberUser.name?.charAt(0)?.toUpperCase() ?? "?"}
                         </div>
                         <div>
-                          <a href={`/profile/${memberUser.id}`} className="text-sm font-medium hover:text-primary transition-colors">{memberUser.name}</a>
+                          <a href={`/pool/${slug}/player/${memberUser.id}`} className="text-sm font-medium hover:text-primary transition-colors">{memberUser.name}</a>
                           <p className="text-xs text-muted-foreground">
                             {format(new Date(member.joinedAt), "dd/MM/yyyy", { locale: ptBR })}
                           </p>

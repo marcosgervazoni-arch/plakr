@@ -284,6 +284,8 @@ export const appRouter = router({
           name: usersT.name,
           avatarUrl: usersT.avatarUrl,
           createdAt: usersT.createdAt,
+          whatsappLink: usersT.whatsappLink,
+          telegramLink: usersT.telegramLink,
         }).from(usersT).where(eq(usersT.id, input.userId)).limit(1);
         if (!userRows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado." });
         const user = userRows[0];
@@ -357,9 +359,27 @@ export const appRouter = router({
           poolsCount: Number(r.poolsCount),
         }));
       }),
+    updateProfile: protectedProcedure
+      .input(z.object({
+        avatarUrl: z.string().url().optional(),
+        whatsappLink: z.string().max(255).optional().nullable(),
+        telegramLink: z.string().max(255).optional().nullable(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { eq } = await import("drizzle-orm");
+        const { users: usersT } = await import("../drizzle/schema");
+        const updateData: Record<string, unknown> = {};
+        if (input.avatarUrl !== undefined) updateData.avatarUrl = input.avatarUrl;
+        if (input.whatsappLink !== undefined) updateData.whatsappLink = input.whatsappLink;
+        if (input.telegramLink !== undefined) updateData.telegramLink = input.telegramLink;
+        if (Object.keys(updateData).length === 0) return { success: true };
+        await db.update(usersT).set(updateData).where(eq(usersT.id, ctx.user.id));
+        return { success: true };
+      }),
   }),
-
-  // ─── TOURNAMENTS ───────────────────────────────────────────────────────────
+  // ─── TOURNAMENTS ────────────────────────────────────────────────────────────
   tournaments: router({
     listGlobal: publicProcedure.query(async () => {
       return getGlobalTournaments();
@@ -534,6 +554,71 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const id = await createTeam(input);
         return { id };
+      }),
+    // Admin: recalcular pontuação de todos os membros de todos os bolões de um torneio
+    recalculatePool: adminProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { pools: poolsT, poolMembers } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        // Find all pools for this tournament
+        const pools = await db.select({ id: poolsT.id }).from(poolsT).where(eq(poolsT.tournamentId, input.tournamentId));
+        let totalRecalculated = 0;
+        for (const pool of pools) {
+          const members = await db.select({ userId: poolMembers.userId }).from(poolMembers).where(eq(poolMembers.poolId, pool.id));
+          for (const member of members) {
+            await recalculateMemberStats(pool.id, member.userId);
+            totalRecalculated++;
+          }
+        }
+        await createAdminLog(ctx.user.id, "recalculate_scores", "tournament", input.tournamentId, { totalRecalculated });
+        return { success: true, totalRecalculated };
+      }),
+    // Admin: importar jogos via Google Sheets (URL pública)
+    importFromSheets: adminProcedure
+      .input(z.object({
+        tournamentId: z.number(),
+        sheetsUrl: z.string().url(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Convert Google Sheets URL to CSV export URL
+        let csvUrl = input.sheetsUrl;
+        const editMatch = csvUrl.match(/\/spreadsheets\/d\/([^/]+)/);
+        const gidMatch = csvUrl.match(/[?&]gid=(\d+)/);
+        if (editMatch) {
+          const sheetId = editMatch[1];
+          const gid = gidMatch ? gidMatch[1] : "0";
+          csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+        }
+        const response = await fetch(csvUrl);
+        if (!response.ok) throw new TRPCError({ code: "BAD_REQUEST", message: "Não foi possível acessar a planilha. Verifique se ela é pública." });
+        const csvData = await response.text();
+        const lines = csvData.trim().split("\n").slice(1); // skip header
+        let imported = 0;
+        let skipped = 0;
+        for (const line of lines) {
+          const parts = line.split(",").map((p) => p.trim().replace(/^"|"$/g, ""));
+          if (parts.length < 3) { skipped++; continue; }
+          const [teamAName, teamBName, matchDateStr, , phase] = parts;
+          if (!teamAName || !teamBName || !matchDateStr) { skipped++; continue; }
+          try {
+            await createGame({
+              tournamentId: input.tournamentId,
+              teamAName,
+              teamBName,
+              matchDate: new Date(matchDateStr),
+              phase: phase || "Fase de Grupos",
+            });
+            imported++;
+          } catch (err) {
+            console.warn("[importFromSheets] Skipping row:", line, err);
+            skipped++;
+          }
+        }
+        await createAdminLog(ctx.user.id, "import_from_sheets", "tournament", input.tournamentId, { imported, skipped, sheetsUrl: input.sheetsUrl });
+        return { imported, skipped };
       }),
   }),
 
@@ -1000,6 +1085,129 @@ export const appRouter = router({
         }
         return { success: true };
       }),
+
+    // ─── PERFIL CONTEXTUAL POR BOLÃO ─────────────────────────────────────────
+    getMemberProfile: protectedProcedure
+      .input(z.object({ poolId: z.number(), userId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { eq, desc, and } = await import("drizzle-orm");
+        const { users: usersT, poolMemberStats, bets: betsT, games: gamesT, userPlans } = await import("../drizzle/schema");
+        // Verificar se o solicitante é membro ou admin
+        const requester = await getPoolMember(input.poolId, ctx.user.id);
+        const pool = await getPoolById(input.poolId);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+        if (!requester && ctx.user.role !== "admin" && pool.accessType !== "public") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        // Dados do usuário
+        const userRows = await db.select({
+          id: usersT.id, name: usersT.name, avatarUrl: usersT.avatarUrl,
+          createdAt: usersT.createdAt, whatsappLink: usersT.whatsappLink, telegramLink: usersT.telegramLink,
+        }).from(usersT).where(eq(usersT.id, input.userId)).limit(1);
+        if (!userRows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado." });
+        const user = userRows[0];
+        // Plano
+        const planRows = await db.select().from(userPlans).where(eq(userPlans.userId, input.userId)).limit(1);
+        const plan = planRows[0] ?? null;
+        // Stats deste bolão
+        const statsRows = await db.select().from(poolMemberStats)
+          .where(and(eq(poolMemberStats.poolId, input.poolId), eq(poolMemberStats.userId, input.userId))).limit(1);
+        const stats = statsRows[0] ?? null;
+        // Ranking neste bolão
+        const rankRows = await db.select({ userId: poolMemberStats.userId, totalPoints: poolMemberStats.totalPoints })
+          .from(poolMemberStats).where(eq(poolMemberStats.poolId, input.poolId)).orderBy(desc(poolMemberStats.totalPoints));
+        const rankPosition = rankRows.findIndex((r) => r.userId === input.userId) + 1;
+        // Histórico de pontos acumulados (jogos finalizados)
+        const betsHistory = await db.select({
+          pointsEarned: betsT.pointsEarned, matchDate: gamesT.matchDate,
+          teamAName: gamesT.teamAName, teamBName: gamesT.teamBName,
+        }).from(betsT).innerJoin(gamesT, eq(betsT.gameId, gamesT.id))
+          .where(and(eq(betsT.poolId, input.poolId), eq(betsT.userId, input.userId), eq(gamesT.status, "finished")))
+          .orderBy(gamesT.matchDate);
+        let cumulative = 0;
+        const pointsHistory = betsHistory.map((b) => {
+          cumulative += Number(b.pointsEarned ?? 0);
+          return { label: `${b.teamAName ?? "?"} × ${b.teamBName ?? "?"}`, matchDate: b.matchDate, points: Number(b.pointsEarned ?? 0), cumulative };
+        });
+        // Últimos 10 palpites com breakdown
+        const recentBets = await db.select({
+          gameId: betsT.gameId, predictedScoreA: betsT.predictedScoreA, predictedScoreB: betsT.predictedScoreB,
+          pointsEarned: betsT.pointsEarned, pointsExactScore: betsT.pointsExactScore,
+          pointsCorrectResult: betsT.pointsCorrectResult, pointsGoalDiff: betsT.pointsGoalDiff,
+          pointsZebra: betsT.pointsZebra, isZebra: betsT.isZebra,
+          teamAName: gamesT.teamAName, teamBName: gamesT.teamBName,
+          realScoreA: gamesT.scoreA, realScoreB: gamesT.scoreB,
+          matchDate: gamesT.matchDate, gameStatus: gamesT.status, phase: gamesT.phase,
+        }).from(betsT).innerJoin(gamesT, eq(betsT.gameId, gamesT.id))
+          .where(and(eq(betsT.poolId, input.poolId), eq(betsT.userId, input.userId)))
+          .orderBy(desc(gamesT.matchDate)).limit(10);
+        return {
+          user, plan,
+          pool: { id: pool.id, name: pool.name, slug: pool.slug, logoUrl: pool.logoUrl },
+          stats: stats ? {
+            totalPoints: Number(stats.totalPoints), exactScoreCount: Number(stats.exactScoreCount),
+            correctResultCount: Number(stats.correctResultCount), totalBets: Number(stats.totalBets),
+            zebraCount: Number(stats.zebraCount), rankPosition, totalMembers: rankRows.length,
+            accuracy: Number(stats.totalBets) > 0
+              ? Math.round(((Number(stats.exactScoreCount) + Number(stats.correctResultCount)) / Number(stats.totalBets)) * 100) : 0,
+          } : null,
+          pointsHistory,
+          recentBets: recentBets.map((b) => ({
+            ...b,
+            pointsEarned: Number(b.pointsEarned ?? 0), pointsExactScore: Number(b.pointsExactScore ?? 0),
+            pointsCorrectResult: Number(b.pointsCorrectResult ?? 0), pointsGoalDiff: Number(b.pointsGoalDiff ?? 0),
+            pointsZebra: Number(b.pointsZebra ?? 0),
+          })),
+        };
+      }),
+
+    // ─── REGRAS PÚBLICAS DO BOLÃO ─────────────────────────────────────────────────────
+    getScoringRulesPublic: protectedProcedure
+      .input(z.object({ poolId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        const pool = await getPoolById(input.poolId);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+        if (!member && ctx.user.role !== "admin" && pool.accessType !== "public") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        return getPoolScoringRules(input.poolId);
+      }),
+
+    // ─── BRACKET / CHAVEAMENTO ────────────────────────────────────────────────────────────
+    getBracket: protectedProcedure
+      .input(z.object({ poolId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        const pool = await getPoolById(input.poolId);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+        if (!member && ctx.user.role !== "admin" && pool.accessType !== "public") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const phases = await getTournamentPhases(pool.tournamentId);
+        const games = await getGamesByTournament(pool.tournamentId);
+        // Agrupar jogos por fase
+        // Agrupar jogos por fase (campo phase = string key)
+        const phaseKeyMap = new Map<string, typeof games>();
+        for (const game of games) {
+          const key = game.phase ?? "group_stage";
+          if (!phaseKeyMap.has(key)) phaseKeyMap.set(key, []);
+          phaseKeyMap.get(key)!.push(game);
+        }
+        const result = phases.map((phase) => ({
+          phase,
+          games: (phaseKeyMap.get(phase.key) ?? []).sort((a, b) => (a.matchNumber ?? 0) - (b.matchNumber ?? 0)),
+        }));
+        // Jogos sem fase configurada
+        const knownKeys = new Set(phases.map((p) => p.key));
+        const orphanGames = games.filter((g) => !knownKeys.has(g.phase ?? ""));
+        if (orphanGames.length > 0) {
+          result.unshift({ phase: { id: 0, tournamentId: pool.tournamentId, key: "group_stage", label: "Fase de Grupos", enabled: true, order: 0, slots: null, isKnockout: false, updatedAt: new Date() }, games: orphanGames });
+        }
+        return result;
+      }),
   }),
   // ─── BETS ──────────────────────────────────────────────────────────────────
   bets: router({
@@ -1078,6 +1286,37 @@ export const appRouter = router({
       await markAllNotificationsRead(ctx.user.id);
       return { success: true };
     }),
+    getPreferences: protectedProcedure.query(async ({ ctx }) => {
+      const db = await (await import("./db")).getDb();
+      if (!db) return null;
+      const { notificationPreferences } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const rows = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, ctx.user.id)).limit(1);
+      if (rows[0]) return rows[0];
+      // Create defaults if not exists
+      await db.insert(notificationPreferences).values({ userId: ctx.user.id }).onDuplicateKeyUpdate({ set: { userId: ctx.user.id } });
+      const created = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, ctx.user.id)).limit(1);
+      return created[0] ?? null;
+    }),
+    updatePreferences: protectedProcedure
+      .input(z.object({
+        inAppGameReminder: z.boolean().optional(),
+        inAppRankingUpdate: z.boolean().optional(),
+        inAppResultAvailable: z.boolean().optional(),
+        inAppSystem: z.boolean().optional(),
+        emailGameReminder: z.boolean().optional(),
+        emailRankingUpdate: z.boolean().optional(),
+        emailResultAvailable: z.boolean().optional(),
+        emailSystem: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return { success: false };
+        const { notificationPreferences } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.insert(notificationPreferences).values({ userId: ctx.user.id, ...input }).onDuplicateKeyUpdate({ set: input });
+        return { success: true };
+      }),
     broadcast: adminProcedure
       .input(z.object({
         title: z.string().min(1).max(100),
@@ -1311,6 +1550,37 @@ export const appRouter = router({
         const { ads: adsT } = await import("../drizzle/schema");
         const { eq } = await import("drizzle-orm");
         await db.delete(adsT).where(eq(adsT.id, input.id));
+        return { success: true };
+      }),
+    clicksByDay: adminProcedure
+      .input(z.object({ adId: z.number().optional() }))
+      .query(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return [];
+        const { adClicks, ads: adsT } = await import("../drizzle/schema");
+        const { eq, and, sql, desc } = await import("drizzle-orm");
+        const conditions = input.adId ? [eq(adClicks.adId, input.adId)] : [];
+        const rows = await db
+          .select({
+            adId: adClicks.adId,
+            adTitle: adsT.title,
+            day: sql<string>`DATE(${adClicks.createdAt})`,
+            clicks: sql<number>`COUNT(*)`,
+          })
+          .from(adClicks)
+          .innerJoin(adsT, eq(adClicks.adId, adsT.id))
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .groupBy(adClicks.adId, adsT.title, sql`DATE(${adClicks.createdAt})`)
+          .orderBy(desc(sql`DATE(${adClicks.createdAt})`));
+        return rows.map((r) => ({ ...r, clicks: Number(r.clicks) }));
+      }),
+    recordClick: publicProcedure
+      .input(z.object({ adId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return { success: false };
+        const { adClicks } = await import("../drizzle/schema");
+        await db.insert(adClicks).values({ adId: input.adId, userId: ctx.user?.id ?? null });
         return { success: true };
       }),
   }),

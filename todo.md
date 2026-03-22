@@ -200,3 +200,60 @@
 - [x] Fix: Rota /admin/tournaments/:id criada com página AdminTournamentDetail
 - [x] Fix: Item "Times & Jogos" removido do AdminLayout (rota inéxistente)
 - [x] Fix: Guard de slug vazio adicionado no OrganizerLayout (redireciona para /dashboard)
+
+## Implementação Completa — Engenharia Reversa v1 (22/03/2026)
+
+### Bloco 1 — Perfil Contextual por Bolão
+- [x] Procedure pools.getMemberProfile (stats, histórico, palpites por bolão)
+- [x] Página PoolMemberProfile.tsx em /pool/:slug/player/:userId
+- [x] Gráfico de evolução de pontos (AreaChart) no PoolMemberProfile
+- [x] Breakdown de pontos por critério nos palpites recentes
+- [x] Refatorar /profile/:userId — remover métricas agregadas, manter ficha leve
+- [x] Atualizar links de perfil no PoolPage (ranking e membros) para /pool/:slug/player/:userId
+
+### Bloco 2 — Notificações Frontend
+- [x] Sino de notificações no AppShell com badge de contagem não lidas
+- [x] Página /notifications com lista, marcar lida, marcar todas como lidas
+- [x] Página /notification-preferences com toggles por canal e tipo
+
+### Bloco 3 — Tela de Usuário Bloqueado
+- [x] Página Suspended.tsx em /suspended
+- [x] Guard no AppShell que redireciona isBlocked=true para /suspended
+
+### Bloco 4 — Histórico de Palpites com Breakdown
+- [x] Procedure bets.myHistory (palpites finalizados com breakdown por critério)
+- [x] Página /pool/:slug/history no PoolPage com breakdown, ícone zebra, pontos por critério
+
+### Bloco 5 — Regulamento Dinâmico por Bolão
+- [x] Procedure pools.getScoringRulesPublic
+- [x] Página /pool/:slug/rules no PoolPage exibindo os 7 critérios configurados pelo organizador
+
+### Bloco 6 — Chaveamento Visual para Participante
+- [x] Procedure pools.getBracket (fases e jogos em estrutura de árvore)
+- [x] Página /pool/:slug/bracket no PoolPage com visualização da árvore eliminatória
+
+### Bloco 7 — Upload de Avatar pelo Usuário
+- [x] Procedure users.updateProfile (upload S3 + salvar URL)
+- [x] Página /my-profile com upload de avatar no /profile/me com preview e remoção
+
+### Bloco 8 — Recálculo Manual de Pontuação
+- [x] Procedure tournaments.recalculatePool
+- [x] Botão "Recalcular pontuação" no OrganizerDashboard ou AdminPools
+
+### Bloco 9 — Importação via Google Sheets
+- [x] Procedure tournaments.importFromSheets (URL → CSV → upsert jogos)
+- [x] Modal de importação no AdminTournamentDetail com histórico de sincronizações
+
+### Bloco 10 — Links Pessoais de Contato
+- [x] Procedure users.updateContactLinks (whatsappLink, telegramLink)
+- [x] UI de edição no /my-profile
+- [x] Exibir links no PoolMemberProfile quando preenchidos
+
+### Bloco 11 — Exportação CSV de Cliques em Anúncios
+- [x] Procedure ads.clicksByDay + ads.recordClick
+- [x] Botão "Exportar CSV" no AdminAds.tsx
+
+### Bloco 12 — Analytics GA4 / Facebook Pixel
+- [x] UI no AdminSettings para configurar gaMeasurementId e fbPixelId
+- [x] Hook useAnalytics com trackEvent e fbTrack
+- [x] Procedure system.getAnalyticsConfig + instrumentação: bet_placed, ranking_viewed, result_checked

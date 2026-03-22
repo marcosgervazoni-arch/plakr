@@ -1,7 +1,7 @@
 /**
- * Perfil Público do Apostador — /profile/:userId
- * Exibe avatar, nome, plano, estatísticas globais e bolões recentes.
- * Acessível sem login. Redireciona /profile/me para o próprio ID.
+ * Ficha Pública do Usuário — /profile/:userId
+ * Exibe apenas dados de apresentação: avatar, nome, plano, membro desde e lista de bolões.
+ * Métricas de desempenho são exibidas no perfil contextual /pool/:slug/player/:userId.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -9,38 +9,28 @@ import AppShell from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Trophy,
-  Crown,
-  Target,
-  CheckCircle2,
-  Users,
-  TrendingUp,
-  ChevronRight,
-  Loader2,
-  AlertCircle,
-  Share2,
+  Trophy, Crown, Loader2, AlertCircle, Calendar,
+  MessageCircle, Send, ExternalLink, Share2, TrendingUp,
 } from "lucide-react";
-import { useParams, Link, useLocation } from "wouter";
+import { useParams, Link } from "wouter";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function PublicProfile() {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId: userIdParam } = useParams<{ userId: string }>();
   const { user: currentUser, isAuthenticated } = useAuth();
-  const [, navigate] = useLocation();
   const [resolvedId, setResolvedId] = useState<number | null>(null);
 
-  // Resolve "me" to actual user ID
   useEffect(() => {
-    if (userId === "me") {
-      if (isAuthenticated && currentUser?.id) {
-        setResolvedId(currentUser.id);
-      }
+    if (userIdParam === "me" && currentUser?.id) {
+      setResolvedId(currentUser.id);
     } else {
-      const parsed = parseInt(userId ?? "", 10);
+      const parsed = parseInt(userIdParam ?? "", 10);
       if (!isNaN(parsed)) setResolvedId(parsed);
     }
-  }, [userId, isAuthenticated, currentUser?.id]);
+  }, [userIdParam, currentUser?.id]);
 
   const { data, isLoading, error } = trpc.users.getPublicProfile.useQuery(
     { userId: resolvedId! },
@@ -48,15 +38,11 @@ export default function PublicProfile() {
   );
 
   const handleShare = () => {
-    const url = `${window.location.origin}/profile/${resolvedId}`;
-    navigator.clipboard.writeText(url).then(() => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
       toast.success("Link copiado para a área de transferência!");
     });
   };
 
-  const isOwnProfile = isAuthenticated && currentUser?.id === resolvedId;
-
-  // Loading state
   if (!resolvedId || isLoading) {
     return (
       <AppShell>
@@ -67,47 +53,40 @@ export default function PublicProfile() {
     );
   }
 
-  // Error / not found
-  if (error) {
+  if (error || !data) {
     return (
       <AppShell>
         <div className="max-w-md mx-auto px-4 py-16 text-center space-y-4">
           <AlertCircle className="w-12 h-12 text-muted-foreground/30 mx-auto" />
           <h1 className="font-bold text-xl">Perfil não encontrado</h1>
           <p className="text-muted-foreground text-sm">
-            Este usuário não existe ou não está disponível.
+            Este usuário não existe ou o perfil não está disponível.
           </p>
           <Link href="/dashboard">
-            <Button variant="outline" size="sm">← Voltar ao início</Button>
+            <Button variant="outline" size="sm">← Voltar ao painel</Button>
           </Link>
         </div>
       </AppShell>
     );
   }
 
-  if (!data) return null;
-
-  const { user, plan, stats, recentPools } = data;
+  const { user, plan, recentPools } = data;
   const isPro = plan?.plan === "pro" && plan?.isActive;
+  const isOwnProfile = isAuthenticated && currentUser?.id === resolvedId;
   const initials = user.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
-  const memberSince = user.createdAt
-    ? new Date(user.createdAt).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-    : "";
 
   return (
     <AppShell>
-      <div className="max-w-3xl mx-auto px-4 py-6 lg:py-10 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 py-6 lg:py-10 space-y-6">
 
-        {/* ── Profile hero ── */}
+        {/* ── Hero card ── */}
         <div className="bg-card border border-border/30 rounded-2xl overflow-hidden">
-          {/* Banner gradient */}
-          <div className="h-24 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent" />
-
-          <div className="px-6 pb-6 -mt-12">
+          <div className="h-20 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent" />
+          <div className="px-6 pb-6 -mt-10">
             <div className="flex items-end justify-between gap-4 flex-wrap">
               {/* Avatar */}
               <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-card border-4 border-card overflow-hidden flex items-center justify-center">
+                <div className="w-20 h-20 rounded-2xl bg-card border-4 border-card overflow-hidden flex items-center justify-center shadow-lg">
                   {user.avatarUrl ? (
                     <img src={user.avatarUrl} alt={user.name ?? ""} className="w-full h-full object-cover" />
                   ) : (
@@ -124,15 +103,27 @@ export default function PublicProfile() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2 pb-1">
+              <div className="flex items-center gap-2 pb-1 flex-wrap">
+                {(user as any).whatsappLink && (
+                  <a href={(user as any).whatsappLink} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="gap-2 text-green-500 border-green-500/30 hover:bg-green-500/10">
+                      <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                    </Button>
+                  </a>
+                )}
+                {(user as any).telegramLink && (
+                  <a href={(user as any).telegramLink} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="gap-2 text-blue-400 border-blue-400/30 hover:bg-blue-400/10">
+                      <Send className="w-3.5 h-3.5" /> Telegram
+                    </Button>
+                  </a>
+                )}
                 <Button variant="outline" size="sm" onClick={handleShare} className="gap-2">
                   <Share2 className="w-3.5 h-3.5" /> Compartilhar
                 </Button>
                 {isOwnProfile && (
                   <Link href="/dashboard">
-                    <Button size="sm" variant="ghost" className="gap-2">
-                      Meu painel →
-                    </Button>
+                    <Button size="sm" variant="ghost" className="gap-2">Meu painel →</Button>
                   </Link>
                 )}
               </div>
@@ -150,107 +141,68 @@ export default function PublicProfile() {
                 ) : (
                   <Badge variant="outline" className="text-xs text-muted-foreground">Gratuito</Badge>
                 )}
+                {isOwnProfile && (
+                  <Badge variant="outline" className="text-xs text-muted-foreground">Você</Badge>
+                )}
               </div>
-              {memberSince && (
-                <p className="text-sm text-muted-foreground mt-0.5">Membro desde {memberSince}</p>
+              {user.createdAt && (
+                <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Membro desde {format(new Date(user.createdAt), "MMMM 'de' yyyy", { locale: ptBR })}
+                </p>
               )}
             </div>
           </div>
         </div>
 
-        {/* ── Stats grid ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: "Pontos Totais", value: stats.totalPoints, icon: TrendingUp, color: "text-primary" },
-            { label: "Placares Exatos", value: stats.exactScores, icon: CheckCircle2, color: "text-green-400" },
-            { label: "Bolões", value: stats.poolsCount, icon: Users, color: "text-blue-400" },
-            { label: "Precisão", value: `${stats.accuracy}%`, icon: Target, color: "text-yellow-400" },
-          ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="bg-card border border-border/30 rounded-xl p-4 text-center space-y-1">
-              <Icon className={`w-5 h-5 mx-auto ${color}`} />
-              <p className={`font-bold text-2xl ${color}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                {value}
-              </p>
-              <p className="text-xs text-muted-foreground leading-tight">{label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Accuracy bar ── */}
-        {stats.totalBets > 0 && (
-          <div className="bg-card border border-border/30 rounded-xl p-5 space-y-3">
-            <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Desempenho nos Palpites</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Exatos ({stats.exactScores})</span>
-                <span>Corretos ({stats.correctScores})</span>
-                <span>Total ({stats.totalBets})</span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden flex">
-                <div
-                  className="h-full bg-green-500 transition-all"
-                  style={{ width: `${(stats.exactScores / stats.totalBets) * 100}%` }}
-                />
-                <div
-                  className="h-full bg-yellow-500 transition-all"
-                  style={{ width: `${(stats.correctScores / stats.totalBets) * 100}%` }}
-                />
-              </div>
-              <div className="flex items-center gap-4 text-xs">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-                  Placar exato
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block" />
-                  Resultado correto
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-muted inline-block" />
-                  Errado
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Recent pools ── */}
+        {/* ── Bolões que participa ── */}
         <div className="space-y-3">
-          <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Bolões Recentes</h3>
-          {recentPools.length === 0 ? (
+          <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">
+            Bolões que participa
+          </h3>
+          {!recentPools || recentPools.length === 0 ? (
             <div className="bg-card border border-border/30 rounded-xl p-8 text-center space-y-2">
               <Trophy className="w-8 h-8 text-muted-foreground/20 mx-auto" />
-              <p className="text-sm text-muted-foreground">Nenhum bolão ainda.</p>
+              <p className="text-sm text-muted-foreground">Nenhum bolão público encontrado.</p>
             </div>
           ) : (
             <div className="space-y-2">
               {recentPools.map((pool: any) => (
-                <Link key={pool.poolId} href={`/pool/${pool.poolSlug}`}>
-                  <div className="bg-card border border-border/30 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-primary/30 transition-all cursor-pointer group">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                      {pool.logoUrl ? (
-                        <img src={pool.logoUrl} alt={pool.poolName} className="w-full h-full object-cover" />
-                      ) : (
-                        <Trophy className="w-5 h-5 text-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{pool.poolName}</p>
-                      {pool.rank && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Posição #{pool.rank} · {pool.totalPoints ?? 0} pts
-                        </p>
-                      )}
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                <div key={pool.poolId} className="bg-card border border-border/30 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                    {pool.logoUrl ? (
+                      <img src={pool.logoUrl} alt={pool.poolName} className="w-full h-full object-cover" />
+                    ) : (
+                      <Trophy className="w-5 h-5 text-primary" />
+                    )}
                   </div>
-                </Link>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">{pool.poolName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      #{pool.rankPosition ?? pool.rank} · {pool.totalPoints ?? 0} pts
+                    </p>
+                  </div>
+                  <Link href={`/pool/${pool.poolSlug ?? pool.slug}/player/${resolvedId}`}>
+                    <Button variant="ghost" size="sm" className="gap-1.5 text-xs shrink-0">
+                      Ver desempenho <ExternalLink className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* ── Global ranking teaser ── */}
+        {/* ── Nota informativa ── */}
+        <div className="bg-muted/30 border border-border/20 rounded-xl p-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            Para ver o desempenho detalhado de{" "}
+            {isOwnProfile ? "você" : user.name?.split(" ")[0] ?? "este apostador"}{" "}
+            em um bolão específico, clique em "Ver desempenho" ao lado de cada bolão acima.
+          </p>
+        </div>
+
+        {/* ── Ranking Global teaser ── */}
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 flex items-center gap-4">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <TrendingUp className="w-5 h-5 text-primary" />
@@ -265,6 +217,7 @@ export default function PublicProfile() {
             <Button size="sm" variant="outline" className="shrink-0">Ver ranking</Button>
           </Link>
         </div>
+
       </div>
     </AppShell>
   );

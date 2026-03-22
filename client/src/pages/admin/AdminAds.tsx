@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ExternalLink, Loader2, MousePointerClick, Plus, Trash2 } from "lucide-react";
+import { Download, ExternalLink, Loader2, MousePointerClick, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -19,6 +19,19 @@ export default function AdminAds() {
   const [form, setForm] = useState({ title: "", assetUrl: "", linkUrl: "", type: "banner" as "banner" | "video" | "script", position: "sidebar" as "sidebar" | "top" | "between_sections" | "bottom" | "popup", isActive: true });
 
   const { data: ads, isLoading, refetch } = trpc.ads.list.useQuery();
+  const { data: clicksData } = trpc.ads.clicksByDay.useQuery({});
+
+  const handleExportCsv = () => {
+    if (!clicksData || clicksData.length === 0) { toast.info("Nenhum clique registrado ainda."); return; }
+    const header = "Anúncio,Data,Cliques";
+    const rows = clicksData.map((r) => `"${r.adTitle}",${r.day},${r.clicks}`);
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `cliques-anuncios-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const createMutation = trpc.ads.create.useMutation({
     onSuccess: () => { toast.success("Anúncio criado."); setOpen(false); refetch(); setForm({ title: "", assetUrl: "", linkUrl: "", type: "banner", position: "sidebar", isActive: true }); },
@@ -43,10 +56,15 @@ export default function AdminAds() {
             <h1 className="text-2xl font-bold font-display">Publicidade</h1>
             <p className="text-muted-foreground text-sm mt-1">Gerencie banners e anúncios da plataforma</p>
           </div>
-          <Button className="bg-brand hover:bg-brand/90 gap-2" onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Novo Anúncio
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleExportCsv}>
+              <Download className="h-4 w-4" /> Exportar CSV
+            </Button>
+            <Button className="bg-brand hover:bg-brand/90 gap-2" onClick={() => setOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Novo Anúncio
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
