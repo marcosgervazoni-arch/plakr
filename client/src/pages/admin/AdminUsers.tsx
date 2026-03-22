@@ -76,7 +76,7 @@ export default function AdminUsers() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-sm truncate">{u.name ?? "Sem nome"}</p>
+                      <a href={`/profile/${u.id}`} className="font-medium text-sm truncate hover:text-primary transition-colors">{u.name ?? "Sem nome"}</a>
                       {u.role === "admin" && (
                         <Badge variant="outline" className="text-xs border-brand/30 text-brand">
                           <Shield className="h-2.5 w-2.5 mr-1" />Admin

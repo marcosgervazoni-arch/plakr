@@ -177,3 +177,18 @@
 - [ ] Testes: recalculo retroativo de pontos
 - [ ] Configura\u00e7\u00e3o Stripe: produto Pro + Price ID no products.ts
 - [ ] Dashboard atualizado para 100% em todas as fases
+
+## Revisão de UX — Sprint 21/03/2026
+- [x] AppShell: sidebar global colapsável para usuários autenticados
+- [x] AppShell: header unificado com logo, nav contextual e avatar
+- [x] Perfil público /profile/:userId — avatar, stats globais, histórico, ranking
+- [x] Procedure users.getPublicProfile (publicProcedure com userId)
+- [x] Procedure users.globalRanking (top apostadores da plataforma)
+- [ ] Admin: formulário inline para adicionar times a campeonatos
+- [ ] Admin: formulário inline para adicionar jogos a campeonatos
+- [ ] Admin: visualização de bracket/chaveamento por fase
+- [x] Rota /upgrade independente de bolão específico
+- [x] Banner de upgrade Pro no Dashboard (para usuários sem plano Pro)
+- [x] Links de perfil público nos rankings dos bolões
+- [x] Página de Ranking Global /ranking
+- [x] Nomes de usuários como links de perfil no AdminUsers

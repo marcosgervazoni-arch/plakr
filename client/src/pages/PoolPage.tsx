@@ -363,7 +363,9 @@ export default function PoolPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm truncate">
-                            {rankUser.name}
+                            <a href={`/profile/${rankUser.id}`} className="hover:text-primary transition-colors">
+                              {rankUser.name}
+                            </a>
                             {rankUser.id === user?.id && (
                               <span className="text-brand-400 text-xs ml-2">(você)</span>
                             )}
@@ -400,7 +402,7 @@ export default function PoolPage() {
                           {memberUser.name?.charAt(0)?.toUpperCase() ?? "?"}
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{memberUser.name}</p>
+                          <a href={`/profile/${memberUser.id}`} className="text-sm font-medium hover:text-primary transition-colors">{memberUser.name}</a>
                           <p className="text-xs text-muted-foreground">
                             {format(new Date(member.joinedAt), "dd/MM/yyyy", { locale: ptBR })}
                           </p>

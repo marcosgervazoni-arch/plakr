@@ -270,6 +270,93 @@ export const appRouter = router({
         await createAdminLog(ctx.user.id, "promote_admin", "user", input.userId);
         return { success: true };
       }),
+
+    // Public profile — accessible without login
+    getPublicProfile: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { eq, sql, desc } = await import("drizzle-orm");
+        const { users: usersT, poolMembers, poolMemberStats, pools: poolsT, userPlans } = await import("../drizzle/schema");
+        const userRows = await db.select({
+          id: usersT.id,
+          name: usersT.name,
+          avatarUrl: usersT.avatarUrl,
+          createdAt: usersT.createdAt,
+        }).from(usersT).where(eq(usersT.id, input.userId)).limit(1);
+        if (!userRows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado." });
+        const user = userRows[0];
+        const planRows = await db.select().from(userPlans).where(eq(userPlans.userId, input.userId)).limit(1);
+        const plan = planRows[0] ?? null;
+        const statsRows = await db.select({
+          totalPoints: sql<number>`COALESCE(SUM(total_points), 0)`,
+          exactScores: sql<number>`COALESCE(SUM(exact_score_count), 0)`,
+          poolsCount: sql<number>`COUNT(DISTINCT pool_id)`,
+          correctScores: sql<number>`COALESCE(SUM(correct_result_count), 0)`,
+          totalBets: sql<number>`COALESCE(SUM(total_bets), 0)`,
+        }).from(poolMemberStats).where(eq(poolMemberStats.userId, input.userId));
+        const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, poolsCount: 0, correctScores: 0, totalBets: 0 };
+        const recentPools = await db.select({
+          poolId: poolsT.id,
+          poolName: poolsT.name,
+          poolSlug: poolsT.slug,
+          logoUrl: poolsT.logoUrl,
+          totalPoints: poolMemberStats.totalPoints,
+          rank: poolMemberStats.rankPosition,
+        }).from(poolMembers)
+          .innerJoin(poolsT, eq(poolMembers.poolId, poolsT.id))
+          .leftJoin(poolMemberStats, eq(poolMemberStats.userId, poolMembers.userId))
+          .where(eq(poolMembers.userId, input.userId))
+          .orderBy(desc(poolsT.createdAt))
+          .limit(5);
+        return {
+          user,
+          plan,
+          stats: {
+            totalPoints: Number(stats.totalPoints),
+            exactScores: Number(stats.exactScores),
+            poolsCount: Number(stats.poolsCount),
+            correctScores: Number(stats.correctScores),
+            totalBets: Number(stats.totalBets),
+            accuracy: Number(stats.totalBets) > 0
+              ? Math.round(((Number(stats.exactScores) + Number(stats.correctScores)) / Number(stats.totalBets)) * 100)
+              : 0,
+          },
+          recentPools,
+        };
+      }),
+
+    // Global ranking — top bettors across all pools
+    globalRanking: publicProcedure
+      .input(z.object({ limit: z.number().default(20) }))
+      .query(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return [];
+        const { eq, sql, desc } = await import("drizzle-orm");
+        const { users: usersT, poolMemberStats } = await import("../drizzle/schema");
+        const rows = await db.select({
+          userId: usersT.id,
+          name: usersT.name,
+          avatarUrl: usersT.avatarUrl,
+          totalPoints: sql<number>`COALESCE(SUM(${poolMemberStats.totalPoints}), 0)`,
+          exactScores: sql<number>`COALESCE(SUM(${poolMemberStats.exactScoreCount}), 0)`,
+          poolsCount: sql<number>`COUNT(DISTINCT ${poolMemberStats.poolId})`,
+        }).from(usersT)
+          .leftJoin(poolMemberStats, eq(poolMemberStats.userId, usersT.id))
+          .groupBy(usersT.id, usersT.name, usersT.avatarUrl)
+          .orderBy(desc(sql`COALESCE(SUM(${poolMemberStats.totalPoints}), 0)`))
+          .limit(input.limit);
+        return rows.map((r, i) => ({
+          rank: i + 1,
+          userId: r.userId,
+          name: r.name,
+          avatarUrl: r.avatarUrl,
+          totalPoints: Number(r.totalPoints),
+          exactScores: Number(r.exactScores),
+          poolsCount: Number(r.poolsCount),
+        }));
+      }),
   }),
 
   // ─── TOURNAMENTS ───────────────────────────────────────────────────────────

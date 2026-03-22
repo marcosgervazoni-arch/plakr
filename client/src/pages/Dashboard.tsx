@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
-import NotificationBell from "@/components/NotificationBell";
+import AppShell from "@/components/AppShell";
 import CreatePoolModal from "@/components/CreatePoolModal";
 import {
   Trophy,
@@ -22,10 +22,8 @@ import {
   Minus,
   TrendingUp,
   Crown,
-  LogOut,
   Settings,
   ChevronRight,
-  Shield,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -43,7 +41,7 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
-  const { user, isAuthenticated, loading, logout } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -89,48 +87,24 @@ export default function Dashboard() {
   const initials = user?.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top nav */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border/30">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-              <Trophy className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-sm hidden sm:block" style={{ fontFamily: "'Syne', sans-serif" }}>ApostAI</span>
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-1">
-            <Link href="/pools/public">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                <Search className="w-4 h-4 mr-1.5" /> Bolões Públicos
-              </Button>
-            </Link>
-            <Link href="/enter-pool">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                Entrar por código
-              </Button>
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <NotificationBell />
-            {(userData?.user?.role === "admin" || user?.role === "admin") && (
-              <Link href="/admin">
-                <Button variant="ghost" size="sm" className="text-primary">
-                  <Shield className="w-4 h-4" />
-                </Button>
-              </Link>
-            )}
-            <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => logout()}>
-              <LogOut className="w-4 h-4 text-muted-foreground" />
-            </Button>
+    <AppShell>
+      <div className="max-w-5xl mx-auto px-4 py-6 lg:py-8">
+        {/* Page header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
+              Olá, {user?.name?.split(" ")[0] ?? "Apostador"} 👋
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {(pools as any[]).length === 0 ? "Crie ou entre em um bolão para começar" : `Você está em ${(pools as any[]).length} bolão${(pools as any[]).length > 1 ? "ões" : ""}`}
+            </p>
           </div>
+          <Button size="sm" onClick={() => setShowCreateModal(true)} className="gap-2 shrink-0">
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Criar Bolão</span>
+          </Button>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-6 lg:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
 
           {/* ── LEFT: Profile card ── */}
           <div className="space-y-4">
@@ -202,10 +176,29 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Quick actions */}
+            {/* Upgrade CTA for free users */}
+            {!isPro && (
+              <Link href="/upgrade">
+                <div className="mt-1 bg-primary/5 border border-primary/20 rounded-lg p-3 cursor-pointer hover:bg-primary/10 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-xs font-bold text-primary">Upgrade para Pro</span>
+                    <ChevronRight className="w-3 h-3 text-primary ml-auto shrink-0" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Bolões ilimitados, campeonatos personalizados e mais.
+                  </p>
+                </div>
+              </Link>
+            )}
+
+            <Link href="/profile/me">
+              <Button variant="outline" size="sm" className="w-full gap-2 mt-1">Ver perfil público</Button>
+            </Link>
+
             <div className="grid grid-cols-2 gap-2">
               <Button onClick={() => setShowCreateModal(true)} className="w-full" size="sm">
-                <Plus className="w-4 h-4 mr-1.5" /> Criar Bolão
+                <Plus className="w-4 h-4 mr-1.5" /> Criar
               </Button>
               <Link href="/enter-pool" className="block">
                 <Button variant="outline" className="w-full" size="sm">
@@ -213,18 +206,6 @@ export default function Dashboard() {
                 </Button>
               </Link>
             </div>
-
-            {/* Upgrade CTA for free users */}
-            {!isPro && (
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-2">
-                <Crown className="w-6 h-6 text-primary mx-auto" />
-                <p className="text-sm font-semibold">Desbloqueie o Plano Pro</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Bolões ilimitados, campeonatos personalizados e muito mais.
-                </p>
-                <Button size="sm" className="w-full text-xs mt-1">Fazer upgrade →</Button>
-              </div>
-            )}
           </div>
 
           {/* ── RIGHT: Content ── */}
@@ -399,8 +380,7 @@ export default function Dashboard() {
 
           </div>
         </div>
-      </main>
-
+      </div>
       {showCreateModal && (
         <CreatePoolModal
           onClose={() => setShowCreateModal(false)}
@@ -410,6 +390,6 @@ export default function Dashboard() {
           }}
         />
       )}
-    </div>
+    </AppShell>
   );
 }

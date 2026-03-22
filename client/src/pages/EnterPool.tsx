@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
+import AppShell from "@/components/AppShell";
 import {
   Search,
   Trophy,
   Users,
   Calendar,
-  ArrowLeft,
   CheckCircle2,
   Loader2,
   AlertCircle,
@@ -107,13 +107,9 @@ export default function EnterPool() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
+    <AppShell>
+      <div className="flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-4">
-
-        {/* Back link */}
-        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Voltar para o painel
-        </Link>
 
         {/* Main card */}
         <div className="bg-card border border-border/50 rounded-xl overflow-hidden">
@@ -259,6 +255,7 @@ export default function EnterPool() {
           </Link>
         </p>
       </div>
-    </div>
+      </div>
+    </AppShell>
   );
 }

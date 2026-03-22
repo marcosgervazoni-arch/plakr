@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
+import AppShell from "@/components/AppShell";
 import {
   Trophy,
   Search,
   Users,
   Crown,
-  ChevronLeft,
   Loader2,
   Plus,
   Filter,
@@ -66,30 +66,19 @@ export default function PublicPools() {
   const tournaments = tournamentsData ?? [];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border/30">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link href="/dashboard">
-            <Button variant="ghost" size="icon" className="w-8 h-8 shrink-0">
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <div className="flex items-center gap-2 flex-1">
-            <Trophy className="w-4 h-4 text-primary shrink-0" />
-            <span className="font-bold text-sm" style={{ fontFamily: "'Syne', sans-serif" }}>
-              Bolões Públicos
-            </span>
+    <AppShell>
+      <div className="max-w-5xl mx-auto px-4 py-6 space-y-5">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>Bolões Públicos</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Descubra e entre em bolões abertos</p>
           </div>
-          <Link href="/dashboard">
-            <Button size="sm" variant="ghost" className="text-xs hidden sm:flex">
-              <Plus className="w-3.5 h-3.5 mr-1.5" /> Criar bolão
+          <Link href="/create-pool">
+            <Button size="sm" className="gap-2">
+              <Plus className="w-4 h-4" /> Criar Bolão
             </Button>
           </Link>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-5">
 
         {/* Search + filters */}
         <div className="space-y-3">
@@ -245,7 +234,7 @@ export default function PublicPools() {
             ))}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

@@ -13,6 +13,9 @@ import AdminPanel from "./pages/AdminPanel";
 import ProjectDashboard from "./pages/ProjectDashboard";
 import EnterPool from "./pages/EnterPool";
 import PublicPools from "./pages/PublicPools";
+import PublicProfile from "./pages/PublicProfile";
+import GlobalRanking from "./pages/GlobalRanking";
+import UpgradePage from "./pages/UpgradePage";
 
 // Organizer pages (Fase 4)
 import CreatePool from "./pages/organizer/CreatePool";
@@ -43,6 +46,9 @@ function Router() {
       <Route path="/join/:token" component={JoinPool} />
       <Route path="/enter-pool" component={EnterPool} />
       <Route path="/pools/public" component={PublicPools} />
+      <Route path="/profile/:userId" component={PublicProfile} />
+      <Route path="/ranking" component={GlobalRanking} />
+      <Route path="/upgrade" component={UpgradePage} />
 
       {/* Participant routes */}
       <Route path="/dashboard" component={Dashboard} />
