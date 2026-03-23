@@ -472,6 +472,17 @@ export default function AdminSettings() {
               </CardContent>
             </Card>
 
+          {/* Botão Salvar fixo no rodapé — sempre visível em mobile */}
+          <div className="pt-4 border-t border-border/50">
+            <Button
+              className="w-full bg-brand hover:bg-brand/90 gap-2 h-12 text-base"
+              onClick={() => updateMutation.mutate(form)}
+              disabled={updateMutation.isPending || isLoading}
+            >
+              {updateMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+              Salvar Configurações
+            </Button>
+          </div>
           </div>
         )}
       </div>

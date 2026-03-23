@@ -3,7 +3,7 @@
  * Gerencia notificações push recebidas do servidor VAPID.
  */
 
-const CACHE_NAME = "apostai-sw-v1";
+const CACHE_NAME = "apostai-sw-v2";
 
 // ─── Push recebido ────────────────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
@@ -87,5 +87,14 @@ self.addEventListener("pushsubscriptionchange", (event) => {
 // ─── Instalação / ativação ────────────────────────────────────────────────────
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  // Limpar caches antigos para forçar atualização dos assets
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      );
+    }).then(() => self.clients.claim())
+  );
 });
