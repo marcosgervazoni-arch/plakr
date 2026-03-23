@@ -472,3 +472,8 @@
 
 ## Sprint 23/03/2026 — Correção urgente
 - [x] Fix: AdminPools ainda retorna lista vazia (2 errors na prévia) após correção anterior
+
+## Sprint 23/03/2026 — Rich Notifications
+- [x] Broadcast: editor rich notification com preview em tempo real
+- [x] Broadcast: categorias (Lembrete de jogo, Resultado disponível, Atualização do Ranking, Publicidade, Comunicação)
+- [x] Broadcast: campos icon, imageUrl, actionUrl, actionLabel, priority no schema

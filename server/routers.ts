@@ -1840,13 +1840,20 @@ export const appRouter = router({
     broadcast: adminProcedure
       .input(z.object({
         title: z.string().min(1).max(100),
-        content: z.string().min(1).max(500),
+        content: z.string().min(1).max(2000),
         audience: z.enum(["all", "pro", "free"]).default("all"),
         channels: z.object({
           inApp: z.boolean().default(true),
           push: z.boolean().default(false),
           email: z.boolean().default(false),
         }).default({ inApp: true, push: false, email: false }),
+        // Rich notification fields
+        category: z.enum(["game_reminder", "result_available", "ranking_update", "advertising", "communication"]).default("communication"),
+        priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+        imageUrl: z.string().url().optional().or(z.literal("")),
+        actionUrl: z.string().optional(),
+        actionLabel: z.string().max(50).optional(),
+        emoji: z.string().max(10).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const db = await (await import("./db")).getDb();
@@ -1874,17 +1881,37 @@ export const appRouter = router({
         let inAppSent = 0;
         let pushSent = 0;
         let emailSent = 0;
+        // Mapear category para type da notificação
+        const notifTypeMap: Record<string, "game_reminder" | "result_available" | "ranking_update" | "ad" | "system"> = {
+          game_reminder: "game_reminder",
+          result_available: "result_available",
+          ranking_update: "ranking_update",
+          advertising: "ad",
+          communication: "system",
+        };
+        const notifType = notifTypeMap[input.category] ?? "system";
+        const titleWithEmoji = input.emoji ? `${input.emoji} ${input.title}` : input.title;
         // Canal in-app
         if (input.channels.inApp) {
           for (const uid of userIds) {
-            await createNotification({ userId: uid, type: "system", title: input.title, message: input.content });
+            await createNotification({
+              userId: uid,
+              type: notifType,
+              title: titleWithEmoji,
+              message: input.content,
+              imageUrl: input.imageUrl || undefined,
+              actionUrl: input.actionUrl || undefined,
+              actionLabel: input.actionLabel || undefined,
+              priority: input.priority,
+              category: input.category,
+            });
             inAppSent++;
           }
         }
         // Canal push
         if (input.channels.push) {
           const { broadcastPush } = await import("./push");
-          const result = await broadcastPush(userIds, { title: input.title, body: input.content, url: "/notifications" }, "pushSystem");
+          const result = await broadcastPush(userIds, { title: titleWithEmoji, body: input.content, url: input.actionUrl || "/notifications" }, "pushSystem");
           pushSent = result.sent;
         }
         // Canal email
@@ -1898,12 +1925,25 @@ export const appRouter = router({
           for (const uid of userIds) {
             const u = emailMap.get(uid);
             if (!u?.email) continue;
+            const emailHtml = `
+<!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#0f0f0f;color:#e5e5e5;">
+  <div style="background:#1a1a1a;border-radius:12px;overflow:hidden;border:1px solid #2a2a2a;">
+    ${input.imageUrl ? `<img src="${input.imageUrl}" alt="" style="width:100%;max-height:200px;object-fit:cover;display:block;">` : ''}
+    <div style="padding:24px;">
+      ${input.emoji ? `<div style="font-size:32px;margin-bottom:12px;">${input.emoji}</div>` : ''}
+      <h2 style="margin:0 0 12px;color:#fff;font-size:20px;">${input.title}</h2>
+      <div style="color:#aaa;font-size:14px;line-height:1.6;white-space:pre-wrap;">${input.content}</div>
+      ${input.actionUrl ? `<div style="margin-top:20px;"><a href="${input.actionUrl}" style="display:inline-block;background:#22c55e;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;">${input.actionLabel || 'Ver mais'}</a></div>` : ''}
+    </div>
+    <div style="padding:12px 24px;border-top:1px solid #2a2a2a;font-size:11px;color:#666;">ApostAI &bull; Você recebeu esta mensagem pois é usuário da plataforma.</div>
+  </div>
+</body></html>`;
             await enqueueEmail({
               toUserId: uid,
               toEmail: u.email,
               type: "welcome",
-              subject: input.title,
-              html: `<p style="font-family:sans-serif;">${input.content}</p>`,
+              subject: titleWithEmoji,
+              html: emailHtml,
             });
             emailSent++;
           }

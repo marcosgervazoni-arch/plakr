@@ -374,6 +374,12 @@ export const notifications = mysqlTable("notifications", {
   message: text("message").notNull(),
   isRead: boolean("isRead").default(false).notNull(),
   relatedGameId: int("relatedGameId").references(() => games.id),
+  // Rich notification fields
+  imageUrl: varchar("imageUrl", { length: 500 }),
+  actionUrl: varchar("actionUrl", { length: 500 }),
+  actionLabel: varchar("actionLabel", { length: 100 }),
+  priority: mysqlEnum("priority", ["low", "normal", "high", "urgent"]).default("normal").notNull(),
+  category: varchar("category", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
