@@ -1468,6 +1468,34 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Admin: criar bolão diretamente
+    adminCreate: adminProcedure
+      .input(z.object({
+        name: z.string().min(3).max(100),
+        tournamentId: z.number(),
+        accessType: z.enum(["public", "private_code", "private_link"]).default("public"),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const slug = `${input.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${nanoid(6)}`;
+        const inviteToken = nanoid(32);
+        const inviteCode = nanoid(8).toUpperCase();
+        const poolId = await createPool({
+          name: input.name,
+          tournamentId: input.tournamentId,
+          accessType: input.accessType,
+          description: input.description,
+          slug,
+          inviteToken,
+          inviteCode,
+          ownerId: ctx.user.id,
+        });
+        await addPoolMember(poolId, ctx.user.id, "organizer");
+        await upsertPoolScoringRules(poolId, {}, ctx.user.id);
+        await createAdminLog(ctx.user.id, "admin_create_pool", "pool", poolId, { name: input.name });
+        return { poolId, slug, inviteToken };
+      }),
+
     // ─── REGRAS PÚBLICAS DO BOLÃO ─────────────────────────────────────────────────────
     getScoringRulesPublic: protectedProcedure
       .input(z.object({ poolId: z.number() }))

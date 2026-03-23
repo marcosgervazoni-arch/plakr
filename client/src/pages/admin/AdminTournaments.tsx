@@ -81,14 +81,20 @@ export default function AdminTournaments() {
 
   const [form, setForm] = useState({
     name: "", slug: "", country: "BR", season: new Date().getFullYear().toString(),
-    startDate: "", endDate: "", logoUrl: "",
+    startDate: "", endDate: "", logoUrl: "", isGlobal: true,
   });
+
+  // Auto-gerar slug a partir do nome
+  const handleNameChange = (name: string) => {
+    const autoSlug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    setForm((f) => ({ ...f, name, slug: autoSlug }));
+  };
 
   const handleCreate = () => {
     if (!form.name || !form.slug) return toast.error("Nome e slug são obrigatórios.");
     createMutation.mutate({
       name: form.name, slug: form.slug, country: form.country,
-      season: form.season, isGlobal: true,
+      season: form.season, isGlobal: form.isGlobal,
       startDate: form.startDate ? new Date(form.startDate) : undefined,
       endDate: form.endDate ? new Date(form.endDate) : undefined,
       logoUrl: form.logoUrl || undefined,
@@ -237,12 +243,37 @@ export default function AdminTournaments() {
               <div className="col-span-2 space-y-1">
                 <Label>Nome *</Label>
                 <Input placeholder="Copa do Mundo 2026" value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+                  onChange={(e) => handleNameChange(e.target.value)} />
               </div>
               <div className="col-span-2 space-y-1">
                 <Label>Slug (URL) *</Label>
                 <Input placeholder="copa-mundo-2026" value={form.slug}
                   onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") }))} />
+                <p className="text-xs text-muted-foreground">Gerado automaticamente. Edite se necessário.</p>
+              </div>
+              <div className="col-span-2 space-y-1">
+                <Label>Tipo</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={form.isGlobal ? "default" : "outline"}
+                    size="sm"
+                    className={form.isGlobal ? "bg-brand hover:bg-brand/90" : ""}
+                    onClick={() => setForm((f) => ({ ...f, isGlobal: true }))}
+                  >
+                    <Globe className="h-3.5 w-3.5 mr-1.5" />
+                    Global (plataforma)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={!form.isGlobal ? "default" : "outline"}
+                    size="sm"
+                    className={!form.isGlobal ? "bg-brand hover:bg-brand/90" : ""}
+                    onClick={() => setForm((f) => ({ ...f, isGlobal: false }))}
+                  >
+                    Personalizado
+                  </Button>
+                </div>
               </div>
               <div className="space-y-1">
                 <Label>País</Label>
@@ -271,8 +302,8 @@ export default function AdminTournaments() {
               </div>
             </div>
             <Button className="w-full bg-brand hover:bg-brand/90" onClick={handleCreate}
-              disabled={createMutation.isPending}>
-              {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              disabled={createMutation.isPending || !form.name || !form.slug}>
+              {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
               Criar Campeonato
             </Button>
           </div>

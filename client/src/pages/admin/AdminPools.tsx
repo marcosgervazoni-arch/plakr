@@ -2,7 +2,11 @@ import AdminLayout from "@/components/AdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,11 +26,10 @@ import {
   Globe,
   Lock,
   Loader2,
+  Plus,
   Search,
-  Settings,
   Trash2,
   Trophy,
-  Users,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -37,8 +40,16 @@ export default function AdminPools() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [, navigate] = useLocation();
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    tournamentId: "",
+    accessType: "public" as "public" | "private_code" | "private_link",
+    description: "",
+  });
 
   const { data: pools, isLoading, refetch } = trpc.pools.adminList.useQuery({ limit: 200 });
+  const { data: tournaments } = trpc.tournaments.list.useQuery();
 
   const deletePool = trpc.pools.delete.useMutation({
     onSuccess: () => {
@@ -51,6 +62,27 @@ export default function AdminPools() {
       setDeleteTarget(null);
     },
   });
+
+  const createPool = trpc.pools.adminCreate.useMutation({
+    onSuccess: (data) => {
+      toast.success("Bolão criado com sucesso!");
+      setShowCreate(false);
+      setForm({ name: "", tournamentId: "", accessType: "public", description: "" });
+      refetch();
+      navigate(`/pool/${data.slug}`);
+    },
+    onError: (err) => toast.error("Erro ao criar bolão", { description: err.message }),
+  });
+
+  const handleCreate = () => {
+    if (!form.name || !form.tournamentId) return toast.error("Nome e campeonato são obrigatórios.");
+    createPool.mutate({
+      name: form.name,
+      tournamentId: parseInt(form.tournamentId),
+      accessType: form.accessType,
+      description: form.description || undefined,
+    });
+  };
 
   const filtered = (pools ?? []).filter((p) => {
     const matchSearch = !search ||
@@ -70,24 +102,34 @@ export default function AdminPools() {
   return (
     <AdminLayout activeSection="pools">
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold font-display">Bolões</h1>
             <p className="text-muted-foreground text-sm mt-1">Visão geral de todos os bolões da plataforma</p>
           </div>
-          <div className="flex gap-2 shrink-0">
-            {(["all", "active", "finished", "deleted"] as const).map((s) => (
-              <Button
-                key={s}
-                size="sm"
-                variant={statusFilter === s ? "default" : "outline"}
-                className={`text-xs h-7 ${statusFilter === s ? "bg-brand hover:bg-brand/90" : ""}`}
-                onClick={() => setStatusFilter(s)}
-              >
-                {s === "all" ? "Todos" : s === "active" ? "Ativos" : s === "finished" ? "Encerrados" : "Excluídos"}
-                <Badge variant="outline" className="ml-1.5 text-xs h-4 px-1">{counts[s]}</Badge>
-              </Button>
-            ))}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex gap-1">
+              {(["all", "active", "finished", "deleted"] as const).map((s) => (
+                <Button
+                  key={s}
+                  size="sm"
+                  variant={statusFilter === s ? "default" : "outline"}
+                  className={`text-xs h-7 ${statusFilter === s ? "bg-brand hover:bg-brand/90" : ""}`}
+                  onClick={() => setStatusFilter(s)}
+                >
+                  {s === "all" ? "Todos" : s === "active" ? "Ativos" : s === "finished" ? "Encerrados" : "Excluídos"}
+                  <Badge variant="outline" className="ml-1.5 text-xs h-4 px-1">{counts[s]}</Badge>
+                </Button>
+              ))}
+            </div>
+            <Button
+              size="sm"
+              onClick={() => setShowCreate(true)}
+              className="gap-2 bg-brand hover:bg-brand/90 h-7"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Novo Bolão
+            </Button>
           </div>
         </div>
 
@@ -187,12 +229,97 @@ export default function AdminPools() {
             ))}
             {filtered.length === 0 && (
               <div className="text-center py-12 text-muted-foreground text-sm">
-                Nenhum bolão encontrado.
+                {search ? "Nenhum bolão encontrado para esta busca." : "Nenhum bolão cadastrado."}
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Modal: Criar Bolão */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-brand" />
+              Novo Bolão
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label>Nome do Bolão *</Label>
+              <Input
+                placeholder="Ex: Bolão da Copa 2026"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>Campeonato *</Label>
+              <Select
+                value={form.tournamentId}
+                onValueChange={(v) => setForm((f) => ({ ...f, tournamentId: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um campeonato" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(tournaments ?? []).map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>
+                      {t.name} {t.season ? `(${t.season})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Tipo de Acesso</Label>
+              <div className="flex gap-2">
+                {[
+                  { value: "public", label: "Público", icon: <Globe className="h-3.5 w-3.5 mr-1" /> },
+                  { value: "private_link", label: "Por Link", icon: <Lock className="h-3.5 w-3.5 mr-1" /> },
+                  { value: "private_code", label: "Por Código", icon: <Lock className="h-3.5 w-3.5 mr-1" /> },
+                ].map((opt) => (
+                  <Button
+                    key={opt.value}
+                    type="button"
+                    variant={form.accessType === opt.value ? "default" : "outline"}
+                    size="sm"
+                    className={`flex-1 text-xs ${form.accessType === opt.value ? "bg-brand hover:bg-brand/90" : ""}`}
+                    onClick={() => setForm((f) => ({ ...f, accessType: opt.value as typeof f.accessType }))}
+                  >
+                    {opt.icon}{opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Descrição <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Textarea
+                placeholder="Descreva o bolão..."
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                className="resize-none h-20"
+              />
+            </div>
+
+            <Button
+              className="w-full bg-brand hover:bg-brand/90"
+              onClick={handleCreate}
+              disabled={createPool.isPending || !form.name || !form.tournamentId}
+            >
+              {createPool.isPending
+                ? <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                : <Plus className="h-4 w-4 mr-2" />
+              }
+              Criar Bolão
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Confirm Delete Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>

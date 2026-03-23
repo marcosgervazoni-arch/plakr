@@ -415,3 +415,14 @@
 - [ ] Structured Logging em JSON
 - [ ] Campos obrigatórios: userId, userName, action, correlationId, payload, level (info/warn/error), timestamp
 - [ ] Registrar diff de banco: quem mudou, quando, valor anterior vs novo
+
+## Novas Funcionalidades — Sprint 23/03 (tarde)
+
+- [ ] AdminTournaments: botão +Novo Campeonato com modal (nome, slug, país, temporada, global/personalizado, datas)
+- [ ] AdminPools: botão +Novo Bolão com modal (nome, campeonato, tipo de acesso, plano)
+- [ ] Backend: procedure pools.adminCreate para criação de bolão pelo superadmin
+- [ ] Backend: captura de IP real (x-forwarded-for) nos procedures críticos (block_user, delete_pool, delete_tournament, set_result, broadcast)
+- [ ] AdminAds: botão +Novo Anúncio com modal completo (título, URL, imagem, posição, device, período, tipo)
+- [ ] Frontend: componente AdBanner que respeita posição, device, período e toggle global adsEnabled
+- [ ] Frontend: integrar AdBanner nas posições definidas (topo, entre jogos, lateral, popup)
+- [ ] Frontend: filtrar anúncios por device (mobile/desktop/all) e período (startAt/endAt)
