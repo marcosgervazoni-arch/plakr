@@ -18,8 +18,12 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Crown,
+  ExternalLink,
+  Globe,
+  Lock,
   Loader2,
   Search,
+  Settings,
   Trash2,
   Trophy,
   Users,
@@ -30,10 +34,11 @@ import { toast } from "sonner";
 
 export default function AdminPools() {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [, navigate] = useLocation();
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
 
-  const { data: pools, isLoading, refetch } = trpc.pools.adminList.useQuery({ limit: 100 });
+  const { data: pools, isLoading, refetch } = trpc.pools.adminList.useQuery({ limit: 200 });
 
   const deletePool = trpc.pools.delete.useMutation({
     onSuccess: () => {
@@ -47,19 +52,43 @@ export default function AdminPools() {
     },
   });
 
-  const filtered = (pools ?? []).filter(
-    (p) =>
-      !search ||
+  const filtered = (pools ?? []).filter((p) => {
+    const matchSearch = !search ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.slug.toLowerCase().includes(search.toLowerCase())
-  );
+      p.slug.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "all" || p.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const counts = {
+    all: (pools ?? []).length,
+    active: (pools ?? []).filter(p => p.status === "active").length,
+    finished: (pools ?? []).filter(p => p.status === "finished").length,
+    deleted: (pools ?? []).filter(p => p.status === "deleted").length,
+  };
 
   return (
     <AdminLayout activeSection="pools">
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold font-display">Bolões</h1>
-          <p className="text-muted-foreground text-sm mt-1">Visão geral de todos os bolões da plataforma</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold font-display">Bolões</h1>
+            <p className="text-muted-foreground text-sm mt-1">Visão geral de todos os bolões da plataforma</p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            {(["all", "active", "finished", "deleted"] as const).map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={statusFilter === s ? "default" : "outline"}
+                className={`text-xs h-7 ${statusFilter === s ? "bg-brand hover:bg-brand/90" : ""}`}
+                onClick={() => setStatusFilter(s)}
+              >
+                {s === "all" ? "Todos" : s === "active" ? "Ativos" : s === "finished" ? "Encerrados" : "Excluídos"}
+                <Badge variant="outline" className="ml-1.5 text-xs h-4 px-1">{counts[s]}</Badge>
+              </Button>
+            ))}
+          </div>
         </div>
 
         <div className="relative">
@@ -114,6 +143,12 @@ export default function AdminPools() {
                       >
                         {p.status === "active" ? "Ativo" : p.status === "finished" ? "Encerrado" : p.status === "deleted" ? "Excluído" : "Arquivado"}
                       </Badge>
+                      <Badge variant="outline" className={`text-xs ${
+                        p.accessType === "public" ? "border-blue-400/30 text-blue-400" : "border-muted text-muted-foreground"
+                      }`}>
+                        {p.accessType === "public" ? <Globe className="h-2.5 w-2.5 mr-1 inline" /> : <Lock className="h-2.5 w-2.5 mr-1 inline" />}
+                        {p.accessType === "public" ? "Público" : p.accessType === "private_code" ? "Código" : "Link"}
+                      </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground font-mono mt-0.5">{p.slug}</p>
                   </div>
@@ -123,19 +158,30 @@ export default function AdminPools() {
                       {format(new Date(p.createdAt), "dd/MM/yyyy", { locale: ptBR })}
                     </p>
                   </div>
-                  {p.status !== "deleted" && (
+                  <div className="flex items-center gap-1 shrink-0">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteTarget({ id: p.id, name: p.name });
-                      }}
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      title="Ver bolão"
+                      onClick={(e) => { e.stopPropagation(); navigate(`/pool/${p.slug}`); }}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <ExternalLink className="h-4 w-4" />
                     </Button>
-                  )}
+                    {p.status !== "deleted" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteTarget({ id: p.id, name: p.name });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}

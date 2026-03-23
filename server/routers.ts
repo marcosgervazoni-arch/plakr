@@ -352,6 +352,59 @@ export const appRouter = router({
           poolsCount: Number(r.poolsCount),
         }));
       }),
+    // Admin: buscar atividade de um usuário (logs de auditoria + palpites recentes)
+    getUserActivity: adminProcedure
+      .input(z.object({ userId: z.number(), limit: z.number().default(50) }))
+      .query(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return { logs: [], bets: [], pools: [] };
+        const { eq, desc, and, isNotNull } = await import("drizzle-orm");
+        const { adminLogs, bets, games, pools: poolsT, poolMembers, poolMemberStats } = await import("../drizzle/schema");
+        // Logs de auditoria onde adminId = userId (ações do próprio usuário como admin)
+        const logs = await db.select().from(adminLogs)
+          .where(eq(adminLogs.adminId, input.userId))
+          .orderBy(desc(adminLogs.createdAt))
+          .limit(input.limit);
+        // Palpites recentes
+        const recentBets = await db
+          .select({ bet: bets, game: games })
+          .from(bets)
+          .innerJoin(games, eq(bets.gameId, games.id))
+          .where(eq(bets.userId, input.userId))
+          .orderBy(desc(games.matchDate))
+          .limit(20);
+        // Bolões participando
+        const userPools = await db
+          .select({
+            poolId: poolsT.id,
+            poolName: poolsT.name,
+            poolSlug: poolsT.slug,
+            totalPoints: poolMemberStats.totalPoints,
+            rank: poolMemberStats.rankPosition,
+            joinedAt: poolMembers.joinedAt,
+          })
+          .from(poolMembers)
+          .innerJoin(poolsT, eq(poolMembers.poolId, poolsT.id))
+          .leftJoin(poolMemberStats, and(eq(poolMemberStats.userId, poolMembers.userId), eq(poolMemberStats.poolId, poolMembers.poolId)))
+          .where(eq(poolMembers.userId, input.userId))
+          .orderBy(desc(poolMembers.joinedAt))
+          .limit(20);
+        return {
+          logs,
+          bets: recentBets.map(({ bet, game }) => ({
+            gameId: game.id,
+            teamAName: game.teamAName ?? "Time A",
+            teamBName: game.teamBName ?? "Time B",
+            predictedScoreA: bet.predictedScoreA,
+            predictedScoreB: bet.predictedScoreB,
+            realScoreA: game.scoreA,
+            realScoreB: game.scoreB,
+            pointsEarned: bet.pointsEarned,
+            matchDate: game.matchDate,
+          })),
+          pools: userPools,
+        };
+      }),
     updateProfile: protectedProcedure
       .input(z.object({
         avatarUrl: z.string().url().optional(),
@@ -674,6 +727,176 @@ export const appRouter = router({
         }
         await createAdminLog(ctx.user.id, "import_from_sheets", "tournament", input.tournamentId, { imported, skipped, sheetsUrl: input.sheetsUrl });
         return { imported, skipped };
+      }),
+
+    // Adicionar fase ao campeonato
+    addPhase: adminProcedure
+      .input(z.object({
+        tournamentId: z.number(),
+        key: z.string(),
+        label: z.string(),
+        order: z.number(),
+        slots: z.number().default(2),
+        isKnockout: z.boolean().default(false),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        const { tournamentPhases } = await import("../drizzle/schema");
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        const [phase] = await db.insert(tournamentPhases).values({
+          tournamentId: input.tournamentId,
+          key: input.key,
+          label: input.label,
+          order: input.order,
+          slots: input.slots,
+          isKnockout: input.isKnockout,
+          enabled: true,
+          updatedAt: new Date(),
+        }).$returningId();
+        await createAdminLog(ctx.user.id, "add_phase", "tournament", input.tournamentId, { key: input.key, label: input.label });
+        return { id: phase.id };
+      }),
+
+    // Atualizar fase
+    updatePhase: adminProcedure
+      .input(z.object({
+        phaseId: z.number(),
+        label: z.string().optional(),
+        order: z.number().optional(),
+        slots: z.number().optional(),
+        isKnockout: z.boolean().optional(),
+        enabled: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        const { tournamentPhases } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        const updates: Record<string, unknown> = { updatedAt: new Date() };
+        if (input.label !== undefined) updates.label = input.label;
+        if (input.order !== undefined) updates.order = input.order;
+        if (input.slots !== undefined) updates.slots = input.slots;
+        if (input.isKnockout !== undefined) updates.isKnockout = input.isKnockout ? 1 : 0;
+        if (input.enabled !== undefined) updates.enabled = input.enabled ? 1 : 0;
+        await db.update(tournamentPhases).set(updates).where(eq(tournamentPhases.id, input.phaseId));
+        await createAdminLog(ctx.user.id, "update_phase", "tournament_phase", input.phaseId, updates);
+        return { ok: true };
+      }),
+
+    // Excluir fase
+    deletePhase: adminProcedure
+      .input(z.object({ phaseId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        const { tournamentPhases } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        await db.delete(tournamentPhases).where(eq(tournamentPhases.id, input.phaseId));
+        await createAdminLog(ctx.user.id, "delete_phase", "tournament_phase", input.phaseId, {});
+        return { ok: true };
+      }),
+
+    // Atualizar jogo (edit inline)
+    updateGame: adminProcedure
+      .input(z.object({
+        gameId: z.number(),
+        teamAName: z.string().optional(),
+        teamBName: z.string().optional(),
+        matchDate: z.date().optional(),
+        venue: z.string().optional(),
+        phase: z.string().optional(),
+        status: z.enum(["scheduled", "live", "finished", "cancelled"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        const { games } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        const { gameId, ...updates } = input;
+        const cleanUpdates: Record<string, unknown> = { updatedAt: new Date() };
+        if (updates.teamAName !== undefined) cleanUpdates.teamAName = updates.teamAName;
+        if (updates.teamBName !== undefined) cleanUpdates.teamBName = updates.teamBName;
+        if (updates.matchDate !== undefined) cleanUpdates.matchDate = updates.matchDate;
+        if (updates.venue !== undefined) cleanUpdates.venue = updates.venue;
+        if (updates.phase !== undefined) cleanUpdates.phase = updates.phase;
+        if (updates.status !== undefined) cleanUpdates.status = updates.status;
+        await db.update(games).set(cleanUpdates).where(eq(games.id, gameId));
+        await createAdminLog(ctx.user.id, "update_game", "game", gameId, cleanUpdates);
+        return { ok: true };
+      }),
+
+    // Atualização em lote de jogos por fase
+    batchUpdateGames: adminProcedure
+      .input(z.object({
+        tournamentId: z.number(),
+        phase: z.string(),
+        updates: z.array(z.object({
+          gameId: z.number(),
+          teamAName: z.string().optional(),
+          teamBName: z.string().optional(),
+          matchDate: z.date().optional(),
+          venue: z.string().optional(),
+        })),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        const { games } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        let updated = 0;
+        for (const upd of input.updates) {
+          const { gameId, ...fields } = upd;
+          const cleanFields: Record<string, unknown> = { updatedAt: new Date() };
+          if (fields.teamAName !== undefined) cleanFields.teamAName = fields.teamAName;
+          if (fields.teamBName !== undefined) cleanFields.teamBName = fields.teamBName;
+          if (fields.matchDate !== undefined) cleanFields.matchDate = fields.matchDate;
+          if (fields.venue !== undefined) cleanFields.venue = fields.venue;
+          await db.update(games).set(cleanFields).where(eq(games.id, gameId));
+          updated++;
+        }
+        await createAdminLog(ctx.user.id, "batch_update_games", "tournament", input.tournamentId, { phase: input.phase, updated });
+        return { updated };
+      }),
+
+    // Gerar próxima fase automaticamente a partir da classificação
+    generateNextPhase: adminProcedure
+      .input(z.object({
+        tournamentId: z.number(),
+        currentPhase: z.string(), // key da fase atual (ex: "group_a")
+        nextPhase: z.string(),    // key da próxima fase (ex: "round_of_32")
+        nextPhaseLabel: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Buscar jogos da fase atual com resultado
+        const db = await (await import("./db")).getDb();
+        const { games } = await import("../drizzle/schema");
+        const { eq, and, isNotNull } = await import("drizzle-orm");
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+        const finishedGames = await db.select().from(games)
+          .where(and(eq(games.tournamentId, input.tournamentId), eq(games.phase, input.currentPhase), isNotNull(games.scoreA)));
+        // Coletar times classificados (vencedores ou por pontos)
+        const teamSet = new Set<string>();
+        for (const g of finishedGames) {
+          if (g.scoreA !== null && g.scoreB !== null) {
+            if (g.scoreA > g.scoreB && g.teamAName) teamSet.add(g.teamAName);
+            else if (g.scoreB > g.scoreA && g.teamBName) teamSet.add(g.teamBName);
+          }
+        }
+        const qualifiedTeams = Array.from(teamSet);
+        // Criar jogos TBD para a próxima fase
+        let created = 0;
+        for (let i = 0; i < Math.floor(qualifiedTeams.length / 2); i++) {
+          await createGame({
+            tournamentId: input.tournamentId,
+            teamAName: qualifiedTeams[i * 2] ?? "A Definir",
+            teamBName: qualifiedTeams[i * 2 + 1] ?? "A Definir",
+            matchDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // +7 dias
+            phase: input.nextPhaseLabel,
+          });
+          created++;
+        }
+        await createAdminLog(ctx.user.id, "generate_next_phase", "tournament", input.tournamentId, { currentPhase: input.currentPhase, nextPhase: input.nextPhase, created });
+        return { created, qualifiedTeams };
       }),
   }),
 

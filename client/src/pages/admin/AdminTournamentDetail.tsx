@@ -1,6 +1,6 @@
 /**
  * AdminTournamentDetail — /admin/tournaments/:id
- * Página de detalhes de um campeonato: times, jogos, fases, edição inline.
+ * Accordion por fase, bracket visual para eliminatórias, edição inline de jogos, gerenciamento de fases.
  */
 import AdminLayout from "@/components/AdminLayout";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -27,10 +29,12 @@ import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
-  ChevronRight,
+  ChevronDown,
   Clock,
   Globe,
+  Layers,
   Loader2,
+  MapPin,
   Plus,
   Shield,
   Trash2,
@@ -40,12 +44,24 @@ import {
   Flag,
   RefreshCw,
   FileSpreadsheet,
+  Save,
+  X,
+  Zap,
+  GitBranch,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 
 type GameStatus = "scheduled" | "live" | "finished" | "cancelled";
+
+interface EditGameForm {
+  teamAName: string;
+  teamBName: string;
+  matchDate: string;
+  venue: string;
+  status: GameStatus;
+}
 
 export default function AdminTournamentDetail() {
   const { id } = useParams<{ id: string }>();
@@ -65,6 +81,7 @@ export default function AdminTournamentDetail() {
     },
     onError: (e: { message: string }) => toast.error("Erro ao recalcular", { description: e.message }),
   });
+
   // ── Import from Sheets ──
   const [showSheetsModal, setShowSheetsModal] = useState(false);
   const [sheetsUrl, setSheetsUrl] = useState("");
@@ -77,32 +94,49 @@ export default function AdminTournamentDetail() {
     },
     onError: (e: { message: string }) => toast.error("Erro na importação", { description: e.message }),
   });
+
   // ── Add Team form ──
   const [showAddTeam, setShowAddTeam] = useState(false);
   const [teamForm, setTeamForm] = useState({ name: "", code: "", flagUrl: "", groupName: "" });
 
   // ── Add Game form ──
   const [showAddGame, setShowAddGame] = useState(false);
-  const [gameForm, setGameForm] = useState({
-    phase: "group",
-    teamAName: "",
-    teamBName: "",
-    matchDate: "",
-    venue: "",
-  });
+  const [gameForm, setGameForm] = useState({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "" });
 
   // ── Set Result form ──
   const [showSetResult, setShowSetResult] = useState(false);
   const [resultTarget, setResultTarget] = useState<{ gameId: number; teamA: string; teamB: string } | null>(null);
   const [resultForm, setResultForm] = useState({ scoreA: "", scoreB: "" });
 
+  // ── Edit Game inline ──
+  const [editingGameId, setEditingGameId] = useState<number | null>(null);
+  const [editGameForm, setEditGameForm] = useState<EditGameForm>({ teamAName: "", teamBName: "", matchDate: "", venue: "", status: "scheduled" });
+
+  // ── Add Phase form ──
+  const [showAddPhase, setShowAddPhase] = useState(false);
+  const [phaseForm, setPhaseForm] = useState({ key: "", label: "", order: 1, slots: 2, isKnockout: false });
+
+  // ── Edit Phase ──
+  const [editingPhaseId, setEditingPhaseId] = useState<number | null>(null);
+  const [editPhaseLabel, setEditPhaseLabel] = useState("");
+
+  // ── Delete targets ──
+  const [deleteGameTarget, setDeleteGameTarget] = useState<{ id: number; teamA: string; teamB: string } | null>(null);
+  const [deleteTeamTarget, setDeleteTeamTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deletePhaseTarget, setDeletePhaseTarget] = useState<{ id: number; label: string } | null>(null);
+
+  // ── Batch edit state ──
+  const [batchPhase, setBatchPhase] = useState<string | null>(null);
+  const [batchEdits, setBatchEdits] = useState<Record<number, Partial<EditGameForm>>>({});
+
+  // ── Mutations ──
   const addTeamMutation = trpc.tournaments.addTeam.useMutation({
     onSuccess: () => { toast.success("Time adicionado."); setShowAddTeam(false); setTeamForm({ name: "", code: "", flagUrl: "", groupName: "" }); refetch(); },
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
   const addGameMutation = trpc.tournaments.addGame.useMutation({
-    onSuccess: () => { toast.success("Jogo adicionado."); setShowAddGame(false); setGameForm({ phase: "group", teamAName: "", teamBName: "", matchDate: "", venue: "" }); refetch(); },
+    onSuccess: () => { toast.success("Jogo adicionado."); setShowAddGame(false); setGameForm({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "" }); refetch(); },
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
@@ -111,18 +145,44 @@ export default function AdminTournamentDetail() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
-  // ── Delete Game ──
-  const [deleteGameTarget, setDeleteGameTarget] = useState<{ id: number; teamA: string; teamB: string } | null>(null);
   const deleteGameMutation = trpc.tournaments.deleteGame.useMutation({
     onSuccess: () => { toast.success("Jogo excluído."); setDeleteGameTarget(null); refetch(); },
     onError: (e: { message: string }) => { toast.error("Erro ao excluir jogo", { description: e.message }); setDeleteGameTarget(null); },
   });
 
-  // ── Delete Team ──
-  const [deleteTeamTarget, setDeleteTeamTarget] = useState<{ id: number; name: string } | null>(null);
   const deleteTeamMutation = trpc.tournaments.deleteTeam.useMutation({
     onSuccess: () => { toast.success("Time excluído."); setDeleteTeamTarget(null); refetch(); },
     onError: (e: { message: string }) => { toast.error("Erro ao excluir time", { description: e.message }); setDeleteTeamTarget(null); },
+  });
+
+  const updateGameMutation = trpc.tournaments.updateGame.useMutation({
+    onSuccess: () => { toast.success("Jogo atualizado."); setEditingGameId(null); refetch(); },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const addPhaseMutation = trpc.tournaments.addPhase.useMutation({
+    onSuccess: () => { toast.success("Fase adicionada."); setShowAddPhase(false); setPhaseForm({ key: "", label: "", order: 1, slots: 2, isKnockout: false }); refetch(); },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const updatePhaseMutation = trpc.tournaments.updatePhase.useMutation({
+    onSuccess: () => { toast.success("Fase atualizada."); setEditingPhaseId(null); refetch(); },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const deletePhaseMutation = trpc.tournaments.deletePhase.useMutation({
+    onSuccess: () => { toast.success("Fase excluída."); setDeletePhaseTarget(null); refetch(); },
+    onError: (e: { message: string }) => { toast.error("Erro ao excluir fase", { description: e.message }); setDeletePhaseTarget(null); },
+  });
+
+  const batchUpdateMutation = trpc.tournaments.batchUpdateGames.useMutation({
+    onSuccess: (d) => { toast.success(`${d.updated} jogos atualizados em lote.`); setBatchPhase(null); setBatchEdits({}); refetch(); },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const generateNextPhaseMutation = trpc.tournaments.generateNextPhase.useMutation({
+    onSuccess: (d) => { toast.success(`${d.created} jogos gerados para a próxima fase.`); refetch(); },
+    onError: (e: { message: string }) => toast.error(e.message),
   });
 
   if (isLoading) {
@@ -151,19 +211,67 @@ export default function AdminTournamentDetail() {
 
   const { tournament, phases, teams, games } = data;
 
-  // Group games by phase
-  const gamesByPhase: Record<string, typeof games> = {};
+  // Map games to phases
+  const gamesByPhaseLabel: Record<string, typeof games> = {};
   for (const g of games) {
-    const phase = g.phase ?? "Sem fase";
-    if (!gamesByPhase[phase]) gamesByPhase[phase] = [];
-    gamesByPhase[phase].push(g);
+    const key = g.phase ?? "Sem fase";
+    if (!gamesByPhaseLabel[key]) gamesByPhaseLabel[key] = [];
+    gamesByPhaseLabel[key].push(g);
+  }
+
+  // Build ordered phase list from phases table, then orphan groups
+  const orderedPhases = phases.map((p) => ({
+    id: p.id,
+    key: p.key,
+    label: p.label,
+    isKnockout: p.isKnockout,
+    slots: p.slots,
+    games: gamesByPhaseLabel[p.label] ?? [],
+  }));
+  // Orphan games not matched to any phase label
+  const knownLabels = new Set(phases.map((p) => p.label));
+  const orphanGames = games.filter((g) => !knownLabels.has(g.phase ?? ""));
+  if (orphanGames.length > 0) {
+    orderedPhases.push({ id: -1, key: "orphan", label: "Sem fase", isKnockout: false, slots: null, games: orphanGames });
   }
 
   const statusBadge = (status: GameStatus | string | null) => {
     if (!status || status === "scheduled") return <Badge variant="outline" className="text-xs border-muted-foreground/30 text-muted-foreground gap-1"><Clock className="h-2.5 w-2.5" />Agendado</Badge>;
     if (status === "live") return <Badge variant="outline" className="text-xs border-green-400/50 text-green-400 gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Ao vivo</Badge>;
     if (status === "finished") return <Badge variant="outline" className="text-xs border-blue-400/30 text-blue-400 gap-1"><CheckCircle2 className="h-2.5 w-2.5" />Encerrado</Badge>;
+    if (status === "cancelled") return <Badge variant="outline" className="text-xs border-red-400/30 text-red-400 gap-1"><X className="h-2.5 w-2.5" />Cancelado</Badge>;
     return <Badge variant="outline" className="text-xs">{status}</Badge>;
+  };
+
+  // Bracket visual for knockout phases
+  const KnockoutBracket = ({ phaseGames }: { phaseGames: typeof games }) => {
+    const pairs: Array<typeof games> = [];
+    for (let i = 0; i < phaseGames.length; i += 2) {
+      pairs.push(phaseGames.slice(i, i + 2) as typeof games);
+    }
+    return (
+      <div className="overflow-x-auto pb-2">
+        <div className="flex gap-3 min-w-max">
+          {pairs.map((pair, pi) => (
+            <div key={pi} className="flex flex-col gap-1">
+              {pair.map((g) => (
+                <div key={g.id} className="bg-muted/30 border border-border/40 rounded-lg px-3 py-2 w-52 flex items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{g.teamAName ?? "A Definir"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{g.teamBName ?? "A Definir"}</p>
+                  </div>
+                  {g.scoreA !== null && g.scoreB !== null ? (
+                    <span className="font-mono text-sm font-bold text-brand shrink-0">{g.scoreA}–{g.scoreB}</span>
+                  ) : (
+                    <span className="text-muted-foreground text-xs font-mono shrink-0">vs</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -210,31 +318,43 @@ export default function AdminTournamentDetail() {
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
             <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowAddTeam(true)}>
-              <Shield className="h-4 w-4" /> Adicionar Time
+              <Shield className="h-4 w-4" /> Time
+            </Button>
+            <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowAddPhase(true)}>
+              <Layers className="h-4 w-4" /> Fase
             </Button>
             <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowSheetsModal(true)}>
-              <FileSpreadsheet className="h-4 w-4" /> Importar Sheets
+              <FileSpreadsheet className="h-4 w-4" /> Sheets
             </Button>
             <Button size="sm" variant="outline" className="gap-2 text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
               disabled={recalculateMutation.isPending}
               onClick={() => recalculateMutation.mutate({ tournamentId })}>
               {recalculateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Recalcular Pontos
+              Recalcular
             </Button>
             <Button size="sm" className="gap-2 bg-brand hover:bg-brand/90" onClick={() => setShowAddGame(true)}>
-              <Plus className="h-4 w-4" /> Adicionar Jogo
+              <Plus className="h-4 w-4" /> Jogo
             </Button>
           </div>
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-3">
               <Shield className="h-5 w-5 text-brand shrink-0" />
               <div>
                 <p className="text-2xl font-bold font-mono">{teams.length}</p>
                 <p className="text-xs text-muted-foreground">Times</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50">
+            <CardContent className="p-4 flex items-center gap-3">
+              <Layers className="h-5 w-5 text-brand shrink-0" />
+              <div>
+                <p className="text-2xl font-bold font-mono">{phases.length}</p>
+                <p className="text-xs text-muted-foreground">Fases</p>
               </div>
             </CardContent>
           </Card>
@@ -258,115 +378,348 @@ export default function AdminTournamentDetail() {
           </Card>
         </div>
 
-        {/* Teams */}
+        {/* Teams accordion */}
         {teams.length > 0 && (
-          <Card className="border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="h-4 w-4 text-brand" /> Times ({teams.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {teams.map((team) => (
-                  <div key={team.id} className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-1.5 group">
-                    {team.flagUrl ? (
-                      <img src={team.flagUrl} alt={team.name} className="w-5 h-5 object-contain rounded-sm" />
-                    ) : (
-                      <Flag className="h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                    <span className="text-sm font-medium">{team.name}</span>
-                    {team.code && <span className="text-xs text-muted-foreground font-mono">({team.code})</span>}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ml-1"
-                      onClick={() => setDeleteTeamTarget({ id: team.id, name: team.name })}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Games by phase */}
-        {Object.keys(gamesByPhase).length > 0 ? (
-          Object.entries(gamesByPhase).map(([phase, phaseGames]) => (
-            <Card key={phase} className="border-border/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-brand" />
-                  {phase === "group" ? "Fase de Grupos" : phase === "round_of_16" ? "Oitavas de Final" : phase === "quarter" ? "Quartas de Final" : phase === "semi" ? "Semifinais" : phase === "final" ? "Final" : phase}
-                  <Badge variant="outline" className="text-xs ml-auto">{phaseGames.length} jogos</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {phaseGames.map((g) => (
-                  <div key={g.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{g.teamAName ?? "Time A"}</span>
-                        {g.scoreA !== null && g.scoreB !== null ? (
-                          <span className="font-mono text-sm font-bold text-brand">{g.scoreA} × {g.scoreB}</span>
-                        ) : (
-                          <span className="text-muted-foreground text-xs font-mono">vs</span>
-                        )}
-                        <span className="font-medium text-sm">{g.teamBName ?? "Time B"}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(g.matchDate), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                        </span>
-                        {g.venue && <span className="text-xs text-muted-foreground">· {g.venue}</span>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {statusBadge(g.status)}
-                      {g.status !== "finished" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs gap-1"
-                          onClick={() => {
-                            setResultTarget({ gameId: g.id, teamA: g.teamAName ?? "Time A", teamB: g.teamBName ?? "Time B" });
-                            setResultForm({ scoreA: g.scoreA?.toString() ?? "", scoreB: g.scoreB?.toString() ?? "" });
-                            setShowSetResult(true);
-                          }}
-                        >
-                          <Pencil className="h-3 w-3" /> Resultado
-                        </Button>
+          <Accordion type="single" collapsible defaultValue="teams">
+            <AccordionItem value="teams" className="border border-border/50 rounded-xl px-4">
+              <AccordionTrigger className="hover:no-underline py-3">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-brand" />
+                  <span className="font-semibold text-sm">Times</span>
+                  <Badge variant="outline" className="text-xs ml-1">{teams.length}</Badge>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-4">
+                <div className="flex flex-wrap gap-2">
+                  {teams.map((team) => (
+                    <div key={team.id} className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-1.5 group">
+                      {team.flagUrl ? (
+                        <img src={team.flagUrl} alt={team.name} className="w-5 h-5 object-contain rounded-sm" />
+                      ) : (
+                        <Flag className="h-3.5 w-3.5 text-muted-foreground" />
                       )}
+                      <span className="text-sm font-medium">{team.name}</span>
+                      {team.code && <span className="text-xs text-muted-foreground font-mono">({team.code})</span>}
+                      {team.groupName && <span className="text-xs text-muted-foreground">Gr.{team.groupName}</span>}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                        onClick={() => setDeleteGameTarget({ id: g.id, teamA: g.teamAName ?? "Time A", teamB: g.teamBName ?? "Time B" })}
+                        className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ml-1"
+                        onClick={() => setDeleteTeamTarget({ id: team.id, name: team.name })}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        )}
+
+        {/* Phases accordion */}
+        {orderedPhases.length > 0 ? (
+          <Accordion type="multiple" defaultValue={orderedPhases.slice(0, 2).map(p => p.key)}>
+            {orderedPhases.map((phase) => (
+              <AccordionItem key={phase.key} value={phase.key} className="border border-border/50 rounded-xl px-4 mb-3">
+                <AccordionTrigger className="hover:no-underline py-3">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {phase.isKnockout ? (
+                      <GitBranch className="h-4 w-4 text-amber-400 shrink-0" />
+                    ) : (
+                      <Trophy className="h-4 w-4 text-brand shrink-0" />
+                    )}
+                    {editingPhaseId === phase.id ? (
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Input
+                          value={editPhaseLabel}
+                          onChange={(e) => setEditPhaseLabel(e.target.value)}
+                          className="h-7 text-sm w-48"
+                          autoFocus
+                        />
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-green-400"
+                          onClick={() => updatePhaseMutation.mutate({ phaseId: phase.id, label: editPhaseLabel })}>
+                          <Save className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground"
+                          onClick={() => setEditingPhaseId(null)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="font-semibold text-sm truncate">{phase.label}</span>
+                    )}
+                    <Badge variant="outline" className="text-xs ml-1 shrink-0">{phase.games.length} jogos</Badge>
+                    {phase.isKnockout && (
+                      <Badge variant="outline" className="text-xs border-amber-400/30 text-amber-400 shrink-0">Eliminatória</Badge>
+                    )}
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))
+                  <div className="flex items-center gap-1 mr-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {phase.id > 0 && (
+                      <>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() => { setEditingPhaseId(phase.id); setEditPhaseLabel(phase.label); }}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-amber-400"
+                          title="Edição em lote"
+                          onClick={() => { setBatchPhase(phase.label); setBatchEdits({}); }}>
+                          <Zap className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                          onClick={() => setDeletePhaseTarget({ id: phase.id, label: phase.label })}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  {/* Bracket visual for knockout phases */}
+                  {phase.isKnockout && phase.games.length > 0 && (
+                    <div className="mb-4 p-3 bg-muted/20 rounded-lg border border-border/30">
+                      <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                        <GitBranch className="h-3 w-3" /> Chaveamento
+                      </p>
+                      <KnockoutBracket phaseGames={phase.games} />
+                    </div>
+                  )}
+
+                  {/* Batch edit mode */}
+                  {batchPhase === phase.label && (
+                    <div className="mb-4 p-3 bg-amber-400/5 border border-amber-400/20 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs font-medium text-amber-400 flex items-center gap-1">
+                          <Zap className="h-3 w-3" /> Edição em lote — {phase.label}
+                        </p>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-amber-400/30 text-amber-400"
+                            disabled={batchUpdateMutation.isPending}
+                            onClick={() => {
+                              const updates = Object.entries(batchEdits).map(([gameId, fields]) => ({
+                                gameId: Number(gameId),
+                                teamAName: fields.teamAName,
+                                teamBName: fields.teamBName,
+                                matchDate: fields.matchDate ? new Date(fields.matchDate) : undefined,
+                                venue: fields.venue,
+                              }));
+                              if (updates.length === 0) { toast.error("Nenhuma alteração feita."); return; }
+                              batchUpdateMutation.mutate({ tournamentId, phase: phase.label, updates });
+                            }}>
+                            {batchUpdateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                            Salvar lote
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setBatchPhase(null); setBatchEdits({}); }}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {phase.games.map((g) => (
+                          <div key={g.id} className="grid grid-cols-4 gap-2 items-center">
+                            <Input
+                              placeholder={g.teamAName ?? "Time A"}
+                              value={batchEdits[g.id]?.teamAName ?? ""}
+                              onChange={(e) => setBatchEdits(prev => ({ ...prev, [g.id]: { ...prev[g.id], teamAName: e.target.value } }))}
+                              className="h-7 text-xs"
+                            />
+                            <Input
+                              placeholder={g.teamBName ?? "Time B"}
+                              value={batchEdits[g.id]?.teamBName ?? ""}
+                              onChange={(e) => setBatchEdits(prev => ({ ...prev, [g.id]: { ...prev[g.id], teamBName: e.target.value } }))}
+                              className="h-7 text-xs"
+                            />
+                            <Input
+                              type="datetime-local"
+                              value={batchEdits[g.id]?.matchDate ?? ""}
+                              onChange={(e) => setBatchEdits(prev => ({ ...prev, [g.id]: { ...prev[g.id], matchDate: e.target.value } }))}
+                              className="h-7 text-xs"
+                            />
+                            <Input
+                              placeholder={g.venue ?? "Local"}
+                              value={batchEdits[g.id]?.venue ?? ""}
+                              onChange={(e) => setBatchEdits(prev => ({ ...prev, [g.id]: { ...prev[g.id], venue: e.target.value } }))}
+                              className="h-7 text-xs"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Games list */}
+                  <div className="space-y-2">
+                    {phase.games.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        <Trophy className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                        Nenhum jogo nesta fase.
+                        <Button size="sm" variant="outline" className="mt-3 gap-1 flex mx-auto"
+                          onClick={() => { setGameForm(f => ({ ...f, phase: phase.label })); setShowAddGame(true); }}>
+                          <Plus className="h-3.5 w-3.5" /> Adicionar jogo
+                        </Button>
+                      </div>
+                    ) : (
+                      phase.games.map((g) => (
+                        <div key={g.id}>
+                          {editingGameId === g.id ? (
+                            /* Inline edit form */
+                            <div className="p-3 rounded-lg border border-brand/30 bg-brand/5 space-y-3">
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Time A</Label>
+                                  <Input value={editGameForm.teamAName} onChange={(e) => setEditGameForm(f => ({ ...f, teamAName: e.target.value }))} className="h-8 text-sm" />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Time B</Label>
+                                  <Input value={editGameForm.teamBName} onChange={(e) => setEditGameForm(f => ({ ...f, teamBName: e.target.value }))} className="h-8 text-sm" />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Data/Hora</Label>
+                                  <Input type="datetime-local" value={editGameForm.matchDate} onChange={(e) => setEditGameForm(f => ({ ...f, matchDate: e.target.value }))} className="h-8 text-sm" />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Local</Label>
+                                  <Input value={editGameForm.venue} onChange={(e) => setEditGameForm(f => ({ ...f, venue: e.target.value }))} className="h-8 text-sm" placeholder="Estádio" />
+                                </div>
+                              </div>
+                              <div className="flex gap-2 justify-end">
+                                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingGameId(null)}>
+                                  <X className="h-3.5 w-3.5 mr-1" /> Cancelar
+                                </Button>
+                                <Button size="sm" className="h-7 text-xs bg-brand hover:bg-brand/90 gap-1"
+                                  disabled={updateGameMutation.isPending}
+                                  onClick={() => updateGameMutation.mutate({
+                                    gameId: g.id,
+                                    teamAName: editGameForm.teamAName || undefined,
+                                    teamBName: editGameForm.teamBName || undefined,
+                                    matchDate: editGameForm.matchDate ? new Date(editGameForm.matchDate) : undefined,
+                                    venue: editGameForm.venue || undefined,
+                                    status: editGameForm.status,
+                                  })}>
+                                  {updateGameMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                  Salvar
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Normal game row */
+                            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors group">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm">{g.teamAName ?? "A Definir"}</span>
+                                  {g.scoreA !== null && g.scoreB !== null ? (
+                                    <span className="font-mono text-sm font-bold text-brand">{g.scoreA} × {g.scoreB}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground text-xs font-mono">vs</span>
+                                  )}
+                                  <span className="font-medium text-sm">{g.teamBName ?? "A Definir"}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Calendar className="h-2.5 w-2.5" />
+                                    {format(new Date(g.matchDate), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                                  </span>
+                                  {g.venue && (
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                      <MapPin className="h-2.5 w-2.5" />{g.venue}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {statusBadge(g.status)}
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                                  onClick={() => {
+                                    setEditingGameId(g.id);
+                                    setEditGameForm({
+                                      teamAName: g.teamAName ?? "",
+                                      teamBName: g.teamBName ?? "",
+                                      matchDate: g.matchDate ? format(new Date(g.matchDate), "yyyy-MM-dd'T'HH:mm") : "",
+                                      venue: g.venue ?? "",
+                                      status: (g.status as GameStatus) ?? "scheduled",
+                                    });
+                                  }}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                {g.status !== "finished" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs gap-1 opacity-0 group-hover:opacity-100"
+                                    onClick={() => {
+                                      setResultTarget({ gameId: g.id, teamA: g.teamAName ?? "Time A", teamB: g.teamBName ?? "Time B" });
+                                      setResultForm({ scoreA: g.scoreA?.toString() ?? "", scoreB: g.scoreB?.toString() ?? "" });
+                                      setShowSetResult(true);
+                                    }}
+                                  >
+                                    <CheckCircle2 className="h-3 w-3" /> Resultado
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                                  onClick={() => setDeleteGameTarget({ id: g.id, teamA: g.teamAName ?? "Time A", teamB: g.teamBName ?? "Time B" })}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Generate next phase button */}
+                  {phase.isKnockout && phase.games.some(g => g.status === "finished") && (
+                    <div className="mt-3 pt-3 border-t border-border/30">
+                      <Button size="sm" variant="outline" className="gap-2 text-xs text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
+                        disabled={generateNextPhaseMutation.isPending}
+                        onClick={() => {
+                          const nextPhase = orderedPhases.find(p => p.id > phase.id);
+                          if (!nextPhase) { toast.error("Não há próxima fase configurada."); return; }
+                          generateNextPhaseMutation.mutate({
+                            tournamentId,
+                            currentPhase: phase.label,
+                            nextPhase: nextPhase.key,
+                            nextPhaseLabel: nextPhase.label,
+                          });
+                        }}>
+                        {generateNextPhaseMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                        Gerar próxima fase automaticamente
+                      </Button>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         ) : (
           <Card className="border-border/50 border-dashed">
             <CardContent className="p-8 text-center">
               <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">Nenhum jogo cadastrado ainda.</p>
-              <Button size="sm" className="mt-4 gap-2 bg-brand hover:bg-brand/90" onClick={() => setShowAddGame(true)}>
-                <Plus className="h-4 w-4" /> Adicionar primeiro jogo
-              </Button>
+              <p className="text-muted-foreground text-sm">Nenhuma fase cadastrada ainda.</p>
+              <div className="flex gap-2 justify-center mt-4">
+                <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowAddPhase(true)}>
+                  <Layers className="h-4 w-4" /> Adicionar fase
+                </Button>
+                <Button size="sm" className="gap-2 bg-brand hover:bg-brand/90" onClick={() => setShowAddGame(true)}>
+                  <Plus className="h-4 w-4" /> Adicionar jogo
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Confirm Delete Game Dialog */}
+      {/* Confirm Delete Game */}
       <AlertDialog open={!!deleteGameTarget} onOpenChange={(open) => !open && setDeleteGameTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -377,11 +730,9 @@ export default function AdminTournamentDetail() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white"
               onClick={() => deleteGameTarget && deleteGameMutation.mutate({ gameId: deleteGameTarget.id })}
-              disabled={deleteGameMutation.isPending}
-            >
+              disabled={deleteGameMutation.isPending}>
               {deleteGameMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
               Excluir jogo
             </AlertDialogAction>
@@ -389,24 +740,39 @@ export default function AdminTournamentDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Confirm Delete Team Dialog */}
+      {/* Confirm Delete Team */}
       <AlertDialog open={!!deleteTeamTarget} onOpenChange={(open) => !open && setDeleteTeamTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir time "{deleteTeamTarget?.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação é permanente. O time será removido do campeonato.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Esta ação é permanente. O time será removido do campeonato.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white"
               onClick={() => deleteTeamTarget && deleteTeamMutation.mutate({ teamId: deleteTeamTarget.id })}
-              disabled={deleteTeamMutation.isPending}
-            >
+              disabled={deleteTeamMutation.isPending}>
               {deleteTeamMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
               Excluir time
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm Delete Phase */}
+      <AlertDialog open={!!deletePhaseTarget} onOpenChange={(open) => !open && setDeletePhaseTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir fase "{deletePhaseTarget?.label}"?</AlertDialogTitle>
+            <AlertDialogDescription>A fase será removida do chaveamento. Os jogos associados permanecem mas ficam sem fase.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => deletePhaseTarget && deletePhaseMutation.mutate({ phaseId: deletePhaseTarget.id })}
+              disabled={deletePhaseMutation.isPending}>
+              {deletePhaseMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Excluir fase
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -416,32 +782,26 @@ export default function AdminTournamentDetail() {
       <Dialog open={showAddTeam} onOpenChange={setShowAddTeam}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-brand" /> Adicionar Time
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-brand" /> Adicionar Time</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Nome *</Label>
-              <Input placeholder="Brasil" value={teamForm.name}
-                onChange={(e) => setTeamForm(f => ({ ...f, name: e.target.value }))} />
+              <Input placeholder="Brasil" value={teamForm.name} onChange={(e) => setTeamForm(f => ({ ...f, name: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label>Código (sigla)</Label>
-                <Input placeholder="BRA" maxLength={10} value={teamForm.code}
-                  onChange={(e) => setTeamForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} />
+                <Label>Código</Label>
+                <Input placeholder="BRA" maxLength={10} value={teamForm.code} onChange={(e) => setTeamForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} />
               </div>
               <div className="space-y-1">
                 <Label>Grupo</Label>
-                <Input placeholder="A" maxLength={10} value={teamForm.groupName}
-                  onChange={(e) => setTeamForm(f => ({ ...f, groupName: e.target.value }))} />
+                <Input placeholder="A" maxLength={10} value={teamForm.groupName} onChange={(e) => setTeamForm(f => ({ ...f, groupName: e.target.value }))} />
               </div>
             </div>
             <div className="space-y-1">
               <Label>URL da Bandeira</Label>
-              <Input placeholder="https://..." value={teamForm.flagUrl}
-                onChange={(e) => setTeamForm(f => ({ ...f, flagUrl: e.target.value }))} />
+              <Input placeholder="https://..." value={teamForm.flagUrl} onChange={(e) => setTeamForm(f => ({ ...f, flagUrl: e.target.value }))} />
             </div>
             <Button className="w-full bg-brand hover:bg-brand/90"
               disabled={!teamForm.name || addTeamMutation.isPending}
@@ -453,56 +813,87 @@ export default function AdminTournamentDetail() {
         </DialogContent>
       </Dialog>
 
+      {/* Modal: Adicionar Fase */}
+      <Dialog open={showAddPhase} onOpenChange={setShowAddPhase}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-brand" /> Adicionar Fase</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Nome da fase *</Label>
+              <Input placeholder="Quartas de Final" value={phaseForm.label} onChange={(e) => setPhaseForm(f => ({ ...f, label: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>Chave (slug) *</Label>
+              <Input placeholder="quarter_finals" value={phaseForm.key} onChange={(e) => setPhaseForm(f => ({ ...f, key: e.target.value.toLowerCase().replace(/\s+/g, "_") }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Ordem</Label>
+                <Input type="number" min={1} value={phaseForm.order} onChange={(e) => setPhaseForm(f => ({ ...f, order: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Vagas (slots)</Label>
+                <Input type="number" min={2} value={phaseForm.slots} onChange={(e) => setPhaseForm(f => ({ ...f, slots: Number(e.target.value) }))} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label>Fase eliminatória?</Label>
+              <Switch checked={phaseForm.isKnockout} onCheckedChange={(v) => setPhaseForm(f => ({ ...f, isKnockout: v }))} />
+            </div>
+            <Button className="w-full bg-brand hover:bg-brand/90"
+              disabled={!phaseForm.label || !phaseForm.key || addPhaseMutation.isPending}
+              onClick={() => addPhaseMutation.mutate({ tournamentId, key: phaseForm.key, label: phaseForm.label, order: phaseForm.order, slots: phaseForm.slots, isKnockout: phaseForm.isKnockout })}>
+              {addPhaseMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Adicionar Fase
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Modal: Adicionar Jogo */}
       <Dialog open={showAddGame} onOpenChange={setShowAddGame}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-brand" /> Adicionar Jogo
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-brand" /> Adicionar Jogo</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Fase</Label>
               <Select value={gameForm.phase} onValueChange={(v) => setGameForm(f => ({ ...f, phase: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecionar fase..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="group">Fase de Grupos</SelectItem>
-                  <SelectItem value="round_of_16">Oitavas de Final</SelectItem>
-                  <SelectItem value="quarter">Quartas de Final</SelectItem>
-                  <SelectItem value="semi">Semifinais</SelectItem>
-                  <SelectItem value="final">Final</SelectItem>
+                  {phases.map((p) => (
+                    <SelectItem key={p.key} value={p.label}>{p.label}</SelectItem>
+                  ))}
+                  <SelectItem value="Sem fase">Sem fase</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Time A *</Label>
-                <Input placeholder="Brasil" value={gameForm.teamAName}
-                  onChange={(e) => setGameForm(f => ({ ...f, teamAName: e.target.value }))} />
+                <Input placeholder="Brasil" value={gameForm.teamAName} onChange={(e) => setGameForm(f => ({ ...f, teamAName: e.target.value }))} />
               </div>
               <div className="space-y-1">
                 <Label>Time B *</Label>
-                <Input placeholder="Argentina" value={gameForm.teamBName}
-                  onChange={(e) => setGameForm(f => ({ ...f, teamBName: e.target.value }))} />
+                <Input placeholder="Argentina" value={gameForm.teamBName} onChange={(e) => setGameForm(f => ({ ...f, teamBName: e.target.value }))} />
               </div>
             </div>
             <div className="space-y-1">
               <Label>Data e Hora *</Label>
-              <Input type="datetime-local" value={gameForm.matchDate}
-                onChange={(e) => setGameForm(f => ({ ...f, matchDate: e.target.value }))} />
+              <Input type="datetime-local" value={gameForm.matchDate} onChange={(e) => setGameForm(f => ({ ...f, matchDate: e.target.value }))} />
             </div>
             <div className="space-y-1">
               <Label>Estádio / Local</Label>
-              <Input placeholder="Maracanã, Rio de Janeiro" value={gameForm.venue}
-                onChange={(e) => setGameForm(f => ({ ...f, venue: e.target.value }))} />
+              <Input placeholder="Maracanã, Rio de Janeiro" value={gameForm.venue} onChange={(e) => setGameForm(f => ({ ...f, venue: e.target.value }))} />
             </div>
-
             <Button className="w-full bg-brand hover:bg-brand/90"
               disabled={!gameForm.teamAName || !gameForm.teamBName || !gameForm.matchDate || addGameMutation.isPending}
               onClick={() => addGameMutation.mutate({
                 tournamentId,
-                phase: gameForm.phase,
+                phase: gameForm.phase || "Sem fase",
                 teamAName: gameForm.teamAName,
                 teamBName: gameForm.teamBName,
                 matchDate: new Date(gameForm.matchDate).getTime(),
@@ -519,44 +910,26 @@ export default function AdminTournamentDetail() {
       <Dialog open={showSetResult} onOpenChange={(open) => { setShowSetResult(open); if (!open) setResultTarget(null); }}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-400" /> Registrar Resultado
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-green-400" /> Registrar Resultado</DialogTitle>
           </DialogHeader>
           {resultTarget && (
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
                   <p className="text-sm font-medium">{resultTarget.teamA}</p>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="99"
-                    className="w-16 text-center font-mono text-xl mt-2"
-                    value={resultForm.scoreA}
-                    onChange={(e) => setResultForm(f => ({ ...f, scoreA: e.target.value }))}
-                  />
+                  <Input type="number" min="0" max="99" className="w-16 text-center font-mono text-xl mt-2"
+                    value={resultForm.scoreA} onChange={(e) => setResultForm(f => ({ ...f, scoreA: e.target.value }))} />
                 </div>
                 <span className="text-muted-foreground font-mono text-lg">×</span>
                 <div className="text-center">
                   <p className="text-sm font-medium">{resultTarget.teamB}</p>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="99"
-                    className="w-16 text-center font-mono text-xl mt-2"
-                    value={resultForm.scoreB}
-                    onChange={(e) => setResultForm(f => ({ ...f, scoreB: e.target.value }))}
-                  />
+                  <Input type="number" min="0" max="99" className="w-16 text-center font-mono text-xl mt-2"
+                    value={resultForm.scoreB} onChange={(e) => setResultForm(f => ({ ...f, scoreB: e.target.value }))} />
                 </div>
               </div>
               <Button className="w-full bg-green-600 hover:bg-green-700"
                 disabled={resultForm.scoreA === "" || resultForm.scoreB === "" || setResultMutation.isPending}
-                onClick={() => setResultMutation.mutate({
-                  gameId: resultTarget.gameId,
-                  scoreA: Number(resultForm.scoreA),
-                  scoreB: Number(resultForm.scoreB),
-                })}>
+                onClick={() => setResultMutation.mutate({ gameId: resultTarget.gameId, scoreA: Number(resultForm.scoreA), scoreB: Number(resultForm.scoreB) })}>
                 {setResultMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Confirmar Resultado
               </Button>
@@ -564,29 +937,23 @@ export default function AdminTournamentDetail() {
           )}
         </DialogContent>
       </Dialog>
+
       {/* Modal: Importar via Google Sheets */}
       <Dialog open={showSheetsModal} onOpenChange={(open) => { setShowSheetsModal(open); if (!open) setSheetsUrl(""); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-green-400" /> Importar Jogos via Google Sheets
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><FileSpreadsheet className="h-5 w-5 text-green-400" /> Importar Jogos via Google Sheets</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Cole a URL pública da planilha. A planilha deve ter as colunas nesta ordem:
+              Cole a URL pública da planilha. Colunas esperadas:
               <span className="font-mono text-xs block mt-1 bg-muted/50 px-2 py-1 rounded">Time A, Time B, Data/Hora, Prazo, Fase, Local</span>
             </p>
             <div className="space-y-1.5">
               <Label>URL da Planilha</Label>
-              <Input
-                placeholder="https://docs.google.com/spreadsheets/d/..."
-                value={sheetsUrl}
-                onChange={(e) => setSheetsUrl(e.target.value)}
-              />
+              <Input placeholder="https://docs.google.com/spreadsheets/d/..." value={sheetsUrl} onChange={(e) => setSheetsUrl(e.target.value)} />
             </div>
-            <Button
-              className="w-full bg-green-600 hover:bg-green-700"
+            <Button className="w-full bg-green-600 hover:bg-green-700"
               disabled={!sheetsUrl.trim() || importSheetsMutation.isPending}
               onClick={() => importSheetsMutation.mutate({ tournamentId, sheetsUrl: sheetsUrl.trim() })}>
               {importSheetsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}

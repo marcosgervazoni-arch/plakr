@@ -26,7 +26,7 @@ export default function AdminMonetization() {
   const monthlyRevenue = stats ? stats.proPlans * 2990 : 0;
 
   return (
-    <AdminLayout activeSection="monetization">
+    <AdminLayout activeSection="subscriptions">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">

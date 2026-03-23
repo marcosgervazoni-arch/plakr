@@ -1,0 +1,9 @@
+{
+  "query": "\nINSERT INTO games (tournamentId, phase, teamAName, teamBName, matchDate, status, createdAt, updatedAt)\nVALUES\n  (2, 'Quartas de Final', 'A Definir', 'A Definir', '2026-07-03 23:00:00', 'scheduled', NOW(), NOW()),\n  (2, 'Quartas de Final', 'A Definir', 'A Definir', '2026-07-04 19:00:00', 'scheduled', NOW(), NOW()),\n  (2, 'Quartas de Final', 'A Definir', 'A Definir', '2026-07-04 23:00:00', 'scheduled', NOW(), NOW()),\n  (2, 'Quartas de Final', 'A Definir', 'A Definir', '2026-07-05 23:00:00', 'scheduled', NOW(), NOW());\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nINSERT INTO games (tournamentId, phase, teamAName, teamBName, matchDate, status, createdAt, updatedAt)\nVALUES\n  (2, 'Quartas de Final', 'A Definir', 'A Definir', '2026-07-03 23:00:00', 'scheduled', NOW(), NOW()),\n  (2, 'Quartas de Final', 'A Definir', 'A Definir', '2026-07-04 19:00:00', 'scheduled', NOW(), NOW()),\n  (2, 'Quartas de Final', 'A Definir', 'A Definir', '2026-07-04 23:00:00', 'scheduled', NOW(), NOW()),\n  (2, 'Quartas de Final', 'A Definir', 'A Definir', '2026-07-05 23:00:00', 'scheduled', NOW(), NOW());\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 382
+}

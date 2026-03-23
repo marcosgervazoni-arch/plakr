@@ -18,11 +18,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+  Activity,
   Ban,
   Bell,
   Calendar,
@@ -32,7 +34,9 @@ import {
   Mail,
   Search,
   Shield,
+  Target,
   Trash2,
+  Trophy,
   User,
   UserCheck,
   UserX,
@@ -61,8 +65,14 @@ export default function AdminUsers() {
   const [removeTarget, setRemoveTarget] = useState<{ id: number; name: string } | null>(null);
   const [notifTitle, setNotifTitle] = useState("");
   const [notifMessage, setNotifMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("actions");
 
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery({ limit: 100 });
+
+  const { data: userActivity, isLoading: activityLoading } = trpc.users.getUserActivity.useQuery(
+    { userId: selectedUser?.id ?? 0 },
+    { enabled: !!selectedUser && activeTab === "activity" }
+  );
 
   const blockMutation = trpc.users.blockUser.useMutation({
     onSuccess: () => {
@@ -318,59 +328,151 @@ export default function AdminUsers() {
 
                   <Separator />
 
-                  {/* Enviar notificação */}
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Enviar Notificação</p>
-                    <div className="space-y-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Título</Label>
-                        <Input
-                          value={notifTitle}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotifTitle(e.target.value)}
-                          placeholder="Ex: Aviso importante"
-                          className="text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Mensagem</Label>
-                        <Textarea
-                          value={notifMessage}
-                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotifMessage(e.target.value)}
-                          placeholder="Conteúdo da notificação..."
-                          className="text-sm resize-none"
-                          rows={3}
-                        />
-                      </div>
-                      <Button
-                        size="sm"
-                        className="w-full gap-1.5 bg-brand hover:bg-brand/90"
-                        onClick={() => sendNotifMutation.mutate({ userId: selectedUser.id, title: notifTitle, message: notifMessage })}
-                        disabled={!notifTitle.trim() || !notifMessage.trim() || sendNotifMutation.isPending}
-                      >
-                        {sendNotifMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
-                        Enviar Notificação
-                      </Button>
-                    </div>
-                  </div>
+                  {/* Tabs: Ações / Atividade */}
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="w-full">
+                      <TabsTrigger value="actions" className="flex-1 text-xs">
+                        <User className="h-3.5 w-3.5 mr-1.5" />Ações
+                      </TabsTrigger>
+                      <TabsTrigger value="activity" className="flex-1 text-xs">
+                        <Activity className="h-3.5 w-3.5 mr-1.5" />Atividade
+                      </TabsTrigger>
+                    </TabsList>
 
-                  <Separator />
+                    <TabsContent value="actions" className="mt-4 space-y-4">
+                      {/* Enviar notificação */}
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Enviar Notificação</p>
+                        <div className="space-y-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Título</Label>
+                            <Input
+                              value={notifTitle}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotifTitle(e.target.value)}
+                              placeholder="Ex: Aviso importante"
+                              className="text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Mensagem</Label>
+                            <Textarea
+                              value={notifMessage}
+                              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotifMessage(e.target.value)}
+                              placeholder="Conteúdo da notificação..."
+                              className="text-sm resize-none"
+                              rows={3}
+                            />
+                          </div>
+                          <Button
+                            size="sm"
+                            className="w-full gap-1.5 bg-brand hover:bg-brand/90"
+                            onClick={() => sendNotifMutation.mutate({ userId: selectedUser.id, title: notifTitle, message: notifMessage })}
+                            disabled={!notifTitle.trim() || !notifMessage.trim() || sendNotifMutation.isPending}
+                          >
+                            {sendNotifMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
+                            Enviar Notificação
+                          </Button>
+                        </div>
+                      </div>
+                      <Separator />
+                      {/* Zona de perigo */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-red-400">Zona de Perigo</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 border-red-400/30 text-red-400 hover:bg-red-400/10 w-full"
+                          onClick={() => setRemoveTarget({ id: selectedUser.id, name: selectedUser.name ?? "Usuário" })}
+                        >
+                          <UserX className="h-3.5 w-3.5" />
+                          Anonimizar & Remover Usuário
+                        </Button>
+                        <p className="text-xs text-muted-foreground">
+                          Remove nome, e-mail e dados pessoais. Ação irreversível.
+                        </p>
+                      </div>
+                    </TabsContent>
 
-                  {/* Zona de perigo */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-red-400">Zona de Perigo</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 border-red-400/30 text-red-400 hover:bg-red-400/10 w-full"
-                      onClick={() => setRemoveTarget({ id: selectedUser.id, name: selectedUser.name ?? "Usuário" })}
-                    >
-                      <UserX className="h-3.5 w-3.5" />
-                      Anonimizar & Remover Usuário
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      Remove nome, e-mail e dados pessoais. Ação irreversível.
-                    </p>
-                  </div>
+                    <TabsContent value="activity" className="mt-4 space-y-4">
+                      {activityLoading ? (
+                        <div className="flex items-center justify-center h-24">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : (
+                        <>
+                          {/* Bolões */}
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                              <Trophy className="h-3.5 w-3.5" />Bolões ({userActivity?.pools.length ?? 0})
+                            </p>
+                            {(userActivity?.pools ?? []).length === 0 ? (
+                              <p className="text-xs text-muted-foreground">Nenhum bolão encontrado.</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {(userActivity?.pools ?? []).map((p) => (
+                                  <div key={p.poolId} className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-xs">
+                                    <span className="font-medium truncate">{p.poolName}</span>
+                                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                                      {p.rank && <span className="text-muted-foreground">#{p.rank}</span>}
+                                      <span className="font-semibold text-brand">{p.totalPoints ?? 0}pts</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <Separator />
+                          {/* Palpites recentes */}
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                              <Target className="h-3.5 w-3.5" />Palpites Recentes ({userActivity?.bets.length ?? 0})
+                            </p>
+                            {(userActivity?.bets ?? []).length === 0 ? (
+                              <p className="text-xs text-muted-foreground">Nenhum palpite encontrado.</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {(userActivity?.bets ?? []).map((b, i) => (
+                                  <div key={i} className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-xs">
+                                    <div className="truncate">
+                                      <span className="font-medium">{b.teamAName} {b.predictedScoreA} × {b.predictedScoreB} {b.teamBName}</span>
+                                      {b.realScoreA !== null && (
+                                        <span className="text-muted-foreground ml-1">(Real: {b.realScoreA}×{b.realScoreB})</span>
+                                      )}
+                                    </div>
+                                    {b.pointsEarned !== null && (
+                                      <span className={`font-semibold shrink-0 ml-2 ${b.pointsEarned > 0 ? "text-green-400" : "text-muted-foreground"}`}>
+                                        +{b.pointsEarned}pts
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {/* Logs de auditoria (se admin) */}
+                          {(userActivity?.logs ?? []).length > 0 && (
+                            <>
+                              <Separator />
+                              <div className="space-y-2">
+                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                  <Activity className="h-3.5 w-3.5" />Logs de Admin ({userActivity?.logs.length ?? 0})
+                                </p>
+                                <div className="space-y-1">
+                                  {(userActivity?.logs ?? []).map((l) => (
+                                    <div key={l.id} className="flex items-start justify-between p-2 rounded-md bg-muted/30 text-xs gap-2">
+                                      <span className="font-mono text-muted-foreground shrink-0">{format(new Date(l.createdAt), "dd/MM HH:mm", { locale: ptBR })}</span>
+                                      <span className="font-medium truncate">{l.action}</span>
+                                      {l.entityType && <span className="text-muted-foreground shrink-0">{l.entityType}#{l.entityId}</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 </div>
               </ScrollArea>
             </>

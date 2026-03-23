@@ -363,3 +363,55 @@
 - [x] Frontend: AdminTournamentDetail — botão de excluir por time (ícone hover) com AlertDialog
 - [x] Notificação automática aos participantes ao excluir bolão
 - [x] Notificação automática aos organizadores ao excluir campeonato com bolões vinculados
+
+## Melhorias Solicitadas — Sprint 23/03/2026
+
+### Admin > Campeonatos
+- [ ] Corrigir chaveamento Copa do Mundo 2026 (Quartas de Final faltantes)
+- [ ] Fluxo de criação: Campeonato → Fases (chaveamento) → Jogos
+- [ ] Bracket visual (wireframe de chaveamento) com slots "a definir" para fases eliminatórias
+- [ ] Layout com accordion por fase (usabilidade)
+- [ ] Editar/excluir jogo inline
+- [ ] Editar/excluir fase e suas informações
+- [ ] Atualização em lote de jogos (por grupo e por fase)
+- [ ] Botão de geração automática da próxima fase a partir da classificação
+
+### Admin > Bolões
+- [ ] Painel gerenciável ao clicar no bolão (todas as ações de superadmin)
+- [ ] Exibir: data de criação, qtde de participantes, botão "Acessar o bolão"
+- [ ] Botão "Salvar" explícito após alterações no painel
+
+### Admin > Usuários
+- [ ] Acesso aos logs do usuário (ações, logins, alterações)
+
+### Admin > Broadcasts
+- [ ] Botão "ENVIAR" funcional
+- [ ] Rich push notifications (in-app, push e e-mail com formatação)
+- [ ] Tipos de notificação: Lembrete de jogo (auto), Resultado disponível (auto), Atualização de Ranking (auto), Publicidade (manual), Comunicação (manual)
+- [ ] Preview da mensagem por canal
+
+### Admin > Publicidade
+- [ ] Toggle global ativo/inativo (publicidade ligada ou desligada na plataforma)
+- [ ] Botão "Criar anúncio"
+- [ ] Painel de posições e dimensões recomendadas
+- [ ] Tabela gerencial: Prévia | Título | Posição | Device | Período | Intervalo | Cliques | Status | Exibir/Não exibir | Editar | Excluir
+- [ ] Posições: Topo, Lateral (desktop), Entre seções (configurável por página/bloco), Rodapé, Pop Up (frequência configurável)
+- [ ] Suporte a imagens e vídeos (vídeo reproduz completo antes de avançar)
+- [ ] Campo de link clicável
+- [ ] Seleção de dispositivo: todos / mobile / desktop
+- [ ] Agendamento de veiculação (início e fim)
+- [ ] Carrossel automático quando há mais de 1 material (tempo configurável)
+
+### Admin > Monetização
+- [ ] REMOVER tela de Monetização do menu
+
+### Admin > Configurações
+- [ ] Botão "SALVAR" explícito para qualquer alteração
+
+### Admin > Integrações
+- [ ] Botão "SALVAR" explícito para qualquer alteração
+
+### Admin > Logs de Auditoria
+- [ ] Structured Logging em JSON
+- [ ] Campos obrigatórios: userId, userName, action, correlationId, payload, level (info/warn/error), timestamp
+- [ ] Registrar diff de banco: quem mudou, quando, valor anterior vs novo

@@ -35,7 +35,6 @@ export type AdminSection =
   | "ads"
   | "settings"
   | "audit"
-  | "monetization"
   | "integrations";
 
 interface NavItem {
@@ -93,7 +92,6 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Wallet,
     items: [
       { id: "subscriptions", label: "Assinaturas", icon: CreditCard, path: "/admin/subscriptions" },
-      { id: "monetization", label: "Monetização", icon: Wallet, path: "/admin/monetization" },
     ],
   },
   {
