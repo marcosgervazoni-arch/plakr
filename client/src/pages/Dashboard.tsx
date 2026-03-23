@@ -26,6 +26,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link, useLocation } from "wouter";
 import { DashboardSkeleton } from "@/components/Skeletons";
 import { EmptyState } from "@/components/EmptyState";
@@ -50,15 +51,23 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = trpc.users.myStats.useQuery(undefined, { enabled: isAuthenticated });
   const { data: recentBets = [] } = trpc.users.recentBets.useQuery(undefined, { enabled: isAuthenticated });
 
-  // Compute cumulative points for chart
+  // Pool selector for points chart
+  const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
+  const { data: poolStats } = trpc.users.myStatsByPool.useQuery(
+    { poolId: selectedPoolId! },
+    { enabled: isAuthenticated && selectedPoolId !== null }
+  );
+
+  // Compute cumulative points for chart — either global or per-pool
+  const activePointsHistory = selectedPoolId !== null ? poolStats?.pointsHistory : stats?.pointsHistory;
   const chartData = useMemo(() => {
-    if (!stats?.pointsHistory?.length) return [];
+    if (!activePointsHistory?.length) return [];
     let cumulative = 0;
-    return stats.pointsHistory.map((p: { label: string; points: number; cumulative: number }) => {
+    return activePointsHistory.map((p: { label: string; points: number }) => {
       cumulative += p.points;
       return { label: p.label, points: cumulative };
     });
-  }, [stats?.pointsHistory]);
+  }, [activePointsHistory]);
 
   if (loading || (isAuthenticated && poolsLoading && statsLoading)) {
     return <DashboardSkeleton />;
@@ -272,9 +281,29 @@ export default function Dashboard() {
 
             {/* Points evolution chart — always visible */}
             <section>
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Evolução de Pontos</h3>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                  <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Evolução de Pontos</h3>
+                </div>
+                {(pools as any[]).length > 0 && (
+                  <Select
+                    value={selectedPoolId === null ? "all" : String(selectedPoolId)}
+                    onValueChange={(v) => setSelectedPoolId(v === "all" ? null : Number(v))}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-auto min-w-[140px] max-w-[200px] border-border/40 bg-card">
+                      <SelectValue placeholder="Selecionar bolão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os bolões</SelectItem>
+                      {(pools as any[]).filter(p => p.status !== "deleted").map((pool: any) => (
+                        <SelectItem key={pool.id} value={String(pool.id)}>
+                          {pool.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div className="bg-card border border-border/30 rounded-xl p-4">
                 {chartData.length === 0 ? (

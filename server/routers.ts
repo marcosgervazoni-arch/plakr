@@ -173,6 +173,62 @@ export const appRouter = router({
       };
     }),
 
+    myStatsByPool: protectedProcedure
+      .input(z.object({ poolId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return { totalPoints: 0, exactScores: 0, rank: null, totalMembers: 0, pointsHistory: [] };
+        const { sql, eq, and } = await import("drizzle-orm");
+        const { poolMemberStats, poolMembers, bets, games } = await import("../drizzle/schema");
+
+        // Stats for this specific pool
+        const statsRows = await db
+          .select({
+            totalPoints: poolMemberStats.totalPoints,
+            exactScores: poolMemberStats.exactScoreCount,
+            rank: poolMemberStats.rankPosition,
+          })
+          .from(poolMemberStats)
+          .where(and(eq(poolMemberStats.userId, ctx.user.id), eq(poolMemberStats.poolId, input.poolId)))
+          .limit(1);
+
+        const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, rank: null };
+
+        // Total members in pool
+        const membersRows = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(poolMembers)
+          .where(eq(poolMembers.poolId, input.poolId));
+        const totalMembers = Number(membersRows[0]?.count ?? 0);
+
+        // Points history filtered by this pool
+        const history = await db
+          .select({
+            matchDate: games.matchDate,
+            pointsEarned: bets.pointsEarned,
+          })
+          .from(bets)
+          .innerJoin(games, eq(bets.gameId, games.id))
+          .where(and(
+            eq(bets.userId, ctx.user.id),
+            eq(bets.poolId, input.poolId),
+            sql`${bets.pointsEarned} IS NOT NULL`
+          ))
+          .orderBy(games.matchDate)
+          .limit(20);
+
+        return {
+          totalPoints: Number(stats.totalPoints ?? 0),
+          exactScores: Number(stats.exactScores ?? 0),
+          rank: stats.rank ? Number(stats.rank) : null,
+          totalMembers,
+          pointsHistory: history.map((h) => ({
+            label: new Date(h.matchDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+            points: Number(h.pointsEarned ?? 0),
+          })),
+        };
+      }),
+
     recentBets: protectedProcedure.query(async ({ ctx }) => {
       const db = await (await import("./db")).getDb();
       if (!db) return [];
