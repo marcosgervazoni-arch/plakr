@@ -563,6 +563,74 @@ export const appRouter = router({
         await createAdminLog(ctx.user.id, "recalculate_scores", "tournament", input.tournamentId, { totalRecalculated });
         return { success: true, totalRecalculated };
       }),
+    // Admin/Criador: excluir campeonato
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { tournaments, pools: poolsT, poolMembers, games: gamesT, teams: teamsT } = await import("../drizzle/schema");
+        const { eq, inArray } = await import("drizzle-orm");
+        const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, input.id)).limit(1);
+        if (!tournament) throw new TRPCError({ code: "NOT_FOUND", message: "Campeonato não encontrado." });
+        const isAdmin = ctx.user.role === "admin";
+        const isCreator = tournament.createdBy === ctx.user.id;
+        if (!isAdmin && !isCreator) throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o criador ou um administrador pode excluir este campeonato." });
+        // Buscar bolões vinculados
+        const linkedPools = await db.select({ id: poolsT.id, ownerId: poolsT.ownerId, name: poolsT.name })
+          .from(poolsT).where(eq(poolsT.tournamentId, input.id));
+        if (linkedPools.length > 0) {
+          const poolIds = linkedPools.map(p => p.id);
+          const ownerIds = Array.from(new Set(linkedPools.map(p => p.ownerId).filter(id => id !== ctx.user.id)));
+          for (const ownerId of ownerIds) {
+            await createNotification({ userId: ownerId, type: "system", title: "Campeonato excluído",
+              message: `O campeonato "${tournament.name}" foi excluído pela administração. Os bolões vinculados foram encerrados.` });
+          }
+          const members = await db.select({ userId: poolMembers.userId }).from(poolMembers)
+            .where(inArray(poolMembers.poolId, poolIds));
+          const notifiedIds = new Set([ctx.user.id, ...ownerIds]);
+          for (const m of members) {
+            if (notifiedIds.has(m.userId)) continue;
+            await createNotification({ userId: m.userId, type: "system", title: "Campeonato excluído",
+              message: `O campeonato "${tournament.name}" foi excluído. Seu bolão vinculado foi encerrado.` });
+            notifiedIds.add(m.userId);
+          }
+          await db.update(poolsT).set({ status: "deleted" }).where(inArray(poolsT.id, poolIds));
+        }
+        await db.delete(gamesT).where(eq(gamesT.tournamentId, input.id));
+        await db.delete(teamsT).where(eq(teamsT.tournamentId, input.id));
+        await db.delete(tournaments).where(eq(tournaments.id, input.id));
+        await createAdminLog(ctx.user.id, "delete_tournament", "tournament", input.id, { name: tournament.name, linkedPools: linkedPools.length });
+        return { success: true };
+      }),
+    // Admin: excluir jogo individual
+    deleteGame: adminProcedure
+      .input(z.object({ gameId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { games: gamesT } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [game] = await db.select().from(gamesT).where(eq(gamesT.id, input.gameId)).limit(1);
+        if (!game) throw new TRPCError({ code: "NOT_FOUND", message: "Jogo não encontrado." });
+        await db.delete(gamesT).where(eq(gamesT.id, input.gameId));
+        await createAdminLog(ctx.user.id, "delete_game", "game", input.gameId, { teamAName: game.teamAName, teamBName: game.teamBName });
+        return { success: true };
+      }),
+    // Admin: excluir time individual
+    deleteTeam: adminProcedure
+      .input(z.object({ teamId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { teams: teamsT } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [team] = await db.select().from(teamsT).where(eq(teamsT.id, input.teamId)).limit(1);
+        if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Time não encontrado." });
+        await db.delete(teamsT).where(eq(teamsT.id, input.teamId));
+        await createAdminLog(ctx.user.id, "delete_team", "team", input.teamId, { name: team.name });
+        return { success: true };
+      }),
     // Admin: importar jogos via Google Sheets (URL pública)
     importFromSheets: adminProcedure
       .input(z.object({
@@ -1149,6 +1217,32 @@ export const appRouter = router({
             pointsZebra: Number(b.pointsZebra ?? 0),
           })),
         };
+      }),
+
+    // Organizador/Admin: excluir bolão com notificação aos membros
+    delete: protectedProcedure
+      .input(z.object({ poolId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { pools: poolsT, poolMembers } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [pool] = await db.select().from(poolsT).where(eq(poolsT.id, input.poolId)).limit(1);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND", message: "Bolão não encontrado." });
+        const isAdmin = ctx.user.role === "admin";
+        const isOwner = pool.ownerId === ctx.user.id;
+        if (!isAdmin && !isOwner) throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador ou um administrador pode excluir este bolão." });
+        // Notificar todos os membros
+        const members = await db.select({ userId: poolMembers.userId }).from(poolMembers).where(eq(poolMembers.poolId, input.poolId));
+        for (const member of members) {
+          if (member.userId === ctx.user.id) continue;
+          await createNotification({ userId: member.userId, type: "system", title: "Bolão excluído",
+            message: `O bolão "${pool.name}" foi excluído pelo organizador. Todos os seus palpites foram removidos.` });
+        }
+        // Soft-delete: marcar como deleted
+        await db.update(poolsT).set({ status: "deleted" }).where(eq(poolsT.id, input.poolId));
+        await createAdminLog(ctx.user.id, "delete_pool", "pool", input.poolId, { name: pool.name, memberCount: members.length });
+        return { success: true };
       }),
 
     // ─── REGRAS PÚBLICAS DO BOLÃO ─────────────────────────────────────────────────────

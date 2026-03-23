@@ -9,17 +9,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import {
+  AlertTriangle,
   ArrowLeft,
   Copy,
   Loader2,
   Lock,
   Settings,
   Star,
+  Trash2,
   Trophy,
   Users,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 
 export default function PoolSettings() {
@@ -109,6 +122,15 @@ export default function PoolSettings() {
   const { pool, myRole } = data;
   const isOrganizer = myRole === "organizer" || user?.role === "admin";
   const isPro = pool.plan === "pro";
+  const [, navigate] = useLocation();
+
+  const deletePool = trpc.pools.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Bolão excluído com sucesso.");
+      navigate("/dashboard");
+    },
+    onError: (err) => toast.error("Erro ao excluir", { description: err.message }),
+  });
 
   if (!isOrganizer) {
     return (
@@ -332,6 +354,44 @@ export default function PoolSettings() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* DANGER ZONE */}
+        <div className="mt-8 border border-red-500/30 rounded-xl p-6 bg-red-500/5">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-4 h-4 text-red-400" />
+            <h3 className="font-semibold text-red-400 text-sm">Zona de Perigo</h3>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            A exclusão do bolão é permanente e irreversível. Todos os palpites e dados serão removidos e todos os participantes serão notificados.
+          </p>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="border-red-500/40 text-red-400 hover:bg-red-500/10 gap-2">
+                <Trash2 className="w-4 h-4" />
+                Excluir Bolão
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir bolão "{pool.name}"?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação é <strong>permanente e irreversível</strong>. Todos os {members?.length ?? 0} participantes serão notificados e todos os palpites serão removidos.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => deletePool.mutate({ poolId: pool.id })}
+                  disabled={deletePool.isPending}
+                >
+                  {deletePool.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                  Sim, excluir bolão
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </main>
     </div>
   );

@@ -12,6 +12,16 @@ import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Calendar,
   ChevronRight,
   Download,
@@ -20,6 +30,7 @@ import {
   Globe,
   Loader2,
   Plus,
+  Trash2,
   Trophy,
   Upload,
 } from "lucide-react";
@@ -35,7 +46,20 @@ export default function AdminTournaments() {
   const [csvPoolId, setCsvPoolId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const { data: tournaments, refetch } = trpc.tournaments.list.useQuery();
+
+  const deleteTournament = trpc.tournaments.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Campeonato excluído com sucesso.");
+      setDeleteTarget(null);
+      refetch();
+    },
+    onError: (err) => {
+      toast.error("Erro ao excluir", { description: err.message });
+      setDeleteTarget(null);
+    },
+  });
 
   const createMutation = trpc.tournaments.create.useMutation({
     onSuccess: () => {
@@ -159,6 +183,14 @@ export default function AdminTournaments() {
                         </p>
                       </div>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: t.id, name: t.name }); }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </CardContent>
@@ -167,6 +199,29 @@ export default function AdminTournaments() {
           )}
         </div>
       </div>
+
+      {/* Confirm Delete Tournament Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir campeonato "{deleteTarget?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é <strong>permanente e irreversível</strong>. Todos os jogos e times vinculados serão removidos. Os organizadores dos bolões vinculados serão notificados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => deleteTarget && deleteTournament.mutate({ id: deleteTarget.id })}
+              disabled={deleteTournament.isPending}
+            >
+              {deleteTournament.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Sim, excluir campeonato
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Modal: Criar Campeonato */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>

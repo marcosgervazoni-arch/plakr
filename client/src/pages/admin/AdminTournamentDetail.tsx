@@ -14,6 +14,16 @@ import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
@@ -23,6 +33,7 @@ import {
   Loader2,
   Plus,
   Shield,
+  Trash2,
   Trophy,
   Users,
   Pencil,
@@ -98,6 +109,20 @@ export default function AdminTournamentDetail() {
   const setResultMutation = trpc.tournaments.setResult.useMutation({
     onSuccess: () => { toast.success("Resultado registrado."); setShowSetResult(false); setResultTarget(null); refetch(); },
     onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  // ── Delete Game ──
+  const [deleteGameTarget, setDeleteGameTarget] = useState<{ id: number; teamA: string; teamB: string } | null>(null);
+  const deleteGameMutation = trpc.tournaments.deleteGame.useMutation({
+    onSuccess: () => { toast.success("Jogo excluído."); setDeleteGameTarget(null); refetch(); },
+    onError: (e: { message: string }) => { toast.error("Erro ao excluir jogo", { description: e.message }); setDeleteGameTarget(null); },
+  });
+
+  // ── Delete Team ──
+  const [deleteTeamTarget, setDeleteTeamTarget] = useState<{ id: number; name: string } | null>(null);
+  const deleteTeamMutation = trpc.tournaments.deleteTeam.useMutation({
+    onSuccess: () => { toast.success("Time excluído."); setDeleteTeamTarget(null); refetch(); },
+    onError: (e: { message: string }) => { toast.error("Erro ao excluir time", { description: e.message }); setDeleteTeamTarget(null); },
   });
 
   if (isLoading) {
@@ -244,7 +269,7 @@ export default function AdminTournamentDetail() {
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {teams.map((team) => (
-                  <div key={team.id} className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-1.5">
+                  <div key={team.id} className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-1.5 group">
                     {team.flagUrl ? (
                       <img src={team.flagUrl} alt={team.name} className="w-5 h-5 object-contain rounded-sm" />
                     ) : (
@@ -252,6 +277,14 @@ export default function AdminTournamentDetail() {
                     )}
                     <span className="text-sm font-medium">{team.name}</span>
                     {team.code && <span className="text-xs text-muted-foreground font-mono">({team.code})</span>}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ml-1"
+                      onClick={() => setDeleteTeamTarget({ id: team.id, name: team.name })}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -306,6 +339,14 @@ export default function AdminTournamentDetail() {
                           <Pencil className="h-3 w-3" /> Resultado
                         </Button>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                        onClick={() => setDeleteGameTarget({ id: g.id, teamA: g.teamAName ?? "Time A", teamB: g.teamBName ?? "Time B" })}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -324,6 +365,52 @@ export default function AdminTournamentDetail() {
           </Card>
         )}
       </div>
+
+      {/* Confirm Delete Game Dialog */}
+      <AlertDialog open={!!deleteGameTarget} onOpenChange={(open) => !open && setDeleteGameTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir jogo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Excluir <strong>{deleteGameTarget?.teamA} vs {deleteGameTarget?.teamB}</strong>? Esta ação é permanente e todos os palpites deste jogo serão removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => deleteGameTarget && deleteGameMutation.mutate({ gameId: deleteGameTarget.id })}
+              disabled={deleteGameMutation.isPending}
+            >
+              {deleteGameMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Excluir jogo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm Delete Team Dialog */}
+      <AlertDialog open={!!deleteTeamTarget} onOpenChange={(open) => !open && setDeleteTeamTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir time "{deleteTeamTarget?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente. O time será removido do campeonato.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => deleteTeamTarget && deleteTeamMutation.mutate({ teamId: deleteTeamTarget.id })}
+              disabled={deleteTeamMutation.isPending}
+            >
+              {deleteTeamMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Excluir time
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Modal: Adicionar Time */}
       <Dialog open={showAddTeam} onOpenChange={setShowAddTeam}>

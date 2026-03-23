@@ -350,3 +350,16 @@
 - [x] Adicionar aba "Fila de E-mails" no AdminBroadcasts com status e tentativas
 - [x] Adicionar card "Push Stats" (assinaturas ativas) no AdminBroadcasts
 - [x] Adicionar botão "Lembrete de Jogo" no AdminTournamentDetail para disparo manual
+
+## Exclusão de Entidades — Sprint 23/03/2026
+- [x] Backend: procedure pools.delete (organizador + superadmin, notifica participantes)
+- [x] Backend: procedure tournaments.delete (superadmin, notifica organizadores de bolões vinculados)
+- [x] Backend: procedure tournaments.deleteGame (superadmin)
+- [x] Backend: procedure tournaments.deleteTeam (superadmin)
+- [x] Frontend: PoolSettings — zona de perigo com AlertDialog de confirmação para excluir bolão
+- [x] Frontend: AdminPools — botão de excluir por bolão com AlertDialog de confirmação
+- [x] Frontend: AdminTournaments — botão de excluir por campeonato com AlertDialog de confirmação
+- [x] Frontend: AdminTournamentDetail — botão de excluir por jogo (ícone hover) com AlertDialog
+- [x] Frontend: AdminTournamentDetail — botão de excluir por time (ícone hover) com AlertDialog
+- [x] Notificação automática aos participantes ao excluir bolão
+- [x] Notificação automática aos organizadores ao excluir campeonato com bolões vinculados
