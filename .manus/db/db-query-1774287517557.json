@@ -1,0 +1,64 @@
+{
+  "query": "SELECT id, teamAName, teamBName, matchDate, phase, groupName, venue FROM games WHERE tournamentId = 2 AND phase = 'group_a' ORDER BY matchDate LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, matchDate, phase, groupName, venue FROM games WHERE tournamentId = 2 AND phase = 'group_a' ORDER BY matchDate LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "teamAName": "México",
+      "teamBName": "África do Sul",
+      "matchDate": "2026-06-11 19:00:00",
+      "phase": "group_a",
+      "groupName": "A",
+      "venue": "Estádio Azteca, Cidade do México"
+    },
+    {
+      "id": "2",
+      "teamAName": "Coreia do Sul",
+      "teamBName": "Playoff D UEFA",
+      "matchDate": "2026-06-12 03:00:00",
+      "phase": "group_a",
+      "groupName": "A",
+      "venue": "Estádio Akron, Guadalajara"
+    },
+    {
+      "id": "25",
+      "teamAName": "Playoff D UEFA",
+      "teamBName": "África do Sul",
+      "matchDate": "2026-06-18 16:00:00",
+      "phase": "group_a",
+      "groupName": "A",
+      "venue": "Mercedes-Benz Stadium, Atlanta"
+    },
+    {
+      "id": "28",
+      "teamAName": "México",
+      "teamBName": "Coreia do Sul",
+      "matchDate": "2026-06-19 03:00:00",
+      "phase": "group_a",
+      "groupName": "A",
+      "venue": "Estádio Akron, Guadalajara"
+    },
+    {
+      "id": "54",
+      "teamAName": "Playoff D UEFA",
+      "teamBName": "México",
+      "matchDate": "2026-06-25 03:00:00",
+      "phase": "group_a",
+      "groupName": "A",
+      "venue": "Estádio Azteca, Cidade do México"
+    },
+    {
+      "id": "53",
+      "teamAName": "África do Sul",
+      "teamBName": "Coreia do Sul",
+      "matchDate": "2026-06-25 03:00:00",
+      "phase": "group_a",
+      "groupName": "A",
+      "venue": "Estádio BBVA, Monterrey"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\tphase\tgroupName\tvenue\n1\tMéxico\tÁfrica do Sul\t2026-06-11 19:00:00\tgroup_a\tA\tEstádio Azteca, Cidade do México\n2\tCoreia do Sul\tPlayoff D UEFA\t2026-06-12 03:00:00\tgroup_a\tA\tEstádio Akron, Guadalajara\n25\tPlayoff D UEFA\tÁfrica do Sul\t2026-06-18 16:00:00\tgroup_a\tA\tMercedes-Benz Stadium, Atlanta\n28\tMéxico\tCoreia do Sul\t2026-06-19 03:00:00\tgroup_a\tA\tEstádio Akron, Guadalajara\n54\tPlayoff D UEFA\tMéxico\t2026-06-25 03:00:00\tgroup_a\tA\tEstádio Azteca, Cidade do México\n53\tÁfrica do Sul\tCoreia do Sul\t2026-06-25 03:00:00\tgroup_a\tA\tEstádio BBVA, Monterrey\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}

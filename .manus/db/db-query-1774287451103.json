@@ -1,0 +1,38 @@
+{
+  "query": "\nSELECT t.id, t.name FROM tournaments t ORDER BY t.id;\n\nSELECT tp.id, tp.key, tp.label, tp.order, tp.slots, tp.isKnockout, tp.tournamentId\nFROM tournament_phases tp ORDER BY tp.tournamentId, tp.order;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT t.id, t.name FROM tournaments t ORDER BY t.id;\n\nSELECT tp.id, tp.key, tp.label, tp.order, tp.slots, tp.isKnockout, tp.tournamentId\nFROM tournament_phases tp ORDER BY tp.tournamentId, tp.order;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Copa do Mundo 2026"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA"
+    }
+  ],
+  "messages": [
+    "id\tkey\tlabel\torder\tslots\tisKnockout\ttournamentId",
+    "1\tgroup_a\tGrupo A\t1\t4\t0\t2",
+    "2\tgroup_b\tGrupo B\t2\t4\t0\t2",
+    "3\tgroup_c\tGrupo C\t3\t4\t0\t2",
+    "4\tgroup_d\tGrupo D\t4\t4\t0\t2",
+    "5\tgroup_e\tGrupo E\t5\t4\t0\t2",
+    "6\tgroup_f\tGrupo F\t6\t4\t0\t2",
+    "7\tgroup_g\tGrupo G\t7\t4\t0\t2",
+    "8\tgroup_h\tGrupo H\t8\t4\t0\t2",
+    "9\tgroup_i\tGrupo I\t9\t4\t0\t2",
+    "10\tgroup_j\tGrupo J\t10\t4\t0\t2",
+    "11\tgroup_k\tGrupo K\t11\t4\t0\t2",
+    "12\tgroup_l\tGrupo L\t12\t4\t0\t2",
+    "13\tround_of_32\tRodada de 32\t13\t32\t1\t2",
+    "14\tround_of_16\tOitavas de Final\t14\t16\t1\t2",
+    "30001\tquarter_finals\tQuartas de Final\t15\t4\t1\t2",
+    "15\tsemifinals\tSemifinais\t16\t8\t1\t2",
+    "16\tthird_place\tDisputa 3º Lugar\t17\t2\t1\t2",
+    "17\tfinal\tFinal\t18\t2\t1\t2"
+  ],
+  "stdout": "id\tname\n1\tCopa do Mundo 2026\n2\tCopa do Mundo FIFA\nid\tkey\tlabel\torder\tslots\tisKnockout\ttournamentId\n1\tgroup_a\tGrupo A\t1\t4\t0\t2\n2\tgroup_b\tGrupo B\t2\t4\t0\t2\n3\tgroup_c\tGrupo C\t3\t4\t0\t2\n4\tgroup_d\tGrupo D\t4\t4\t0\t2\n5\tgroup_e\tGrupo E\t5\t4\t0\t2\n6\tgroup_f\tGrupo F\t6\t4\t0\t2\n7\tgroup_g\tGrupo G\t7\t4\t0\t2\n8\tgroup_h\tGrupo H\t8\t4\t0\t2\n9\tgroup_i\tGrupo I\t9\t4\t0\t2\n10\tgroup_j\tGrupo J\t10\t4\t0\t2\n11\tgroup_k\tGrupo K\t11\t4\t0\t2\n12\tgroup_l\tGrupo L\t12\t4\t0\t2\n13\tround_of_32\tRodada de 32\t13\t32\t1\t2\n14\tround_of_16\tOitavas de Final\t14\t16\t1\t2\n30001\tquarter_finals\tQuartas de Final\t15\t4\t1\t2\n15\tsemifinals\tSemifinais\t16\t8\t1\t2\n16\tthird_place\tDisputa 3º Lugar\t17\t2\t1\t2\n17\tfinal\tFinal\t18\t2\t1\t2\n",
+  "stderr": "",
+  "execution_time_ms": 414
+}

@@ -447,3 +447,9 @@
 - [x] Atualização em lote por fase (já existia via botão ⚡)
 - [x] Editar/excluir fase (já existia)
 - [x] Layout accordion por fase (já existia)
+
+## Correções de Chaveamento Copa do Mundo — Sprint 23/03/2026 (noite)
+- [x] Semifinais: slots corrigidos de 8 para 4 (2 jogos × 2 times)
+- [x] Quartas de Final: removidas 4 duplicatas (ids 30001-30004 sem matchNumber)
+- [x] Semifinais: removidos 4 jogos duplicados/mal classificados (ids 97-100)
+- [x] Chaveamento final: 72 jogos de grupos (12×6) + 16 Rodada de 32 + 8 Oitavas + 4 Quartas + 2 Semifinais + 1 Disputa 3º Lugar + 1 Final = 104 jogos totais

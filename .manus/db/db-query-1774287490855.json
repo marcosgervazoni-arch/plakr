@@ -1,0 +1,82 @@
+{
+  "query": "SELECT COUNT(*) as total, phase FROM games WHERE tournamentId = 2 GROUP BY phase ORDER BY phase;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT COUNT(*) as total, phase FROM games WHERE tournamentId = 2 GROUP BY phase ORDER BY phase;",
+  "rows": [
+    {
+      "total": "1",
+      "phase": "Disputa 3º Lugar"
+    },
+    {
+      "total": "1",
+      "phase": "Final"
+    },
+    {
+      "total": "6",
+      "phase": "group_a"
+    },
+    {
+      "total": "6",
+      "phase": "group_b"
+    },
+    {
+      "total": "6",
+      "phase": "group_c"
+    },
+    {
+      "total": "6",
+      "phase": "group_d"
+    },
+    {
+      "total": "6",
+      "phase": "group_e"
+    },
+    {
+      "total": "6",
+      "phase": "group_f"
+    },
+    {
+      "total": "6",
+      "phase": "group_g"
+    },
+    {
+      "total": "6",
+      "phase": "group_h"
+    },
+    {
+      "total": "6",
+      "phase": "group_i"
+    },
+    {
+      "total": "6",
+      "phase": "group_j"
+    },
+    {
+      "total": "6",
+      "phase": "group_k"
+    },
+    {
+      "total": "6",
+      "phase": "group_l"
+    },
+    {
+      "total": "8",
+      "phase": "Oitavas de Final"
+    },
+    {
+      "total": "8",
+      "phase": "Quartas de Final"
+    },
+    {
+      "total": "16",
+      "phase": "Rodada de 32"
+    },
+    {
+      "total": "6",
+      "phase": "Semifinais"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tphase\n1\tDisputa 3º Lugar\n1\tFinal\n6\tgroup_a\n6\tgroup_b\n6\tgroup_c\n6\tgroup_d\n6\tgroup_e\n6\tgroup_f\n6\tgroup_g\n6\tgroup_h\n6\tgroup_i\n6\tgroup_j\n6\tgroup_k\n6\tgroup_l\n8\tOitavas de Final\n8\tQuartas de Final\n16\tRodada de 32\n6\tSemifinais\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}

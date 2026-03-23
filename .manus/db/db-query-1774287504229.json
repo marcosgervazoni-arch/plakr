@@ -1,0 +1,122 @@
+{
+  "query": "\nSELECT id, teamAName, teamBName, matchDate, phase, matchNumber FROM games WHERE tournamentId = 2 AND phase IN ('Semifinais', 'Quartas de Final') ORDER BY phase, matchNumber;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT id, teamAName, teamBName, matchDate, phase, matchNumber FROM games WHERE tournamentId = 2 AND phase IN ('Semifinais', 'Quartas de Final') ORDER BY phase, matchNumber;\n",
+  "rows": [
+    {
+      "id": "30004",
+      "teamAName": "A Definir",
+      "teamBName": "A Definir",
+      "matchDate": "2026-07-05 23:00:00",
+      "phase": "Quartas de Final",
+      "matchNumber": "NULL"
+    },
+    {
+      "id": "30003",
+      "teamAName": "A Definir",
+      "teamBName": "A Definir",
+      "matchDate": "2026-07-04 23:00:00",
+      "phase": "Quartas de Final",
+      "matchNumber": "NULL"
+    },
+    {
+      "id": "30002",
+      "teamAName": "A Definir",
+      "teamBName": "A Definir",
+      "matchDate": "2026-07-04 19:00:00",
+      "phase": "Quartas de Final",
+      "matchNumber": "NULL"
+    },
+    {
+      "id": "30001",
+      "teamAName": "A Definir",
+      "teamBName": "A Definir",
+      "matchDate": "2026-07-03 23:00:00",
+      "phase": "Quartas de Final",
+      "matchNumber": "NULL"
+    },
+    {
+      "id": "30005",
+      "teamAName": "A definir",
+      "teamBName": "A definir",
+      "matchDate": "2026-07-03 21:00:00",
+      "phase": "Quartas de Final",
+      "matchNumber": "85"
+    },
+    {
+      "id": "30006",
+      "teamAName": "A definir",
+      "teamBName": "A definir",
+      "matchDate": "2026-07-04 17:00:00",
+      "phase": "Quartas de Final",
+      "matchNumber": "86"
+    },
+    {
+      "id": "30007",
+      "teamAName": "A definir",
+      "teamBName": "A definir",
+      "matchDate": "2026-07-04 21:00:00",
+      "phase": "Quartas de Final",
+      "matchNumber": "87"
+    },
+    {
+      "id": "30008",
+      "teamAName": "A definir",
+      "teamBName": "A definir",
+      "matchDate": "2026-07-05 17:00:00",
+      "phase": "Quartas de Final",
+      "matchNumber": "88"
+    },
+    {
+      "id": "97",
+      "teamAName": "Vencedor R16-1",
+      "teamBName": "Vencedor R16-2",
+      "matchDate": "2026-07-09 22:00:00",
+      "phase": "Semifinais",
+      "matchNumber": "97"
+    },
+    {
+      "id": "98",
+      "teamAName": "Vencedor R16-3",
+      "teamBName": "Vencedor R16-4",
+      "matchDate": "2026-07-10 22:00:00",
+      "phase": "Semifinais",
+      "matchNumber": "98"
+    },
+    {
+      "id": "99",
+      "teamAName": "Vencedor R16-5",
+      "teamBName": "Vencedor R16-6",
+      "matchDate": "2026-07-11 19:00:00",
+      "phase": "Semifinais",
+      "matchNumber": "99"
+    },
+    {
+      "id": "100",
+      "teamAName": "Vencedor R16-7",
+      "teamBName": "Vencedor R16-8",
+      "matchDate": "2026-07-11 22:00:00",
+      "phase": "Semifinais",
+      "matchNumber": "100"
+    },
+    {
+      "id": "101",
+      "teamAName": "Vencedor QF-1",
+      "teamBName": "Vencedor QF-2",
+      "matchDate": "2026-07-14 22:00:00",
+      "phase": "Semifinais",
+      "matchNumber": "101"
+    },
+    {
+      "id": "102",
+      "teamAName": "Vencedor QF-3",
+      "teamBName": "Vencedor QF-4",
+      "matchDate": "2026-07-15 22:00:00",
+      "phase": "Semifinais",
+      "matchNumber": "102"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\tphase\tmatchNumber\n30004\tA Definir\tA Definir\t2026-07-05 23:00:00\tQuartas de Final\tNULL\n30003\tA Definir\tA Definir\t2026-07-04 23:00:00\tQuartas de Final\tNULL\n30002\tA Definir\tA Definir\t2026-07-04 19:00:00\tQuartas de Final\tNULL\n30001\tA Definir\tA Definir\t2026-07-03 23:00:00\tQuartas de Final\tNULL\n30005\tA definir\tA definir\t2026-07-03 21:00:00\tQuartas de Final\t85\n30006\tA definir\tA definir\t2026-07-04 17:00:00\tQuartas de Final\t86\n30007\tA definir\tA definir\t2026-07-04 21:00:00\tQuartas de Final\t87\n30008\tA definir\tA definir\t2026-07-05 17:00:00\tQuartas de Final\t88\n97\tVencedor R16-1\tVencedor R16-2\t2026-07-09 22:00:00\tSemifinais\t97\n98\tVencedor R16-3\tVencedor R16-4\t2026-07-10 22:00:00\tSemifinais\t98\n99\tVencedor R16-5\tVencedor R16-6\t2026-07-11 19:00:00\tSemifinais\t99\n100\tVencedor R16-7\tVencedor R16-8\t2026-07-11 22:00:00\tSemifinais\t100\n101\tVencedor QF-1\tVencedor QF-2\t2026-07-14 22:00:00\tSemifinais\t101\n102\tVencedor QF-3\tVencedor QF-4\t2026-07-15 22:00:00\tSemifinais\t102\n",
+  "stderr": "",
+  "execution_time_ms": 362
+}

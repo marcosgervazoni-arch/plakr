@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Remover as 4 Quartas duplicadas (sem matchNumber, inseridas manualmente antes)\nDELETE FROM games WHERE id IN (30001, 30002, 30003, 30004);\n\n-- Remover os 4 jogos de Semifinais que são na verdade Oitavas mal classificadas (97-100)\nDELETE FROM games WHERE id IN (97, 98, 99, 100);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \n-- Remover as 4 Quartas duplicadas (sem matchNumber, inseridas manualmente antes)\nDELETE FROM games WHERE id IN (30001, 30002, 30003, 30004);\n\n-- Remover os 4 jogos de Semifinais que são na verdade Oitavas mal classificadas (97-100)\nDELETE FROM games WHERE id IN (97, 98, 99, 100);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 567
+}
