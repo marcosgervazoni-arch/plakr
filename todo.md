@@ -436,3 +436,14 @@
 - [x] AdminAds: botão +Novo Anúncio separado do Exportar CSV, sempre visível no mobile (shrink-0)
 - [x] AdminSettings: botão Salvar com shrink-0 e texto abreviado em mobile (sm:hidden/sm:inline)
 - [x] AdminIntegrations: botão Salvar com shrink-0 e texto abreviado em mobile (sm:hidden/sm:inline)
+
+## Campeonatos — Sprint 23/03/2026 (tarde)
+- [x] Chaveamento Copa do Mundo: Quartas de Final já estava correto no banco (phase_id: 30001, key: quarter_finals, order: 15, slots: 4)
+- [x] Fluxo de criação em 3 etapas: wizard modal (Informações → Fases → Jogos) no AdminTournaments
+- [x] Atalhos de template no wizard: Copa do Mundo (14 fases) e Liga (3 fases)
+- [x] Bracket visual: exibe slots vazios "A Definir" mesmo sem jogos cadastrados (baseado em phase.slots)
+- [x] Botão Gerar próxima fase: disponível para qualquer fase com jogos encerrados (não só eliminatórias)
+- [x] Editar/excluir jogo individualmente (já existia via ícone hover)
+- [x] Atualização em lote por fase (já existia via botão ⚡)
+- [x] Editar/excluir fase (já existia)
+- [x] Layout accordion por fase (já existia)

@@ -1,0 +1,200 @@
+{
+  "query": "SELECT t.id, t.name, tp.id as phase_id, tp.key, tp.label, tp.order, tp.slots, tp.isKnockout FROM tournaments t LEFT JOIN tournament_phases tp ON tp.tournamentId = t.id WHERE t.name LIKE '%Copa%' OR t.name LIKE '%World%' OR t.name LIKE '%FIFA%' ORDER BY t.id, tp.order;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT t.id, t.name, tp.id as phase_id, tp.key, tp.label, tp.order, tp.slots, tp.isKnockout FROM tournaments t LEFT JOIN tournament_phases tp ON tp.tournamentId = t.id WHERE t.name LIKE '%Copa%' OR t.name LIKE '%World%' OR t.name LIKE '%FIFA%' ORDER BY t.id, tp.order;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Copa do Mundo 2026",
+      "phase_id": "NULL",
+      "key": "NULL",
+      "label": "NULL",
+      "order": "NULL",
+      "slots": "NULL",
+      "isKnockout": "NULL"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "1",
+      "key": "group_a",
+      "label": "Grupo A",
+      "order": "1",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "2",
+      "key": "group_b",
+      "label": "Grupo B",
+      "order": "2",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "3",
+      "key": "group_c",
+      "label": "Grupo C",
+      "order": "3",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "4",
+      "key": "group_d",
+      "label": "Grupo D",
+      "order": "4",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "5",
+      "key": "group_e",
+      "label": "Grupo E",
+      "order": "5",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "6",
+      "key": "group_f",
+      "label": "Grupo F",
+      "order": "6",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "7",
+      "key": "group_g",
+      "label": "Grupo G",
+      "order": "7",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "8",
+      "key": "group_h",
+      "label": "Grupo H",
+      "order": "8",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "9",
+      "key": "group_i",
+      "label": "Grupo I",
+      "order": "9",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "10",
+      "key": "group_j",
+      "label": "Grupo J",
+      "order": "10",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "11",
+      "key": "group_k",
+      "label": "Grupo K",
+      "order": "11",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "12",
+      "key": "group_l",
+      "label": "Grupo L",
+      "order": "12",
+      "slots": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "13",
+      "key": "round_of_32",
+      "label": "Rodada de 32",
+      "order": "13",
+      "slots": "32",
+      "isKnockout": "1"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "14",
+      "key": "round_of_16",
+      "label": "Oitavas de Final",
+      "order": "14",
+      "slots": "16",
+      "isKnockout": "1"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "30001",
+      "key": "quarter_finals",
+      "label": "Quartas de Final",
+      "order": "15",
+      "slots": "4",
+      "isKnockout": "1"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "15",
+      "key": "semifinals",
+      "label": "Semifinais",
+      "order": "16",
+      "slots": "8",
+      "isKnockout": "1"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "16",
+      "key": "third_place",
+      "label": "Disputa 3º Lugar",
+      "order": "17",
+      "slots": "2",
+      "isKnockout": "1"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "phase_id": "17",
+      "key": "final",
+      "label": "Final",
+      "order": "18",
+      "slots": "2",
+      "isKnockout": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tphase_id\tkey\tlabel\torder\tslots\tisKnockout\n1\tCopa do Mundo 2026\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n2\tCopa do Mundo FIFA\t1\tgroup_a\tGrupo A\t1\t4\t0\n2\tCopa do Mundo FIFA\t2\tgroup_b\tGrupo B\t2\t4\t0\n2\tCopa do Mundo FIFA\t3\tgroup_c\tGrupo C\t3\t4\t0\n2\tCopa do Mundo FIFA\t4\tgroup_d\tGrupo D\t4\t4\t0\n2\tCopa do Mundo FIFA\t5\tgroup_e\tGrupo E\t5\t4\t0\n2\tCopa do Mundo FIFA\t6\tgroup_f\tGrupo F\t6\t4\t0\n2\tCopa do Mundo FIFA\t7\tgroup_g\tGrupo G\t7\t4\t0\n2\tCopa do Mundo FIFA\t8\tgroup_h\tGrupo H\t8\t4\t0\n2\tCopa do Mundo FIFA\t9\tgroup_i\tGrupo I\t9\t4\t0\n2\tCopa do Mundo FIFA\t10\tgroup_j\tGrupo J\t10\t4\t0\n2\tCopa do Mundo FIFA\t11\tgroup_k\tGrupo K\t11\t4\t0\n2\tCopa do Mundo FIFA\t12\tgroup_l\tGrupo L\t12\t4\t0\n2\tCopa do Mundo FIFA\t13\tround_of_32\tRodada de 32\t13\t32\t1\n2\tCopa do Mundo FIFA\t14\tround_of_16\tOitavas de Final\t14\t16\t1\n2\tCopa do Mundo FIFA\t30001\tquarter_finals\tQuartas de Final\t15\t4\t1\n2\tCopa do Mundo FIFA\t15\tsemifinals\tSemifinais\t16\t8\t1\n2\tCopa do Mundo FIFA\t16\tthird_place\tDisputa 3º Lugar\t17\t2\t1\n2\tCopa do Mundo FIFA\t17\tfinal\tFinal\t18\t2\t1\n",
+  "stderr": "",
+  "execution_time_ms": 374
+}

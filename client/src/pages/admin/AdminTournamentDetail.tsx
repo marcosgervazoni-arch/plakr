@@ -244,29 +244,49 @@ export default function AdminTournamentDetail() {
   };
 
   // Bracket visual for knockout phases
-  const KnockoutBracket = ({ phaseGames }: { phaseGames: typeof games }) => {
-    const pairs: Array<typeof games> = [];
-    for (let i = 0; i < phaseGames.length; i += 2) {
-      pairs.push(phaseGames.slice(i, i + 2) as typeof games);
+  // Shows real games + placeholder slots when slots > games.length
+  const KnockoutBracket = ({ phaseGames, slots }: { phaseGames: typeof games; slots: number | null }) => {
+    // Build a list of match slots: real games first, then empty placeholders
+    const totalMatches = slots ? Math.max(Math.ceil(slots / 2), phaseGames.length) : phaseGames.length;
+    const matchSlots: Array<typeof games[0] | null> = [
+      ...phaseGames,
+      ...Array(Math.max(0, totalMatches - phaseGames.length)).fill(null),
+    ];
+    // Group into pairs (match 1 vs match 2 side by side)
+    const pairs: Array<[typeof games[0] | null, typeof games[0] | null]> = [];
+    for (let i = 0; i < matchSlots.length; i += 2) {
+      pairs.push([matchSlots[i] ?? null, matchSlots[i + 1] ?? null]);
     }
+    const MatchSlot = ({ game, idx }: { game: typeof games[0] | null; idx: number }) => (
+      <div className={`border rounded-lg px-3 py-2 w-52 flex items-center justify-between gap-2 ${
+        game ? "bg-muted/30 border-border/40" : "bg-muted/10 border-border/20 border-dashed"
+      }`}>
+        <div className="flex-1 min-w-0">
+          <p className={`text-xs font-medium truncate ${!game ? "text-muted-foreground/50 italic" : ""}`}>
+            {game?.teamAName ?? "A Definir"}
+          </p>
+          <p className={`text-xs truncate ${!game ? "text-muted-foreground/40 italic" : "text-muted-foreground"}`}>
+            {game?.teamBName ?? "A Definir"}
+          </p>
+        </div>
+        {game ? (
+          game.scoreA !== null && game.scoreB !== null ? (
+            <span className="font-mono text-sm font-bold text-brand shrink-0">{game.scoreA}–{game.scoreB}</span>
+          ) : (
+            <span className="text-muted-foreground text-xs font-mono shrink-0">vs</span>
+          )
+        ) : (
+          <span className="text-muted-foreground/30 text-xs font-mono shrink-0">#{idx + 1}</span>
+        )}
+      </div>
+    );
     return (
       <div className="overflow-x-auto pb-2">
         <div className="flex gap-3 min-w-max">
           {pairs.map((pair, pi) => (
-            <div key={pi} className="flex flex-col gap-1">
-              {pair.map((g) => (
-                <div key={g.id} className="bg-muted/30 border border-border/40 rounded-lg px-3 py-2 w-52 flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{g.teamAName ?? "A Definir"}</p>
-                    <p className="text-xs text-muted-foreground truncate">{g.teamBName ?? "A Definir"}</p>
-                  </div>
-                  {g.scoreA !== null && g.scoreB !== null ? (
-                    <span className="font-mono text-sm font-bold text-brand shrink-0">{g.scoreA}–{g.scoreB}</span>
-                  ) : (
-                    <span className="text-muted-foreground text-xs font-mono shrink-0">vs</span>
-                  )}
-                </div>
-              ))}
+            <div key={pi} className="flex flex-col gap-1.5">
+              <MatchSlot game={pair[0]} idx={pi * 2} />
+              <MatchSlot game={pair[1]} idx={pi * 2 + 1} />
             </div>
           ))}
         </div>
@@ -475,13 +495,20 @@ export default function AdminTournamentDetail() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
-                  {/* Bracket visual for knockout phases */}
-                  {phase.isKnockout && phase.games.length > 0 && (
+                  {/* Bracket visual for knockout phases — shows slots even when empty */}
+                  {phase.isKnockout && (
                     <div className="mb-4 p-3 bg-muted/20 rounded-lg border border-border/30">
-                      <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                        <GitBranch className="h-3 w-3" /> Chaveamento
-                      </p>
-                      <KnockoutBracket phaseGames={phase.games} />
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <GitBranch className="h-3 w-3" /> Chaveamento
+                        </p>
+                        {phase.slots && (
+                          <span className="text-xs text-muted-foreground font-mono">
+                            {phase.games.length}/{Math.ceil(phase.slots / 2)} jogos
+                          </span>
+                        )}
+                      </div>
+                      <KnockoutBracket phaseGames={phase.games} slots={phase.slots} />
                     </div>
                   )}
 
@@ -677,26 +704,29 @@ export default function AdminTournamentDetail() {
                     )}
                   </div>
 
-                  {/* Generate next phase button */}
-                  {phase.isKnockout && phase.games.some(g => g.status === "finished") && (
-                    <div className="mt-3 pt-3 border-t border-border/30">
-                      <Button size="sm" variant="outline" className="gap-2 text-xs text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
-                        disabled={generateNextPhaseMutation.isPending}
-                        onClick={() => {
-                          const nextPhase = orderedPhases.find(p => p.id > phase.id);
-                          if (!nextPhase) { toast.error("Não há próxima fase configurada."); return; }
-                          generateNextPhaseMutation.mutate({
-                            tournamentId,
-                            currentPhase: phase.label,
-                            nextPhase: nextPhase.key,
-                            nextPhaseLabel: nextPhase.label,
-                          });
-                        }}>
-                        {generateNextPhaseMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-                        Gerar próxima fase automaticamente
-                      </Button>
-                    </div>
-                  )}
+                  {/* Generate next phase button — available for any phase with finished games */}
+                  {phase.games.some(g => g.status === "finished") && (() => {
+                    const currentIdx = orderedPhases.findIndex(p => p.key === phase.key);
+                    const nextPhase = currentIdx >= 0 ? orderedPhases[currentIdx + 1] : undefined;
+                    if (!nextPhase || nextPhase.id < 0) return null;
+                    return (
+                      <div className="mt-3 pt-3 border-t border-border/30">
+                        <Button size="sm" variant="outline" className="gap-2 text-xs text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
+                          disabled={generateNextPhaseMutation.isPending}
+                          onClick={() => {
+                            generateNextPhaseMutation.mutate({
+                              tournamentId,
+                              currentPhase: phase.label,
+                              nextPhase: nextPhase.key,
+                              nextPhaseLabel: nextPhase.label,
+                            });
+                          }}>
+                          {generateNextPhaseMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                          Gerar "{nextPhase.label}" automaticamente
+                        </Button>
+                      </div>
+                    );
+                  })()}
                 </AccordionContent>
               </AccordionItem>
             ))}
