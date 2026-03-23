@@ -148,19 +148,19 @@ export default function AdminAds() {
       <TooltipProvider>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h1 className="text-2xl font-bold font-display">Publicidade</h1>
-              <p className="text-muted-foreground text-sm mt-1">Gerencie banners, vídeos e scripts da plataforma</p>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <Button variant="outline" className="gap-2" onClick={handleExportCsv}>
-                <Download className="h-4 w-4" /> Exportar CSV
-              </Button>
-              <Button className="bg-brand hover:bg-brand/90 gap-2" onClick={() => setCreateOpen(true)}>
+          <div className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h1 className="text-2xl font-bold font-display">Publicidade</h1>
+                <p className="text-muted-foreground text-sm mt-1">Gerencie banners, vídeos e scripts da plataforma</p>
+              </div>
+              <Button className="bg-brand hover:bg-brand/90 gap-2 shrink-0" onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4" /> Novo Anúncio
               </Button>
             </div>
+            <Button variant="outline" className="gap-2" onClick={handleExportCsv}>
+              <Download className="h-4 w-4" /> Exportar CSV
+            </Button>
           </div>
 
           {/* Stats + Toggle Global */}

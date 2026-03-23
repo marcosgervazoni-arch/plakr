@@ -122,23 +122,23 @@ export default function AdminTournaments() {
     <AdminLayout activeSection="tournaments">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold font-display">Campeonatos</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Gerencie campeonatos globais e importe jogos via CSV
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowCsvImport(true)} className="gap-2">
-              <Upload className="h-4 w-4" />
-              Importar CSV
-            </Button>
-            <Button size="sm" onClick={() => setShowCreate(true)} className="gap-2 bg-brand hover:bg-brand/90">
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold font-display">Campeonatos</h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                Gerencie campeonatos globais e importe jogos via CSV
+              </p>
+            </div>
+            <Button size="sm" onClick={() => setShowCreate(true)} className="gap-2 bg-brand hover:bg-brand/90 shrink-0">
               <Plus className="h-4 w-4" />
               Novo Campeonato
             </Button>
           </div>
+          <Button variant="outline" size="sm" onClick={() => setShowCsvImport(true)} className="gap-2">
+            <Upload className="h-4 w-4" />
+            Importar CSV
+          </Button>
         </div>
 
         {/* Lista de campeonatos */}

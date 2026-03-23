@@ -102,34 +102,34 @@ export default function AdminPools() {
   return (
     <AdminLayout activeSection="pools">
       <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold font-display">Bolões</h1>
-            <p className="text-muted-foreground text-sm mt-1">Visão geral de todos os bolões da plataforma</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex gap-1">
-              {(["all", "active", "finished", "deleted"] as const).map((s) => (
-                <Button
-                  key={s}
-                  size="sm"
-                  variant={statusFilter === s ? "default" : "outline"}
-                  className={`text-xs h-7 ${statusFilter === s ? "bg-brand hover:bg-brand/90" : ""}`}
-                  onClick={() => setStatusFilter(s)}
-                >
-                  {s === "all" ? "Todos" : s === "active" ? "Ativos" : s === "finished" ? "Encerrados" : "Excluídos"}
-                  <Badge variant="outline" className="ml-1.5 text-xs h-4 px-1">{counts[s]}</Badge>
-                </Button>
-              ))}
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold font-display">Bolões</h1>
+              <p className="text-muted-foreground text-sm mt-1">Visão geral de todos os bolões da plataforma</p>
             </div>
             <Button
               size="sm"
               onClick={() => setShowCreate(true)}
-              className="gap-2 bg-brand hover:bg-brand/90 h-7"
+              className="gap-2 bg-brand hover:bg-brand/90 shrink-0"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
               Novo Bolão
             </Button>
+          </div>
+          <div className="flex gap-1 flex-wrap">
+            {(["all", "active", "finished", "deleted"] as const).map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={statusFilter === s ? "default" : "outline"}
+                className={`text-xs h-7 ${statusFilter === s ? "bg-brand hover:bg-brand/90" : ""}`}
+                onClick={() => setStatusFilter(s)}
+              >
+                {s === "all" ? "Todos" : s === "active" ? "Ativos" : s === "finished" ? "Encerrados" : "Excluídos"}
+                <Badge variant="outline" className="ml-1.5 text-xs h-4 px-1">{counts[s]}</Badge>
+              </Button>
+            ))}
           </div>
         </div>
 

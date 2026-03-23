@@ -426,3 +426,10 @@
 - [ ] Frontend: componente AdBanner que respeita posição, device, período e toggle global adsEnabled
 - [ ] Frontend: integrar AdBanner nas posições definidas (topo, entre jogos, lateral, popup)
 - [ ] Frontend: filtrar anúncios por device (mobile/desktop/all) e período (startAt/endAt)
+
+## Correção de Botões Mobile — Sprint 23/03/2026
+- [x] AdminTournaments: botão +Novo Campeonato separado do Importar CSV, sempre visível no mobile (shrink-0)
+- [x] AdminPools: botão +Novo Bolão separado dos filtros de status, sempre visível no mobile (shrink-0)
+- [x] AdminAds: botão +Novo Anúncio separado do Exportar CSV, sempre visível no mobile (shrink-0)
+- [x] AdminSettings: botão Salvar com shrink-0 e texto abreviado em mobile (sm:hidden/sm:inline)
+- [x] AdminIntegrations: botão Salvar com shrink-0 e texto abreviado em mobile (sm:hidden/sm:inline)

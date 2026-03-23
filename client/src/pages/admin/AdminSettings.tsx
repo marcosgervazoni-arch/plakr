@@ -129,9 +129,9 @@ export default function AdminSettings() {
     <AdminLayout activeSection="settings">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-brand/10">
+            <div className="p-2 rounded-lg bg-brand/10 shrink-0">
               <Settings className="h-5 w-5 text-brand" />
             </div>
             <div>
@@ -140,12 +140,13 @@ export default function AdminSettings() {
             </div>
           </div>
           <Button
-            className="bg-brand hover:bg-brand/90 gap-2"
+            className="bg-brand hover:bg-brand/90 gap-2 shrink-0"
             onClick={() => updateMutation.mutate(form)}
             disabled={updateMutation.isPending || isLoading}
           >
             {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Salvar Configurações
+            <span className="hidden sm:inline">Salvar Configurações</span>
+            <span className="sm:hidden">Salvar</span>
           </Button>
         </div>
 
