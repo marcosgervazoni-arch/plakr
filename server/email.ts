@@ -6,6 +6,7 @@
  */
 import { ENV } from "./_core/env";
 import { getDb, createNotification } from "./db";
+import { resolveNotificationTemplate } from "./notificationTemplateHelper";
 import { emailQueue, users, games, userPlans, pools, poolMembers } from "../drizzle/schema";
 import { eq, and, lte, gte, sql } from "drizzle-orm";
 
@@ -364,14 +365,32 @@ export async function scheduleBetReminders(): Promise<void> {
 
         const matchDate = new Date(g.matchDate as Date);
         const matchTime = matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+        const matchDateStr = matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }) + " às " + matchTime;
+
+        // Resolver template personalizado (com fallback para texto padrão)
+        const tmpl = await resolveNotificationTemplate(
+          "game_reminder",
+          {
+            teamA: g.homeTeamName ?? "Time A",
+            teamB: g.awayTeamName ?? "Time B",
+            matchDate: matchDateStr,
+            minutesUntilGame: 60,
+            poolName: pool.name,
+          },
+          {
+            title: `⏰ Jogo em 1 hora — ${g.homeTeamName} × ${g.awayTeamName}`,
+            body: `O jogo começa às ${matchTime}. Faça seu palpite no bolão "${pool.name}" antes que seja tarde!`,
+          }
+        );
+        if (!tmpl.enabled) continue;
 
         for (const { userId } of members) {
           await createNotification({
             userId,
             poolId: pool.id,
             type: "game_reminder",
-            title: `⏰ Jogo em 1 hora — ${g.homeTeamName} × ${g.awayTeamName}`,
-            message: `O jogo começa às ${matchTime}. Faça seu palpite no bolão "${pool.name}" antes que seja tarde!`,
+            title: tmpl.title,
+            message: tmpl.body,
             actionUrl: `/pools/${pool.id}`,
             actionLabel: "Fazer palpite",
             priority: "high",

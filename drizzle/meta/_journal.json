@@ -64,6 +64,13 @@
       "when": 1774305866317,
       "tag": "0008_lethal_maria_hill",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1774308694085,
+      "tag": "0009_white_karnak",
+      "breakpoints": true
     }
   ]
 }

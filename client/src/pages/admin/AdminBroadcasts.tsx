@@ -6,14 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RichTextEditor, type MediaAttachment } from "@/components/RichTextEditor";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
   Bell,
+  Bot,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   Clock,
   ExternalLink,
   Image,
@@ -21,11 +25,13 @@ import {
   Loader2,
   Mail,
   Megaphone,
+  Pencil,
   Send,
   Smartphone,
   Star,
   Trophy,
   Users,
+  Variable,
   XCircle,
   Zap,
 } from "lucide-react";
@@ -299,12 +305,15 @@ export default function AdminBroadcasts() {
         </div>
 
         <Tabs defaultValue="compose">
-          <TabsList>
-            <TabsTrigger value="compose">
-              <Megaphone className="h-4 w-4 mr-2" />Compor
+          <TabsList className="w-full sm:w-auto flex">
+            <TabsTrigger value="compose" className="flex-1 sm:flex-none">
+              <Megaphone className="h-4 w-4 mr-1.5" /><span className="hidden sm:inline">Compor</span><span className="sm:hidden">Compor</span>
             </TabsTrigger>
-            <TabsTrigger value="email-queue">
-              <Mail className="h-4 w-4 mr-2" />Fila de E-mails
+            <TabsTrigger value="auto-messages" className="flex-1 sm:flex-none">
+              <Bot className="h-4 w-4 mr-1.5" /><span className="hidden sm:inline">Automáticas</span><span className="sm:hidden">Auto</span>
+            </TabsTrigger>
+            <TabsTrigger value="email-queue" className="flex-1 sm:flex-none">
+              <Mail className="h-4 w-4 mr-1.5" /><span className="hidden sm:inline">Fila de E-mails</span><span className="sm:hidden">E-mails</span>
             </TabsTrigger>
           </TabsList>
 
@@ -697,8 +706,349 @@ export default function AdminBroadcasts() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ── Aba Mensagens Automáticas ── */}
+          <TabsContent value="auto-messages" className="mt-4">
+            <AutoMessagesTab />
+          </TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
+  );
+}
+
+// ─── VARIÁVEIS DISPONÍVEIS POR TIPO ──────────────────────────────────────────
+
+const TEMPLATE_VARIABLES: Record<string, { variable: string; description: string; example: string }[]> = {
+  game_reminder: [
+    { variable: "{{userName}}", description: "Nome do usuário", example: "João Silva" },
+    { variable: "{{teamA}}", description: "Nome do time A", example: "Flamengo" },
+    { variable: "{{teamB}}", description: "Nome do time B", example: "Palmeiras" },
+    { variable: "{{matchDate}}", description: "Data e hora do jogo", example: "25/03 às 16h00" },
+    { variable: "{{minutesUntilGame}}", description: "Minutos até o jogo", example: "30" },
+    { variable: "{{poolName}}", description: "Nome do bolão", example: "Bolão da Galera" },
+    { variable: "{{venue}}", description: "Local do jogo", example: "Maracanã" },
+  ],
+  result_available: [
+    { variable: "{{userName}}", description: "Nome do usuário", example: "João Silva" },
+    { variable: "{{teamA}}", description: "Nome do time A", example: "Flamengo" },
+    { variable: "{{teamB}}", description: "Nome do time B", example: "Palmeiras" },
+    { variable: "{{scoreA}}", description: "Placar do time A", example: "2" },
+    { variable: "{{scoreB}}", description: "Placar do time B", example: "1" },
+    { variable: "{{userPoints}}", description: "Pontos do usuário neste jogo", example: "10" },
+    { variable: "{{poolName}}", description: "Nome do bolão", example: "Bolão da Galera" },
+    { variable: "{{betScoreA}}", description: "Palpite do usuário (time A)", example: "2" },
+    { variable: "{{betScoreB}}", description: "Palpite do usuário (time B)", example: "0" },
+  ],
+  ranking_update: [
+    { variable: "{{userName}}", description: "Nome do usuário", example: "João Silva" },
+    { variable: "{{poolName}}", description: "Nome do bolão", example: "Bolão da Galera" },
+    { variable: "{{position}}", description: "Posição no ranking", example: "3" },
+    { variable: "{{totalPoints}}", description: "Total de pontos", example: "85" },
+    { variable: "{{positionChange}}", description: "Variação de posição", example: "Subiu 2 posições! 🚀" },
+    { variable: "{{totalMembers}}", description: "Total de participantes", example: "24" },
+  ],
+};
+
+const TEMPLATE_LABELS: Record<string, { label: string; icon: string; description: string }> = {
+  game_reminder: {
+    label: "Lembrete de Jogo",
+    icon: "⏰",
+    description: "Enviado automaticamente antes do início de cada jogo (padrão: 30 min antes)",
+  },
+  result_available: {
+    label: "Resultado Disponível",
+    icon: "🏁",
+    description: "Enviado automaticamente após o registro do resultado de um jogo",
+  },
+  ranking_update: {
+    label: "Atualização do Ranking",
+    icon: "📊",
+    description: "Enviado automaticamente após o recálculo de pontuação e ranking",
+  },
+};
+
+// ─── COMPONENTE DE MENSAGENS AUTOMÁTICAS ──────────────────────────────────────
+
+function AutoMessagesTab() {
+  const { data: templates, isLoading, refetch } = trpc.notificationTemplates.list.useQuery();
+  const toggleMutation = trpc.notificationTemplates.toggle.useMutation({
+    onSuccess: () => { refetch(); toast.success("Status atualizado!"); },
+    onError: () => toast.error("Erro ao atualizar status."),
+  });
+  const updateMutation = trpc.notificationTemplates.update.useMutation({
+    onSuccess: () => { refetch(); setEditingType(null); toast.success("Template salvo!"); },
+    onError: () => toast.error("Erro ao salvar template."),
+  });
+
+  const [editingType, setEditingType] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{
+    titleTemplate: string;
+    bodyTemplate: string;
+    pushTitleTemplate: string;
+    pushBodyTemplate: string;
+    emailSubjectTemplate: string;
+    emailBodyTemplate: string;
+  }>({ titleTemplate: "", bodyTemplate: "", pushTitleTemplate: "", pushBodyTemplate: "", emailSubjectTemplate: "", emailBodyTemplate: "" });
+  const [showVars, setShowVars] = useState<string | null>(null);
+  const [activeChannel, setActiveChannel] = useState<"inapp" | "push" | "email">("inapp");
+
+  function startEdit(t: NonNullable<typeof templates>[0]) {
+    setEditingType(t.type);
+    setEditForm({
+      titleTemplate: t.titleTemplate,
+      bodyTemplate: t.bodyTemplate,
+      pushTitleTemplate: t.pushTitleTemplate ?? "",
+      pushBodyTemplate: t.pushBodyTemplate ?? "",
+      emailSubjectTemplate: t.emailSubjectTemplate ?? "",
+      emailBodyTemplate: t.emailBodyTemplate ?? "",
+    });
+    setShowVars(null);
+  }
+
+  function insertVariable(variable: string) {
+    // Insere a variável no campo ativo (bodyTemplate por padrão)
+    setEditForm(f => ({ ...f, bodyTemplate: f.bodyTemplate + variable }));
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Cabeçalho informativo */}
+      <Card className="border-brand/20 bg-brand/5">
+        <CardContent className="pt-4 pb-3">
+          <div className="flex items-start gap-3">
+            <Bot className="h-5 w-5 text-brand mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-foreground">Mensagens Automáticas</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Estas mensagens são disparadas automaticamente pelo sistema. Use o toggle para ativar ou desativar cada tipo, e personalize o texto usando as variáveis disponíveis.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lista de templates */}
+      {(templates ?? []).map((template) => {
+        const meta = TEMPLATE_LABELS[template.type] ?? { label: template.type, icon: "📢", description: "" };
+        const vars = TEMPLATE_VARIABLES[template.type] ?? [];
+        const isEditing = editingType === template.type;
+
+        return (
+          <Card key={template.type} className={`border-border/50 transition-opacity ${!template.enabled ? "opacity-60" : ""}`}>
+            {/* Header do card */}
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <span className="text-2xl leading-none mt-0.5">{meta.icon}</span>
+                  <div className="min-w-0">
+                    <CardTitle className="text-sm font-semibold">{meta.label}</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{meta.description}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-muted-foreground hidden sm:inline">
+                    {template.enabled ? "Ativo" : "Inativo"}
+                  </span>
+                  <Switch
+                    checked={template.enabled}
+                    onCheckedChange={(checked) => toggleMutation.mutate({ type: template.type as "game_reminder" | "result_available" | "ranking_update", enabled: checked })}
+                    disabled={toggleMutation.isPending}
+                  />
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-0 space-y-3">
+              {/* Preview do template atual (quando não está editando) */}
+              {!isEditing && (
+                <div className="space-y-2">
+                  <div className="rounded-lg bg-muted/30 border border-border/30 p-3 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Bell className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium text-muted-foreground">In-App / Push</span>
+                    </div>
+                    <p className="text-xs font-semibold">{template.titleTemplate}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{template.bodyTemplate}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto text-xs"
+                    onClick={() => startEdit(template)}
+                  >
+                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                    Personalizar texto
+                  </Button>
+                </div>
+              )}
+
+              {/* Formulário de edição */}
+              {isEditing && (
+                <div className="space-y-4 border border-brand/20 rounded-lg p-4 bg-brand/5">
+                  {/* Seletor de canal */}
+                  <div className="flex gap-1 bg-muted/40 rounded-lg p-1">
+                    {(["inapp", "push", "email"] as const).map((ch) => (
+                      <button
+                        key={ch}
+                        onClick={() => setActiveChannel(ch)}
+                        className={`flex-1 text-xs py-1.5 px-2 rounded-md font-medium transition-colors ${activeChannel === ch ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                      >
+                        {ch === "inapp" ? "In-App" : ch === "push" ? "Push" : "E-mail"}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Campos do canal ativo */}
+                  {activeChannel === "inapp" && (
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Título</Label>
+                        <Input
+                          value={editForm.titleTemplate}
+                          onChange={(e) => setEditForm(f => ({ ...f, titleTemplate: e.target.value }))}
+                          placeholder="Ex: ⏰ Jogo em breve: {{teamA}} x {{teamB}}"
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Mensagem</Label>
+                        <Textarea
+                          value={editForm.bodyTemplate}
+                          onChange={(e) => setEditForm(f => ({ ...f, bodyTemplate: e.target.value }))}
+                          placeholder="Texto da notificação..."
+                          rows={3}
+                          className="text-sm resize-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeChannel === "push" && (
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Título Push</Label>
+                        <Input
+                          value={editForm.pushTitleTemplate}
+                          onChange={(e) => setEditForm(f => ({ ...f, pushTitleTemplate: e.target.value }))}
+                          placeholder="Título curto para push (máx. 50 chars)"
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Corpo Push</Label>
+                        <Textarea
+                          value={editForm.pushBodyTemplate}
+                          onChange={(e) => setEditForm(f => ({ ...f, pushBodyTemplate: e.target.value }))}
+                          placeholder="Texto curto para push..."
+                          rows={2}
+                          className="text-sm resize-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeChannel === "email" && (
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Assunto do E-mail</Label>
+                        <Input
+                          value={editForm.emailSubjectTemplate}
+                          onChange={(e) => setEditForm(f => ({ ...f, emailSubjectTemplate: e.target.value }))}
+                          placeholder="Ex: ⏰ Lembrete: {{teamA}} x {{teamB}} começa em breve"
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Corpo do E-mail (HTML)</Label>
+                        <Textarea
+                          value={editForm.emailBodyTemplate}
+                          onChange={(e) => setEditForm(f => ({ ...f, emailBodyTemplate: e.target.value }))}
+                          placeholder="<p>Olá, {{userName}}!</p>..."
+                          rows={5}
+                          className="text-sm resize-none font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tabela de variáveis */}
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => setShowVars(showVars === template.type ? null : template.type)}
+                      className="flex items-center gap-1.5 text-xs text-brand hover:text-brand/80 font-medium transition-colors"
+                    >
+                      <Variable className="h-3.5 w-3.5" />
+                      Variáveis disponíveis
+                      <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showVars === template.type ? "rotate-90" : ""}`} />
+                    </button>
+
+                    {showVars === template.type && (
+                      <div className="rounded-lg border border-border/50 overflow-hidden">
+                        <div className="bg-muted/30 px-3 py-2 flex items-center gap-1.5">
+                          <Variable className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs font-medium text-muted-foreground">Clique para inserir no campo Mensagem</span>
+                        </div>
+                        <div className="divide-y divide-border/30">
+                          {vars.map((v) => (
+                            <button
+                              key={v.variable}
+                              onClick={() => insertVariable(v.variable)}
+                              className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-muted/30 transition-colors text-left"
+                            >
+                              <code className="text-xs font-mono text-brand bg-brand/10 px-1.5 py-0.5 rounded shrink-0">{v.variable}</code>
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium">{v.description}</p>
+                                <p className="text-xs text-muted-foreground">Ex: {v.example}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botões de ação */}
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      className="flex-1 sm:flex-none"
+                      onClick={() => updateMutation.mutate({
+                        type: template.type as "game_reminder" | "result_available" | "ranking_update",
+                        titleTemplate: editForm.titleTemplate,
+                        bodyTemplate: editForm.bodyTemplate,
+                        pushTitleTemplate: editForm.pushTitleTemplate || undefined,
+                        pushBodyTemplate: editForm.pushBodyTemplate || undefined,
+                        emailSubjectTemplate: editForm.emailSubjectTemplate || undefined,
+                        emailBodyTemplate: editForm.emailBodyTemplate || undefined,
+                      })}
+                      disabled={updateMutation.isPending}
+                    >
+                      {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
+                      Salvar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingType(null)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }

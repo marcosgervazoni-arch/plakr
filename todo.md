@@ -484,3 +484,11 @@
 - [x] Broadcast: editor rich text com toolbar (negrito, itálico, tachado, código, listas, links, emojis)
 - [x] Broadcast: upload de mídia (imagem, vídeo, áudio) e documentos (PDF) no editor
 - [x] Broadcast: preview renderizado (Markdown/rich text) em tempo real, mobile-first
+
+## Sprint 23/03/2026 — Mensagens Automáticas no Broadcast
+- [x] Schema: tabela `notification_templates` (type, title, body, enabled, variables)
+- [x] Backend: procedures getTemplates, updateTemplate, toggleTemplate
+- [x] AdminBroadcasts: aba "Automáticas" com toggle Liga/Desliga por tipo
+- [x] AdminBroadcasts: editor de personalização de texto por tipo (campos por canal)
+- [x] AdminBroadcasts: tabela de variáveis disponíveis por tipo de mensagem
+- [x] Backend: usar templates personalizados nos disparos automáticos (scoring.ts, email.ts)

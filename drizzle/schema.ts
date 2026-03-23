@@ -499,6 +499,27 @@ export const adminLogs = mysqlTable("admin_logs", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+// ─── TEMPLATES DE MENSAGENS AUTOMÁTICAS ─────────────────────────────────────
+export const notificationTemplates = mysqlTable("notification_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  type: mysqlEnum("type", ["game_reminder", "result_available", "ranking_update"]).notNull().unique(),
+  enabled: boolean("enabled").default(true).notNull(),
+  // Templates in-app
+  titleTemplate: varchar("titleTemplate", { length: 255 }).notNull(),
+  bodyTemplate: text("bodyTemplate").notNull(),
+  // Templates push
+  pushTitleTemplate: varchar("pushTitleTemplate", { length: 255 }),
+  pushBodyTemplate: text("pushBodyTemplate"),
+  // Templates e-mail
+  emailSubjectTemplate: varchar("emailSubjectTemplate", { length: 255 }),
+  emailBodyTemplate: text("emailBodyTemplate"),
+  updatedBy: int("updatedBy").references(() => users.id),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type NotificationTemplate = typeof notificationTemplates.$inferSelect;
+
 // ─── EXPORTS DE TIPOS ADICIONAIS ────────────────────────────────────────────
 export type InsertUserPlan = typeof userPlans.$inferInsert;
 export type InsertPool = typeof pools.$inferInsert;

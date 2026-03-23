@@ -16,6 +16,7 @@ import {
   getBetsByPool,
   updateBetScore,
 } from "./db";
+import { resolveNotificationTemplate } from "./notificationTemplateHelper";
 
 // ─── REDIS CONNECTION ─────────────────────────────────────────────────────────
 
@@ -356,32 +357,68 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
       const { userId, totalPoints } = memberStats[i];
       const position = i + 1;
       const posEmoji = position === 1 ? "🥇" : position === 2 ? "🥈" : position === 3 ? "🥉" : `#${position}`;
+      const positionChange = `${posEmoji} (${position}º lugar)`;
 
-      // Notificação de resultado
-      await createNotification({
-        userId,
-        poolId: pool.id,
-        type: "result_available",
-        title: `✅ Resultado: ${game.teamAName} ${scoreA} × ${scoreB} ${game.teamBName}`,
-        message: `O resultado foi registrado no bolão "${pool.name}". Você está com ${totalPoints} ponto${totalPoints !== 1 ? "s" : ""} no total.`,
-        actionUrl: `/pools/${pool.id}`,
-        actionLabel: "Ver pontuação",
-        priority: "high",
-        category: "result_available",
-      });
+      // Notificação de resultado (com template personalizável)
+      const resultTmpl = await resolveNotificationTemplate(
+        "result_available",
+        {
+          teamA: game.teamAName ?? "Time A",
+          teamB: game.teamBName ?? "Time B",
+          scoreA,
+          scoreB,
+          userPoints: totalPoints,
+          poolName: pool.name,
+        },
+        {
+          title: `✅ Resultado: ${game.teamAName} ${scoreA} × ${scoreB} ${game.teamBName}`,
+          body: `O resultado foi registrado no bolão "${pool.name}". Você está com ${totalPoints} ponto${totalPoints !== 1 ? "s" : ""} no total.`,
+        }
+      );
+      if (resultTmpl.enabled) {
+        await createNotification({
+          userId,
+          poolId: pool.id,
+          type: "result_available",
+          title: resultTmpl.title,
+          message: resultTmpl.body,
+          actionUrl: `/pools/${pool.id}`,
+          actionLabel: "Ver pontuação",
+          priority: "high",
+          category: "result_available",
+        });
+      }
 
-      // Notificação de ranking
-      await createNotification({
-        userId,
-        poolId: pool.id,
-        type: "ranking_update",
-        title: `🏆 Ranking atualizado — ${pool.name}`,
-        message: `Você está na posição ${posEmoji} com ${totalPoints} ponto${totalPoints !== 1 ? "s" : ""} após o jogo ${game.teamAName} × ${game.teamBName}.`,
-        actionUrl: `/pools/${pool.id}`,
-        actionLabel: "Ver ranking",
-        priority: "normal",
-        category: "ranking_update",
-      });
+      // Notificação de ranking (com template personalizável)
+      const rankingTmpl = await resolveNotificationTemplate(
+        "ranking_update",
+        {
+          poolName: pool.name,
+          position,
+          totalPoints,
+          positionChange,
+          totalMembers: memberStats.length,
+          teamA: game.teamAName ?? "Time A",
+          teamB: game.teamBName ?? "Time B",
+        },
+        {
+          title: `🏆 Ranking atualizado — ${pool.name}`,
+          body: `Você está na posição ${posEmoji} com ${totalPoints} ponto${totalPoints !== 1 ? "s" : ""} após o jogo ${game.teamAName} × ${game.teamBName}.`,
+        }
+      );
+      if (rankingTmpl.enabled) {
+        await createNotification({
+          userId,
+          poolId: pool.id,
+          type: "ranking_update",
+          title: rankingTmpl.title,
+          message: rankingTmpl.body,
+          actionUrl: `/pools/${pool.id}`,
+          actionLabel: "Ver ranking",
+          priority: "normal",
+          category: "ranking_update",
+        });
+      }
     }
   }
 
