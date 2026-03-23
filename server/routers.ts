@@ -992,7 +992,7 @@ export const appRouter = router({
             description: poolsTable.description,
             planExpiresAt: poolsTable.planExpiresAt,
             stripeSubscriptionId: poolsTable.stripeSubscriptionId,
-            memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = ${poolsTable.id} AND pm.isBlocked = 0)`,
+            memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.\`poolId\` = pools.id AND pm.\`isBlocked\` = 0)`,
           })
           .from(poolsTable)
           .orderBy(desc(poolsTable.createdAt))

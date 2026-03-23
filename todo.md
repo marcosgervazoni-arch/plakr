@@ -469,3 +469,6 @@
 - [x] Fix: AdminPools retornando "nenhum bolão cadastrado" mesmo com bolões existentes
 - [x] AdBanner: integrar no sidebar do AppShell (desktop)
 - [x] AdminUsers: aba de logs de atividade por usuário (logins, palpites, alterações)
+
+## Sprint 23/03/2026 — Correção urgente
+- [x] Fix: AdminPools ainda retorna lista vazia (2 errors na prévia) após correção anterior
