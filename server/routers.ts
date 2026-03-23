@@ -413,11 +413,19 @@ export const appRouter = router({
       .input(z.object({ userId: z.number(), limit: z.number().default(50) }))
       .query(async ({ input }) => {
         const db = await (await import("./db")).getDb();
-        if (!db) return { logs: [], bets: [], pools: [] };
-        const { eq, desc, and, isNotNull } = await import("drizzle-orm");
-        const { adminLogs, bets, games, pools: poolsT, poolMembers, poolMemberStats } = await import("../drizzle/schema");
-        // Logs de auditoria onde adminId = userId (ações do próprio usuário como admin)
-        const logs = await db.select().from(adminLogs)
+        if (!db) return { logs: [], adminActions: [], bets: [], pools: [], lastSignedIn: null, createdAt: null };
+        const { eq, desc, and, or } = await import("drizzle-orm");
+        const { adminLogs, bets, games, pools: poolsT, poolMembers, poolMemberStats, users: usersT } = await import("../drizzle/schema");
+        // Dados básicos do usuário (lastSignedIn, createdAt)
+        const [userRow] = await db.select({ lastSignedIn: usersT.lastSignedIn, createdAt: usersT.createdAt })
+          .from(usersT).where(eq(usersT.id, input.userId)).limit(1);
+        // Logs onde o usuário é o ALVO (ações de admin sobre este usuário)
+        const logsAboutUser = await db.select().from(adminLogs)
+          .where(and(eq(adminLogs.entityType, "user"), eq(adminLogs.entityId, input.userId)))
+          .orderBy(desc(adminLogs.createdAt))
+          .limit(30);
+        // Ações do próprio usuário como admin
+        const adminActions = await db.select().from(adminLogs)
           .where(eq(adminLogs.adminId, input.userId))
           .orderBy(desc(adminLogs.createdAt))
           .limit(input.limit);
@@ -446,7 +454,10 @@ export const appRouter = router({
           .orderBy(desc(poolMembers.joinedAt))
           .limit(20);
         return {
-          logs,
+          logs: logsAboutUser,
+          adminActions,
+          lastSignedIn: userRow?.lastSignedIn ?? null,
+          createdAt: userRow?.createdAt ?? null,
           bets: recentBets.map(({ bet, game }) => ({
             gameId: game.id,
             teamAName: game.teamAName ?? "Time A",
@@ -981,7 +992,7 @@ export const appRouter = router({
             description: poolsTable.description,
             planExpiresAt: poolsTable.planExpiresAt,
             stripeSubscriptionId: poolsTable.stripeSubscriptionId,
-            memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = ${poolsTable.id} AND pm.status = 'active')`,
+            memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = ${poolsTable.id} AND pm.isBlocked = 0)`,
           })
           .from(poolsTable)
           .orderBy(desc(poolsTable.createdAt))

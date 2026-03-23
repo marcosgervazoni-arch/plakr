@@ -464,3 +464,8 @@
 - [x] AdBanner: componente criado com carrossel automático, suporte a imagem/vídeo/script, popup, filtro por device
 - [x] AdBanner: integrado no Dashboard (entre seções)
 - [x] AdBanner: integrado no PoolPage (topo da aba de jogos)
+
+## Sprint 23/03/2026 — Noite
+- [x] Fix: AdminPools retornando "nenhum bolão cadastrado" mesmo com bolões existentes
+- [x] AdBanner: integrar no sidebar do AppShell (desktop)
+- [x] AdminUsers: aba de logs de atividade por usuário (logins, palpites, alterações)

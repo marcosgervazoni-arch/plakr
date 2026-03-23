@@ -7,6 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NotificationBell from "@/components/NotificationBell";
+import { AdBanner } from "@/components/AdBanner";
 import { cn } from "@/lib/utils";
 import {
   Trophy,
@@ -206,6 +207,11 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
         )}
       </nav>
+
+      {/* Ad Banner no sidebar */}
+      <div className="px-3 pb-2">
+        <AdBanner position="sidebar" className="w-full" />
+      </div>
 
       {/* Upgrade CTA — apenas para usuários free */}
       {isAuthenticated && !isPro && (

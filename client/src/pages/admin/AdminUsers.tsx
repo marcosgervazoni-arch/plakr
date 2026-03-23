@@ -400,6 +400,23 @@ export default function AdminUsers() {
                         </div>
                       ) : (
                         <>
+                          {/* Resumo de Acesso */}
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                              <Activity className="h-3.5 w-3.5" />Resumo de Acesso
+                            </p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="p-2 rounded-md bg-muted/30 text-xs">
+                                <p className="text-muted-foreground mb-0.5">Cadastro</p>
+                                <p className="font-medium">{userActivity?.createdAt ? format(new Date(userActivity.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}</p>
+                              </div>
+                              <div className="p-2 rounded-md bg-muted/30 text-xs">
+                                <p className="text-muted-foreground mb-0.5">Último acesso</p>
+                                <p className="font-medium">{userActivity?.lastSignedIn ? format(new Date(userActivity.lastSignedIn), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <Separator />
                           {/* Bolões */}
                           <div className="space-y-2">
                             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -411,7 +428,10 @@ export default function AdminUsers() {
                               <div className="space-y-1">
                                 {(userActivity?.pools ?? []).map((p) => (
                                   <div key={p.poolId} className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-xs">
-                                    <span className="font-medium truncate">{p.poolName}</span>
+                                    <div className="min-w-0">
+                                      <span className="font-medium truncate block">{p.poolName}</span>
+                                      <span className="text-muted-foreground">{p.joinedAt ? format(new Date(p.joinedAt), "dd/MM/yyyy", { locale: ptBR }) : ""}</span>
+                                    </div>
                                     <div className="flex items-center gap-2 shrink-0 ml-2">
                                       {p.rank && <span className="text-muted-foreground">#{p.rank}</span>}
                                       <span className="font-semibold text-brand">{p.totalPoints ?? 0}pts</span>
@@ -449,19 +469,41 @@ export default function AdminUsers() {
                               </div>
                             )}
                           </div>
-                          {/* Logs de auditoria (se admin) */}
+                          {/* Logs sobre este usuário (ações de admin) */}
                           {(userActivity?.logs ?? []).length > 0 && (
                             <>
                               <Separator />
                               <div className="space-y-2">
                                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                                  <Activity className="h-3.5 w-3.5" />Logs de Admin ({userActivity?.logs.length ?? 0})
+                                  <Activity className="h-3.5 w-3.5" />Ações Administrativas ({userActivity?.logs.length ?? 0})
                                 </p>
                                 <div className="space-y-1">
                                   {(userActivity?.logs ?? []).map((l) => (
-                                    <div key={l.id} className="flex items-start justify-between p-2 rounded-md bg-muted/30 text-xs gap-2">
+                                    <div key={l.id} className="flex items-start gap-2 p-2 rounded-md bg-muted/30 text-xs">
                                       <span className="font-mono text-muted-foreground shrink-0">{format(new Date(l.createdAt), "dd/MM HH:mm", { locale: ptBR })}</span>
-                                      <span className="font-medium truncate">{l.action}</span>
+                                      <span className={`font-medium truncate flex-1 ${
+                                        l.level === "error" ? "text-red-400" : l.level === "warn" ? "text-yellow-400" : "text-foreground"
+                                      }`}>{l.action}</span>
+                                      {l.ipAddress && <span className="text-muted-foreground shrink-0 font-mono">{l.ipAddress}</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                          {/* Ações do próprio usuário como admin */}
+                          {(userActivity?.adminActions ?? []).length > 0 && (
+                            <>
+                              <Separator />
+                              <div className="space-y-2">
+                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                                  <Shield className="h-3.5 w-3.5" />Ações como Admin ({userActivity?.adminActions.length ?? 0})
+                                </p>
+                                <div className="space-y-1">
+                                  {(userActivity?.adminActions ?? []).map((l) => (
+                                    <div key={l.id} className="flex items-start gap-2 p-2 rounded-md bg-muted/30 text-xs">
+                                      <span className="font-mono text-muted-foreground shrink-0">{format(new Date(l.createdAt), "dd/MM HH:mm", { locale: ptBR })}</span>
+                                      <span className="font-medium truncate flex-1">{l.action}</span>
                                       {l.entityType && <span className="text-muted-foreground shrink-0">{l.entityType}#{l.entityId}</span>}
                                     </div>
                                   ))}
