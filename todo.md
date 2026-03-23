@@ -456,3 +456,11 @@
 
 ## Perfil do Usuário — Sprint 23/03/2026
 - [x] Gráfico de evolução de pontos: adicionar seletor de bolão para visualização por bolão individual (em vez de somar pontos de todos os bolões)
+
+## Sprint 23/03/2026 — Tarde (Publicidade e Bolões)
+- [x] AdminPools Sheet: lista de participantes com avatar, nome e badge de organizador
+- [x] AdminAds: prévia de vídeo na tabela (tag <video> para tipo video)
+- [x] AdminAds: campos avançados disponíveis também na criação de anúncio
+- [x] AdBanner: componente criado com carrossel automático, suporte a imagem/vídeo/script, popup, filtro por device
+- [x] AdBanner: integrado no Dashboard (entre seções)
+- [x] AdBanner: integrado no PoolPage (topo da aba de jogos)

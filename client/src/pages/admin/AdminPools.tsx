@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,10 +37,87 @@ import {
   Search,
   Trash2,
   Trophy,
+  Users,
+  Save,
+  Settings2,
+  CalendarDays,
+  ChevronRight,
+  UserCheck,
+  UserX,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+
+type Pool = {
+  id: number;
+  name: string;
+  slug: string;
+  status: "active" | "finished" | "archived" | "deleted";
+  accessType: "public" | "private_code" | "private_link";
+  plan: "free" | "pro";
+  logoUrl: string | null;
+  createdAt: Date | string;
+  ownerId: number;
+  tournamentId: number | null;
+  description: string | null;
+  memberCount: number;
+  planExpiresAt?: Date | string | null;
+  stripeSubscriptionId?: string | null;
+};
+
+function PoolMembersList({ poolId }: { poolId: number }) {
+  const { data: members, isLoading } = trpc.pools.getMembers.useQuery({ poolId });
+
+  return (
+    <div className="mb-4">
+      <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
+        <Users className="h-4 w-4 text-muted-foreground" />
+        Participantes
+        {members && (
+          <Badge variant="outline" className="text-xs h-4 px-1 ml-1">{members.length}</Badge>
+        )}
+      </h3>
+      {isLoading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : members && members.length > 0 ? (
+        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+          {members.map((m) => {
+            const user = (m as any).user ?? m;
+            const member = (m as any).member ?? m;
+            const name = user.name ?? "Usuário";
+            const avatarUrl = user.avatarUrl ?? user.avatar_url;
+            const role = member.role ?? (m as any).role;
+            const userId = member.userId ?? (m as any).userId ?? user.id;
+            return (
+              <div key={userId} className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted/20 transition-colors">
+                <Avatar className="h-6 w-6 shrink-0">
+                  <AvatarImage src={avatarUrl ?? undefined} />
+                  <AvatarFallback className="text-xs">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{name}</p>
+                </div>
+                {role === "organizer" ? (
+                  <Badge variant="outline" className="text-xs h-4 px-1 border-yellow-400/30 text-yellow-400">
+                    <Crown className="h-2.5 w-2.5 mr-0.5" />Org
+                  </Badge>
+                ) : (
+                  <UserCheck className="h-3.5 w-3.5 text-muted-foreground/50" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground text-center py-3">Nenhum participante encontrado.</p>
+      )}
+    </div>
+  );
+}
 
 export default function AdminPools() {
   const [search, setSearch] = useState("");
@@ -41,6 +125,14 @@ export default function AdminPools() {
   const [, navigate] = useLocation();
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
+  const [editForm, setEditForm] = useState<{
+    name: string;
+    status: "active" | "finished" | "deleted";
+    accessType: "public" | "private_code" | "private_link";
+    description: string;
+  } | null>(null);
+
   const [form, setForm] = useState({
     name: "",
     tournamentId: "",
@@ -55,12 +147,24 @@ export default function AdminPools() {
     onSuccess: () => {
       toast.success("Bolão excluído com sucesso.");
       setDeleteTarget(null);
+      setSelectedPool(null);
       refetch();
     },
     onError: (err) => {
       toast.error("Erro ao excluir", { description: err.message });
       setDeleteTarget(null);
     },
+  });
+
+  const updatePool = trpc.pools.adminUpdatePool.useMutation({
+    onSuccess: () => {
+      toast.success("Bolão atualizado com sucesso!");
+      refetch();
+      if (selectedPool && editForm) {
+        setSelectedPool({ ...selectedPool, ...editForm });
+      }
+    },
+    onError: (err) => toast.error("Erro ao atualizar", { description: err.message }),
   });
 
   const createPool = trpc.pools.adminCreate.useMutation({
@@ -84,6 +188,27 @@ export default function AdminPools() {
     });
   };
 
+  const handleSavePool = () => {
+    if (!selectedPool || !editForm) return;
+    updatePool.mutate({
+      poolId: selectedPool.id,
+      name: editForm.name,
+      status: editForm.status,
+      accessType: editForm.accessType,
+      description: editForm.description,
+    });
+  };
+
+  const openPanel = (pool: Pool) => {
+    setSelectedPool(pool);
+    setEditForm({
+      name: pool.name,
+      status: pool.status === "archived" ? "finished" : pool.status as "active" | "finished" | "deleted",
+      accessType: pool.accessType,
+      description: pool.description ?? "",
+    });
+  };
+
   const filtered = (pools ?? []).filter((p) => {
     const matchSearch = !search ||
       p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -99,9 +224,17 @@ export default function AdminPools() {
     deleted: (pools ?? []).filter(p => p.status === "deleted").length,
   };
 
+  const statusLabel = (s: string) => {
+    if (s === "active") return "Ativo";
+    if (s === "finished") return "Encerrado";
+    if (s === "deleted") return "Excluído";
+    return "Arquivado";
+  };
+
   return (
     <AdminLayout activeSection="pools">
       <div className="space-y-6">
+        {/* Header */}
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -133,6 +266,7 @@ export default function AdminPools() {
           </div>
         </div>
 
+        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -143,6 +277,7 @@ export default function AdminPools() {
           />
         </div>
 
+        {/* List */}
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -150,22 +285,20 @@ export default function AdminPools() {
         ) : (
           <div className="space-y-2">
             {filtered.map((p) => (
-              <Card key={p.id} className="border-border/50 hover:border-brand/30 transition-colors">
+              <Card
+                key={p.id}
+                className="border-border/50 hover:border-brand/30 transition-colors cursor-pointer"
+                onClick={() => openPanel(p)}
+              >
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div
-                    className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center shrink-0 cursor-pointer"
-                    onClick={() => navigate(`/pool/${p.slug}`)}
-                  >
+                  <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
                     {p.logoUrl ? (
                       <img src={p.logoUrl} alt={p.name} className="w-7 h-7 object-contain rounded" />
                     ) : (
                       <Trophy className="h-4 w-4 text-brand" />
                     )}
                   </div>
-                  <div
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => navigate(`/pool/${p.slug}`)}
-                  >
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-sm truncate">{p.name}</p>
                       {p.plan === "pro" && (
@@ -183,7 +316,7 @@ export default function AdminPools() {
                             : "border-muted text-muted-foreground"
                         }`}
                       >
-                        {p.status === "active" ? "Ativo" : p.status === "finished" ? "Encerrado" : p.status === "deleted" ? "Excluído" : "Arquivado"}
+                        {statusLabel(p.status)}
                       </Badge>
                       <Badge variant="outline" className={`text-xs ${
                         p.accessType === "public" ? "border-blue-400/30 text-blue-400" : "border-muted text-muted-foreground"
@@ -192,7 +325,13 @@ export default function AdminPools() {
                         {p.accessType === "public" ? "Público" : p.accessType === "private_code" ? "Código" : "Link"}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{p.slug}</p>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <p className="text-xs text-muted-foreground font-mono">{p.slug}</p>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {p.memberCount} participante{p.memberCount !== 1 ? "s" : ""}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-right shrink-0 hidden sm:block mr-2">
                     <p className="text-xs text-muted-foreground">Criado em</p>
@@ -200,30 +339,7 @@ export default function AdminPools() {
                       {format(new Date(p.createdAt), "dd/MM/yyyy", { locale: ptBR })}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      title="Ver bolão"
-                      onClick={(e) => { e.stopPropagation(); navigate(`/pool/${p.slug}`); }}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                    {p.status !== "deleted" && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteTarget({ id: p.id, name: p.name });
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardContent>
               </Card>
             ))}
@@ -235,6 +351,174 @@ export default function AdminPools() {
           </div>
         )}
       </div>
+
+      {/* Sheet: Painel Gerenciável */}
+      <Sheet open={!!selectedPool} onOpenChange={(open) => !open && setSelectedPool(null)}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          {selectedPool && editForm && (
+            <>
+              <SheetHeader className="pb-4">
+                <SheetTitle className="flex items-center gap-2">
+                  <Settings2 className="h-5 w-5 text-brand" />
+                  Gerenciar Bolão
+                </SheetTitle>
+              </SheetHeader>
+
+              {/* Info do bolão */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
+                  {selectedPool.logoUrl ? (
+                    <img src={selectedPool.logoUrl} alt={selectedPool.name} className="w-8 h-8 object-contain rounded" />
+                  ) : (
+                    <Trophy className="h-5 w-5 text-brand" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{selectedPool.name}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{selectedPool.slug}</p>
+                </div>
+              </div>
+
+              {/* Stats rápidas */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="text-center p-2 rounded-lg bg-muted/20">
+                  <p className="text-lg font-bold text-brand">{selectedPool.memberCount}</p>
+                  <p className="text-xs text-muted-foreground">Participantes</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-muted/20">
+                  <p className="text-sm font-bold capitalize">{selectedPool.plan}</p>
+                  <p className="text-xs text-muted-foreground">Plano</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-muted/20">
+                  <p className="text-xs font-bold">
+                    {format(new Date(selectedPool.createdAt), "dd/MM/yy", { locale: ptBR })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Criado</p>
+                </div>
+              </div>
+
+              {/* Lista de Participantes */}
+              <PoolMembersList poolId={selectedPool.id} />
+
+              {/* Botão Acessar o Bolão */}
+              <Button
+                variant="outline"
+                className="w-full mb-4 gap-2"
+                onClick={() => {
+                  navigate(`/pool/${selectedPool.slug}`);
+                  setSelectedPool(null);
+                }}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Acessar o Bolão
+              </Button>
+
+              <Separator className="mb-4" />
+
+              {/* Formulário de edição */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-muted-foreground" />
+                  Configurações
+                </h3>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Nome do Bolão</Label>
+                  <Input
+                    value={editForm.name}
+                    onChange={(e) => setEditForm(f => f ? { ...f, name: e.target.value } : f)}
+                    className="h-9 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Status</Label>
+                  <Select
+                    value={editForm.status}
+                    onValueChange={(v) => setEditForm(f => f ? { ...f, status: v as typeof f.status } : f)}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="finished">Encerrado</SelectItem>
+                      <SelectItem value="deleted">Excluído</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Tipo de Acesso</Label>
+                  <Select
+                    value={editForm.accessType}
+                    onValueChange={(v) => setEditForm(f => f ? { ...f, accessType: v as typeof f.accessType } : f)}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Público</SelectItem>
+                      <SelectItem value="private_link">Por Link</SelectItem>
+                      <SelectItem value="private_code">Por Código</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Descrição</Label>
+                  <Textarea
+                    value={editForm.description}
+                    onChange={(e) => setEditForm(f => f ? { ...f, description: e.target.value } : f)}
+                    className="resize-none h-20 text-sm"
+                    placeholder="Descrição do bolão..."
+                  />
+                </div>
+
+                {/* Datas */}
+                {selectedPool.planExpiresAt && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 rounded-lg bg-muted/20">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Plano Pro expira em {format(new Date(selectedPool.planExpiresAt), "dd/MM/yyyy", { locale: ptBR })}
+                  </div>
+                )}
+
+                {/* Botão Salvar */}
+                <Button
+                  className="w-full bg-brand hover:bg-brand/90 gap-2"
+                  onClick={handleSavePool}
+                  disabled={updatePool.isPending}
+                >
+                  {updatePool.isPending
+                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                    : <Save className="h-4 w-4" />
+                  }
+                  Salvar Alterações
+                </Button>
+
+                <Separator />
+
+                {/* Zona de perigo */}
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wide">Zona de Perigo</h3>
+                  {selectedPool.status !== "deleted" && (
+                    <Button
+                      variant="outline"
+                      className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 gap-2"
+                      onClick={() => {
+                        setDeleteTarget({ id: selectedPool.id, name: selectedPool.name });
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Excluir Bolão
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Modal: Criar Bolão */}
       <Dialog open={showCreate} onOpenChange={setShowCreate}>

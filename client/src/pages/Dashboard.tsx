@@ -31,6 +31,7 @@ import { Link, useLocation } from "wouter";
 import { DashboardSkeleton } from "@/components/Skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorCard } from "@/components/ErrorCard";
+import { AdBanner } from "@/components/AdBanner";
 import {
   AreaChart,
   Area,
@@ -350,6 +351,9 @@ export default function Dashboard() {
                 )}
               </div>
             </section>
+
+            {/* Ad between sections */}
+            <AdBanner position="between_sections" className="w-full" />
 
             {/* Recent bets — always visible */}
             <section>

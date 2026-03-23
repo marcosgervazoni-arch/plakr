@@ -964,9 +964,51 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const db = await (await import("./db")).getDb();
         if (!db) return [];
+        const { pools: poolsTable, poolMembers } = await import("../drizzle/schema");
+        const { desc, sql } = await import("drizzle-orm");
+        const rows = await db
+          .select({
+            id: poolsTable.id,
+            name: poolsTable.name,
+            slug: poolsTable.slug,
+            status: poolsTable.status,
+            accessType: poolsTable.accessType,
+            plan: poolsTable.plan,
+            logoUrl: poolsTable.logoUrl,
+            createdAt: poolsTable.createdAt,
+            ownerId: poolsTable.ownerId,
+            tournamentId: poolsTable.tournamentId,
+            description: poolsTable.description,
+            planExpiresAt: poolsTable.planExpiresAt,
+            stripeSubscriptionId: poolsTable.stripeSubscriptionId,
+            memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = ${poolsTable.id} AND pm.status = 'active')`,
+          })
+          .from(poolsTable)
+          .orderBy(desc(poolsTable.createdAt))
+          .limit(input.limit);
+        return rows.map(r => ({ ...r, memberCount: Number(r.memberCount) }));
+      }),
+    adminUpdatePool: adminProcedure
+      .input(z.object({
+        poolId: z.number(),
+        status: z.enum(["active", "finished", "deleted"]).optional(),
+        accessType: z.enum(["public", "private_code", "private_link"]).optional(),
+        name: z.string().min(3).max(100).optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         const { pools: poolsTable } = await import("../drizzle/schema");
-        const { desc } = await import("drizzle-orm");
-        return db.select().from(poolsTable).orderBy(desc(poolsTable.createdAt)).limit(input.limit);
+        const { eq } = await import("drizzle-orm");
+        const updates: Record<string, unknown> = {};
+        if (input.status !== undefined) updates.status = input.status;
+        if (input.accessType !== undefined) updates.accessType = input.accessType;
+        if (input.name !== undefined) updates.name = input.name;
+        if (input.description !== undefined) updates.description = input.description;
+        await db.update(poolsTable).set(updates).where(eq(poolsTable.id, input.poolId));
+        await createAdminLog(ctx.user.id, "update_pool", "pool", input.poolId, updates);
+        return { success: true };
       }),
     create: protectedProcedure
       .input(z.object({

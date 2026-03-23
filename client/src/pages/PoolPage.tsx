@@ -23,6 +23,7 @@ import { Link, useParams } from "wouter";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
+import { AdBanner } from "@/components/AdBanner";
 
 export default function PoolPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -227,6 +228,8 @@ export default function PoolPage() {
 
           {/* GAMES TAB */}
           <TabsContent value="games" className="space-y-3">
+            {/* Ad top of games section */}
+            <AdBanner position="top" className="w-full" />
             {games.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Calendar className="w-10 h-10 mx-auto mb-3 opacity-30" />

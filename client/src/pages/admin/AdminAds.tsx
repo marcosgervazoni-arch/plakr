@@ -252,7 +252,9 @@ export default function AdminAds() {
                         return (
                           <TableRow key={ad.id} className={!ad.isActive ? "opacity-50" : ""}>
                             <TableCell>
-                              {ad.assetUrl ? (
+                              {ad.assetUrl && ad.type === "video" ? (
+                                <video src={ad.assetUrl} className="w-12 h-8 object-cover rounded border border-border/50" muted playsInline />
+                              ) : ad.assetUrl ? (
                                 <img src={ad.assetUrl} alt={ad.title} className="w-12 h-8 object-cover rounded border border-border/50" />
                               ) : (
                                 <div className="w-12 h-8 bg-muted rounded border border-border/50 flex items-center justify-center">
@@ -363,6 +365,7 @@ export default function AdminAds() {
         })}
         isPending={createMutation.isPending}
         submitLabel="Criar Anúncio"
+        showAdvanced
       />
 
       {/* Edit Dialog */}
