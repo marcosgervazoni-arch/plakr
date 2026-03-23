@@ -342,14 +342,45 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
       });
     }
 
-    // Notificar membros sobre resultado
+    // Notificar membros sobre resultado e ranking
+    // Montar ranking ordenado por pontos para incluir posição na notificação
+    const memberStats: Array<{ userId: number; totalPoints: number }> = [];
     for (const { member } of members) {
+      const allBets = await getBetsByPool(pool.id, member.userId);
+      const totalPoints = allBets.reduce((sum, b) => sum + (b.pointsEarned ?? 0), 0);
+      memberStats.push({ userId: member.userId, totalPoints });
+    }
+    memberStats.sort((a, b) => b.totalPoints - a.totalPoints);
+
+    for (let i = 0; i < memberStats.length; i++) {
+      const { userId, totalPoints } = memberStats[i];
+      const position = i + 1;
+      const posEmoji = position === 1 ? "🥇" : position === 2 ? "🥈" : position === 3 ? "🥉" : `#${position}`;
+
+      // Notificação de resultado
       await createNotification({
-        userId: member.userId,
+        userId,
         poolId: pool.id,
         type: "result_available",
-        title: `Resultado: ${game.teamAName} ${scoreA} × ${scoreB} ${game.teamBName}`,
-        message: `O resultado do jogo foi registrado. Confira sua pontuação no bolão "${pool.name}".`,
+        title: `✅ Resultado: ${game.teamAName} ${scoreA} × ${scoreB} ${game.teamBName}`,
+        message: `O resultado foi registrado no bolão "${pool.name}". Você está com ${totalPoints} ponto${totalPoints !== 1 ? "s" : ""} no total.`,
+        actionUrl: `/pools/${pool.id}`,
+        actionLabel: "Ver pontuação",
+        priority: "high",
+        category: "result_available",
+      });
+
+      // Notificação de ranking
+      await createNotification({
+        userId,
+        poolId: pool.id,
+        type: "ranking_update",
+        title: `🏆 Ranking atualizado — ${pool.name}`,
+        message: `Você está na posição ${posEmoji} com ${totalPoints} ponto${totalPoints !== 1 ? "s" : ""} após o jogo ${game.teamAName} × ${game.teamBName}.`,
+        actionUrl: `/pools/${pool.id}`,
+        actionLabel: "Ver ranking",
+        priority: "normal",
+        category: "ranking_update",
       });
     }
   }

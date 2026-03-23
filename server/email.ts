@@ -5,8 +5,8 @@
  * resultado disponível, expiração de plano Pro e convite de bolão.
  */
 import { ENV } from "./_core/env";
-import { getDb } from "./db";
-import { emailQueue, users, games, userPlans } from "../drizzle/schema";
+import { getDb, createNotification } from "./db";
+import { emailQueue, users, games, userPlans, pools, poolMembers } from "../drizzle/schema";
 import { eq, and, lte, gte, sql } from "drizzle-orm";
 
 // ─── Brand colors ────────────────────────────────────────────────────────────
@@ -347,8 +347,39 @@ export async function scheduleBetReminders(): Promise<void> {
       .limit(20);
 
     console.log(`[Email] Found ${upcomingGames.length} games needing bet reminders`);
-    // Note: Full implementation would join with pool_members and users to get emails
-    // and enqueue individual reminder emails. Simplified here for architecture clarity.
+
+    for (const g of upcomingGames) {
+      // Buscar bolões ativos que usam este torneio
+      const activePools = await db
+        .select({ id: pools.id, name: pools.name, slug: pools.slug })
+        .from(pools)
+        .where(and(eq(pools.tournamentId, g.tournamentId), eq(pools.status, "active")));
+
+      for (const pool of activePools) {
+        // Buscar membros ativos do bolão
+        const members = await db
+          .select({ userId: poolMembers.userId })
+          .from(poolMembers)
+          .where(and(eq(poolMembers.poolId, pool.id), eq(poolMembers.isBlocked, false)));
+
+        const matchDate = new Date(g.matchDate as Date);
+        const matchTime = matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+
+        for (const { userId } of members) {
+          await createNotification({
+            userId,
+            poolId: pool.id,
+            type: "game_reminder",
+            title: `⏰ Jogo em 1 hora — ${g.homeTeamName} × ${g.awayTeamName}`,
+            message: `O jogo começa às ${matchTime}. Faça seu palpite no bolão "${pool.name}" antes que seja tarde!`,
+            actionUrl: `/pools/${pool.id}`,
+            actionLabel: "Fazer palpite",
+            priority: "high",
+            category: "game_reminder",
+          });
+        }
+      }
+    }
   } catch (err) {
     console.error("[Email] Bet reminder scheduling error:", err);
   }

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor, type MediaAttachment } from "@/components/RichTextEditor";
 import { trpc } from "@/lib/trpc";
 import {
   AlertTriangle,
@@ -32,41 +32,8 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 
-// ─── Categorias ───────────────────────────────────────────────────────────────
+// ─── Categorias manuais (automáticas são disparadas pelo sistema) ─────────────
 const CATEGORIES = [
-  {
-    value: "game_reminder",
-    label: "Lembrete de Jogo",
-    description: "Aviso de que o jogo está prestes a iniciar",
-    icon: Clock,
-    color: "text-blue-400",
-    bg: "bg-blue-400/10",
-    border: "border-blue-400/30",
-    emoji: "⚽",
-    auto: true,
-  },
-  {
-    value: "result_available",
-    label: "Resultado Disponível",
-    description: "Resultado do jogo foi apurado",
-    icon: CheckCircle2,
-    color: "text-green-400",
-    bg: "bg-green-400/10",
-    border: "border-green-400/30",
-    emoji: "✅",
-    auto: true,
-  },
-  {
-    value: "ranking_update",
-    label: "Atualização do Ranking",
-    description: "Classificação do bolão foi atualizada",
-    icon: Trophy,
-    color: "text-yellow-400",
-    bg: "bg-yellow-400/10",
-    border: "border-yellow-400/30",
-    emoji: "🏆",
-    auto: true,
-  },
   {
     value: "advertising",
     label: "Publicidade",
@@ -76,7 +43,6 @@ const CATEGORIES = [
     bg: "bg-purple-400/10",
     border: "border-purple-400/30",
     emoji: "🎯",
-    auto: false,
   },
   {
     value: "communication",
@@ -87,7 +53,6 @@ const CATEGORIES = [
     bg: "bg-brand/10",
     border: "border-brand/30",
     emoji: "📢",
-    auto: false,
   },
 ] as const;
 
@@ -119,7 +84,7 @@ function InAppPreview({
   title: string; content: string; emoji: string; imageUrl: string;
   actionUrl: string; actionLabel: string; category: Category; priority: string;
 }) {
-  const cat = CATEGORIES.find(c => c.value === category) ?? CATEGORIES[4];
+  const cat = CATEGORIES.find(c => c.value === category) ?? CATEGORIES[0];
   const CatIcon = cat.icon;
   const priorityOpt = PRIORITY_OPTIONS.find(p => p.value === priority) ?? PRIORITY_OPTIONS[1];
   const displayTitle = emoji ? `${emoji} ${title || "Título da notificação"}` : (title || "Título da notificação");
@@ -240,6 +205,7 @@ export default function AdminBroadcasts() {
   const [actionLabel, setActionLabel] = useState("");
   const [audience, setAudience] = useState<"all" | "pro" | "free">("all");
   const [channels, setChannels] = useState({ inApp: true, push: false, email: false });
+  const [attachments, setAttachments] = useState<MediaAttachment[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [emailFilter, setEmailFilter] = useState<"all" | "pending" | "sent" | "failed">("all");
 
@@ -284,7 +250,7 @@ export default function AdminBroadcasts() {
   const toggleChannel = (ch: keyof typeof channels) =>
     setChannels((prev) => ({ ...prev, [ch]: !prev[ch] }));
 
-  const selectedCat = CATEGORIES.find(c => c.value === category) ?? CATEGORIES[4];
+  const selectedCat = CATEGORIES.find(c => c.value === category) ?? CATEGORIES[0];
   const CatIcon = selectedCat.icon;
 
   return (
@@ -384,7 +350,7 @@ export default function AdminBroadcasts() {
                                 <div className="flex items-center gap-2">
                                   <span className={`text-sm font-medium ${isSelected ? cat.color : ""}`}>{cat.label}</span>
                                   <Badge variant="outline" className="text-xs h-4 px-1">
-                                    {cat.auto ? "automática" : "manual"}
+                                    manual
                                   </Badge>
                                 </div>
                                 <p className="text-xs text-muted-foreground">{cat.description}</p>
@@ -428,17 +394,17 @@ export default function AdminBroadcasts() {
                         <p className="text-xs text-muted-foreground text-right">{title.length}/100</p>
                       </div>
 
-                      {/* Mensagem */}
+                      {/* Mensagem — Editor Rich Text */}
                       <div className="space-y-1">
                         <Label>Mensagem *</Label>
-                        <Textarea
-                          placeholder="Escreva o conteúdo completo da notificação. Você pode usar quebras de linha para organizar o texto."
+                        <RichTextEditor
                           value={content}
-                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
-                          className="resize-none h-32"
+                          onChange={setContent}
+                          placeholder="Escreva o conteúdo completo da notificação..."
+                          attachments={attachments}
+                          onAttachmentsChange={setAttachments}
                           maxLength={2000}
                         />
-                        <p className="text-xs text-muted-foreground text-right">{content.length}/2000</p>
                       </div>
 
                       {/* Prioridade */}

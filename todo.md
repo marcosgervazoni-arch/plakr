@@ -477,3 +477,10 @@
 - [x] Broadcast: editor rich notification com preview em tempo real
 - [x] Broadcast: categorias (Lembrete de jogo, Resultado disponível, Atualização do Ranking, Publicidade, Comunicação)
 - [x] Broadcast: campos icon, imageUrl, actionUrl, actionLabel, priority no schema
+
+## Sprint 23/03/2026 — Broadcast Rich Editor + Auto-notificações
+- [x] Broadcast: remover categorias automáticas do seletor manual (manter só Publicidade e Comunicação)
+- [x] Broadcast: implementar disparos automáticos (game_reminder, result_available, ranking_update) via crons/hooks
+- [x] Broadcast: editor rich text com toolbar (negrito, itálico, tachado, código, listas, links, emojis)
+- [x] Broadcast: upload de mídia (imagem, vídeo, áudio) e documentos (PDF) no editor
+- [x] Broadcast: preview renderizado (Markdown/rich text) em tempo real, mobile-first
