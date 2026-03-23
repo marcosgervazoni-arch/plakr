@@ -427,6 +427,9 @@
 - [ ] Frontend: integrar AdBanner nas posições definidas (topo, entre jogos, lateral, popup)
 - [ ] Frontend: filtrar anúncios por device (mobile/desktop/all) e período (startAt/endAt)
 
+## Correção de Botões Mobile — Sprint 23/03/2026 (v2)
+- [x] AdminBroadcasts: botão Enviar Broadcast movido para fora dos cards, sempre visível abaixo do Preview em mobile (h-12, text-base)
+
 ## Correção de Botões Mobile — Sprint 23/03/2026
 - [x] AdminTournaments: botão +Novo Campeonato separado do Importar CSV, sempre visível no mobile (shrink-0)
 - [x] AdminPools: botão +Novo Bolão separado dos filtros de status, sempre visível no mobile (shrink-0)

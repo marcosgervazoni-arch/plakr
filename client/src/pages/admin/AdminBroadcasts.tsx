@@ -154,6 +154,7 @@ export default function AdminBroadcasts() {
 
           {/* Aba Compor */}
           <TabsContent value="compose" className="mt-4">
+            <div className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Formulário */}
               <Card className="border-border/50">
@@ -258,23 +259,6 @@ export default function AdminBroadcasts() {
                     <p className="text-xs text-muted-foreground text-right">{content.length}/500</p>
                   </div>
 
-                  <Button
-                    className="w-full bg-brand hover:bg-brand/90 gap-2"
-                    onClick={handleSend}
-                    disabled={
-                      broadcastMutation.isPending ||
-                      !title.trim() ||
-                      !content.trim() ||
-                      (!channels.inApp && !channels.push && !channels.email)
-                    }
-                  >
-                    {broadcastMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                    Enviar Broadcast
-                  </Button>
                 </CardContent>
               </Card>
 
@@ -358,6 +342,26 @@ export default function AdminBroadcasts() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Botão Enviar — sempre visível abaixo dos cards */}
+            <Button
+              className="w-full bg-brand hover:bg-brand/90 gap-2 h-12 text-base"
+              onClick={handleSend}
+              disabled={
+                broadcastMutation.isPending ||
+                !title.trim() ||
+                !content.trim() ||
+                (!channels.inApp && !channels.push && !channels.email)
+              }
+            >
+              {broadcastMutation.isPending ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+              Enviar Broadcast
+            </Button>
             </div>
           </TabsContent>
 
