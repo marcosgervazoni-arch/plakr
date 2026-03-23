@@ -60,6 +60,7 @@ export const platformSettings = mysqlTable("platform_settings", {
   vapidPrivateKey: text("vapidPrivateKey"),
   vapidEmail: varchar("vapidEmail", { length: 320 }),
   pushEnabled: boolean("pushEnabled").default(false).notNull(),
+  adsEnabled: boolean("adsEnabled").default(true).notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").references(() => users.id),
 });
@@ -485,6 +486,10 @@ export const adminLogs = mysqlTable("admin_logs", {
   entityType: varchar("entityType", { length: 64 }),
   entityId: int("entityId"),
   details: json("details").$type<Record<string, unknown>>(),
+  previousValue: json("previousValue").$type<Record<string, unknown>>(),
+  correlationId: varchar("correlationId", { length: 36 }),
+  level: mysqlEnum("level", ["info", "warn", "error"]).default("info").notNull(),
+  ipAddress: varchar("ipAddress", { length: 45 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

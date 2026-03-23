@@ -2040,6 +2040,41 @@ export const appRouter = router({
         await db.insert(adClicks).values({ adId: input.adId, userId: ctx.user?.id ?? null });
         return { success: true };
       }),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().min(1).max(255).optional(),
+        assetUrl: z.string().optional().nullable(),
+        linkUrl: z.string().optional().nullable(),
+        type: z.enum(["banner", "video", "script"]).optional(),
+        position: z.enum(["sidebar", "top", "between_sections", "bottom", "popup"]).optional(),
+        isActive: z.boolean().optional(),
+        device: z.string().optional(),
+        startAt: z.date().optional().nullable(),
+        endAt: z.date().optional().nullable(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new Error("DB not available");
+        const { ads: adsT } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const { id, ...updates } = input;
+        await db.update(adsT).set(updates as Record<string, unknown>).where(eq(adsT.id, id));
+        await createAdminLog(ctx.user.id, "ads.update", "ad", id, { updates });
+        return { success: true };
+      }),
+    globalToggle: adminProcedure
+      .input(z.object({ enabled: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new Error("DB not available");
+        const { platformSettings } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        await db.update(platformSettings).set({ adsEnabled: input.enabled }).where(eq(platformSettings.id, 1));
+        await createAdminLog(ctx.user.id, "ads.globalToggle", "platform", 1, { adsEnabled: input.enabled });
+        return { success: true };
+      }),
   }),
 });
 

@@ -1,0 +1,14 @@
+{
+  "query": "\n-- Corrigir nomes das fases nos jogos\nUPDATE games SET phase = 'Rodada de 32' WHERE tournamentId = 2 AND phase = 'round_of_32';\nUPDATE games SET phase = 'Oitavas de Final' WHERE tournamentId = 2 AND phase = 'round_of_16';\nUPDATE games SET phase = 'Semifinais' WHERE tournamentId = 2 AND phase = 'semifinals';\nUPDATE games SET phase = 'Disputa 3º Lugar' WHERE tournamentId = 2 AND phase = 'third_place';\nUPDATE games SET phase = 'Final' WHERE tournamentId = 2 AND phase = 'final';\n\n-- Verificar contagem atual de Quartas de Final\nSELECT phase, COUNT(*) as cnt FROM games WHERE tournamentId = 2 AND phase = 'Quartas de Final';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \n-- Corrigir nomes das fases nos jogos\nUPDATE games SET phase = 'Rodada de 32' WHERE tournamentId = 2 AND phase = 'round_of_32';\nUPDATE games SET phase = 'Oitavas de Final' WHERE tournamentId = 2 AND phase = 'round_of_16';\nUPDATE games SET phase = 'Semifinais' WHERE tournamentId = 2 AND phase = 'semifinals';\nUPDATE games SET phase = 'Disputa 3º Lugar' WHERE tournamentId = 2 AND phase = 'third_place';\nUPDATE games SET phase = 'Final' WHERE tournamentId = 2 AND phase = 'final';\n\n-- Verificar contagem atual de Quartas de Final\nSELECT phase, COUNT(*) as cnt FROM games WHERE tournamentId = 2 AND phase = 'Quartas de Final';\n",
+  "rows": [
+    {
+      "phase": "Quartas de Final",
+      "cnt": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "phase\tcnt\nQuartas de Final\t4\n",
+  "stderr": "",
+  "execution_time_ms": 757
+}

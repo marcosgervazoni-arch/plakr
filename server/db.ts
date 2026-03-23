@@ -562,11 +562,28 @@ export async function createAdminLog(
   entityType?: string,
   entityId?: number,
   details?: Record<string, unknown>,
-  poolId?: number
+  poolId?: number,
+  opts?: {
+    previousValue?: Record<string, unknown>;
+    correlationId?: string;
+    level?: "info" | "warn" | "error";
+    ipAddress?: string;
+  }
 ) {
   const db = await getDb();
   if (!db) return;
-  await db.insert(adminLogs).values({ adminId, action, entityType, entityId, details, poolId });
+  await db.insert(adminLogs).values({
+    adminId,
+    action,
+    entityType,
+    entityId,
+    details,
+    poolId,
+    previousValue: opts?.previousValue,
+    correlationId: opts?.correlationId,
+    level: opts?.level ?? "info",
+    ipAddress: opts?.ipAddress,
+  });
 }
 
 // ─── EMAIL QUEUE ──────────────────────────────────────────────────────────────

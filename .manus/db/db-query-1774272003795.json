@@ -1,0 +1,14 @@
+{
+  "query": "\n-- A Copa do Mundo 2026 tem 8 Quartas de Final (QF1 a QF8)\n-- Já existem 4 inseridos. Inserir os 4 restantes.\n-- QF5: Vencedor R32-9 vs Vencedor R32-10\nINSERT INTO games (tournamentId, teamAName, teamBName, phase, matchDate, venue, status, matchNumber, sourceMatchARole, sourceMatchBRole)\nVALUES \n  (2, 'A definir', 'A definir', 'Quartas de Final', '2026-07-03 21:00:00', 'A definir', 'scheduled', 85, 'winner', 'winner'),\n  (2, 'A definir', 'A definir', 'Quartas de Final', '2026-07-04 17:00:00', 'A definir', 'scheduled', 86, 'winner', 'winner'),\n  (2, 'A definir', 'A definir', 'Quartas de Final', '2026-07-04 21:00:00', 'A definir', 'scheduled', 87, 'winner', 'winner'),\n  (2, 'A definir', 'A definir', 'Quartas de Final', '2026-07-05 17:00:00', 'A definir', 'scheduled', 88, 'winner', 'winner');\n\n-- Verificar total\nSELECT phase, COUNT(*) as cnt FROM games WHERE tournamentId = 2 AND phase = 'Quartas de Final';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \n-- A Copa do Mundo 2026 tem 8 Quartas de Final (QF1 a QF8)\n-- Já existem 4 inseridos. Inserir os 4 restantes.\n-- QF5: Vencedor R32-9 vs Vencedor R32-10\nINSERT INTO games (tournamentId, teamAName, teamBName, phase, matchDate, venue, status, matchNumber, sourceMatchARole, sourceMatchBRole)\nVALUES \n  (2, 'A definir', 'A definir', 'Quartas de Final', '2026-07-03 21:00:00', 'A definir', 'scheduled', 85, 'winner', 'winner'),\n  (2, 'A definir', 'A definir', 'Quartas de Final', '2026-07-04 17:00:00', 'A definir', 'scheduled', 86, 'winner', 'winner'),\n  (2, 'A definir', 'A definir', 'Quartas de Final', '2026-07-04 21:00:00', 'A definir', 'scheduled', 87, 'winner', 'winner'),\n  (2, 'A definir', 'A definir', 'Quartas de Final', '2026-07-05 17:00:00', 'A definir', 'scheduled', 88, 'winner', 'winner');\n\n-- Verificar total\nSELECT phase, COUNT(*) as cnt FROM games WHERE tournamentId = 2 AND phase = 'Quartas de Final';\n",
+  "rows": [
+    {
+      "phase": "Quartas de Final",
+      "cnt": "8"
+    }
+  ],
+  "messages": [],
+  "stdout": "phase\tcnt\nQuartas de Final\t8\n",
+  "stderr": "",
+  "execution_time_ms": 437
+}
