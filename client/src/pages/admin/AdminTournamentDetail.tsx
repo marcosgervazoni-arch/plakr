@@ -211,26 +211,27 @@ export default function AdminTournamentDetail() {
 
   const { tournament, phases, teams, games } = data;
 
-  // Map games to phases
-  const gamesByPhaseLabel: Record<string, typeof games> = {};
+  // Map games to phases — indexed by the game's phase value (e.g. "group_a" or "Grupo A")
+  const gamesByPhaseKey: Record<string, typeof games> = {};
   for (const g of games) {
     const key = g.phase ?? "Sem fase";
-    if (!gamesByPhaseLabel[key]) gamesByPhaseLabel[key] = [];
-    gamesByPhaseLabel[key].push(g);
+    if (!gamesByPhaseKey[key]) gamesByPhaseKey[key] = [];
+    gamesByPhaseKey[key].push(g);
   }
 
   // Build ordered phase list from phases table, then orphan groups
+  // Match by phase.key first ("group_a"), then by phase.label ("Grupo A") for backwards compat
   const orderedPhases = phases.map((p) => ({
     id: p.id,
     key: p.key,
     label: p.label,
     isKnockout: p.isKnockout,
     slots: p.slots,
-    games: gamesByPhaseLabel[p.label] ?? [],
+    games: gamesByPhaseKey[p.key] ?? gamesByPhaseKey[p.label] ?? [],
   }));
-  // Orphan games not matched to any phase label
-  const knownLabels = new Set(phases.map((p) => p.label));
-  const orphanGames = games.filter((g) => !knownLabels.has(g.phase ?? ""));
+  // Orphan games not matched to any phase key or label
+  const knownKeys = new Set(phases.flatMap((p) => [p.key, p.label]));
+  const orphanGames = games.filter((g) => !knownKeys.has(g.phase ?? ""));
   if (orphanGames.length > 0) {
     orderedPhases.push({ id: -1, key: "orphan", label: "Sem fase", isKnockout: false, slots: null, games: orphanGames });
   }

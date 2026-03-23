@@ -1,0 +1,61 @@
+{
+  "query": "SELECT phase, COUNT(*) as total FROM games WHERE tournamentId = 2 AND phase LIKE 'group_%' GROUP BY phase ORDER BY phase;\nSELECT COUNT(*) as total_group_stage FROM games WHERE tournamentId = 2 AND phase LIKE 'group_%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT phase, COUNT(*) as total FROM games WHERE tournamentId = 2 AND phase LIKE 'group_%' GROUP BY phase ORDER BY phase;\nSELECT COUNT(*) as total_group_stage FROM games WHERE tournamentId = 2 AND phase LIKE 'group_%';",
+  "rows": [
+    {
+      "phase": "group_a",
+      "total": "6"
+    },
+    {
+      "phase": "group_b",
+      "total": "6"
+    },
+    {
+      "phase": "group_c",
+      "total": "6"
+    },
+    {
+      "phase": "group_d",
+      "total": "6"
+    },
+    {
+      "phase": "group_e",
+      "total": "6"
+    },
+    {
+      "phase": "group_f",
+      "total": "6"
+    },
+    {
+      "phase": "group_g",
+      "total": "6"
+    },
+    {
+      "phase": "group_h",
+      "total": "6"
+    },
+    {
+      "phase": "group_i",
+      "total": "6"
+    },
+    {
+      "phase": "group_j",
+      "total": "6"
+    },
+    {
+      "phase": "group_k",
+      "total": "6"
+    },
+    {
+      "phase": "group_l",
+      "total": "6"
+    }
+  ],
+  "messages": [
+    "total_group_stage",
+    "72"
+  ],
+  "stdout": "phase\ttotal\ngroup_a\t6\ngroup_b\t6\ngroup_c\t6\ngroup_d\t6\ngroup_e\t6\ngroup_f\t6\ngroup_g\t6\ngroup_h\t6\ngroup_i\t6\ngroup_j\t6\ngroup_k\t6\ngroup_l\t6\ntotal_group_stage\n72\n",
+  "stderr": "",
+  "execution_time_ms": 440
+}

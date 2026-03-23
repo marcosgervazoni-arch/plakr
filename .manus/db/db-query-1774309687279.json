@@ -1,0 +1,46 @@
+{
+  "query": "-- Irã x Nova Zelândia: 15/06 22:00 Brasília = 16/06 01:00 UTC (banco tem 16/06 03:00 UTC = 00:00 Brasília - ERRADO)\nUPDATE games SET matchDate = '2026-06-16 01:00:00' WHERE id = 16;\n\n-- Bélgica x Irã: 21/06 16:00 Brasília = 19:00 UTC ✓ (já correto)\n-- Nova Zelândia x Egito: 21/06 22:00 Brasília = 22/06 01:00 UTC (banco tem 22/06 03:00 UTC - ERRADO)\nUPDATE games SET matchDate = '2026-06-22 01:00:00' WHERE id = 40;\n\n-- Bélgica x Nova Zelândia: 26/06 23:00 Brasília = 27/06 02:00 UTC (banco tem 27/06 03:00 UTC - ERRADO)\nUPDATE games SET matchDate = '2026-06-27 02:00:00' WHERE id = 63;\n\n-- Egito x Irã: 26/06 23:00 Brasília = 27/06 02:00 UTC (banco tem 27/06 03:00 UTC - ERRADO)\nUPDATE games SET matchDate = '2026-06-27 02:00:00' WHERE id = 64;\n\n-- Verificar também o Grupo D: Austrália x Playoff C UEFA: 13/06 01:00 Brasília = 04:00 UTC (banco tem 14/06 06:00 UTC - ERRADO)\nSELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase = 'group_d' ORDER BY matchDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Irã x Nova Zelândia: 15/06 22:00 Brasília = 16/06 01:00 UTC (banco tem 16/06 03:00 UTC = 00:00 Brasília - ERRADO)\nUPDATE games SET matchDate = '2026-06-16 01:00:00' WHERE id = 16;\n\n-- Bélgica x Irã: 21/06 16:00 Brasília = 19:00 UTC ✓ (já correto)\n-- Nova Zelândia x Egito: 21/06 22:00 Brasília = 22/06 01:00 UTC (banco tem 22/06 03:00 UTC - ERRADO)\nUPDATE games SET matchDate = '2026-06-22 01:00:00' WHERE id = 40;\n\n-- Bélgica x Nova Zelândia: 26/06 23:00 Brasília = 27/06 02:00 UTC (banco tem 27/06 03:00 UTC - ERRADO)\nUPDATE games SET matchDate = '2026-06-27 02:00:00' WHERE id = 63;\n\n-- Egito x Irã: 26/06 23:00 Brasília = 27/06 02:00 UTC (banco tem 27/06 03:00 UTC - ERRADO)\nUPDATE games SET matchDate = '2026-06-27 02:00:00' WHERE id = 64;\n\n-- Verificar também o Grupo D: Austrália x Playoff C UEFA: 13/06 01:00 Brasília = 04:00 UTC (banco tem 14/06 06:00 UTC - ERRADO)\nSELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase = 'group_d' ORDER BY matchDate;",
+  "rows": [
+    {
+      "id": "4",
+      "teamAName": "Estados Unidos",
+      "teamBName": "Paraguai",
+      "matchDate": "2026-06-13 03:00:00"
+    },
+    {
+      "id": "8",
+      "teamAName": "Austrália",
+      "teamBName": "Playoff C UEFA",
+      "matchDate": "2026-06-14 06:00:00"
+    },
+    {
+      "id": "29",
+      "teamAName": "Estados Unidos",
+      "teamBName": "Austrália",
+      "matchDate": "2026-06-19 19:00:00"
+    },
+    {
+      "id": "32",
+      "teamAName": "Playoff C UEFA",
+      "teamBName": "Paraguai",
+      "matchDate": "2026-06-20 06:00:00"
+    },
+    {
+      "id": "59",
+      "teamAName": "Playoff C UEFA",
+      "teamBName": "Estados Unidos",
+      "matchDate": "2026-06-26 06:00:00"
+    },
+    {
+      "id": "60",
+      "teamAName": "Paraguai",
+      "teamBName": "Austrália",
+      "matchDate": "2026-06-26 06:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\n4\tEstados Unidos\tParaguai\t2026-06-13 03:00:00\n8\tAustrália\tPlayoff C UEFA\t2026-06-14 06:00:00\n29\tEstados Unidos\tAustrália\t2026-06-19 19:00:00\n32\tPlayoff C UEFA\tParaguai\t2026-06-20 06:00:00\n59\tPlayoff C UEFA\tEstados Unidos\t2026-06-26 06:00:00\n60\tParaguai\tAustrália\t2026-06-26 06:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 583
+}

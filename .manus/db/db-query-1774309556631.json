@@ -1,0 +1,25 @@
+{
+  "query": "SELECT id, name, slug, status FROM tournaments ORDER BY id;\nSELECT COUNT(*) as total_games FROM games;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, name, slug, status FROM tournaments ORDER BY id;\nSELECT COUNT(*) as total_games FROM games;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Copa do Mundo 2026",
+      "slug": "copa-do-mundo-2026",
+      "status": "active"
+    },
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "slug": "copa-do-mundo-fifa-2026",
+      "status": "active"
+    }
+  ],
+  "messages": [
+    "total_games",
+    "104"
+  ],
+  "stdout": "id\tname\tslug\tstatus\n1\tCopa do Mundo 2026\tcopa-do-mundo-2026\tactive\n2\tCopa do Mundo FIFA\tcopa-do-mundo-fifa-2026\tactive\ntotal_games\n104\n",
+  "stderr": "",
+  "execution_time_ms": 419
+}

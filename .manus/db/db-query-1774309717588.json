@@ -1,0 +1,9 @@
+{
+  "query": "-- Grupo F correções:\nUPDATE games SET matchDate = '2026-06-15 02:00:00' WHERE id = 12;\nUPDATE games SET matchDate = '2026-06-21 04:00:00' WHERE id = 36;\nUPDATE games SET matchDate = '2026-06-25 23:00:00' WHERE id = 57;\nUPDATE games SET matchDate = '2026-06-25 23:00:00' WHERE id = 58;\n-- Grupo I correções:\nUPDATE games SET matchDate = '2026-06-23 00:00:00' WHERE id = 43;\nUPDATE games SET matchDate = '2026-06-27 19:00:00' WHERE id = 61;\nUPDATE games SET matchDate = '2026-06-27 19:00:00' WHERE id = 62;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Grupo F correções:\nUPDATE games SET matchDate = '2026-06-15 02:00:00' WHERE id = 12;\nUPDATE games SET matchDate = '2026-06-21 04:00:00' WHERE id = 36;\nUPDATE games SET matchDate = '2026-06-25 23:00:00' WHERE id = 57;\nUPDATE games SET matchDate = '2026-06-25 23:00:00' WHERE id = 58;\n-- Grupo I correções:\nUPDATE games SET matchDate = '2026-06-23 00:00:00' WHERE id = 43;\nUPDATE games SET matchDate = '2026-06-27 19:00:00' WHERE id = 61;\nUPDATE games SET matchDate = '2026-06-27 19:00:00' WHERE id = 62;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 713
+}

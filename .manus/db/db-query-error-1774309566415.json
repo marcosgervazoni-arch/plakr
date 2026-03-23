@@ -1,0 +1,8 @@
+{
+  "query": "SELECT tournament_id, COUNT(*) as total FROM games GROUP BY tournament_id;\nSELECT id, team_a_name, team_b_name, match_date, status, round FROM games WHERE tournament_id = 2 ORDER BY match_date LIMIT 10;\nDESCRIBE games;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT tournament_id, COUNT(*) as total FROM games GROUP BY tournament_id;\nSELECT id, team_a_name, team_b_name, match_date, status, round FROM games WHERE tournament_id = 2 ORDER BY match_date LIMIT 10;\nDESCRIBE games;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'tournament_id' in 'group statement'"
+  ]
+}

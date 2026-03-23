@@ -1,0 +1,94 @@
+{
+  "query": "SELECT id, teamAName, teamBName, matchDate, groupName FROM games WHERE tournamentId = 2 AND phase IN ('group_g','group_l') ORDER BY matchDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, matchDate, groupName FROM games WHERE tournamentId = 2 AND phase IN ('group_g','group_l') ORDER BY matchDate;",
+  "rows": [
+    {
+      "id": "14",
+      "teamAName": "Bélgica",
+      "teamBName": "Egito",
+      "matchDate": "2026-06-15 19:00:00",
+      "groupName": "G"
+    },
+    {
+      "id": "16",
+      "teamAName": "Irã",
+      "teamBName": "Nova Zelândia",
+      "matchDate": "2026-06-16 03:00:00",
+      "groupName": "G"
+    },
+    {
+      "id": "22",
+      "teamAName": "Inglaterra",
+      "teamBName": "Croácia",
+      "matchDate": "2026-06-17 20:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "23",
+      "teamAName": "Gana",
+      "teamBName": "Panamá",
+      "matchDate": "2026-06-18 03:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "38",
+      "teamAName": "Bélgica",
+      "teamBName": "Irã",
+      "matchDate": "2026-06-21 19:00:00",
+      "groupName": "G"
+    },
+    {
+      "id": "40",
+      "teamAName": "Nova Zelândia",
+      "teamBName": "Egito",
+      "matchDate": "2026-06-22 03:00:00",
+      "groupName": "G"
+    },
+    {
+      "id": "46",
+      "teamAName": "Inglaterra",
+      "teamBName": "Gana",
+      "matchDate": "2026-06-23 20:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "47",
+      "teamAName": "Panamá",
+      "teamBName": "Croácia",
+      "matchDate": "2026-06-24 03:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "63",
+      "teamAName": "Bélgica",
+      "teamBName": "Nova Zelândia",
+      "matchDate": "2026-06-27 03:00:00",
+      "groupName": "G"
+    },
+    {
+      "id": "64",
+      "teamAName": "Egito",
+      "teamBName": "Irã",
+      "matchDate": "2026-06-27 03:00:00",
+      "groupName": "G"
+    },
+    {
+      "id": "71",
+      "teamAName": "Inglaterra",
+      "teamBName": "Panamá",
+      "matchDate": "2026-06-28 22:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "72",
+      "teamAName": "Croácia",
+      "teamBName": "Gana",
+      "matchDate": "2026-06-28 22:00:00",
+      "groupName": "L"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\tgroupName\n14\tBélgica\tEgito\t2026-06-15 19:00:00\tG\n16\tIrã\tNova Zelândia\t2026-06-16 03:00:00\tG\n22\tInglaterra\tCroácia\t2026-06-17 20:00:00\tL\n23\tGana\tPanamá\t2026-06-18 03:00:00\tL\n38\tBélgica\tIrã\t2026-06-21 19:00:00\tG\n40\tNova Zelândia\tEgito\t2026-06-22 03:00:00\tG\n46\tInglaterra\tGana\t2026-06-23 20:00:00\tL\n47\tPanamá\tCroácia\t2026-06-24 03:00:00\tL\n63\tBélgica\tNova Zelândia\t2026-06-27 03:00:00\tG\n64\tEgito\tIrã\t2026-06-27 03:00:00\tG\n71\tInglaterra\tPanamá\t2026-06-28 22:00:00\tL\n72\tCroácia\tGana\t2026-06-28 22:00:00\tL\n",
+  "stderr": "",
+  "execution_time_ms": 369
+}

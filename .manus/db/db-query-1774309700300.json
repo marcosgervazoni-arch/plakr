@@ -1,0 +1,88 @@
+{
+  "query": "-- Verificar Grupo F\nSELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase = 'group_f' ORDER BY matchDate;\n-- Verificar Grupo I (horários específicos)\nSELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase = 'group_i' ORDER BY matchDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Verificar Grupo F\nSELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase = 'group_f' ORDER BY matchDate;\n-- Verificar Grupo I (horários específicos)\nSELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase = 'group_i' ORDER BY matchDate;",
+  "rows": [
+    {
+      "id": "10",
+      "teamAName": "Holanda",
+      "teamBName": "Japão",
+      "matchDate": "2026-06-14 20:00:00"
+    },
+    {
+      "id": "12",
+      "teamAName": "Playoff B UEFA",
+      "teamBName": "Tunísia",
+      "matchDate": "2026-06-15 06:00:00"
+    },
+    {
+      "id": "33",
+      "teamAName": "Holanda",
+      "teamBName": "Playoff B UEFA",
+      "matchDate": "2026-06-20 17:00:00"
+    },
+    {
+      "id": "36",
+      "teamAName": "Tunísia",
+      "teamBName": "Japão",
+      "matchDate": "2026-06-21 06:00:00"
+    },
+    {
+      "id": "57",
+      "teamAName": "Tunísia",
+      "teamBName": "Holanda",
+      "matchDate": "2026-06-26 03:00:00"
+    },
+    {
+      "id": "58",
+      "teamAName": "Japão",
+      "teamBName": "Playoff B UEFA",
+      "matchDate": "2026-06-26 03:00:00"
+    },
+    {
+      "id": "id",
+      "teamAName": "teamAName",
+      "teamBName": "teamBName",
+      "matchDate": "matchDate"
+    },
+    {
+      "id": "17",
+      "teamAName": "França",
+      "teamBName": "Senegal",
+      "matchDate": "2026-06-16 19:00:00"
+    },
+    {
+      "id": "18",
+      "teamAName": "Playoff Intercontinental",
+      "teamBName": "Noruega",
+      "matchDate": "2026-06-16 22:00:00"
+    },
+    {
+      "id": "42",
+      "teamAName": "França",
+      "teamBName": "Playoff Intercontinental",
+      "matchDate": "2026-06-22 21:00:00"
+    },
+    {
+      "id": "43",
+      "teamAName": "Noruega",
+      "teamBName": "Senegal",
+      "matchDate": "2026-06-23 03:00:00"
+    },
+    {
+      "id": "61",
+      "teamAName": "Noruega",
+      "teamBName": "França",
+      "matchDate": "2026-06-26 20:00:00"
+    },
+    {
+      "id": "62",
+      "teamAName": "Senegal",
+      "teamBName": "Playoff Intercontinental",
+      "matchDate": "2026-06-26 20:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\n10\tHolanda\tJapão\t2026-06-14 20:00:00\n12\tPlayoff B UEFA\tTunísia\t2026-06-15 06:00:00\n33\tHolanda\tPlayoff B UEFA\t2026-06-20 17:00:00\n36\tTunísia\tJapão\t2026-06-21 06:00:00\n57\tTunísia\tHolanda\t2026-06-26 03:00:00\n58\tJapão\tPlayoff B UEFA\t2026-06-26 03:00:00\nid\tteamAName\tteamBName\tmatchDate\n17\tFrança\tSenegal\t2026-06-16 19:00:00\n18\tPlayoff Intercontinental\tNoruega\t2026-06-16 22:00:00\n42\tFrança\tPlayoff Intercontinental\t2026-06-22 21:00:00\n43\tNoruega\tSenegal\t2026-06-23 03:00:00\n61\tNoruega\tFrança\t2026-06-26 20:00:00\n62\tSenegal\tPlayoff Intercontinental\t2026-06-26 20:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 416
+}

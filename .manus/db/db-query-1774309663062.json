@@ -1,0 +1,106 @@
+{
+  "query": "SELECT id, teamAName, teamBName, matchDate, groupName, venue FROM games WHERE tournamentId = 2 AND phase IN ('group_i','group_j') ORDER BY matchDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, matchDate, groupName, venue FROM games WHERE tournamentId = 2 AND phase IN ('group_i','group_j') ORDER BY matchDate;",
+  "rows": [
+    {
+      "id": "17",
+      "teamAName": "França",
+      "teamBName": "Senegal",
+      "matchDate": "2026-06-16 19:00:00",
+      "groupName": "I",
+      "venue": "MetLife Stadium, Nova Jersey"
+    },
+    {
+      "id": "18",
+      "teamAName": "Playoff Intercontinental",
+      "teamBName": "Noruega",
+      "matchDate": "2026-06-16 22:00:00",
+      "groupName": "I",
+      "venue": "Gillette Stadium, Foxborough"
+    },
+    {
+      "id": "19",
+      "teamAName": "Argentina",
+      "teamBName": "Argélia",
+      "matchDate": "2026-06-17 03:00:00",
+      "groupName": "J",
+      "venue": "Arrowhead Stadium, Kansas City"
+    },
+    {
+      "id": "20",
+      "teamAName": "Áustria",
+      "teamBName": "Jordânia",
+      "matchDate": "2026-06-17 06:00:00",
+      "groupName": "J",
+      "venue": "Levi's Stadium, Santa Clara"
+    },
+    {
+      "id": "41",
+      "teamAName": "Argentina",
+      "teamBName": "Áustria",
+      "matchDate": "2026-06-22 17:00:00",
+      "groupName": "J",
+      "venue": "AT&T Stadium, Dallas"
+    },
+    {
+      "id": "42",
+      "teamAName": "França",
+      "teamBName": "Playoff Intercontinental",
+      "matchDate": "2026-06-22 21:00:00",
+      "groupName": "I",
+      "venue": "Lincoln Financial Field, Philadelphia"
+    },
+    {
+      "id": "43",
+      "teamAName": "Noruega",
+      "teamBName": "Senegal",
+      "matchDate": "2026-06-23 03:00:00",
+      "groupName": "I",
+      "venue": "BMO Field, Toronto"
+    },
+    {
+      "id": "44",
+      "teamAName": "Jordânia",
+      "teamBName": "Argélia",
+      "matchDate": "2026-06-23 06:00:00",
+      "groupName": "J",
+      "venue": "Levi's Stadium, Santa Clara"
+    },
+    {
+      "id": "61",
+      "teamAName": "Noruega",
+      "teamBName": "França",
+      "matchDate": "2026-06-26 20:00:00",
+      "groupName": "I",
+      "venue": "Gillette Stadium, Foxborough"
+    },
+    {
+      "id": "62",
+      "teamAName": "Senegal",
+      "teamBName": "Playoff Intercontinental",
+      "matchDate": "2026-06-26 20:00:00",
+      "groupName": "I",
+      "venue": "BMO Field, Toronto"
+    },
+    {
+      "id": "67",
+      "teamAName": "Argentina",
+      "teamBName": "Jordânia",
+      "matchDate": "2026-06-27 20:00:00",
+      "groupName": "J",
+      "venue": "AT&T Stadium, Dallas"
+    },
+    {
+      "id": "68",
+      "teamAName": "Argélia",
+      "teamBName": "Áustria",
+      "matchDate": "2026-06-27 20:00:00",
+      "groupName": "J",
+      "venue": "Arrowhead Stadium, Kansas City"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\tgroupName\tvenue\n17\tFrança\tSenegal\t2026-06-16 19:00:00\tI\tMetLife Stadium, Nova Jersey\n18\tPlayoff Intercontinental\tNoruega\t2026-06-16 22:00:00\tI\tGillette Stadium, Foxborough\n19\tArgentina\tArgélia\t2026-06-17 03:00:00\tJ\tArrowhead Stadium, Kansas City\n20\tÁustria\tJordânia\t2026-06-17 06:00:00\tJ\tLevi's Stadium, Santa Clara\n41\tArgentina\tÁustria\t2026-06-22 17:00:00\tJ\tAT&T Stadium, Dallas\n42\tFrança\tPlayoff Intercontinental\t2026-06-22 21:00:00\tI\tLincoln Financial Field, Philadelphia\n43\tNoruega\tSenegal\t2026-06-23 03:00:00\tI\tBMO Field, Toronto\n44\tJordânia\tArgélia\t2026-06-23 06:00:00\tJ\tLevi's Stadium, Santa Clara\n61\tNoruega\tFrança\t2026-06-26 20:00:00\tI\tGillette Stadium, Foxborough\n62\tSenegal\tPlayoff Intercontinental\t2026-06-26 20:00:00\tI\tBMO Field, Toronto\n67\tArgentina\tJordânia\t2026-06-27 20:00:00\tJ\tAT&T Stadium, Dallas\n68\tArgélia\tÁustria\t2026-06-27 20:00:00\tJ\tArrowhead Stadium, Kansas City\n",
+  "stderr": "",
+  "execution_time_ms": 363
+}

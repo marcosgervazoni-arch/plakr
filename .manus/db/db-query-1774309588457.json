@@ -1,0 +1,114 @@
+{
+  "query": "SELECT id, teamAName, teamBName, matchDate, groupName, venue FROM games WHERE tournamentId = 2 AND phase = 'group_a' ORDER BY matchDate;\nSELECT id, teamAName, teamBName, matchDate, groupName, venue FROM games WHERE tournamentId = 2 AND phase = 'group_c' ORDER BY matchDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, matchDate, groupName, venue FROM games WHERE tournamentId = 2 AND phase = 'group_a' ORDER BY matchDate;\nSELECT id, teamAName, teamBName, matchDate, groupName, venue FROM games WHERE tournamentId = 2 AND phase = 'group_c' ORDER BY matchDate;",
+  "rows": [
+    {
+      "id": "1",
+      "teamAName": "México",
+      "teamBName": "África do Sul",
+      "matchDate": "2026-06-11 19:00:00",
+      "groupName": "A",
+      "venue": "Estádio Azteca, Cidade do México"
+    },
+    {
+      "id": "2",
+      "teamAName": "Coreia do Sul",
+      "teamBName": "Playoff D UEFA",
+      "matchDate": "2026-06-12 03:00:00",
+      "groupName": "A",
+      "venue": "Estádio Akron, Guadalajara"
+    },
+    {
+      "id": "25",
+      "teamAName": "Playoff D UEFA",
+      "teamBName": "África do Sul",
+      "matchDate": "2026-06-18 16:00:00",
+      "groupName": "A",
+      "venue": "Mercedes-Benz Stadium, Atlanta"
+    },
+    {
+      "id": "28",
+      "teamAName": "México",
+      "teamBName": "Coreia do Sul",
+      "matchDate": "2026-06-19 03:00:00",
+      "groupName": "A",
+      "venue": "Estádio Akron, Guadalajara"
+    },
+    {
+      "id": "53",
+      "teamAName": "África do Sul",
+      "teamBName": "Coreia do Sul",
+      "matchDate": "2026-06-25 03:00:00",
+      "groupName": "A",
+      "venue": "Estádio BBVA, Monterrey"
+    },
+    {
+      "id": "54",
+      "teamAName": "Playoff D UEFA",
+      "teamBName": "México",
+      "matchDate": "2026-06-25 03:00:00",
+      "groupName": "A",
+      "venue": "Estádio Azteca, Cidade do México"
+    },
+    {
+      "id": "id",
+      "teamAName": "teamAName",
+      "teamBName": "teamBName",
+      "matchDate": "matchDate",
+      "groupName": "groupName",
+      "venue": "venue"
+    },
+    {
+      "id": "6",
+      "teamAName": "Brasil",
+      "teamBName": "Marrocos",
+      "matchDate": "2026-06-13 22:00:00",
+      "groupName": "C",
+      "venue": "MetLife Stadium, Nova Jersey"
+    },
+    {
+      "id": "7",
+      "teamAName": "Haiti",
+      "teamBName": "Escócia",
+      "matchDate": "2026-06-14 03:00:00",
+      "groupName": "C",
+      "venue": "Gillette Stadium, Foxborough"
+    },
+    {
+      "id": "30",
+      "teamAName": "Escócia",
+      "teamBName": "Marrocos",
+      "matchDate": "2026-06-19 22:00:00",
+      "groupName": "C",
+      "venue": "Gillette Stadium, Foxborough"
+    },
+    {
+      "id": "31",
+      "teamAName": "Brasil",
+      "teamBName": "Haiti",
+      "matchDate": "2026-06-20 03:00:00",
+      "groupName": "C",
+      "venue": "Lincoln Financial Field, Philadelphia"
+    },
+    {
+      "id": "51",
+      "teamAName": "Marrocos",
+      "teamBName": "Haiti",
+      "matchDate": "2026-06-24 22:00:00",
+      "groupName": "C",
+      "venue": "Mercedes-Benz Stadium, Atlanta"
+    },
+    {
+      "id": "52",
+      "teamAName": "Escócia",
+      "teamBName": "Brasil",
+      "matchDate": "2026-06-24 22:00:00",
+      "groupName": "C",
+      "venue": "Hard Rock Stadium, Miami"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\tgroupName\tvenue\n1\tMéxico\tÁfrica do Sul\t2026-06-11 19:00:00\tA\tEstádio Azteca, Cidade do México\n2\tCoreia do Sul\tPlayoff D UEFA\t2026-06-12 03:00:00\tA\tEstádio Akron, Guadalajara\n25\tPlayoff D UEFA\tÁfrica do Sul\t2026-06-18 16:00:00\tA\tMercedes-Benz Stadium, Atlanta\n28\tMéxico\tCoreia do Sul\t2026-06-19 03:00:00\tA\tEstádio Akron, Guadalajara\n53\tÁfrica do Sul\tCoreia do Sul\t2026-06-25 03:00:00\tA\tEstádio BBVA, Monterrey\n54\tPlayoff D UEFA\tMéxico\t2026-06-25 03:00:00\tA\tEstádio Azteca, Cidade do México\nid\tteamAName\tteamBName\tmatchDate\tgroupName\tvenue\n6\tBrasil\tMarrocos\t2026-06-13 22:00:00\tC\tMetLife Stadium, Nova Jersey\n7\tHaiti\tEscócia\t2026-06-14 03:00:00\tC\tGillette Stadium, Foxborough\n30\tEscócia\tMarrocos\t2026-06-19 22:00:00\tC\tGillette Stadium, Foxborough\n31\tBrasil\tHaiti\t2026-06-20 03:00:00\tC\tLincoln Financial Field, Philadelphia\n51\tMarrocos\tHaiti\t2026-06-24 22:00:00\tC\tMercedes-Benz Stadium, Atlanta\n52\tEscócia\tBrasil\t2026-06-24 22:00:00\tC\tHard Rock Stadium, Miami\n",
+  "stderr": "",
+  "execution_time_ms": 408
+}

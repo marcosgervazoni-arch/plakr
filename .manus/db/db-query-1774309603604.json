@@ -1,0 +1,154 @@
+{
+  "query": "SELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase IN ('group_a','group_b','group_c','group_d') ORDER BY matchDate LIMIT 24;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase IN ('group_a','group_b','group_c','group_d') ORDER BY matchDate LIMIT 24;",
+  "rows": [
+    {
+      "id": "1",
+      "teamAName": "México",
+      "teamBName": "África do Sul",
+      "matchDate": "2026-06-11 19:00:00"
+    },
+    {
+      "id": "2",
+      "teamAName": "Coreia do Sul",
+      "teamBName": "Playoff D UEFA",
+      "matchDate": "2026-06-12 03:00:00"
+    },
+    {
+      "id": "3",
+      "teamAName": "Canadá",
+      "teamBName": "Playoff A UEFA",
+      "matchDate": "2026-06-12 19:00:00"
+    },
+    {
+      "id": "4",
+      "teamAName": "Estados Unidos",
+      "teamBName": "Paraguai",
+      "matchDate": "2026-06-13 03:00:00"
+    },
+    {
+      "id": "5",
+      "teamAName": "Catar",
+      "teamBName": "Suíça",
+      "matchDate": "2026-06-13 19:00:00"
+    },
+    {
+      "id": "6",
+      "teamAName": "Brasil",
+      "teamBName": "Marrocos",
+      "matchDate": "2026-06-13 22:00:00"
+    },
+    {
+      "id": "7",
+      "teamAName": "Haiti",
+      "teamBName": "Escócia",
+      "matchDate": "2026-06-14 03:00:00"
+    },
+    {
+      "id": "8",
+      "teamAName": "Austrália",
+      "teamBName": "Playoff C UEFA",
+      "matchDate": "2026-06-14 06:00:00"
+    },
+    {
+      "id": "25",
+      "teamAName": "Playoff D UEFA",
+      "teamBName": "África do Sul",
+      "matchDate": "2026-06-18 16:00:00"
+    },
+    {
+      "id": "26",
+      "teamAName": "Suíça",
+      "teamBName": "Playoff A UEFA",
+      "matchDate": "2026-06-18 19:00:00"
+    },
+    {
+      "id": "27",
+      "teamAName": "Canadá",
+      "teamBName": "Catar",
+      "matchDate": "2026-06-18 22:00:00"
+    },
+    {
+      "id": "28",
+      "teamAName": "México",
+      "teamBName": "Coreia do Sul",
+      "matchDate": "2026-06-19 03:00:00"
+    },
+    {
+      "id": "29",
+      "teamAName": "Estados Unidos",
+      "teamBName": "Austrália",
+      "matchDate": "2026-06-19 19:00:00"
+    },
+    {
+      "id": "30",
+      "teamAName": "Escócia",
+      "teamBName": "Marrocos",
+      "matchDate": "2026-06-19 22:00:00"
+    },
+    {
+      "id": "31",
+      "teamAName": "Brasil",
+      "teamBName": "Haiti",
+      "matchDate": "2026-06-20 03:00:00"
+    },
+    {
+      "id": "32",
+      "teamAName": "Playoff C UEFA",
+      "teamBName": "Paraguai",
+      "matchDate": "2026-06-20 06:00:00"
+    },
+    {
+      "id": "49",
+      "teamAName": "Suíça",
+      "teamBName": "Canadá",
+      "matchDate": "2026-06-24 19:00:00"
+    },
+    {
+      "id": "50",
+      "teamAName": "Playoff A UEFA",
+      "teamBName": "Catar",
+      "matchDate": "2026-06-24 19:00:00"
+    },
+    {
+      "id": "52",
+      "teamAName": "Escócia",
+      "teamBName": "Brasil",
+      "matchDate": "2026-06-24 22:00:00"
+    },
+    {
+      "id": "51",
+      "teamAName": "Marrocos",
+      "teamBName": "Haiti",
+      "matchDate": "2026-06-24 22:00:00"
+    },
+    {
+      "id": "54",
+      "teamAName": "Playoff D UEFA",
+      "teamBName": "México",
+      "matchDate": "2026-06-25 03:00:00"
+    },
+    {
+      "id": "53",
+      "teamAName": "África do Sul",
+      "teamBName": "Coreia do Sul",
+      "matchDate": "2026-06-25 03:00:00"
+    },
+    {
+      "id": "60",
+      "teamAName": "Paraguai",
+      "teamBName": "Austrália",
+      "matchDate": "2026-06-26 06:00:00"
+    },
+    {
+      "id": "59",
+      "teamAName": "Playoff C UEFA",
+      "teamBName": "Estados Unidos",
+      "matchDate": "2026-06-26 06:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\n1\tMéxico\tÁfrica do Sul\t2026-06-11 19:00:00\n2\tCoreia do Sul\tPlayoff D UEFA\t2026-06-12 03:00:00\n3\tCanadá\tPlayoff A UEFA\t2026-06-12 19:00:00\n4\tEstados Unidos\tParaguai\t2026-06-13 03:00:00\n5\tCatar\tSuíça\t2026-06-13 19:00:00\n6\tBrasil\tMarrocos\t2026-06-13 22:00:00\n7\tHaiti\tEscócia\t2026-06-14 03:00:00\n8\tAustrália\tPlayoff C UEFA\t2026-06-14 06:00:00\n25\tPlayoff D UEFA\tÁfrica do Sul\t2026-06-18 16:00:00\n26\tSuíça\tPlayoff A UEFA\t2026-06-18 19:00:00\n27\tCanadá\tCatar\t2026-06-18 22:00:00\n28\tMéxico\tCoreia do Sul\t2026-06-19 03:00:00\n29\tEstados Unidos\tAustrália\t2026-06-19 19:00:00\n30\tEscócia\tMarrocos\t2026-06-19 22:00:00\n31\tBrasil\tHaiti\t2026-06-20 03:00:00\n32\tPlayoff C UEFA\tParaguai\t2026-06-20 06:00:00\n49\tSuíça\tCanadá\t2026-06-24 19:00:00\n50\tPlayoff A UEFA\tCatar\t2026-06-24 19:00:00\n52\tEscócia\tBrasil\t2026-06-24 22:00:00\n51\tMarrocos\tHaiti\t2026-06-24 22:00:00\n54\tPlayoff D UEFA\tMéxico\t2026-06-25 03:00:00\n53\tÁfrica do Sul\tCoreia do Sul\t2026-06-25 03:00:00\n60\tParaguai\tAustrália\t2026-06-26 06:00:00\n59\tPlayoff C UEFA\tEstados Unidos\t2026-06-26 06:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 364
+}

@@ -1,0 +1,118 @@
+{
+  "query": "SELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase IN ('group_h','group_j','group_l') ORDER BY matchDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, matchDate FROM games WHERE tournamentId = 2 AND phase IN ('group_h','group_j','group_l') ORDER BY matchDate;",
+  "rows": [
+    {
+      "id": "13",
+      "teamAName": "Espanha",
+      "teamBName": "Cabo Verde",
+      "matchDate": "2026-06-15 16:00:00"
+    },
+    {
+      "id": "15",
+      "teamAName": "Arábia Saudita",
+      "teamBName": "Uruguai",
+      "matchDate": "2026-06-15 22:00:00"
+    },
+    {
+      "id": "19",
+      "teamAName": "Argentina",
+      "teamBName": "Argélia",
+      "matchDate": "2026-06-17 03:00:00"
+    },
+    {
+      "id": "20",
+      "teamAName": "Áustria",
+      "teamBName": "Jordânia",
+      "matchDate": "2026-06-17 06:00:00"
+    },
+    {
+      "id": "22",
+      "teamAName": "Inglaterra",
+      "teamBName": "Croácia",
+      "matchDate": "2026-06-17 20:00:00"
+    },
+    {
+      "id": "23",
+      "teamAName": "Gana",
+      "teamBName": "Panamá",
+      "matchDate": "2026-06-18 03:00:00"
+    },
+    {
+      "id": "37",
+      "teamAName": "Espanha",
+      "teamBName": "Arábia Saudita",
+      "matchDate": "2026-06-21 16:00:00"
+    },
+    {
+      "id": "39",
+      "teamAName": "Uruguai",
+      "teamBName": "Cabo Verde",
+      "matchDate": "2026-06-21 22:00:00"
+    },
+    {
+      "id": "41",
+      "teamAName": "Argentina",
+      "teamBName": "Áustria",
+      "matchDate": "2026-06-22 17:00:00"
+    },
+    {
+      "id": "44",
+      "teamAName": "Jordânia",
+      "teamBName": "Argélia",
+      "matchDate": "2026-06-23 06:00:00"
+    },
+    {
+      "id": "46",
+      "teamAName": "Inglaterra",
+      "teamBName": "Gana",
+      "matchDate": "2026-06-23 20:00:00"
+    },
+    {
+      "id": "47",
+      "teamAName": "Panamá",
+      "teamBName": "Croácia",
+      "matchDate": "2026-06-24 03:00:00"
+    },
+    {
+      "id": "65",
+      "teamAName": "Espanha",
+      "teamBName": "Uruguai",
+      "matchDate": "2026-06-27 20:00:00"
+    },
+    {
+      "id": "66",
+      "teamAName": "Cabo Verde",
+      "teamBName": "Arábia Saudita",
+      "matchDate": "2026-06-27 20:00:00"
+    },
+    {
+      "id": "67",
+      "teamAName": "Argentina",
+      "teamBName": "Jordânia",
+      "matchDate": "2026-06-27 20:00:00"
+    },
+    {
+      "id": "68",
+      "teamAName": "Argélia",
+      "teamBName": "Áustria",
+      "matchDate": "2026-06-27 20:00:00"
+    },
+    {
+      "id": "71",
+      "teamAName": "Inglaterra",
+      "teamBName": "Panamá",
+      "matchDate": "2026-06-28 22:00:00"
+    },
+    {
+      "id": "72",
+      "teamAName": "Croácia",
+      "teamBName": "Gana",
+      "matchDate": "2026-06-28 22:00:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\n13\tEspanha\tCabo Verde\t2026-06-15 16:00:00\n15\tArábia Saudita\tUruguai\t2026-06-15 22:00:00\n19\tArgentina\tArgélia\t2026-06-17 03:00:00\n20\tÁustria\tJordânia\t2026-06-17 06:00:00\n22\tInglaterra\tCroácia\t2026-06-17 20:00:00\n23\tGana\tPanamá\t2026-06-18 03:00:00\n37\tEspanha\tArábia Saudita\t2026-06-21 16:00:00\n39\tUruguai\tCabo Verde\t2026-06-21 22:00:00\n41\tArgentina\tÁustria\t2026-06-22 17:00:00\n44\tJordânia\tArgélia\t2026-06-23 06:00:00\n46\tInglaterra\tGana\t2026-06-23 20:00:00\n47\tPanamá\tCroácia\t2026-06-24 03:00:00\n65\tEspanha\tUruguai\t2026-06-27 20:00:00\n66\tCabo Verde\tArábia Saudita\t2026-06-27 20:00:00\n67\tArgentina\tJordânia\t2026-06-27 20:00:00\n68\tArgélia\tÁustria\t2026-06-27 20:00:00\n71\tInglaterra\tPanamá\t2026-06-28 22:00:00\n72\tCroácia\tGana\t2026-06-28 22:00:00\n",
+  "stderr": "",
+  "execution_time_ms": 352
+}

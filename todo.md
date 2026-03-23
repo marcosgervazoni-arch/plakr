@@ -492,3 +492,6 @@
 - [x] AdminBroadcasts: editor de personalização de texto por tipo (campos por canal)
 - [x] AdminBroadcasts: tabela de variáveis disponíveis por tipo de mensagem
 - [x] Backend: usar templates personalizados nos disparos automáticos (scoring.ts, email.ts)
+
+## Sprint 23/03/2026 — Fix Campeonatos
+- [x] Fix: jogos do torneio Copa do Mundo FIFA (id=2) não aparecem em Admin > Campeonatos (match por phase.key em vez de phase.label)

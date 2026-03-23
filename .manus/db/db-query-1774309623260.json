@@ -1,0 +1,178 @@
+{
+  "query": "SELECT id, teamAName, teamBName, matchDate, groupName FROM games WHERE tournamentId = 2 AND phase IN ('group_i','group_j','group_k','group_l') ORDER BY matchDate LIMIT 24;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, matchDate, groupName FROM games WHERE tournamentId = 2 AND phase IN ('group_i','group_j','group_k','group_l') ORDER BY matchDate LIMIT 24;",
+  "rows": [
+    {
+      "id": "17",
+      "teamAName": "França",
+      "teamBName": "Senegal",
+      "matchDate": "2026-06-16 19:00:00",
+      "groupName": "I"
+    },
+    {
+      "id": "18",
+      "teamAName": "Playoff Intercontinental",
+      "teamBName": "Noruega",
+      "matchDate": "2026-06-16 22:00:00",
+      "groupName": "I"
+    },
+    {
+      "id": "19",
+      "teamAName": "Argentina",
+      "teamBName": "Argélia",
+      "matchDate": "2026-06-17 03:00:00",
+      "groupName": "J"
+    },
+    {
+      "id": "20",
+      "teamAName": "Áustria",
+      "teamBName": "Jordânia",
+      "matchDate": "2026-06-17 06:00:00",
+      "groupName": "J"
+    },
+    {
+      "id": "21",
+      "teamAName": "Portugal",
+      "teamBName": "Playoff Intercontinental 2",
+      "matchDate": "2026-06-17 17:00:00",
+      "groupName": "K"
+    },
+    {
+      "id": "22",
+      "teamAName": "Inglaterra",
+      "teamBName": "Croácia",
+      "matchDate": "2026-06-17 20:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "23",
+      "teamAName": "Gana",
+      "teamBName": "Panamá",
+      "matchDate": "2026-06-18 03:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "24",
+      "teamAName": "Uzbequistão",
+      "teamBName": "Colômbia",
+      "matchDate": "2026-06-18 06:00:00",
+      "groupName": "K"
+    },
+    {
+      "id": "41",
+      "teamAName": "Argentina",
+      "teamBName": "Áustria",
+      "matchDate": "2026-06-22 17:00:00",
+      "groupName": "J"
+    },
+    {
+      "id": "42",
+      "teamAName": "França",
+      "teamBName": "Playoff Intercontinental",
+      "matchDate": "2026-06-22 21:00:00",
+      "groupName": "I"
+    },
+    {
+      "id": "43",
+      "teamAName": "Noruega",
+      "teamBName": "Senegal",
+      "matchDate": "2026-06-23 03:00:00",
+      "groupName": "I"
+    },
+    {
+      "id": "44",
+      "teamAName": "Jordânia",
+      "teamBName": "Argélia",
+      "matchDate": "2026-06-23 06:00:00",
+      "groupName": "J"
+    },
+    {
+      "id": "45",
+      "teamAName": "Portugal",
+      "teamBName": "Uzbequistão",
+      "matchDate": "2026-06-23 17:00:00",
+      "groupName": "K"
+    },
+    {
+      "id": "46",
+      "teamAName": "Inglaterra",
+      "teamBName": "Gana",
+      "matchDate": "2026-06-23 20:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "47",
+      "teamAName": "Panamá",
+      "teamBName": "Croácia",
+      "matchDate": "2026-06-24 03:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "48",
+      "teamAName": "Colômbia",
+      "teamBName": "Playoff Intercontinental 2",
+      "matchDate": "2026-06-24 06:00:00",
+      "groupName": "K"
+    },
+    {
+      "id": "62",
+      "teamAName": "Senegal",
+      "teamBName": "Playoff Intercontinental",
+      "matchDate": "2026-06-26 20:00:00",
+      "groupName": "I"
+    },
+    {
+      "id": "61",
+      "teamAName": "Noruega",
+      "teamBName": "França",
+      "matchDate": "2026-06-26 20:00:00",
+      "groupName": "I"
+    },
+    {
+      "id": "67",
+      "teamAName": "Argentina",
+      "teamBName": "Jordânia",
+      "matchDate": "2026-06-27 20:00:00",
+      "groupName": "J"
+    },
+    {
+      "id": "68",
+      "teamAName": "Argélia",
+      "teamBName": "Áustria",
+      "matchDate": "2026-06-27 20:00:00",
+      "groupName": "J"
+    },
+    {
+      "id": "69",
+      "teamAName": "Portugal",
+      "teamBName": "Colômbia",
+      "matchDate": "2026-06-28 19:00:00",
+      "groupName": "K"
+    },
+    {
+      "id": "70",
+      "teamAName": "Uzbequistão",
+      "teamBName": "Playoff Intercontinental 2",
+      "matchDate": "2026-06-28 19:00:00",
+      "groupName": "K"
+    },
+    {
+      "id": "72",
+      "teamAName": "Croácia",
+      "teamBName": "Gana",
+      "matchDate": "2026-06-28 22:00:00",
+      "groupName": "L"
+    },
+    {
+      "id": "71",
+      "teamAName": "Inglaterra",
+      "teamBName": "Panamá",
+      "matchDate": "2026-06-28 22:00:00",
+      "groupName": "L"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\tgroupName\n17\tFrança\tSenegal\t2026-06-16 19:00:00\tI\n18\tPlayoff Intercontinental\tNoruega\t2026-06-16 22:00:00\tI\n19\tArgentina\tArgélia\t2026-06-17 03:00:00\tJ\n20\tÁustria\tJordânia\t2026-06-17 06:00:00\tJ\n21\tPortugal\tPlayoff Intercontinental 2\t2026-06-17 17:00:00\tK\n22\tInglaterra\tCroácia\t2026-06-17 20:00:00\tL\n23\tGana\tPanamá\t2026-06-18 03:00:00\tL\n24\tUzbequistão\tColômbia\t2026-06-18 06:00:00\tK\n41\tArgentina\tÁustria\t2026-06-22 17:00:00\tJ\n42\tFrança\tPlayoff Intercontinental\t2026-06-22 21:00:00\tI\n43\tNoruega\tSenegal\t2026-06-23 03:00:00\tI\n44\tJordânia\tArgélia\t2026-06-23 06:00:00\tJ\n45\tPortugal\tUzbequistão\t2026-06-23 17:00:00\tK\n46\tInglaterra\tGana\t2026-06-23 20:00:00\tL\n47\tPanamá\tCroácia\t2026-06-24 03:00:00\tL\n48\tColômbia\tPlayoff Intercontinental 2\t2026-06-24 06:00:00\tK\n62\tSenegal\tPlayoff Intercontinental\t2026-06-26 20:00:00\tI\n61\tNoruega\tFrança\t2026-06-26 20:00:00\tI\n67\tArgentina\tJordânia\t2026-06-27 20:00:00\tJ\n68\tArgélia\tÁustria\t2026-06-27 20:00:00\tJ\n69\tPortugal\tColômbia\t2026-06-28 19:00:00\tK\n70\tUzbequistão\tPlayoff Intercontinental 2\t2026-06-28 19:00:00\tK\n72\tCroácia\tGana\t2026-06-28 22:00:00\tL\n71\tInglaterra\tPanamá\t2026-06-28 22:00:00\tL\n",
+  "stderr": "",
+  "execution_time_ms": 376
+}

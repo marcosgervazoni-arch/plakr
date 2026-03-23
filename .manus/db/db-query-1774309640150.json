@@ -1,0 +1,58 @@
+{
+  "query": "SELECT id, teamAName, teamBName, matchDate, groupName, venue FROM games WHERE tournamentId = 2 AND phase = 'group_k' ORDER BY matchDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, matchDate, groupName, venue FROM games WHERE tournamentId = 2 AND phase = 'group_k' ORDER BY matchDate;",
+  "rows": [
+    {
+      "id": "21",
+      "teamAName": "Portugal",
+      "teamBName": "Playoff Intercontinental 2",
+      "matchDate": "2026-06-17 17:00:00",
+      "groupName": "K",
+      "venue": "NRG Stadium, Houston"
+    },
+    {
+      "id": "24",
+      "teamAName": "Uzbequistão",
+      "teamBName": "Colômbia",
+      "matchDate": "2026-06-18 06:00:00",
+      "groupName": "K",
+      "venue": "Estádio Azteca, Cidade do México"
+    },
+    {
+      "id": "45",
+      "teamAName": "Portugal",
+      "teamBName": "Uzbequistão",
+      "matchDate": "2026-06-23 17:00:00",
+      "groupName": "K",
+      "venue": "NRG Stadium, Houston"
+    },
+    {
+      "id": "48",
+      "teamAName": "Colômbia",
+      "teamBName": "Playoff Intercontinental 2",
+      "matchDate": "2026-06-24 06:00:00",
+      "groupName": "K",
+      "venue": "Estádio Akron, Guadalajara"
+    },
+    {
+      "id": "69",
+      "teamAName": "Portugal",
+      "teamBName": "Colômbia",
+      "matchDate": "2026-06-28 19:00:00",
+      "groupName": "K",
+      "venue": "NRG Stadium, Houston"
+    },
+    {
+      "id": "70",
+      "teamAName": "Uzbequistão",
+      "teamBName": "Playoff Intercontinental 2",
+      "matchDate": "2026-06-28 19:00:00",
+      "groupName": "K",
+      "venue": "Estádio Azteca, Cidade do México"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tmatchDate\tgroupName\tvenue\n21\tPortugal\tPlayoff Intercontinental 2\t2026-06-17 17:00:00\tK\tNRG Stadium, Houston\n24\tUzbequistão\tColômbia\t2026-06-18 06:00:00\tK\tEstádio Azteca, Cidade do México\n45\tPortugal\tUzbequistão\t2026-06-23 17:00:00\tK\tNRG Stadium, Houston\n48\tColômbia\tPlayoff Intercontinental 2\t2026-06-24 06:00:00\tK\tEstádio Akron, Guadalajara\n69\tPortugal\tColômbia\t2026-06-28 19:00:00\tK\tNRG Stadium, Houston\n70\tUzbequistão\tPlayoff Intercontinental 2\t2026-06-28 19:00:00\tK\tEstádio Azteca, Cidade do México\n",
+  "stderr": "",
+  "execution_time_ms": 389
+}

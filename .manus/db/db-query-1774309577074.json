@@ -1,0 +1,100 @@
+{
+  "query": "SELECT tournamentId, phase, COUNT(*) as total FROM games GROUP BY tournamentId, phase;\nSELECT id, teamAName, teamBName, matchDate, groupName FROM games WHERE tournamentId = 2 AND phase = 'group_stage' ORDER BY matchDate LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT tournamentId, phase, COUNT(*) as total FROM games GROUP BY tournamentId, phase;\nSELECT id, teamAName, teamBName, matchDate, groupName FROM games WHERE tournamentId = 2 AND phase = 'group_stage' ORDER BY matchDate LIMIT 5;",
+  "rows": [
+    {
+      "tournamentId": "2",
+      "phase": "Semifinais",
+      "total": "2"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_l",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_k",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_h",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_d",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_c",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "Disputa 3º Lugar",
+      "total": "1"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "Oitavas de Final",
+      "total": "8"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "Final",
+      "total": "1"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "Quartas de Final",
+      "total": "4"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_b",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_f",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "Rodada de 32",
+      "total": "16"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_e",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_j",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_a",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_g",
+      "total": "6"
+    },
+    {
+      "tournamentId": "2",
+      "phase": "group_i",
+      "total": "6"
+    }
+  ],
+  "messages": [],
+  "stdout": "tournamentId\tphase\ttotal\n2\tSemifinais\t2\n2\tgroup_l\t6\n2\tgroup_k\t6\n2\tgroup_h\t6\n2\tgroup_d\t6\n2\tgroup_c\t6\n2\tDisputa 3º Lugar\t1\n2\tOitavas de Final\t8\n2\tFinal\t1\n2\tQuartas de Final\t4\n2\tgroup_b\t6\n2\tgroup_f\t6\n2\tRodada de 32\t16\n2\tgroup_e\t6\n2\tgroup_j\t6\n2\tgroup_a\t6\n2\tgroup_g\t6\n2\tgroup_i\t6\n",
+  "stderr": "",
+  "execution_time_ms": 417
+}

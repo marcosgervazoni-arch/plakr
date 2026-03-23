@@ -1,0 +1,11 @@
+{
+  "query": "SELECT id, name, slug, status FROM tournaments ORDER BY id;\nSELECT id, name, tournament_id FROM phases ORDER BY tournament_id, id LIMIT 20;\nSELECT COUNT(*) as total_games FROM games;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, name, slug, status FROM tournaments ORDER BY id;\nSELECT id, name, tournament_id FROM phases ORDER BY tournament_id, id LIMIT 20;\nSELECT COUNT(*) as total_games FROM games;",
+  "returncode": 1,
+  "logs": [
+    "id\tname\tslug\tstatus",
+    "1\tCopa do Mundo 2026\tcopa-do-mundo-2026\tactive",
+    "2\tCopa do Mundo FIFA\tcopa-do-mundo-fifa-2026\tactive",
+    "ERROR 1146 (42S02) at line 2: Table 'djv8mgehu4r2vn8n2swplw.phases' doesn't exist"
+  ]
+}

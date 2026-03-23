@@ -1,0 +1,80 @@
+{
+  "query": "SELECT phase, COUNT(*) as total FROM games WHERE tournamentId = 2 AND phase LIKE 'group_%' GROUP BY phase ORDER BY phase;\nSELECT id, teamAName, teamBName, matchDate, groupName FROM games WHERE tournamentId = 2 AND phase IN ('group_e','group_f','group_g','group_h') ORDER BY matchDate LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT phase, COUNT(*) as total FROM games WHERE tournamentId = 2 AND phase LIKE 'group_%' GROUP BY phase ORDER BY phase;\nSELECT id, teamAName, teamBName, matchDate, groupName FROM games WHERE tournamentId = 2 AND phase IN ('group_e','group_f','group_g','group_h') ORDER BY matchDate LIMIT 20;",
+  "rows": [
+    {
+      "phase": "group_a",
+      "total": "6"
+    },
+    {
+      "phase": "group_b",
+      "total": "6"
+    },
+    {
+      "phase": "group_c",
+      "total": "6"
+    },
+    {
+      "phase": "group_d",
+      "total": "6"
+    },
+    {
+      "phase": "group_e",
+      "total": "6"
+    },
+    {
+      "phase": "group_f",
+      "total": "6"
+    },
+    {
+      "phase": "group_g",
+      "total": "6"
+    },
+    {
+      "phase": "group_h",
+      "total": "6"
+    },
+    {
+      "phase": "group_i",
+      "total": "6"
+    },
+    {
+      "phase": "group_j",
+      "total": "6"
+    },
+    {
+      "phase": "group_k",
+      "total": "6"
+    },
+    {
+      "phase": "group_l",
+      "total": "6"
+    }
+  ],
+  "messages": [
+    "id\tteamAName\tteamBName\tmatchDate\tgroupName",
+    "9\tAlemanha\tCuraçao\t2026-06-14 17:00:00\tE",
+    "10\tHolanda\tJapão\t2026-06-14 20:00:00\tF",
+    "11\tCosta do Marfim\tEquador\t2026-06-15 03:00:00\tE",
+    "12\tPlayoff B UEFA\tTunísia\t2026-06-15 06:00:00\tF",
+    "13\tEspanha\tCabo Verde\t2026-06-15 16:00:00\tH",
+    "14\tBélgica\tEgito\t2026-06-15 19:00:00\tG",
+    "15\tArábia Saudita\tUruguai\t2026-06-15 22:00:00\tH",
+    "16\tIrã\tNova Zelândia\t2026-06-16 03:00:00\tG",
+    "33\tHolanda\tPlayoff B UEFA\t2026-06-20 17:00:00\tF",
+    "34\tAlemanha\tCosta do Marfim\t2026-06-20 20:00:00\tE",
+    "35\tEquador\tCuraçao\t2026-06-21 03:00:00\tE",
+    "36\tTunísia\tJapão\t2026-06-21 06:00:00\tF",
+    "37\tEspanha\tArábia Saudita\t2026-06-21 16:00:00\tH",
+    "38\tBélgica\tIrã\t2026-06-21 19:00:00\tG",
+    "39\tUruguai\tCabo Verde\t2026-06-21 22:00:00\tH",
+    "40\tNova Zelândia\tEgito\t2026-06-22 03:00:00\tG",
+    "56\tEquador\tAlemanha\t2026-06-25 20:00:00\tE",
+    "55\tCuraçao\tCosta do Marfim\t2026-06-25 20:00:00\tE",
+    "58\tJapão\tPlayoff B UEFA\t2026-06-26 03:00:00\tF",
+    "57\tTunísia\tHolanda\t2026-06-26 03:00:00\tF"
+  ],
+  "stdout": "phase\ttotal\ngroup_a\t6\ngroup_b\t6\ngroup_c\t6\ngroup_d\t6\ngroup_e\t6\ngroup_f\t6\ngroup_g\t6\ngroup_h\t6\ngroup_i\t6\ngroup_j\t6\ngroup_k\t6\ngroup_l\t6\nid\tteamAName\tteamBName\tmatchDate\tgroupName\n9\tAlemanha\tCuraçao\t2026-06-14 17:00:00\tE\n10\tHolanda\tJapão\t2026-06-14 20:00:00\tF\n11\tCosta do Marfim\tEquador\t2026-06-15 03:00:00\tE\n12\tPlayoff B UEFA\tTunísia\t2026-06-15 06:00:00\tF\n13\tEspanha\tCabo Verde\t2026-06-15 16:00:00\tH\n14\tBélgica\tEgito\t2026-06-15 19:00:00\tG\n15\tArábia Saudita\tUruguai\t2026-06-15 22:00:00\tH\n16\tIrã\tNova Zelândia\t2026-06-16 03:00:00\tG\n33\tHolanda\tPlayoff B UEFA\t2026-06-20 17:00:00\tF\n34\tAlemanha\tCosta do Marfim\t2026-06-20 20:00:00\tE\n35\tEquador\tCuraçao\t2026-06-21 03:00:00\tE\n36\tTunísia\tJapão\t2026-06-21 06:00:00\tF\n37\tEspanha\tArábia Saudita\t2026-06-21 16:00:00\tH\n38\tBélgica\tIrã\t2026-06-21 19:00:00\tG\n39\tUruguai\tCabo Verde\t2026-06-21 22:00:00\tH\n40\tNova Zelândia\tEgito\t2026-06-22 03:00:00\tG\n56\tEquador\tAlemanha\t2026-06-25 20:00:00\tE\n55\tCuraçao\tCosta do Marfim\t2026-06-25 20:00:00\tE\n58\tJapão\tPlayoff B UEFA\t2026-06-26 03:00:00\tF\n57\tTunísia\tHolanda\t2026-06-26 03:00:00\tF\n",
+  "stderr": "",
+  "execution_time_ms": 413
+}
