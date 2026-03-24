@@ -773,3 +773,7 @@
 ## Sprint 24/03/2026 — Badges no Dashboard
 
 - [x] Dashboard: seção de badges com carrossel de dois estados (Conquistados / Próximos com barra de progresso)
+
+## Sprint 24/03/2026 — Visual Badges Dashboard
+
+- [x] Dashboard: refatorar carrossel de badges para usar visual idêntico ao PublicProfile (BadgeGrid), com badges inativos visíveis quando não há nenhum conquistado

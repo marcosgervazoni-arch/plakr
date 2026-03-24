@@ -229,7 +229,7 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            {/* Badges carrossel */}
+            {/* Badges carrossel — exibe sempre que há badges na plataforma (inativos se nenhum conquistado) */}
             {badgesData && badgesData.length > 0 && (
               <DashboardBadgeCarousel
                 badges={badgesData as any[]}
