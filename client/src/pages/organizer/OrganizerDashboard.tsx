@@ -19,8 +19,17 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
-import { Link, useParams } from "wouter";
-import { useMemo } from "react";
+import { Link, useParams, useLocation } from "wouter";
+import { useMemo, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 function MetricCard({
   icon: Icon,
@@ -49,6 +58,61 @@ function MetricCard({
       </p>
       {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
     </div>
+  );
+}
+
+function ClosePoolSection({ poolId, poolName, slug }: { poolId: number; poolName: string; slug: string }) {
+  const [open, setOpen] = useState(false);
+  const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
+
+  const closeMutation = trpc.pools.closePool.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Bolão encerrado! ${data.top3.length > 0 ? `Campeão: ${(data.top3[0] as any).user?.name ?? "?"}` : ""}`);
+      utils.pools.getBySlug.invalidate({ slug });
+      setOpen(false);
+    },
+    onError: (err) => toast.error(err.message || "Erro ao encerrar bolão."),
+  });
+
+  return (
+    <>
+      <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-red-400">Zona de Perigo</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Encerrar o bolão é uma ação irreversível. Os palpites serão preservados.</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 shrink-0"
+          onClick={() => setOpen(true)}
+        >
+          Encerrar Bolão
+        </Button>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Encerrar Bolão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja encerrar <strong>{poolName}</strong>? Os participantes serão notificados com o resultado final.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button
+              className="bg-red-500 hover:bg-red-600 text-white"
+              onClick={() => closeMutation.mutate({ poolId })}
+              disabled={closeMutation.isPending}
+            >
+              {closeMutation.isPending ? "Encerrando..." : "Sim, encerrar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -267,6 +331,11 @@ export default function OrganizerDashboard() {
             )}
           </div>
         </div>
+
+        {/* Danger zone — Encerrar bolão */}
+        {pool.status !== "finished" && (
+          <ClosePoolSection poolId={pool.id} poolName={pool.name} slug={slug ?? ""} />
+        )}
 
         {/* Plan status bar */}
         <div className="bg-card border border-border/30 rounded-xl p-4 flex flex-wrap items-center gap-4">

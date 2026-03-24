@@ -92,6 +92,13 @@
       "when": 1774353348950,
       "tag": "0012_massive_fallen_one",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1774354754184,
+      "tag": "0013_lyrical_drax",
+      "breakpoints": true
     }
   ]
 }

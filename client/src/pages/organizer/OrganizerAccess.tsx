@@ -39,12 +39,18 @@ export default function OrganizerAccess() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [regenConfirm, setRegenConfirm] = useState<"code" | "link" | null>(null);
+  const utils = trpc.useUtils();
 
   const { data: poolData, refetch } = trpc.pools.getBySlug.useQuery(
     { slug: slug ?? "" },
     { enabled: !!slug }
   );
   const pool = poolData?.pool;
+
+  const { data: accessStats } = trpc.pools.getAccessStats.useQuery(
+    { poolId: pool?.id ?? 0 },
+    { enabled: !!pool?.id }
+  );
 
   const updateMutation = trpc.pools.update.useMutation({
     onSuccess: () => {
@@ -66,19 +72,18 @@ export default function OrganizerAccess() {
     toast.success("Copiado!");
   };
 
+  const regenMutation = trpc.pools.regenerateAccessCode.useMutation({
+    onSuccess: () => {
+      utils.pools.getBySlug.invalidate({ slug });
+      toast.success("Regenerado com sucesso! O código/link anterior não funciona mais.");
+      setRegenConfirm(null);
+    },
+    onError: (err) => toast.error(err.message || "Erro ao regenerar."),
+  });
+
   const handleRegen = (type: "code" | "link") => {
     if (!pool?.id) return;
-    const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const newToken = Math.random().toString(36).substring(2, 18);
-    // regenerate via accessType update to trigger server-side code/token regen
-    if (type === "code") {
-      updateMutation.mutate({ poolId: pool.id, accessType: "private_code" });
-      toast.info("Código regenerado com sucesso.");
-    } else {
-      updateMutation.mutate({ poolId: pool.id, accessType: "private_link" });
-      toast.info("Link regenerado com sucesso.");
-    }
-    setRegenConfirm(null);
+    regenMutation.mutate({ poolId: pool.id, type });
   };
 
   const handleAccessTypeChange = (accessType: AccessType) => {
@@ -87,6 +92,7 @@ export default function OrganizerAccess() {
   };
 
   const isPro = pool?.plan === "pro";
+  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
   const accessType = (pool?.accessType ?? "private_link") as AccessType;
   const inviteLink = pool?.inviteToken
     ? `${window.location.origin}/join/${pool.inviteToken}`
@@ -104,6 +110,7 @@ export default function OrganizerAccess() {
       poolName={pool?.name ?? "Bolão"}
       poolStatus={(pool?.status as any) ?? "active"}
       isPro={isPro}
+      isProExpired={isProExpired}
       activeSection="access"
     >
       <div className="p-6 space-y-6 max-w-2xl">
@@ -235,9 +242,9 @@ export default function OrganizerAccess() {
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Estatísticas de Ingresso</h3>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Via código", value: "—", icon: Key },
-              { label: "Via link", value: "—", icon: Link2 },
-              { label: "Busca pública", value: "—", icon: Globe },
+              { label: "Via código", value: accessStats?.bySource.code ?? "—", icon: Key },
+              { label: "Via link", value: accessStats?.bySource.link ?? "—", icon: Link2 },
+              { label: "Busca pública", value: accessStats?.bySource.public ?? "—", icon: Globe },
             ].map((stat) => (
               <div key={stat.label} className="bg-card border border-border/30 rounded-xl p-4 text-center space-y-2">
                 <stat.icon className="w-4 h-4 text-muted-foreground mx-auto" />

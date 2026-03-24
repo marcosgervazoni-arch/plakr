@@ -128,6 +128,7 @@ export default function SubscriptionPage() {
   };
 
   const isPro = pool?.pool?.plan === "pro";
+  const isProExpired = isPro && !!pool?.pool?.planExpiresAt && new Date(pool.pool.planExpiresAt).getTime() < Date.now();
 
   return (
     <OrganizerLayout
@@ -135,6 +136,7 @@ export default function SubscriptionPage() {
       poolName={pool?.pool?.name ?? "Carregando..."}
       poolStatus={(pool?.pool?.status as "active" | "closed" | "draft") ?? "active"}
       isPro={isPro}
+      isProExpired={isProExpired}
       activeSection="plan"
     >
       <div className="max-w-4xl mx-auto space-y-8">

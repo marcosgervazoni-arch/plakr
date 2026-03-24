@@ -89,8 +89,10 @@ export default function CustomTournament() {
 
   const createTeamMutation = trpc.tournaments.addTeam.useMutation();
   const createGameMutation = trpc.tournaments.addGame.useMutation();
+  const updatePoolMutation = trpc.pools.update.useMutation();
 
   const isPro = pool?.pool?.plan === "pro";
+  const isProExpired = isPro && !!pool?.pool?.planExpiresAt && new Date(pool.pool.planExpiresAt).getTime() < Date.now();
 
   const steps = [
     { n: 1, label: "Informações", icon: Trophy },
@@ -153,6 +155,15 @@ export default function CustomTournament() {
       });
     }
     toast.success(`${games.length} jogos criados!`);
+    // B4 — Vincular automaticamente o campeonato ao bolão
+    if (pool?.pool?.id && createdTournamentId) {
+      try {
+        await updatePoolMutation.mutateAsync({ poolId: pool.pool.id, tournamentId: createdTournamentId } as any);
+        toast.success("Campeonato vinculado ao bolão automaticamente!");
+      } catch {
+        toast.error("Campeonato criado, mas não foi possível vincular ao bolão. Faça isso manualmente nas configurações.");
+      }
+    }
     setStep(4);
   };
 
@@ -179,7 +190,7 @@ export default function CustomTournament() {
 
   if (!isPro) {
     return (
-      <OrganizerLayout slug={slug ?? ""} poolName={pool?.pool?.name ?? ""} poolStatus={(pool?.pool?.status as "active" | "closed" | "draft") ?? "active"} isPro={false} activeSection="tournament">
+      <OrganizerLayout slug={slug ?? ""} poolName={pool?.pool?.name ?? ""} poolStatus={(pool?.pool?.status as "active" | "closed" | "draft") ?? "active"} isPro={false} isProExpired={false} activeSection="tournament">
         <div className="flex flex-col items-center justify-center h-64 text-center gap-4">
           <Crown className="h-12 w-12 text-yellow-400" />
           <h2 className="text-xl font-bold font-display">Recurso Exclusivo Pro</h2>
@@ -196,7 +207,7 @@ export default function CustomTournament() {
   }
 
   return (
-    <OrganizerLayout slug={slug ?? ""} poolName={pool?.pool?.name ?? ""} poolStatus={(pool?.pool?.status as "active" | "closed" | "draft") ?? "active"} isPro={isPro} activeSection="tournament">
+    <OrganizerLayout slug={slug ?? ""} poolName={pool?.pool?.name ?? ""} poolStatus={(pool?.pool?.status as "active" | "closed" | "draft") ?? "active"} isPro={isPro} isProExpired={isProExpired} activeSection="tournament">
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold font-display">Campeonato Personalizado</h1>

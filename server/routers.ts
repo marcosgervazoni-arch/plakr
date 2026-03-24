@@ -1563,6 +1563,7 @@ export const appRouter = router({
         description: z.string().optional(),
         logoUrl: z.string().optional(),
         accessType: z.enum(["public", "private_code", "private_link"]).optional(),
+        tournamentId: z.number().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const { poolId, ...data } = input;
@@ -1956,6 +1957,134 @@ export const appRouter = router({
         await db.update(poolsT).set({ status: "deleted" }).where(eq(poolsT.id, input.poolId));
         await createAdminLog(ctx.user.id, "delete_pool", "pool", input.poolId, { name: pool.name, memberCount: members.length });
         return { success: true };
+      }),
+
+    // Organizador Pro: enviar mensagem in-app para todos os membros do bolão
+    // Estatísticas de ingresso por canal (Free: total; Pro: série temporal 7 dias)
+    getAccessStats: protectedProcedure
+      .input(z.object({ poolId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        if (!member && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const db = await (await import("./db")).getDb();
+        if (!db) return { bySource: { code: 0, link: 0, public: 0, organizer: 0 }, total: 0 };
+        const { poolMembers } = await import("../drizzle/schema");
+        const { eq, and, gte, sql: sqlFn } = await import("drizzle-orm");
+        const rows = await db
+          .select({
+            source: poolMembers.joinSource,
+            count: sqlFn<number>`COUNT(*)`.as("count"),
+          })
+          .from(poolMembers)
+          .where(eq(poolMembers.poolId, input.poolId))
+          .groupBy(poolMembers.joinSource);
+        const bySource = { code: 0, link: 0, public: 0, organizer: 0 };
+        for (const r of rows) {
+          const src = (r.source ?? "public") as keyof typeof bySource;
+          bySource[src] = Number(r.count);
+        }
+        const total = Object.values(bySource).reduce((a, b) => a + b, 0);
+        return { bySource, total };
+      }),
+
+    // Regenerar código/link de acesso do bolão
+    regenerateAccessCode: protectedProcedure
+      .input(z.object({ poolId: z.number(), type: z.enum(["code", "link"]) }))
+      .mutation(async ({ input, ctx }) => {
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const { nanoid } = await import("nanoid");
+        if (input.type === "code") {
+          const newCode = nanoid(8).toUpperCase();
+          await updatePool(input.poolId, { inviteCode: newCode });
+          return { inviteCode: newCode, inviteToken: null };
+        } else {
+          const newToken = nanoid(32);
+          await updatePool(input.poolId, { inviteToken: newToken });
+          return { inviteCode: null, inviteToken: newToken };
+        }
+      }),
+
+    // Encerrar bolão (organizador)
+    closePool: protectedProcedure
+      .input(z.object({ poolId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador pode encerrar o bolão." });
+        }
+        const pool = await getPoolById(input.poolId);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+        if (pool.status === "finished") throw new TRPCError({ code: "BAD_REQUEST", message: "O bolão já está encerrado." });
+        // Calcular pódio
+        const ranking = await getPoolRanking(input.poolId);
+        const top3 = ranking.slice(0, 3);
+        // Atualizar status
+        await updatePool(input.poolId, { status: "finished" });
+        // Notificar membros
+        const db = await (await import("./db")).getDb();
+        if (db) {
+          const { poolMembers } = await import("../drizzle/schema");
+          const { eq } = await import("drizzle-orm");
+          const members = await db.select({ userId: poolMembers.userId }).from(poolMembers).where(eq(poolMembers.poolId, input.poolId));
+          for (const m of members) {
+            const pos = ranking.findIndex((r) => r.user.id === m.userId);
+            const medal = pos === 0 ? "🥇" : pos === 1 ? "🥈" : pos === 2 ? "🥉" : "";
+            await createNotification({
+              userId: m.userId,
+              type: "result_available",
+              title: `${medal} ${pool.name} foi encerrado!`,
+              message: pos >= 0 ? `Você terminou em ${pos + 1}º lugar com ${ranking[pos].stats.totalPoints} pontos.` : `O bolão "${pool.name}" foi encerrado pelo organizador.`,
+              actionUrl: `/pool/${pool.slug}`,
+              actionLabel: "Ver resultado final",
+              priority: "high",
+            });
+          }
+        }
+        await createAdminLog(ctx.user.id, "close_pool", "pool", input.poolId, { name: pool.name, top3: top3.map((r) => ({ name: r.user.name, points: r.stats.totalPoints })) });
+        return { success: true, top3 };
+      }),
+
+    broadcastToMembers: protectedProcedure
+      .input(z.object({
+        poolId: z.number(),
+        title: z.string().min(1).max(100),
+        message: z.string().min(1).max(2000),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const member = await getPoolMember(input.poolId, ctx.user.id);
+        if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador pode enviar mensagens." });
+        }
+        const pool = await getPoolById(input.poolId);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+        if (pool.plan !== "pro" && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Comunicação com membros é exclusiva do Plano Pro." });
+        }
+        const db = await (await import("./db")).getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { poolMembers } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const members = await db.select({ userId: poolMembers.userId }).from(poolMembers).where(eq(poolMembers.poolId, input.poolId));
+        let sent = 0;
+        for (const m of members) {
+          if (m.userId === ctx.user.id) continue; // não notificar o próprio organizador
+          await createNotification({
+            userId: m.userId,
+            type: "system",
+            title: `📢 ${input.title}`,
+            message: input.message,
+            actionUrl: `/pool/${pool.slug}`,
+            actionLabel: "Ver bolão",
+            priority: "normal",
+            category: "communication",
+          });
+          sent++;
+        }
+        await createAdminLog(ctx.user.id, "pool_broadcast", "pool", input.poolId, { title: input.title, sent });
+        return { sent };
       }),
 
     // Admin: criar bolão diretamente

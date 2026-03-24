@@ -18,6 +18,8 @@ import {
   Crown,
   AlertTriangle,
   Lock,
+  ClipboardList,
+  MessageSquare,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
@@ -29,6 +31,8 @@ export type OrganizerSection =
   | "access"
   | "identity"
   | "rules"
+  | "games"
+  | "communication"
   | "tournament"
   | "plan";
 
@@ -76,6 +80,8 @@ export default function OrganizerLayout({
     { id: "access", label: "Controle de Acesso", icon: Link2 },
     { id: "identity", label: "Identidade Visual", icon: Palette },
     { id: "rules", label: "Regras de Pontuação", icon: Settings2 },
+    { id: "games", label: "Jogos e Resultados", icon: ClipboardList, proOnly: true },
+    { id: "communication", label: "Comunicação", icon: MessageSquare, proOnly: true },
     { id: "tournament", label: "Campeonato", icon: Trophy, proOnly: true },
     { id: "plan", label: "Plano e Assinatura", icon: Crown },
   ];
@@ -86,6 +92,8 @@ export default function OrganizerLayout({
     access: `/pool/${slug}/manage/access`,
     identity: `/pool/${slug}/manage/identity`,
     rules: `/pool/${slug}/manage/rules`,
+    games: `/pool/${slug}/manage/games`,
+    communication: `/pool/${slug}/manage/communication`,
     tournament: `/pool/${slug}/manage/tournament`,
     plan: `/pool/${slug}/manage/plan`,
   };

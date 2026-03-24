@@ -56,6 +56,7 @@ export default function OrganizerIdentity() {
   };
 
   const isPro = pool?.plan === "pro";
+  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
   const memberCount = poolData?.memberCount ?? 0;
 
   return (
@@ -64,6 +65,7 @@ export default function OrganizerIdentity() {
       poolName={pool?.name ?? "Bolão"}
       poolStatus={(pool?.status as "active" | "closed" | "draft") ?? "active"}
       isPro={isPro}
+      isProExpired={isProExpired}
       activeSection="identity"
     >
       <div className="p-6 space-y-6 max-w-5xl">

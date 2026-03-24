@@ -1,0 +1,1 @@
+ALTER TABLE `pool_members` ADD `joinSource` enum('code','link','public','organizer') DEFAULT 'public';

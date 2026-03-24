@@ -244,6 +244,7 @@ export const poolMembers = mysqlTable(
     role: mysqlEnum("role", ["organizer", "participant"]).default("participant").notNull(),
     isBlocked: boolean("isBlocked").default(false).notNull(),
     joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+    joinSource: mysqlEnum("joinSource", ["code", "link", "public", "organizer"]).default("public"),
   },
   (t) => [unique("pool_member_unique").on(t.poolId, t.userId)]
 );

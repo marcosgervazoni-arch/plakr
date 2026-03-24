@@ -102,6 +102,7 @@ export default function OrganizerMembers() {
   }, [members, search, filter]);
 
   const isPro = pool?.plan === "pro";
+  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
 
   const filterButtons: { id: FilterType; label: string }[] = [
     { id: "all", label: "Todos" },
@@ -116,6 +117,7 @@ export default function OrganizerMembers() {
       poolName={pool?.name ?? "Bolão"}
       poolStatus={(pool?.status as any) ?? "active"}
       isPro={isPro}
+      isProExpired={isProExpired}
       activeSection="members"
     >
       <div className="p-6 space-y-5 max-w-5xl">

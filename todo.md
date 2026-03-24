@@ -748,3 +748,12 @@
 - [x] A4 — OrganizerMembers: filtro "Inativos" funcional usando isInactive do servidor
 - [x] A5 — Campo format salvo no campeonato (schema + migração SQL + procedure + frontend)
 - [x] A6 — isProExpired calculado a partir de planExpiresAt real (OrganizerDashboard + OrganizerRules)
+
+## Sprint B — Funcionalidades Essenciais do Módulo Organizer (24/03/2026)
+
+- [x] B1 — Tela OrganizerGames: gestão de jogos e resultados (Pro) com setGameResult
+- [x] B2 — Tela OrganizerCommunication: broadcasts in-app para membros (somente Pro)
+- [x] B3 — Encerramento do bolão: procedure closePool + dialog de confirmação + notificação de membros com pódio
+- [x] B4 — Vinculação automática do campeonato ao bolão após wizard (pools.update aceita tournamentId)
+- [x] B5 — Regeneração de código/link de acesso: procedure dedicada regenerateAccessCode (sem depender de mudança de accessType)
+- [x] B6 — Estatísticas reais de ingresso por canal: procedure getAccessStats + campo joinSource no schema + migração aplicada

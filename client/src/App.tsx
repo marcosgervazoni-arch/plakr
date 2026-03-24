@@ -33,6 +33,8 @@ import OrganizerIdentity from "./pages/organizer/OrganizerIdentity";
 import OrganizerRules from "./pages/organizer/OrganizerRules";
 import SubscriptionPage from "./pages/organizer/SubscriptionPage";
 import CustomTournament from "./pages/organizer/CustomTournament";
+import OrganizerGames from "./pages/organizer/OrganizerGames";
+import OrganizerCommunication from "./pages/organizer/OrganizerCommunication";
 
 // Admin pages A1-A10
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -83,6 +85,8 @@ function Router() {
       <Route path="/pool/:slug/manage/identity" component={OrganizerIdentity} />
       <Route path="/pool/:slug/manage/rules" component={OrganizerRules} />
       <Route path="/pool/:slug/manage/plan" component={SubscriptionPage} />
+      <Route path="/pool/:slug/manage/games" component={OrganizerGames} />
+      <Route path="/pool/:slug/manage/communication" component={OrganizerCommunication} />
       <Route path="/pool/:slug/manage/tournament" component={CustomTournament} />
       {/* Legacy settings route — redirect to manage */}
       <Route path="/pool/:slug/settings" component={OrganizerDashboard} />
