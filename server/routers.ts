@@ -1379,9 +1379,9 @@ export const appRouter = router({
         const { sql, eq, and, like, desc } = await import("drizzle-orm");
         const { pools: poolsTable, tournaments, users: usersTable } = await import("../drizzle/schema");
 
+        // Lista todos os bolões ativos (públicos e privados)
         const conditions = [
           eq(poolsTable.status, "active"),
-          eq(poolsTable.accessType, "public"),
         ];
         if (input.search) {
           conditions.push(like(poolsTable.name, `%${input.search}%`));
@@ -1418,6 +1418,7 @@ export const appRouter = router({
             name: r.pool.name,
             logoUrl: r.pool.logoUrl,
             plan: r.pool.plan,
+            accessType: r.pool.accessType, // "public" | "private_code" | "private_link"
             description: r.pool.description ?? null,
             tournamentName: r.tournamentName ?? null,
             ownerName: r.ownerName ?? null,

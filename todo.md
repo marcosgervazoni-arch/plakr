@@ -930,3 +930,13 @@
 - [x] Dashboard mobile: perfil primeiro (order-1), bolões e demais seções depois (order-2)
 - [x] Dashboard: cabeçalho com saudação, contador de bolões e botão [+] removidos
 - [x] Dashboard: cards de bolões com mais destaque visual — fundo âmbar para palpites pendentes, borda mais visível, fonte semibold
+
+## Sprint UX — Explorar Bolões (24/03/2026)
+
+- [x] Backend: procedure pools.listPublic retorna todos os bolões (públicos e privados) com accessType
+- [x] Frontend: página PublicPools reformulada — lista todos os bolões, busca por nome/campeonato, cards com badge de tipo (público/privado/link)
+- [x] Frontend: bolão público → botão "Entrar no bolão" abre modal de confirmação
+- [x] Frontend: bolão privado (código) → botão "Tenho um código" abre modal inline para digitar código
+- [x] Frontend: bolão privado (link) → mensagem informativa sem botão de ação
+- [x] AppShell: renomear "Bolões Públicos" para "Explorar Bolões" no menu lateral
+- [x] Layout mobile first: cards em coluna única, modal full-width no mobile

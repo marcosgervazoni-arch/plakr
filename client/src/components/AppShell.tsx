@@ -44,7 +44,7 @@ const navSections = [
   },
   {
     id: "public",
-    label: "Bolões Públicos",
+    label: "Explorar Bolões",
     icon: Search,
     href: "/pools/public",
     matchFn: (loc: string) => loc.startsWith("/pools/public"),
