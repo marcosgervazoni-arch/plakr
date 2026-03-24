@@ -204,21 +204,6 @@ export default function Dashboard() {
               </Link>
             )}
 
-            <Link href={user?.id ? `/profile/${user.id}` : "/profile/me"}>
-              <Button variant="outline" size="sm" className="w-full gap-2 mt-1">Ver perfil público</Button>
-            </Link>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => setShowCreateModal(true)} className="w-full" size="sm">
-                <Plus className="w-4 h-4 mr-1.5" /> Criar
-              </Button>
-              <Link href="/enter-pool" className="block">
-                <Button variant="outline" className="w-full" size="sm">
-                  <Search className="w-4 h-4 mr-1.5" /> Entrar
-                </Button>
-              </Link>
-            </div>
-
             {/* Badges carrossel — exibe sempre que há badges na plataforma (inativos se nenhum conquistado) */}
             {badgesData && badgesData.length > 0 && (
               <DashboardBadgeCarousel
