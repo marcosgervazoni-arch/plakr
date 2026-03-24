@@ -22,7 +22,6 @@ import {
   ChevronRight,
   Plus,
   Award,
-  Target,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
@@ -248,16 +247,11 @@ export default function AppShell({ children }: AppShellProps) {
                 </div>
               )}
 
-              {/* Ações rápidas: Criar e Entrar */}
-              <div className="flex gap-1.5 px-3 pt-1.5 pb-0.5">
-                <Link href="/create-pool" onClick={() => setSidebarOpen(false)} className="flex-1">
+              {/* Ação rápida: Criar */}
+              <div className="px-3 pt-1.5 pb-0.5">
+                <Link href="/create-pool" onClick={() => setSidebarOpen(false)} className="block">
                   <button className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20">
-                    <Plus className="w-3 h-3" /> Criar
-                  </button>
-                </Link>
-                <Link href="/enter-pool" onClick={() => setSidebarOpen(false)} className="flex-1">
-                  <button className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors border border-border/30">
-                    <Target className="w-3 h-3" /> Entrar
+                    <Plus className="w-3 h-3" /> Criar bolão
                   </button>
                 </Link>
               </div>
@@ -268,25 +262,6 @@ export default function AppShell({ children }: AppShellProps) {
         <div className="pt-2 pb-1">
           <div className="border-t border-border/30" />
         </div>
-
-        {/* Link de Admin — apenas para administradores */}
-        {isAdmin && (
-          <div className="pt-1">
-            <Link href="/admin" onClick={() => setSidebarOpen(false)}>
-              <button
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
-                  location.startsWith("/admin")
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                )}
-              >
-                <Shield className="w-4 h-4 shrink-0" />
-                <span className="flex-1 truncate">Super Admin</span>
-              </button>
-            </Link>
-          </div>
-        )}
       </nav>
 
       {/* Ad Banner no sidebar */}
@@ -309,6 +284,25 @@ export default function AppShell({ children }: AppShellProps) {
                 Bolões ilimitados, campeonatos personalizados e muito mais.
               </p>
             </div>
+          </Link>
+        </div>
+      )}
+
+      {/* Super Admin — rodapé, apenas para administradores */}
+      {isAdmin && (
+        <div className="px-3 pb-1">
+          <Link href="/admin" onClick={() => setSidebarOpen(false)}>
+            <button
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
+                location.startsWith("/admin")
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              )}
+            >
+              <Shield className="w-4 h-4 shrink-0" />
+              <span className="flex-1 truncate">Super Admin</span>
+            </button>
           </Link>
         </div>
       )}
