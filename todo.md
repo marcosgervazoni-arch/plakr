@@ -577,3 +577,10 @@
 - [x] [Backend] getMemberProfile agora retorna campo badges com status de conquista
 - [x] [Seed] 5 badges criados no banco: Atirador de Elite, Mestre dos Placares, Zebra Hunter, Campeão Serial, Maratonista
 - [x] [QA] 8 novos testes para notificação e badges de exemplo (110 testes no total)
+
+## Sprint 24/03/2026 — Correção do Slug de Perfil Público
+
+- [x] [Frontend] handleShare no PublicProfile usa /profile/{id} numérico + toast "Qualquer pessoa pode acessar"
+- [x] [Frontend] /profile/me sem login exibe mensagem amigável em vez de loading infinito
+- [x] [Frontend] Link "Ver perfil completo" no PoolMemberProfile usa /profile/{currentUser.id}
+- [x] [Frontend] Botão "Ver perfil público" no Dashboard usa /profile/{user.id}

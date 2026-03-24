@@ -38,10 +38,33 @@ export default function PublicProfile() {
   );
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      toast.success("Link copiado para a área de transferência!");
+    // Sempre usa o ID numérico para garantir que o link funcione para não-logados
+    const shareUrl = resolvedId
+      ? `${window.location.origin}/profile/${resolvedId}`
+      : window.location.href;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast.success("Link copiado! Qualquer pessoa pode acessar este perfil.");
     });
   };
+
+  // Se o slug for "me" mas o usuário não estiver logado, exibir mensagem amigável
+  if (userIdParam === "me" && !isAuthenticated && !currentUser) {
+    return (
+      <AppShell>
+        <div className="max-w-md mx-auto px-4 py-16 text-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-muted-foreground/30 mx-auto" />
+          <h1 className="font-bold text-xl">Faça login para ver seu perfil</h1>
+          <p className="text-muted-foreground text-sm">
+            O link <code className="bg-muted px-1 py-0.5 rounded text-xs">/profile/me</code> exibe o seu próprio perfil.
+            Para compartilhar seu perfil com outras pessoas, use o botão "Compartilhar" após fazer login.
+          </p>
+          <Link href="/dashboard">
+            <Button size="sm">Fazer login</Button>
+          </Link>
+        </div>
+      </AppShell>
+    );
+  }
 
   if (!resolvedId || isLoading) {
     return (

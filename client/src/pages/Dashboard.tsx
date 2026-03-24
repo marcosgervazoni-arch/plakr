@@ -202,7 +202,7 @@ export default function Dashboard() {
               </Link>
             )}
 
-            <Link href="/profile/me">
+            <Link href={user?.id ? `/profile/${user.id}` : "/profile/me"}>
               <Button variant="outline" size="sm" className="w-full gap-2 mt-1">Ver perfil público</Button>
             </Link>
 

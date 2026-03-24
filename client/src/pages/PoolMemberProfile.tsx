@@ -213,8 +213,8 @@ export default function PoolMemberProfile() {
                   Conquistas
                 </h3>
               </div>
-              {isOwnProfile && (
-                <Link href="/profile/me">
+              {isOwnProfile && currentUser?.id && (
+                <Link href={`/profile/${currentUser.id}`}>
                   <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7">
                     Ver perfil completo →
                   </Button>
