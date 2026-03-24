@@ -736,20 +736,31 @@ export const appRouter = router({
     list: adminProcedure.query(async () => {
       return getGlobalTournaments();
     }),
-    create: adminProcedure
+    create: protectedProcedure
       .input(z.object({
         name: z.string().min(3),
         slug: z.string().min(3),
-        isGlobal: z.boolean().default(true),
+        isGlobal: z.boolean().default(false),
         logoUrl: z.string().optional(),
         country: z.string().optional(),
         season: z.string().optional(),
         startDate: z.date().optional(),
         endDate: z.date().optional(),
+        format: z.enum(["league", "cup", "groups_knockout", "custom"]).optional(),
+        poolId: z.number().optional(), // bolão ao qual o campeonato pertence
       }))
       .mutation(async ({ input, ctx }) => {
+        // Admin pode criar campeonatos globais sem restrição
+        if (ctx.user.role !== "admin") {
+          // Organizador comum: deve ser organizador de um bolão Pro
+          if (!input.poolId) throw new TRPCError({ code: "BAD_REQUEST", message: "Informe o bolão ao qual o campeonato pertence." });
+          const member = await getPoolMember(input.poolId, ctx.user.id);
+          if (!member || member.role !== "organizer") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador do bolão pode criar campeonatos personalizados." });
+          const pool = await getPoolById(input.poolId);
+          if (!pool || pool.plan !== "pro") throw new TRPCError({ code: "FORBIDDEN", message: "Campeonatos personalizados são exclusivos do Plano Pro." });
+        }
         const id = await createTournament({ ...input, createdBy: ctx.user.id });
-        await createAdminLog(ctx.user.id, "create_tournament", "tournament", id);
+        if (ctx.user.role === "admin") await createAdminLog(ctx.user.id, "create_tournament", "tournament", id);
         return { id };
       }),
     // Importar jogos via CSV
@@ -799,7 +810,7 @@ export const appRouter = router({
       }),
 
     // Admin: adicionar jogo
-    addGame: adminProcedure
+    addGame: protectedProcedure
       .input(z.object({
         tournamentId: z.number(),
         teamAName: z.string(),
@@ -809,13 +820,22 @@ export const appRouter = router({
         venue: z.string().optional(),
         groupName: z.string().optional(),
         matchNumber: z.number().optional(),
+        poolId: z.number().optional(), // para validação de organizador Pro
       }))
       .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") {
+          if (!input.poolId) throw new TRPCError({ code: "BAD_REQUEST", message: "Informe o bolão ao qual o jogo pertence." });
+          const member = await getPoolMember(input.poolId, ctx.user.id);
+          if (!member || member.role !== "organizer") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador do bolão pode adicionar jogos." });
+          const pool = await getPoolById(input.poolId);
+          if (!pool || pool.plan !== "pro") throw new TRPCError({ code: "FORBIDDEN", message: "Adição de jogos é exclusiva do Plano Pro." });
+        }
+        const { poolId: _poolId, ...gameData } = input;
         const id = await createGame({
-          ...input,
+          ...gameData,
           matchDate: new Date(input.matchDate),
         });
-        await createAdminLog(ctx.user.id, "add_game", "game", id, { tournamentId: input.tournamentId });
+        if (ctx.user.role === "admin") await createAdminLog(ctx.user.id, "add_game", "game", id, { tournamentId: input.tournamentId });
         return { id };
       }),
 
@@ -880,16 +900,25 @@ export const appRouter = router({
         return { success: true, affectedBets: allBets.length };
       }),
 
-    addTeam: adminProcedure
+    addTeam: protectedProcedure
       .input(z.object({
         tournamentId: z.number(),
         name: z.string(),
         code: z.string().optional(),
         flagUrl: z.string().optional(),
         groupName: z.string().optional(),
+        poolId: z.number().optional(), // para validação de organizador Pro
       }))
-      .mutation(async ({ input }) => {
-        const id = await createTeam(input);
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== "admin") {
+          if (!input.poolId) throw new TRPCError({ code: "BAD_REQUEST", message: "Informe o bolão ao qual o time pertence." });
+          const member = await getPoolMember(input.poolId, ctx.user.id);
+          if (!member || member.role !== "organizer") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador do bolão pode adicionar times." });
+          const pool = await getPoolById(input.poolId);
+          if (!pool || pool.plan !== "pro") throw new TRPCError({ code: "FORBIDDEN", message: "Adição de times é exclusiva do Plano Pro." });
+        }
+        const { poolId: _poolId, ...teamData } = input;
+        const id = await createTeam(teamData);
         return { id };
       }),
     // Admin: recalcular pontuação de todos os membros de todos os bolões de um torneio
@@ -1550,7 +1579,44 @@ export const appRouter = router({
       .query(async ({ input, ctx }) => {
         const member = await getPoolMember(input.poolId, ctx.user.id);
         if (!member && ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-        return getPoolMembers(input.poolId);
+        const members = await getPoolMembers(input.poolId);
+        // Enriquecer com lastBetAt e isInactive (sem palpite nos últimos 3 jogos encerrados)
+        const db = await (await import("./db")).getDb();
+        if (!db) return members;
+        const { bets: betsT, games: gamesT } = await import("../drizzle/schema");
+        const { desc, eq, and, inArray } = await import("drizzle-orm");
+        // Buscar os últimos 3 jogos encerrados do bolão
+        const pool = await getPoolById(input.poolId);
+        const last3Games = pool?.tournamentId
+          ? await db.select({ id: gamesT.id })
+              .from(gamesT)
+              .where(and(eq(gamesT.tournamentId, pool.tournamentId), eq(gamesT.status, "finished")))
+              .orderBy(desc(gamesT.matchDate))
+              .limit(3)
+          : [];
+        const last3GameIds = last3Games.map((g) => g.id);
+        // Para cada membro, buscar o último palpite e verificar se palpitou nos últimos 3 jogos
+        const enriched = await Promise.all(
+          members.map(async (m) => {
+            const [lastBet] = await db.select({ createdAt: betsT.createdAt })
+              .from(betsT)
+              .where(and(eq(betsT.poolId, input.poolId), eq(betsT.userId, m.member.userId)))
+              .orderBy(desc(betsT.createdAt))
+              .limit(1);
+            const betsInLast3 = last3GameIds.length > 0
+              ? await db.select({ id: betsT.id })
+                  .from(betsT)
+                  .where(and(
+                    eq(betsT.poolId, input.poolId),
+                    eq(betsT.userId, m.member.userId),
+                    inArray(betsT.gameId, last3GameIds)
+                  ))
+              : [];
+            const isInactive = last3GameIds.length > 0 && betsInLast3.length === 0;
+            return { ...m, lastBetAt: lastBet?.createdAt ?? null, isInactive };
+          })
+        );
+        return enriched;
       }),
 
     removeMember: protectedProcedure

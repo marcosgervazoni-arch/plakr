@@ -67,16 +67,16 @@ const PRO_FEATURES = [
 ];
 
 export default function SubscriptionPage() {
-  const { poolId } = useParams<{ poolId: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const search = useSearch();
-  const poolIdNum = parseInt(poolId ?? "0");
   const { isAuthenticated } = useAuth();
 
   const { data: poolData } = trpc.pools.getBySlug.useQuery(
-    { slug: poolId ?? "" },
-    { enabled: !!poolId }
+    { slug: slug ?? "" },
+    { enabled: !!slug }
   );
   const pool = poolData;
+  const poolIdNum = pool?.pool?.id ?? 0;
 
   const checkoutMutation = trpc.stripe.createCheckout.useMutation({
     onSuccess: (data) => {
@@ -112,6 +112,7 @@ export default function SubscriptionPage() {
   }, [search]);
 
   const handleUpgrade = () => {
+    if (!poolIdNum) return;
     checkoutMutation.mutate({
       poolId: poolIdNum,
       origin: window.location.origin,
@@ -119,6 +120,7 @@ export default function SubscriptionPage() {
   };
 
   const handleManageSubscription = () => {
+    if (!poolIdNum) return;
     portalMutation.mutate({
       poolId: poolIdNum,
       origin: window.location.origin,
@@ -129,7 +131,7 @@ export default function SubscriptionPage() {
 
   return (
     <OrganizerLayout
-      slug={poolId ?? ""}
+      slug={slug ?? ""}
       poolName={pool?.pool?.name ?? "Carregando..."}
       poolStatus={(pool?.pool?.status as "active" | "closed" | "draft") ?? "active"}
       isPro={isPro}

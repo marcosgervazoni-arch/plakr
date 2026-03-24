@@ -101,6 +101,7 @@ export const tournaments = mysqlTable("tournaments", {
   season: varchar("season", { length: 10 }),
   startDate: timestamp("startDate"),
   endDate: timestamp("endDate"),
+  format: mysqlEnum("format", ["league", "cup", "groups_knockout", "custom"]).default("custom"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

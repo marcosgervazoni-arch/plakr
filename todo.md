@@ -710,3 +710,41 @@
 - [ ] IDEIA: Persistência do estado do menu colapsável (localStorage) para que o usuário não precise reabrir sempre
 - [ ] IDEIA: Seções de bolões no menu principal (padrão Slack/Linear) para acesso direto
 - [ ] IDEIA: Otimização da página /pools/public com filtros avançados e paginação infinita
+
+## Decisões de Produto — Módulo Organizer (24/03/2026)
+
+### Segmentação Free vs Pro (validada)
+- Comunicação com membros (notificação in-app + e-mail) → exclusivo Plano Pro
+- QR Code de convite → removido do escopo atual (backlog futuro)
+
+### Sprint A — Correções Críticas (bugs que quebram o produto)
+- [ ] A1 — SubscriptionPage: corrigir useParams de poolId para slug
+- [ ] A2 — tournaments.create/addTeam/addGame: converter de adminProcedure para protectedProcedure com validação de organizador Pro
+- [ ] A3 — Dashboard Organizer: implementar lógica real de "Participantes Inativos" (sem palpite nos últimos 3 jogos)
+- [ ] A4 — Membros: implementar filtro "Inativos" com base em lastBetAt
+- [ ] A5 — CustomTournament: salvar campo format no schema e payload de create
+- [ ] A6 — OrganizerLayout/Dashboard: calcular isProExpired a partir de planExpiresAt real
+
+### Sprint B — Funcionalidades Essenciais
+- [ ] B1 — Nova seção "Jogos" (/pool/:slug/manage/games): lista de jogos + formulário de placar inline [Pro]
+- [ ] B2 — Nova seção "Comunicação" (/pool/:slug/manage/messages): notificação in-app + e-mail para membros [Pro]
+- [ ] B3 — Encerramento do bolão: card "Zona de Perigo" em Identidade com botões Encerrar/Excluir [Free + Pro]
+- [ ] B4 — Exibir planExpiresAt no Dashboard e tela de Plano com alerta visual em < 7 dias [Pro]
+- [ ] B5 — Membros: linkar "Ver perfil" para /u/:username [Free + Pro]
+- [ ] B6 — Membros: implementar ação "Bloquear membro" via updateUserBlocked [Free + Pro]
+- [ ] B7 — Regras: adicionar slider de bettingDeadlineMinutes na UI [Pro]
+
+### Sprint C — Experiência Avançada
+- [ ] C1 — CustomTournament: vincular automaticamente campeonato ao bolão ao finalizar wizard [Pro]
+- [ ] C2 — Acesso: criar procedure pools.regenerateAccessCode dedicada [Free + Pro]
+- [ ] C3 — Acesso: criar procedure pools.getAccessStats (total Free; série temporal Pro) [Free + Pro]
+- [ ] C4 — OrganizerLayout: reorganizar sidebar com grupos colapsáveis [Free + Pro]
+
+## Sprint A — Correções Críticas do Módulo Organizer (24/03/2026)
+
+- [x] A1 — SubscriptionPage: corrigir parâmetro de rota poolId → slug (upgrade funcionando)
+- [x] A2 — tournaments.create/addTeam/addGame: converter para protectedProcedure com validação de organizador Pro
+- [x] A3 — Dashboard: lógica real de inativos (sem palpite nos últimos 3 jogos encerrados)
+- [x] A4 — OrganizerMembers: filtro "Inativos" funcional usando isInactive do servidor
+- [x] A5 — Campo format salvo no campeonato (schema + migração SQL + procedure + frontend)
+- [x] A6 — isProExpired calculado a partir de planExpiresAt real (OrganizerDashboard + OrganizerRules)

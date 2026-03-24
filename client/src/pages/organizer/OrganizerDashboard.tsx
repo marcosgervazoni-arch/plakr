@@ -77,7 +77,7 @@ export default function OrganizerDashboard() {
   const ranking = rankingData ?? [];
 
   const isPro = pool?.plan === "pro";
-  const isProExpired = false; // TODO: check plan expiry from user_plans
+  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
 
   // Next game with deadline
   const nextGame = useMemo(() => {
@@ -98,9 +98,11 @@ export default function OrganizerDashboard() {
     return h > 0 ? `${h}h ${m}min` : `${m}min`;
   }, [nextGame]);
 
-  // Inactive members (no bets in last 3 games)
+  // Inactive members (sem palpite nos últimos 3 jogos encerrados)
   const inactiveMembers = useMemo(() => {
-    return members.slice(0, 5); // simplified — real impl would check bet history
+    return (members as any[])
+      .filter((m: any) => m.isInactive === true)
+      .slice(0, 5);
   }, [members]);
 
   // Top 5 ranking

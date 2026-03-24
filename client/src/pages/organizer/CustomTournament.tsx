@@ -102,12 +102,20 @@ export default function CustomTournament() {
   const handleStep1 = () => {
     if (!tourInfo.name.trim()) { toast.error("Nome do campeonato é obrigatório."); return; }
     const slugVal = tourInfo.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + Date.now();
+    const formatMap: Record<string, "league" | "cup" | "groups_knockout" | "custom"> = {
+      league: "league",
+      cup: "cup",
+      group_knockout: "groups_knockout",
+      groups_knockout: "groups_knockout",
+    };
     createTournamentMutation.mutate({
       name: tourInfo.name,
       slug: slugVal,
       season: tourInfo.season,
       country: tourInfo.country,
       isGlobal: false,
+      format: formatMap[tourInfo.format] ?? "custom",
+      poolId: pool?.pool?.id,
     });
   };
 
@@ -117,7 +125,7 @@ export default function CustomTournament() {
     if (!createdTournamentId) return;
     const ids: number[] = [];
     for (const t of teams) {
-      const res = await createTeamMutation.mutateAsync({ tournamentId: createdTournamentId, name: t.name, code: t.shortName || t.name.slice(0, 3).toUpperCase(), groupName: t.country || tourInfo.country });
+      const res = await createTeamMutation.mutateAsync({ tournamentId: createdTournamentId, name: t.name, code: t.shortName || t.name.slice(0, 3).toUpperCase(), groupName: t.country || tourInfo.country, poolId: pool?.pool?.id });
       ids.push(res.id);
     }
     setCreatedTeamIds(ids);
@@ -141,6 +149,7 @@ export default function CustomTournament() {
         matchDate: dt.getTime(),
         phase: g.phase,
         venue: g.venue,
+        poolId: pool?.pool?.id,
       });
     }
     toast.success(`${games.length} jogos criados!`);

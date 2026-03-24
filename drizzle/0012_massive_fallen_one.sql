@@ -1,0 +1,1 @@
+ALTER TABLE `tournaments` ADD `format` enum('league','cup','groups_knockout','custom') DEFAULT 'custom';

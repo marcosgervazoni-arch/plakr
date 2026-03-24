@@ -269,7 +269,7 @@ export default function OrganizerRules() {
   const rules = poolData?.rules;
 
   const isPro = pool?.plan === "pro";
-  const isProExpired = false;
+  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
 
   // Verificar se o primeiro jogo já começou (bloquear regras)
   const firstGame = poolData?.games?.[0];

@@ -91,10 +91,11 @@ export default function OrganizerMembers() {
   });
 
   const filtered = useMemo(() => {
-    let list = members.filter((m: any) => {
+    let list = (members as any[]).filter((m: any) => {
       const name = (m.user?.name ?? "").toLowerCase();
       return name.includes(search.toLowerCase());
     });
+    if (filter === "inactive") list = list.filter((m: any) => m.isInactive === true);
     if (filter === "top") list = [...list].sort((a: any, b: any) => (b.member?.totalPoints ?? 0) - (a.member?.totalPoints ?? 0));
     if (filter === "bottom") list = [...list].sort((a: any, b: any) => (a.member?.totalPoints ?? 0) - (b.member?.totalPoints ?? 0));
     return list;
