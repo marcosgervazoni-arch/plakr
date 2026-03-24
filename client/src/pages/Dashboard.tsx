@@ -251,14 +251,22 @@ export default function Dashboard() {
                 />
               ) : (
                 <div className="space-y-2">
-                  {(pools as any[]).map(({ pool, member }: { pool: any; member: any }) => (
+                  {(pools as any[]).map(({ pool, member, rankPosition, totalMembers, pendingBetsCount }: { pool: any; member: any; rankPosition: number | null; totalMembers: number; pendingBetsCount: number }) => (
                     <Link key={pool.id} href={`/pool/${pool.slug}`}>
                       <div className="group flex items-center gap-3 bg-card border border-border/30 rounded-xl px-4 py-3 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
-                          {pool.logoUrl ? (
-                            <img src={pool.logoUrl} alt={pool.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <Trophy className="w-5 h-5 text-primary" />
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                            {pool.logoUrl ? (
+                              <img src={pool.logoUrl} alt={pool.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Trophy className="w-5 h-5 text-primary" />
+                            )}
+                          </div>
+                          {/* Pending bets badge */}
+                          {pendingBetsCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-[10px] font-bold text-white flex items-center justify-center px-1 leading-none border-2 border-card">
+                              {pendingBetsCount > 9 ? "9+" : pendingBetsCount}
+                            </span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -266,17 +274,21 @@ export default function Dashboard() {
                             <p className="font-medium text-sm truncate">{pool.name}</p>
                             {pool.plan === "pro" && <Crown className="w-3 h-3 text-primary shrink-0" />}
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                              pool.status === "active"
-                                ? "bg-green-500/10 text-green-400"
-                                : "bg-muted text-muted-foreground"
-                            }`}>
-                              {pool.status === "active" ? "Ativo" : "Encerrado"}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {member.role === "organizer" ? "Organizador" : "Participante"}
-                            </span>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            {rankPosition && totalMembers > 0 ? (
+                              <span className="text-xs font-semibold" style={{ color: rankPosition === 1 ? "#FBBF24" : rankPosition <= 3 ? "#94A3B8" : undefined }}>
+                                {rankPosition === 1 ? "🥇" : rankPosition === 2 ? "🥈" : rankPosition === 3 ? "🥉" : `${rankPosition}º`} de {totalMembers}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                {member.role === "organizer" ? "Organizador" : "Participante"}
+                              </span>
+                            )}
+                            {pendingBetsCount > 0 && (
+                              <span className="text-xs text-amber-400 font-medium">
+                                · {pendingBetsCount} palpite{pendingBetsCount > 1 ? "s" : ""} pendente{pendingBetsCount > 1 ? "s" : ""}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />

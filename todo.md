@@ -616,3 +616,9 @@
 - [x] [Fullstack] pointsHistory em myStats: innerJoin com pools adicionado, filtra status != 'deleted'
 - [x] [Fullstack] pointsHistory em myStatsByPool: já filtrava por poolId específico (bolão já deletado não seria acessado)
 - [x] [Fullstack] getMemberProfile/recentBets: opera dentro de um bolão específico via poolId, sem risco
+
+## Sprint 24/03/2026 — Dashboard: Ranking e Palpites Pendentes
+
+- [x] [Backend] myPools: rankPosition, totalMembers e pendingBetsCount calculados por bolão via Promise.all
+- [x] [Frontend] Cards de bolão: posição no ranking com medalhas 🥇🥈🥉 para top 3 e "º de N" para demais
+- [x] [Frontend] Cards de bolão: badge laranja com contador de palpites pendentes no ícone do bolão + texto "X palpites pendentes"

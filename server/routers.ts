@@ -130,7 +130,64 @@ export const appRouter = router({
     }),
 
     myPools: protectedProcedure.query(async ({ ctx }) => {
-      return getPoolsByUser(ctx.user.id);
+      const basePools = await getPoolsByUser(ctx.user.id);
+      if (!basePools || basePools.length === 0) return basePools;
+      const db = await (await import("./db")).getDb();
+      if (!db) return basePools;
+      const { eq, and, sql } = await import("drizzle-orm");
+      const { poolMemberStats, games, bets, poolScoringRules } = await import("../drizzle/schema");
+      // Enrich each pool with rank + pending bets in parallel
+      const enriched = await Promise.all(
+        basePools.map(async ({ pool, member }) => {
+          // Rank position for this user in this pool
+          const rankRows = await db
+            .select({ userId: poolMemberStats.userId, totalPoints: poolMemberStats.totalPoints })
+            .from(poolMemberStats)
+            .where(eq(poolMemberStats.poolId, pool.id))
+            .orderBy(sql`${poolMemberStats.totalPoints} DESC`);
+          const rankPosition = rankRows.findIndex((r) => r.userId === ctx.user.id) + 1;
+          const totalMembers = rankRows.length;
+          // Pending bets: scheduled games within deadline that user hasn't bet on yet
+          const deadlineRow = await db
+            .select({ bettingDeadlineMinutes: poolScoringRules.bettingDeadlineMinutes })
+            .from(poolScoringRules)
+            .where(eq(poolScoringRules.poolId, pool.id))
+            .limit(1);
+          const deadlineMinutes = deadlineRow[0]?.bettingDeadlineMinutes ?? 60;
+          // Games that are still open for betting (matchDate > now + deadlineMinutes)
+          const openGames = await db
+            .select({ id: games.id })
+            .from(games)
+            .where(and(
+              eq(games.tournamentId, pool.tournamentId),
+              eq(games.status, "scheduled"),
+              sql`${games.matchDate} > DATE_ADD(NOW(), INTERVAL ${deadlineMinutes} MINUTE)`
+            ));
+          // Count how many of those the user hasn't bet on in this pool
+          let pendingBetsCount = 0;
+          if (openGames.length > 0) {
+            const openGameIds = openGames.map((g) => g.id);
+            const existingBets = await db
+              .select({ gameId: bets.gameId })
+              .from(bets)
+              .where(and(
+                eq(bets.userId, ctx.user.id),
+                eq(bets.poolId, pool.id),
+                sql`${bets.gameId} IN (${sql.join(openGameIds.map((id) => sql`${id}`), sql`, `)})`
+              ));
+            const bettedGameIds = new Set(existingBets.map((b) => b.gameId));
+            pendingBetsCount = openGameIds.filter((id) => !bettedGameIds.has(id)).length;
+          }
+          return {
+            pool,
+            member,
+            rankPosition: rankPosition > 0 ? rankPosition : null,
+            totalMembers,
+            pendingBetsCount,
+          };
+        })
+      );
+      return enriched;
     }),
 
     myStats: protectedProcedure.query(async ({ ctx }) => {
