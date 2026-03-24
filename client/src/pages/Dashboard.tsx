@@ -2,8 +2,7 @@
  * U1 — Home / Perfil do Usuário
  * Especificação: hub central pós-login. Layout duas colunas desktop.
  * Card de perfil (esq): avatar circular, nome Syne, plano badge, stats JetBrains Mono 28px.
- * Conteúdo (dir): lista de bolões, gráfico de evolução Recharts, palpites recentes.
- * Seções de gráfico e palpites recentes sempre visíveis mesmo com valor zero.
+ * Conteúdo (dir): lista de bolões, gráfico de evolução por bolão (sem opção global), radar de perfil, palpites recentes.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -22,8 +21,8 @@ import {
   Minus,
   TrendingUp,
   Crown,
-  Settings,
   ChevronRight,
+  Radar,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,6 +39,11 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar as RechartsRadar,
 } from "recharts";
 
 export default function Dashboard() {
@@ -52,23 +56,26 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = trpc.users.myStats.useQuery(undefined, { enabled: isAuthenticated });
   const { data: recentBets = [] } = trpc.users.recentBets.useQuery(undefined, { enabled: isAuthenticated });
 
-  // Pool selector for points chart
+  // Pool selector — no "all" option; user must select a specific pool
   const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
   const { data: poolStats } = trpc.users.myStatsByPool.useQuery(
     { poolId: selectedPoolId! },
     { enabled: isAuthenticated && selectedPoolId !== null }
   );
 
-  // Compute cumulative points for chart — either global or per-pool
-  const activePointsHistory = selectedPoolId !== null ? poolStats?.pointsHistory : stats?.pointsHistory;
+  // Cumulative points chart — only for selected pool
   const chartData = useMemo(() => {
-    if (!activePointsHistory?.length) return [];
+    const history = poolStats?.pointsHistory;
+    if (!history?.length) return [];
     let cumulative = 0;
-    return activePointsHistory.map((p: { label: string; points: number }) => {
+    return history.map((p: { label: string; points: number }) => {
       cumulative += p.points;
       return { label: p.label, points: cumulative };
     });
-  }, [activePointsHistory]);
+  }, [poolStats?.pointsHistory]);
+
+  // Radar data — pool-specific when selected, global otherwise
+  const activeRadarData = selectedPoolId !== null ? poolStats?.radarData : stats?.radarData;
 
   if (loading || (isAuthenticated && poolsLoading && statsLoading)) {
     return <DashboardSkeleton />;
@@ -94,7 +101,9 @@ export default function Dashboard() {
   }
 
   const isPro = userData?.plan?.plan === "pro" && userData?.plan?.isActive;
+  const avatarUrl = (userData?.user as any)?.avatarUrl as string | null | undefined;
   const initials = user?.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
+  const activePools = (pools as any[]).filter((p: any) => p.pool?.status === "active");
 
   return (
     <AppShell>
@@ -106,7 +115,9 @@ export default function Dashboard() {
               Olá, {user?.name?.split(" ")[0] ?? "Apostador"} 👋
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {(pools as any[]).length === 0 ? "Crie ou entre em um bolão para começar" : `Você está em ${(pools as any[]).length} bolão${(pools as any[]).length > 1 ? "ões" : ""}`}
+              {activePools.length === 0
+                ? "Crie ou entre em um bolão para começar"
+                : `Você está em ${activePools.length} bolão${activePools.length > 1 ? "ões" : ""} ativo${activePools.length > 1 ? "s" : ""}`}
             </p>
           </div>
           <Button size="sm" onClick={() => setShowCreateModal(true)} className="gap-2 shrink-0">
@@ -114,6 +125,7 @@ export default function Dashboard() {
             <span className="hidden sm:inline">Criar Bolão</span>
           </Button>
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
 
           {/* ── LEFT: Profile card ── */}
@@ -123,9 +135,13 @@ export default function Dashboard() {
               <div className="flex flex-col items-center text-center gap-3">
                 <div className="relative">
                   <div className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center overflow-hidden">
-                    <span className="font-bold text-xl text-primary" style={{ fontFamily: "'Syne', sans-serif" }}>
-                      {initials}
-                    </span>
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={user?.name ?? ""} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-bold text-xl text-primary" style={{ fontFamily: "'Syne', sans-serif" }}>
+                        {initials}
+                      </span>
+                    )}
                   </div>
                   {isPro && (
                     <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-card">
@@ -157,29 +173,20 @@ export default function Dashboard() {
               {/* Global stats in JetBrains Mono */}
               <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/30">
                 <div className="text-center">
-                  <p
-                    className="font-bold text-2xl text-primary leading-none"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                  >
+                  <p className="font-bold text-2xl text-primary leading-none" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                     {stats?.totalPoints ?? 0}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">Pontos</p>
                 </div>
                 <div className="text-center border-x border-border/30">
-                  <p
-                    className="font-bold text-2xl text-green-400 leading-none"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                  >
+                  <p className="font-bold text-2xl text-green-400 leading-none" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                     {stats?.exactScores ?? 0}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">Exatos</p>
                 </div>
                 <div className="text-center">
-                  <p
-                    className="font-bold text-2xl text-foreground leading-none"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                  >
-                    {stats?.poolsCount ?? pools.length}
+                  <p className="font-bold text-2xl text-foreground leading-none" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                    {stats?.poolsCount ?? activePools.length}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">Bolões</p>
                 </div>
@@ -244,9 +251,9 @@ export default function Dashboard() {
                 />
               ) : (
                 <div className="space-y-2">
-                  {pools.map(({ pool, member }: { pool: any; member: any }) => (
+                  {(pools as any[]).map(({ pool, member }: { pool: any; member: any }) => (
                     <Link key={pool.id} href={`/pool/${pool.slug}`}>
-                      <div className="bg-card border border-border/30 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-primary/30 hover:bg-card/80 transition-all cursor-pointer group">
+                      <div className="group flex items-center gap-3 bg-card border border-border/30 rounded-xl px-4 py-3 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer">
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                           {pool.logoUrl ? (
                             <img src={pool.logoUrl} alt={pool.name} className="w-full h-full object-cover" />
@@ -280,42 +287,61 @@ export default function Dashboard() {
               )}
             </section>
 
-            {/* Points evolution chart — always visible */}
+            {/* Points evolution chart — pool-specific only */}
             <section>
               <div className="flex items-center justify-between gap-2 mb-3">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-muted-foreground" />
                   <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Evolução de Pontos</h3>
                 </div>
-                {(pools as any[]).length > 0 && (
+                {activePools.length > 0 && (
                   <Select
-                    value={selectedPoolId === null ? "all" : String(selectedPoolId)}
-                    onValueChange={(v) => setSelectedPoolId(v === "all" ? null : Number(v))}
+                    value={selectedPoolId === null ? "" : String(selectedPoolId)}
+                    onValueChange={(v) => setSelectedPoolId(v ? Number(v) : null)}
                   >
-                    <SelectTrigger className="h-7 text-xs w-auto min-w-[140px] max-w-[200px] border-border/40 bg-card">
-                      <SelectValue placeholder="Selecionar bolão" />
+                    <SelectTrigger className="h-7 text-xs w-auto min-w-[160px] max-w-[220px] border-border/40 bg-card">
+                      <SelectValue placeholder="Selecionar bolão…" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todos os bolões</SelectItem>
-                      {(pools as any[]).filter(p => p.status !== "deleted").map((pool: any) => (
-                        <SelectItem key={pool.id} value={String(pool.id)}>
-                          {pool.name}
+                      {activePools.map((p: any) => (
+                        <SelectItem key={p.pool.id} value={String(p.pool.id)}>
+                          {p.pool.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 )}
               </div>
+
               <div className="bg-card border border-border/30 rounded-xl p-4">
-                {chartData.length === 0 ? (
+                {selectedPoolId === null ? (
+                  /* State: no pool selected */
                   <div className="h-[160px] flex flex-col items-center justify-center gap-3">
                     <TrendingUp className="w-8 h-8 text-muted-foreground/20" />
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Seus pontos aparecerão aqui após os primeiros jogos.</p>
-                      <p
-                        className="font-bold text-3xl text-primary mt-2"
-                        style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                      >
+                      <p className="text-sm text-muted-foreground">Selecione um bolão para ver sua evolução de pontos.</p>
+                      {activePools.length > 0 && (
+                        <div className="flex flex-wrap gap-2 justify-center mt-3">
+                          {activePools.slice(0, 3).map((p: any) => (
+                            <button
+                              key={p.pool.id}
+                              onClick={() => setSelectedPoolId(p.pool.id)}
+                              className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                            >
+                              {p.pool.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : chartData.length === 0 ? (
+                  /* State: pool selected but no scored bets yet */
+                  <div className="h-[160px] flex flex-col items-center justify-center gap-3">
+                    <TrendingUp className="w-8 h-8 text-muted-foreground/20" />
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">Nenhum jogo pontuado neste bolão ainda.</p>
+                      <p className="font-bold text-3xl text-primary mt-2" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                         0 pts
                       </p>
                     </div>
@@ -335,7 +361,7 @@ export default function Dashboard() {
                       <Tooltip
                         contentStyle={{ background: "#1A1D27", border: "1px solid #2E3347", borderRadius: "8px", fontSize: "12px" }}
                         labelStyle={{ color: "#94A3B8" }}
-                        formatter={(value: number) => [`${value} pts`, "Pontos"]}
+                        formatter={(value: number) => [`${value} pts`, "Pontos acumulados"]}
                       />
                       <Area
                         type="monotone"
@@ -347,6 +373,60 @@ export default function Dashboard() {
                         activeDot={{ r: 5 }}
                       />
                     </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </section>
+
+            {/* Radar chart — apostador profile */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Radar className="w-4 h-4 text-muted-foreground" />
+                <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">
+                  Perfil de Apostador
+                </h3>
+                {selectedPoolId !== null && (
+                  <span className="text-xs text-muted-foreground/60 ml-1">
+                    — {activePools.find((p: any) => p.pool.id === selectedPoolId)?.pool.name ?? "bolão selecionado"}
+                  </span>
+                )}
+              </div>
+              <div className="bg-card border border-border/30 rounded-xl p-4">
+                {!activeRadarData || activeRadarData.every((d: any) => d.value === 0) ? (
+                  <div className="h-[200px] flex flex-col items-center justify-center gap-3">
+                    <Radar className="w-8 h-8 text-muted-foreground/20" />
+                    <p className="text-sm text-muted-foreground text-center">
+                      Seu perfil de apostador aparecerá aqui após os primeiros jogos pontuados.
+                    </p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <RadarChart data={activeRadarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+                      <PolarGrid stroke="rgba(255,255,255,0.08)" />
+                      <PolarAngleAxis
+                        dataKey="subject"
+                        tick={{ fontSize: 11, fill: "#94A3B8" }}
+                      />
+                      <PolarRadiusAxis
+                        angle={90}
+                        domain={[0, 100]}
+                        tick={{ fontSize: 9, fill: "#64748B" }}
+                        tickCount={4}
+                      />
+                      <RechartsRadar
+                        name="Perfil"
+                        dataKey="value"
+                        stroke="hsl(var(--primary))"
+                        fill="hsl(var(--primary))"
+                        fillOpacity={0.2}
+                        strokeWidth={2}
+                        dot={{ fill: "hsl(var(--primary))", r: 3, strokeWidth: 0 }}
+                      />
+                      <Tooltip
+                        contentStyle={{ background: "#1A1D27", border: "1px solid #2E3347", borderRadius: "8px", fontSize: "12px" }}
+                        formatter={(value: number, name: string) => [`${value}%`, name]}
+                      />
+                    </RadarChart>
                   </ResponsiveContainer>
                 )}
               </div>
@@ -371,7 +451,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="divide-y divide-border/20">
-                    {recentBets.map((bet: any) => {
+                    {(recentBets as any[]).map((bet: any) => {
                       const icon =
                         bet.result === "exact" ? (
                           <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />

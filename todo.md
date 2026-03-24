@@ -598,3 +598,13 @@
 - [x] [Fullstack] listPublic: já filtrava status == 'active', sem alteração necessária
 - [x] [Fullstack] joinPublic/joinByCode/joinByToken: já verificavam status == 'active', sem alteração necessária
 - [x] [Fullstack] recalculatePool (admin): filtro status != 'deleted' adicionado
+
+## Sprint 24/03/2026 — Dashboard: Gráficos Melhorados
+
+- [x] [Backend] myStats: radarData adicionado (Placar Exato, Resultado, Zebra, Goleada, Dif. Gols em %)
+- [x] [Backend] myStatsByPool: radarData filtrado por bolão adicionado
+- [x] [Frontend] Gráfico de evolução: opção "Todos os bolões" removida; estado vazio com atalhos de bolões ativos
+- [x] [Frontend] Estado vazio do gráfico: cards clicáveis dos bolões ativos como atalho de seleção
+- [x] [Frontend] Gráfico de radar: RadarChart com perfil de apostador (Recharts, 5 dimensões)
+- [x] [Frontend] Radar contextual: stats do bolão selecionado ou stats globais com label dinâmico
+- [x] [Frontend] Avatar real do usuário exibido no card de perfil (com fallback para iniciais)

@@ -135,43 +135,56 @@ export const appRouter = router({
 
     myStats: protectedProcedure.query(async ({ ctx }) => {
       const db = await (await import("./db")).getDb();
-      if (!db) return { totalPoints: 0, exactScores: 0, poolsCount: 0, pointsHistory: [] };
+      if (!db) return { totalPoints: 0, exactScores: 0, poolsCount: 0, totalBets: 0, pointsHistory: [], radarData: [] };
       const { sql, eq, and } = await import("drizzle-orm");
-      const { poolMembers, poolMemberStats, bets, games } = await import("../drizzle/schema");
+      const { poolMemberStats, bets, games } = await import("../drizzle/schema");
 
       // Total stats across all pools
       const statsRows = await db
         .select({
           totalPoints: sql<number>`COALESCE(SUM(\`pool_member_stats\`.\`totalPoints\`), 0)`,
           exactScores: sql<number>`COALESCE(SUM(\`pool_member_stats\`.\`exactScoreCount\`), 0)`,
+          correctResults: sql<number>`COALESCE(SUM(\`pool_member_stats\`.\`correctResultCount\`), 0)`,
+          zebraCount: sql<number>`COALESCE(SUM(\`pool_member_stats\`.\`zebraCount\`), 0)`,
+          landslideCount: sql<number>`COALESCE(SUM(\`pool_member_stats\`.\`landslideCount\`), 0)`,
+          goalDiffCount: sql<number>`COALESCE(SUM(\`pool_member_stats\`.\`goalDiffCount\`), 0)`,
+          totalBets: sql<number>`COALESCE(SUM(\`pool_member_stats\`.\`totalBets\`), 0)`,
           poolsCount: sql<number>`COUNT(DISTINCT \`pool_member_stats\`.\`poolId\`)`,
         })
         .from(poolMemberStats)
         .where(eq(poolMemberStats.userId, ctx.user.id));
 
-      const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, poolsCount: 0 };
+      const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, correctResults: 0, zebraCount: 0, landslideCount: 0, goalDiffCount: 0, totalBets: 0, poolsCount: 0 };
+      const tb = Math.max(Number(stats.totalBets), 1); // avoid division by zero
 
-      // Points history: last 10 scored bets ordered by game date
+      // Points history: last 20 scored bets ordered by game date
       const history = await db
-        .select({
-          matchDate: games.matchDate,
-          pointsEarned: bets.pointsEarned,
-        })
+        .select({ matchDate: games.matchDate, pointsEarned: bets.pointsEarned })
         .from(bets)
         .innerJoin(games, eq(bets.gameId, games.id))
         .where(and(eq(bets.userId, ctx.user.id), sql`${bets.pointsEarned} IS NOT NULL`))
         .orderBy(games.matchDate)
         .limit(20);
 
+      // Radar: percentage of each scoring dimension (0-100)
+      const radarData = [
+        { subject: "Placar Exato", value: Math.round((Number(stats.exactScores) / tb) * 100), fullMark: 100 },
+        { subject: "Resultado", value: Math.round((Number(stats.correctResults) / tb) * 100), fullMark: 100 },
+        { subject: "Zebra", value: Math.min(100, Math.round((Number(stats.zebraCount) / tb) * 200)), fullMark: 100 },
+        { subject: "Goleada", value: Math.min(100, Math.round((Number(stats.landslideCount) / tb) * 200)), fullMark: 100 },
+        { subject: "Dif. Gols", value: Math.min(100, Math.round((Number(stats.goalDiffCount) / tb) * 150)), fullMark: 100 },
+      ];
+
       return {
         totalPoints: Number(stats.totalPoints),
         exactScores: Number(stats.exactScores),
         poolsCount: Number(stats.poolsCount),
-        pointsHistory: history.map((h, i) => ({
+        totalBets: Number(stats.totalBets),
+        pointsHistory: history.map((h) => ({
           label: new Date(h.matchDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
           points: Number(h.pointsEarned ?? 0),
-          cumulative: 0, // will be computed client-side
         })),
+        radarData,
       };
     }),
 
@@ -188,13 +201,19 @@ export const appRouter = router({
           .select({
             totalPoints: poolMemberStats.totalPoints,
             exactScores: poolMemberStats.exactScoreCount,
+            correctResults: poolMemberStats.correctResultCount,
+            zebraCount: poolMemberStats.zebraCount,
+            landslideCount: poolMemberStats.landslideCount,
+            goalDiffCount: poolMemberStats.goalDiffCount,
+            totalBets: poolMemberStats.totalBets,
             rank: poolMemberStats.rankPosition,
           })
           .from(poolMemberStats)
           .where(and(eq(poolMemberStats.userId, ctx.user.id), eq(poolMemberStats.poolId, input.poolId)))
           .limit(1);
 
-        const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, rank: null };
+        const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, correctResults: 0, zebraCount: 0, landslideCount: 0, goalDiffCount: 0, totalBets: 0, rank: null };
+        const tb = Math.max(Number(stats.totalBets), 1);
 
         // Total members in pool
         const membersRows = await db
@@ -205,10 +224,7 @@ export const appRouter = router({
 
         // Points history filtered by this pool
         const history = await db
-          .select({
-            matchDate: games.matchDate,
-            pointsEarned: bets.pointsEarned,
-          })
+          .select({ matchDate: games.matchDate, pointsEarned: bets.pointsEarned })
           .from(bets)
           .innerJoin(games, eq(bets.gameId, games.id))
           .where(and(
@@ -219,15 +235,26 @@ export const appRouter = router({
           .orderBy(games.matchDate)
           .limit(20);
 
+        // Radar for this pool
+        const radarData = [
+          { subject: "Placar Exato", value: Math.round((Number(stats.exactScores) / tb) * 100), fullMark: 100 },
+          { subject: "Resultado", value: Math.round((Number(stats.correctResults) / tb) * 100), fullMark: 100 },
+          { subject: "Zebra", value: Math.min(100, Math.round((Number(stats.zebraCount) / tb) * 200)), fullMark: 100 },
+          { subject: "Goleada", value: Math.min(100, Math.round((Number(stats.landslideCount) / tb) * 200)), fullMark: 100 },
+          { subject: "Dif. Gols", value: Math.min(100, Math.round((Number(stats.goalDiffCount) / tb) * 150)), fullMark: 100 },
+        ];
+
         return {
           totalPoints: Number(stats.totalPoints ?? 0),
           exactScores: Number(stats.exactScores ?? 0),
           rank: stats.rank ? Number(stats.rank) : null,
           totalMembers,
+          totalBets: Number(stats.totalBets ?? 0),
           pointsHistory: history.map((h) => ({
             label: new Date(h.matchDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
             points: Number(h.pointsEarned ?? 0),
           })),
+          radarData,
         };
       }),
 
