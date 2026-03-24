@@ -927,5 +927,6 @@
 
 - [x] AppShell: bolões ativos do usuário como itens diretos no menu lateral (com badge de palpites pendentes)
 - [x] AppShell: botões Criar e Entrar no menu lateral abaixo dos bolões
-- [x] Dashboard mobile: reordenar para mostrar bolões antes do perfil (order-1/order-2)
+- [x] Dashboard mobile: perfil primeiro (order-1), bolões e demais seções depois (order-2)
+- [x] Dashboard: cabeçalho com saudação, contador de bolões e botão [+] removidos
 - [x] Dashboard: cards de bolões com mais destaque visual — fundo âmbar para palpites pendentes, borda mais visível, fonte semibold

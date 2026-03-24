@@ -120,29 +120,11 @@ export default function Dashboard() {
   return (
     <AppShell>
       <div className="max-w-5xl mx-auto px-4 py-6 lg:py-8">
-        {/* Page header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
-              Olá, {user?.name?.split(" ")[0] ?? "Apostador"} 👋
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {activePools.length === 0
-                ? "Crie ou entre em um bolão para começar"
-                : `Você está em ${activePools.length} bolão${activePools.length > 1 ? "ões" : ""} ativo${activePools.length > 1 ? "s" : ""}`}
-            </p>
-          </div>
-          <Button size="sm" onClick={() => setShowCreateModal(true)} className="gap-2 shrink-0">
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Criar Bolão</span>
-          </Button>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
 
           {/* ── LEFT: Profile card ── */}
-          {/* Em mobile: order-2 (aparece depois dos bolões); em desktop: order-none (coluna esquerda) */}
-          <div className="space-y-4 order-2 lg:order-none">
+          {/* Em mobile: order-1 (perfil primeiro); em desktop: order-none (coluna esquerda) */}
+          <div className="space-y-4 order-1 lg:order-none">
             <div className="bg-card border border-border/30 rounded-xl p-5 space-y-4">
               {/* Avatar + name */}
               <div className="flex flex-col items-center text-center gap-3">
@@ -248,8 +230,8 @@ export default function Dashboard() {
           </div>
 
           {/* ── RIGHT: Content ── */}
-          {/* Em mobile: order-1 (aparece primeiro, acima do perfil); em desktop: order-none */}
-          <div className="space-y-6 order-1 lg:order-none">
+          {/* Em mobile: order-2 (aparece depois do perfil); em desktop: order-none */}
+          <div className="space-y-6 order-2 lg:order-none">
 
             {/* My pools */}
             <section>
