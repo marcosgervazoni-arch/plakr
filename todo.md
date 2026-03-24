@@ -691,6 +691,10 @@
 - [ ] [Frontend] Remover link para /ranking de qualquer outro lugar na aplicação
 - [ ] [Backlog] Ideia futura: ranking de badges (quem tem mais badges, ranking por tipo de badge)
 
+## Sprint 24/03/2026 — Redirect pós-OAuth
+
+- [x] [Backend] Callback OAuth redireciona para /dashboard em vez de / (Landing Page)
+
 ## Remoção do Ranking Global — Sprint 24/03/2026 ✅
 - [x] Remover rota /ranking do App.tsx
 - [x] Remover import GlobalRanking do App.tsx
