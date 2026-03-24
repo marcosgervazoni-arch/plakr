@@ -3,13 +3,21 @@
  * Especificação: descoberta de bolões abertos ao público.
  * Barra de busca proeminente + filtro por campeonato.
  * Grid de cards com logo, nome, campeonato, participantes, organizador.
- * Badge Pro/Free. Botão "Quero participar!" por card.
- * Estado vazio com CTA para criar bolão.
+ * Badge Pro/Free. Botão "Quero participar!" com modal de confirmação.
+ * Indicador "Você já participa" para bolões onde o usuário já é membro.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import AppShell from "@/components/AppShell";
 import {
@@ -20,10 +28,25 @@ import {
   Loader2,
   Plus,
   Filter,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+
+type Pool = {
+  id: number;
+  slug: string;
+  name: string;
+  logoUrl?: string | null;
+  plan: string;
+  description?: string | null;
+  tournamentName?: string | null;
+  ownerName?: string | null;
+  memberCount: number;
+  isMember: boolean;
+};
 
 export default function PublicPools() {
   const { isAuthenticated } = useAuth();
@@ -31,6 +54,9 @@ export default function PublicPools() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedTournament, setSelectedTournament] = useState<number | undefined>();
+
+  // Modal de confirmação
+  const [confirmPool, setConfirmPool] = useState<Pool | null>(null);
   const [joiningSlug, setJoiningSlug] = useState<string | null>(null);
 
   // Debounce search
@@ -49,6 +75,7 @@ export default function PublicPools() {
   const joinMutation = trpc.pools.joinPublic.useMutation({
     onSuccess: (result: { poolId: number; slug: string; alreadyMember: boolean }) => {
       setJoiningSlug(null);
+      setConfirmPool(null);
       if (result.alreadyMember) {
         toast.info("Você já faz parte deste bolão.");
       } else {
@@ -62,9 +89,10 @@ export default function PublicPools() {
     },
   });
 
-  const handleJoin = (slug: string) => {
-    setJoiningSlug(slug);
-    joinMutation.mutate({ slug });
+  const handleConfirmJoin = () => {
+    if (!confirmPool) return;
+    setJoiningSlug(confirmPool.slug);
+    joinMutation.mutate({ slug: confirmPool.slug });
   };
 
   const pools = data?.pools ?? [];
@@ -87,7 +115,6 @@ export default function PublicPools() {
 
         {/* Search + filters */}
         <div className="space-y-3">
-          {/* Search bar */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -98,7 +125,6 @@ export default function PublicPools() {
             />
           </div>
 
-          {/* Tournament filter chips */}
           {tournaments.length > 0 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <div className="flex items-center gap-1 shrink-0">
@@ -171,14 +197,17 @@ export default function PublicPools() {
         {/* Pool cards grid */}
         {!isLoading && pools.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pools.map((pool: any) => (
+            {pools.map((pool: Pool) => (
               <div
                 key={pool.id}
-                className="bg-card border border-border/30 rounded-xl overflow-hidden hover:border-primary/30 transition-all group"
+                className={`bg-card border rounded-xl overflow-hidden transition-all group ${
+                  pool.isMember
+                    ? "border-primary/40 hover:border-primary/60"
+                    : "border-border/30 hover:border-primary/30"
+                }`}
               >
                 {/* Card header */}
                 <div className="p-4 flex items-start gap-3">
-                  {/* Logo */}
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden border border-primary/20">
                     {pool.logoUrl ? (
                       <img src={pool.logoUrl} alt={pool.name} className="w-full h-full object-cover" />
@@ -187,7 +216,6 @@ export default function PublicPools() {
                     )}
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-bold text-sm leading-tight truncate" style={{ fontFamily: "'Syne', sans-serif" }}>
@@ -219,24 +247,106 @@ export default function PublicPools() {
 
                 {/* Action */}
                 <div className="px-4 pb-4">
-                  <Button
-                    onClick={() => handleJoin(pool.slug)}
-                    disabled={joiningSlug === pool.slug}
-                    className="w-full"
-                    size="sm"
-                  >
-                    {joiningSlug === pool.slug ? (
-                      <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Entrando...</>
-                    ) : (
-                      "Quero participar!"
-                    )}
-                  </Button>
+                  {pool.isMember ? (
+                    <Button
+                      variant="outline"
+                      className="w-full border-primary/30 text-primary hover:bg-primary/5"
+                      size="sm"
+                      onClick={() => navigate(`/pool/${pool.slug}`)}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                      Você já participa
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => setConfirmPool(pool)}
+                      className="w-full"
+                      size="sm"
+                    >
+                      Quero participar!
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Modal de confirmação */}
+      <Dialog open={!!confirmPool} onOpenChange={(open) => { if (!open && !joiningSlug) setConfirmPool(null); }}>
+        <DialogContent className="max-w-sm">
+          {confirmPool && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden border border-primary/20">
+                    {confirmPool.logoUrl ? (
+                      <img src={confirmPool.logoUrl} alt={confirmPool.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Trophy className="w-6 h-6 text-primary" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <DialogTitle className="text-base leading-tight" style={{ fontFamily: "'Syne', sans-serif" }}>
+                      {confirmPool.name}
+                    </DialogTitle>
+                    {confirmPool.tournamentName && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{confirmPool.tournamentName}</p>
+                    )}
+                  </div>
+                </div>
+                <DialogDescription className="text-sm text-left">
+                  {confirmPool.description
+                    ? confirmPool.description
+                    : "Você está prestes a entrar neste bolão. Após confirmar, poderá fazer seus palpites imediatamente."}
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* Detalhes */}
+              <div className="bg-muted/40 rounded-lg p-3 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Participantes</span>
+                  <span className="font-semibold font-mono">{confirmPool.memberCount}</span>
+                </div>
+                {confirmPool.ownerName && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Organizador</span>
+                    <span className="font-medium truncate max-w-[140px]">{confirmPool.ownerName}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Acesso</span>
+                  <Badge variant="secondary" className="text-xs">Público</Badge>
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setConfirmPool(null)}
+                  disabled={!!joiningSlug}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleConfirmJoin}
+                  disabled={!!joiningSlug}
+                  className="gap-1.5"
+                >
+                  {joiningSlug ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Entrando...</>
+                  ) : (
+                    <>Confirmar entrada <ArrowRight className="w-3.5 h-3.5" /></>
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

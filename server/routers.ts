@@ -1127,12 +1127,15 @@ export const appRouter = router({
           conditions.push(eq(poolsTable.tournamentId, input.tournamentId));
         }
 
+        const userId = ctx.user.id;
+
         const rows = await db
           .select({
             pool: poolsTable,
             tournamentName: tournaments.name,
             ownerName: usersTable.name,
             memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.\`poolId\` = ${poolsTable.id})`,
+            isMember: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.\`poolId\` = ${poolsTable.id} AND pm.\`userId\` = ${userId})`,
           })
           .from(poolsTable)
           .leftJoin(tournaments, eq(poolsTable.tournamentId, tournaments.id))
@@ -1149,9 +1152,11 @@ export const appRouter = router({
             name: r.pool.name,
             logoUrl: r.pool.logoUrl,
             plan: r.pool.plan,
+            description: r.pool.description ?? null,
             tournamentName: r.tournamentName ?? null,
             ownerName: r.ownerName ?? null,
             memberCount: Number(r.memberCount),
+            isMember: Number(r.isMember) > 0,
           })),
           total: rows.length,
         };

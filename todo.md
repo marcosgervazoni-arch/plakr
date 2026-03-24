@@ -515,3 +515,8 @@
 - [x] Criar procedure pools.joinPublic no backend (aceita slug, verifica accessType=public, adiciona membro)
 - [x] Trocar botão "Ver bolão →" por "Quero participar!" no PublicPools.tsx
 - [x] Fazer o join automático antes de navegar para o bolão
+
+## Melhorias na Tela de Bolões Públicos (24/03/2026)
+- [x] Backend: incluir campo isMember na procedure listPublic para indicar se o usuário já participa do bolão
+- [x] Frontend: modal de confirmação antes de entrar (card com detalhes do bolão + botão confirmar)
+- [x] Frontend: indicador "Você já participa" nos cards onde o usuário já é membro (badge + link direto)
