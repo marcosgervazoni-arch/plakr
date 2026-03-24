@@ -510,3 +510,8 @@
 
 ## Sprint 24/03/2026 — Auditoria Global de Subqueries
 - [x] Auditoria: mapear e corrigir todos os subqueries raw com snake_case incorreto no backend — apenas 2 ocorrências encontradas (pm.pool_id), ambas já corrigidas. Demais sql<> usam interpolação Drizzle (segura).
+
+## Correção do Fluxo de Bolões Públicos (23/03/2026)
+- [x] Criar procedure pools.joinPublic no backend (aceita slug, verifica accessType=public, adiciona membro)
+- [x] Trocar botão "Ver bolão →" por "Quero participar!" no PublicPools.tsx
+- [x] Fazer o join automático antes de navegar para o bolão

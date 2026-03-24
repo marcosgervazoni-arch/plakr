@@ -3,7 +3,7 @@
  * Especificação: descoberta de bolões abertos ao público.
  * Barra de busca proeminente + filtro por campeonato.
  * Grid de cards com logo, nome, campeonato, participantes, organizador.
- * Badge Pro/Free. Botão "Entrar" por card.
+ * Badge Pro/Free. Botão "Quero participar!" por card.
  * Estado vazio com CTA para criar bolão.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -41,26 +41,31 @@ export default function PublicPools() {
   }, []);
 
   const { data: tournamentsData } = trpc.tournaments.listGlobal.useQuery();
-  const { data, isLoading, refetch } = trpc.pools.listPublic.useQuery(
+  const { data, isLoading } = trpc.pools.listPublic.useQuery(
     { search: debouncedSearch || undefined, tournamentId: selectedTournament },
     { enabled: isAuthenticated }
   );
 
-  const joinMutation = trpc.pools.joinByToken.useMutation({
+  const joinMutation = trpc.pools.joinPublic.useMutation({
     onSuccess: (result: { poolId: number; slug: string; alreadyMember: boolean }) => {
       setJoiningSlug(null);
       if (result.alreadyMember) {
-        toast.info("Você já é membro deste bolão.");
+        toast.info("Você já faz parte deste bolão.");
       } else {
-        toast.success("Você entrou no bolão!");
+        toast.success("Você entrou no bolão! Bons palpites! 🎉");
       }
       navigate(`/pool/${result.slug}`);
     },
     onError: (err: { message?: string }) => {
       setJoiningSlug(null);
-      toast.error(err.message || "Erro ao entrar no bolão.");
+      toast.error(err.message || "Não foi possível entrar no bolão. Tente novamente.");
     },
   });
+
+  const handleJoin = (slug: string) => {
+    setJoiningSlug(slug);
+    joinMutation.mutate({ slug });
+  };
 
   const pools = data?.pools ?? [];
   const tournaments = tournamentsData ?? [];
@@ -215,18 +220,15 @@ export default function PublicPools() {
                 {/* Action */}
                 <div className="px-4 pb-4">
                   <Button
-                    onClick={() => {
-                      setJoiningSlug(pool.slug);
-                      navigate(`/pool/${pool.slug}`);
-                    }}
+                    onClick={() => handleJoin(pool.slug)}
                     disabled={joiningSlug === pool.slug}
                     className="w-full"
                     size="sm"
                   >
                     {joiningSlug === pool.slug ? (
-                      <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Abrindo...</>
+                      <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Entrando...</>
                     ) : (
-                      "Ver bolão →"
+                      "Quero participar!"
                     )}
                   </Button>
                 </div>

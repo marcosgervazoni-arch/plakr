@@ -1258,6 +1258,32 @@ export const appRouter = router({
         return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
       }),
 
+    joinPublic: protectedProcedure
+      .input(z.object({ slug: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const pool = await getPoolBySlug(input.slug);
+        if (!pool) throw new TRPCError({ code: "NOT_FOUND", message: "Bolão não encontrado." });
+        if (pool.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Este bolão não está mais ativo." });
+        if (pool.accessType !== "public") throw new TRPCError({ code: "FORBIDDEN", message: "Este bolão não é público." });
+        const existing = await getPoolMember(pool.id, ctx.user.id);
+        if (existing) return { poolId: pool.id, slug: pool.slug, alreadyMember: true };
+        const settings = await getPlatformSettings();
+        const freeMax = settings?.freeMaxParticipants ?? 50;
+        const memberCount = await countPoolMembers(pool.id);
+        if (pool.plan === "free" && memberCount >= freeMax) {
+          throw new TRPCError({ code: "FORBIDDEN", message: `Este bolão atingiu o limite de ${freeMax} participantes.` });
+        }
+        await addPoolMember(pool.id, ctx.user.id, "participant");
+        await createNotification({
+          userId: pool.ownerId,
+          poolId: pool.id,
+          type: "system",
+          title: "Novo participante",
+          message: `${ctx.user.name ?? "Um usuário"} entrou no bolão "${pool.name}".`,
+        });
+        return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
+      }),
+
     update: protectedProcedure
       .input(z.object({
         poolId: z.number(),
