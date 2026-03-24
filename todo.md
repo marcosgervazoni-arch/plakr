@@ -533,3 +533,9 @@
 - [x] Ranking com pódio visual para os 3 primeiros
 - [x] Aba Membros compacta com avatar e nome clicável
 - [x] Menu de ações contextuais (Meus Palpites, Chaveamento, Regulamento)
+
+## Agrupamento de Jogos por Fase/Rodada (24/03/2026)
+- [x] Detectar se o torneio tem fases distintas (fase != "group_stage" ou múltiplas fases)
+- [x] Agrupar jogos por fase com cabeçalhos colapsáveis quando há chaveamento
+- [x] Implementar "mostrar mais" com colapso por rodada quando não há fases distintas (apenas group_stage)
+- [x] Fase ativa (com jogos abertos ou ao vivo) expandida por padrão, demais colapsadas

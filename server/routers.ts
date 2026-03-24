@@ -1100,7 +1100,8 @@ export const appRouter = router({
         const gameList = await getGamesByTournament(pool.tournamentId);
         const rules = await getPoolScoringRules(pool.id);
         const memberCount = await countPoolMembers(pool.id);
-        return { pool, tournament, games: gameList, rules, memberCount, myRole: member?.role };
+        const phases = await getTournamentPhases(pool.tournamentId);
+        return { pool, tournament, games: gameList, rules, memberCount, myRole: member?.role, phases };
       }),
 
     listPublic: protectedProcedure

@@ -21,9 +21,9 @@ import {
   ArrowLeft,
   Calendar,
   Check,
+  ChevronDown,
   Copy,
   Crown,
-  ExternalLink,
   Loader2,
   Lock,
   Medal,
@@ -32,7 +32,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useParams } from "wouter";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
@@ -120,7 +120,7 @@ export default function PoolPage() {
     );
   }
 
-  const { pool, tournament, games, rules, memberCount, myRole } = data;
+  const { pool, tournament, games, rules, memberCount, myRole, phases } = data;
   const isOrganizer = myRole === "organizer" || user?.role === "admin";
   const betsByGame = new Map(myBets?.map((b) => [b.gameId, b]) ?? []);
   const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
@@ -161,6 +161,68 @@ export default function PoolPage() {
   const nextGame = games
     .filter((g) => g.status === "scheduled")
     .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())[0];
+
+  /* ── Agrupamento de jogos por fase ── */
+  // Mapa de label canônico: key → label (vindo das fases do torneio)
+  const phaseLabels = useMemo(() => {
+    const map = new Map<string, string>();
+    (phases ?? []).forEach((p) => map.set(p.key, p.label));
+    return map;
+  }, [phases]);
+
+  // Detecta se há múltiplas fases distintas (chaveamento)
+  const uniquePhaseKeys = useMemo(() => {
+    const keys = Array.from(new Set(games.map((g) => g.phase ?? "group_stage")));
+    return keys;
+  }, [games]);
+
+  const hasMultiplePhases = uniquePhaseKeys.length > 1;
+
+  // Agrupa jogos por fase, mantendo a ordem das fases do torneio
+  const gamesByPhase = useMemo(() => {
+    const phaseOrder = new Map<string, number>();
+    (phases ?? []).forEach((p, i) => phaseOrder.set(p.key, p.order ?? i));
+
+    const groups = new Map<string, typeof games>();
+    games.forEach((g) => {
+      const key = g.phase ?? "group_stage";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(g);
+    });
+
+    // Ordena grupos pela ordem das fases; fases desconhecidas vão ao final
+    return Array.from(groups.entries()).sort(([a], [b]) => {
+      const oa = phaseOrder.get(a) ?? 999;
+      const ob = phaseOrder.get(b) ?? 999;
+      return oa - ob;
+    });
+  }, [games, phases]);
+
+  // Para bolões sem múltiplas fases: controla quantos jogos são visíveis
+  const INITIAL_GAMES_SHOWN = 5;
+  const [showAllGames, setShowAllGames] = useState(false);
+
+  // Fase ativa = a que tem jogos ao vivo ou, se nenhuma, a com o próximo jogo
+  const activePhaseKey = useMemo(() => {
+    const livePhase = games.find((g) => g.status === "live")?.phase;
+    if (livePhase) return livePhase;
+    const nextPhase = games
+      .filter((g) => g.status === "scheduled")
+      .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())[0]?.phase;
+    return nextPhase ?? uniquePhaseKeys[0] ?? "group_stage";
+  }, [games, uniquePhaseKeys]);
+
+  // Estado de fases expandidas (accordion)
+  const [expandedPhases, setExpandedPhases] = useState<Set<string>>(() => new Set([activePhaseKey ?? ""]));
+
+  const togglePhase = (key: string) => {
+    setExpandedPhases((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -368,176 +430,137 @@ export default function PoolPage() {
                 <Calendar className="w-10 h-10 mx-auto mb-3 opacity-20" />
                 <p className="text-sm">Nenhum jogo cadastrado ainda.</p>
               </div>
-            ) : (
-              games.map((game) => {
-                const myBet = betsByGame.get(game.id);
-                const open = isGameOpen(game.matchDate);
-                const finished = game.status === "finished";
-                const live = game.status === "live";
-                const betA = betInputs[game.id]?.a ?? (myBet ? String(myBet.predictedScoreA) : "");
-                const betB = betInputs[game.id]?.b ?? (myBet ? String(myBet.predictedScoreB) : "");
-                const hasBet = !!myBet;
+            ) : hasMultiplePhases ? (
+              /* ── MODO FASES: accordion por fase ── */
+              <div className="space-y-2">
+                {gamesByPhase.map(([phaseKey, phaseGames]) => {
+                  const label = phaseLabels.get(phaseKey) ?? phaseKey;
+                  const isExpanded = expandedPhases.has(phaseKey);
+                  const hasLive = phaseGames.some((g) => g.status === "live");
+                  const hasOpen = phaseGames.some((g) => g.status === "scheduled" && isGameOpen(g.matchDate));
+                  const allFinished = phaseGames.every((g) => g.status === "finished");
+                  const pendingBets = phaseGames.filter((g) => {
+                    const open = isGameOpen(g.matchDate);
+                    return open && g.status !== "finished" && !betsByGame.has(g.id);
+                  }).length;
 
-                return (
-                  <div
-                    key={game.id}
-                    className={`rounded-xl border overflow-hidden transition-all ${
-                      live
-                        ? "border-red-500/30 bg-red-500/5"
-                        : finished
-                        ? "border-border/30 bg-card/60"
-                        : "border-border/40 bg-card"
-                    }`}
-                  >
-                    {/* Topo do card: fase + data + status */}
-                    <div className={`px-4 py-2 flex items-center justify-between border-b ${
-                      live ? "border-red-500/20 bg-red-500/10" : "border-border/30 bg-muted/20"
-                    }`}>
-                      <div className="flex items-center gap-2">
-                        {live && (
-                          <span className="flex items-center gap-1 text-xs font-semibold text-red-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                            AO VIVO
+                  return (
+                    <div key={phaseKey} className="rounded-xl border border-border/40 overflow-hidden">
+                      {/* Cabeçalho da fase */}
+                      <button
+                        onClick={() => togglePhase(phaseKey)}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors ${
+                          hasLive
+                            ? "bg-red-500/10 hover:bg-red-500/15"
+                            : isExpanded
+                            ? "bg-primary/8 hover:bg-primary/12"
+                            : "bg-muted/30 hover:bg-muted/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          {hasLive && (
+                            <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse shrink-0" />
+                          )}
+                          <span className={`font-semibold text-sm ${
+                            hasLive ? "text-red-400" : isExpanded ? "text-primary" : "text-foreground"
+                          }`}>
+                            {label}
                           </span>
-                        )}
-                        {finished && (
-                          <span className="text-xs font-medium text-green-400">Encerrado</span>
-                        )}
-                        {!live && !finished && (
                           <span className="text-xs text-muted-foreground">
-                            {open ? "Aberto para palpites" : "Prazo encerrado"}
+                            {phaseGames.length} jogo{phaseGames.length !== 1 ? "s" : ""}
                           </span>
-                        )}
-                        {game.phase && (
-                          <span className="text-xs text-muted-foreground/60">· {game.phase}</span>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(game.matchDate), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                      </span>
-                    </div>
-
-                    {/* Corpo: Time A | Placar/Palpite | Time B */}
-                    <div className="px-4 py-4">
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-
-                        {/* Time A */}
-                        <div className="text-right">
-                          {game.teamAFlag && (
-                            <img src={game.teamAFlag} alt="" className="w-8 h-8 object-contain ml-auto mb-1" />
+                          {pendingBets > 0 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
+                              {pendingBets} sem palpite
+                            </span>
                           )}
-                          <p className="font-bold text-sm leading-tight">{game.teamAName ?? "Time A"}</p>
-                          {finished && game.scoreA !== null && (
-                            <p className="text-2xl font-black text-foreground font-mono mt-1">{game.scoreA}</p>
+                          {allFinished && (
+                            <span className="text-xs text-muted-foreground/60">✓ Encerrada</span>
                           )}
                         </div>
+                        <ChevronDown
+                          className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
 
-                        {/* Centro: palpite ou resultado */}
-                        <div className="flex flex-col items-center gap-2 min-w-[100px]">
-                          {/* Resultado real (encerrado) */}
-                          {finished && game.scoreA !== null && game.scoreB !== null && (
-                            <div className="text-xs text-muted-foreground font-medium">Resultado</div>
-                          )}
-
-                          {/* Palpite do usuário ou inputs */}
-                          {open && !finished ? (
-                            <div className="flex items-center gap-1.5">
-                              <Input
-                                type="number"
-                                min={0}
-                                max={99}
-                                placeholder="0"
-                                value={betA}
-                                onChange={(e) =>
-                                  setBetInputs((prev) => ({
-                                    ...prev,
-                                    [game.id]: { a: e.target.value, b: prev[game.id]?.b ?? betB },
-                                  }))
-                                }
-                                className="w-12 text-center h-10 text-base font-bold p-0"
+                      {/* Jogos da fase */}
+                      {isExpanded && (
+                        <div className="divide-y divide-border/20">
+                          {phaseGames.map((game) => {
+                            const myBet = betsByGame.get(game.id);
+                            const open = isGameOpen(game.matchDate);
+                            const finished = game.status === "finished";
+                            const live = game.status === "live";
+                            const betA = betInputs[game.id]?.a ?? (myBet ? String(myBet.predictedScoreA) : "");
+                            const betB = betInputs[game.id]?.b ?? (myBet ? String(myBet.predictedScoreB) : "");
+                            const hasBet = !!myBet;
+                            return (
+                              <GameCard
+                                key={game.id}
+                                game={game}
+                                myBet={myBet}
+                                open={open}
+                                finished={finished}
+                                live={live}
+                                betA={betA}
+                                betB={betB}
+                                hasBet={hasBet}
+                                betInputs={betInputs}
+                                setBetInputs={setBetInputs}
+                                handleBetSubmit={handleBetSubmit}
+                                placeBetPending={placeBet.isPending}
                               />
-                              <span className="text-muted-foreground font-bold text-sm">×</span>
-                              <Input
-                                type="number"
-                                min={0}
-                                max={99}
-                                placeholder="0"
-                                value={betB}
-                                onChange={(e) =>
-                                  setBetInputs((prev) => ({
-                                    ...prev,
-                                    [game.id]: { a: prev[game.id]?.a ?? betA, b: e.target.value },
-                                  }))
-                                }
-                                className="w-12 text-center h-10 text-base font-bold p-0"
-                              />
-                            </div>
-                          ) : hasBet ? (
-                            <div className="text-center">
-                              <p className="text-xs text-muted-foreground mb-1">Meu palpite</p>
-                              <p className="text-xl font-black text-primary font-mono">
-                                {myBet!.predictedScoreA} × {myBet!.predictedScoreB}
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
-                              <Lock className="w-3 h-3" />
-                              {finished ? "Sem palpite" : "Encerrado"}
-                            </div>
-                          )}
-
-                          {/* Pontos ganhos */}
-                          {finished && hasBet && (
-                            <div className="text-center">
-                              <p className={`text-sm font-bold font-mono ${
-                                (myBet!.pointsEarned ?? 0) > 0 ? "text-primary" : "text-muted-foreground"
-                              }`}>
-                                +{myBet!.pointsEarned ?? 0} pts
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Botão apostar */}
-                          {open && !finished && (
-                            <Button
-                              size="sm"
-                              className="h-8 px-4 text-xs mt-1"
-                              onClick={() => handleBetSubmit(game.id)}
-                              disabled={placeBet.isPending}
-                            >
-                              {placeBet.isPending ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : hasBet ? (
-                                <><Check className="w-3 h-3 mr-1" /> Atualizar</>
-                              ) : (
-                                "Apostar"
-                              )}
-                            </Button>
-                          )}
-                        </div>
-
-                        {/* Time B */}
-                        <div className="text-left">
-                          {game.teamBFlag && (
-                            <img src={game.teamBFlag} alt="" className="w-8 h-8 object-contain mr-auto mb-1" />
-                          )}
-                          <p className="font-bold text-sm leading-tight">{game.teamBName ?? "Time B"}</p>
-                          {finished && game.scoreB !== null && (
-                            <p className="text-2xl font-black text-foreground font-mono mt-1">{game.scoreB}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Badges de pontuação */}
-                      {finished && hasBet && (
-                        <div className="mt-3 flex justify-center">
-                          <BetBreakdownBadges bet={myBet!} compact />
+                            );
+                          })}
                         </div>
                       )}
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
+            ) : (
+              /* ── MODO SIMPLES: lista com "mostrar mais" ── */
+              <div className="space-y-3">
+                {(showAllGames ? games : games.slice(0, INITIAL_GAMES_SHOWN)).map((game) => {
+                  const myBet = betsByGame.get(game.id);
+                  const open = isGameOpen(game.matchDate);
+                  const finished = game.status === "finished";
+                  const live = game.status === "live";
+                  const betA = betInputs[game.id]?.a ?? (myBet ? String(myBet.predictedScoreA) : "");
+                  const betB = betInputs[game.id]?.b ?? (myBet ? String(myBet.predictedScoreB) : "");
+                  const hasBet = !!myBet;
+                  return (
+                    <GameCard
+                      key={game.id}
+                      game={game}
+                      myBet={myBet}
+                      open={open}
+                      finished={finished}
+                      live={live}
+                      betA={betA}
+                      betB={betB}
+                      hasBet={hasBet}
+                      betInputs={betInputs}
+                      setBetInputs={setBetInputs}
+                      handleBetSubmit={handleBetSubmit}
+                      placeBetPending={placeBet.isPending}
+                    />
+                  );
+                })}
+                {games.length > INITIAL_GAMES_SHOWN && (
+                  <button
+                    onClick={() => setShowAllGames((v) => !v)}
+                    className="w-full py-3 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border/40 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors"
+                  >
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showAllGames ? "rotate-180" : ""}`} />
+                    {showAllGames
+                      ? "Mostrar menos"
+                      : `Ver mais ${games.length - INITIAL_GAMES_SHOWN} jogo${games.length - INITIAL_GAMES_SHOWN !== 1 ? "s" : ""}`}
+                  </button>
+                )}
+              </div>
             )}
           </TabsContent>
 
@@ -721,6 +744,173 @@ export default function PoolPage() {
           </TabsContent>
         </Tabs>
       </main>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────────
+ * GameCard — card reutilizável para um jogo (usado em modo fases e modo simples)
+ * ────────────────────────────────────────────────────────────────────────────────── */
+interface GameCardProps {
+  game: {
+    id: number;
+    teamAName: string | null;
+    teamBName: string | null;
+    teamAFlag: string | null;
+    teamBFlag: string | null;
+    scoreA: number | null;
+    scoreB: number | null;
+    matchDate: Date;
+    status: string;
+    phase: string | null;
+  };
+  myBet: {
+    predictedScoreA: number;
+    predictedScoreB: number;
+    pointsEarned?: number | null;
+    pointsExactScore?: number | null;
+    pointsCorrectResult?: number | null;
+    pointsTotalGoals?: number | null;
+    pointsGoalDiff?: number | null;
+    pointsOneTeamGoals?: number | null;
+    pointsLandslide?: number | null;
+    pointsZebra?: number | null;
+    isZebra?: boolean | null;
+  } | undefined;
+  open: boolean;
+  finished: boolean;
+  live: boolean;
+  betA: string;
+  betB: string;
+  hasBet: boolean;
+  betInputs: Record<number, { a: string; b: string }>;
+  setBetInputs: React.Dispatch<React.SetStateAction<Record<number, { a: string; b: string }>>>;
+  handleBetSubmit: (gameId: number) => void;
+  placeBetPending: boolean;
+}
+
+function GameCard({
+  game, myBet, open, finished, live, betA, betB, hasBet,
+  betInputs, setBetInputs, handleBetSubmit, placeBetPending,
+}: GameCardProps) {
+  return (
+    <div
+      className={`bg-card transition-all ${
+        live ? "bg-red-500/5" : finished ? "bg-card/60" : ""
+      }`}
+    >
+      {/* Linha de status + data */}
+      <div className={`px-4 py-2 flex items-center justify-between border-b ${
+        live ? "border-red-500/20 bg-red-500/10" : "border-border/20 bg-muted/10"
+      }`}>
+        <div className="flex items-center gap-2">
+          {live && (
+            <span className="flex items-center gap-1 text-xs font-semibold text-red-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+              AO VIVO
+            </span>
+          )}
+          {finished && <span className="text-xs font-medium text-green-400">Encerrado</span>}
+          {!live && !finished && (
+            <span className="text-xs text-muted-foreground">
+              {open ? "Aberto para palpites" : "Prazo encerrado"}
+            </span>
+          )}
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {format(new Date(game.matchDate), "dd/MM 'às' HH:mm", { locale: ptBR })}
+        </span>
+      </div>
+
+      {/* Corpo: Time A | Centro | Time B */}
+      <div className="px-4 py-4">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          {/* Time A */}
+          <div className="text-right">
+            {game.teamAFlag && (
+              <img src={game.teamAFlag} alt="" className="w-8 h-8 object-contain ml-auto mb-1" />
+            )}
+            <p className="font-bold text-sm leading-tight">{game.teamAName ?? "Time A"}</p>
+            {finished && game.scoreA !== null && (
+              <p className="text-2xl font-black text-foreground font-mono mt-1">{game.scoreA}</p>
+            )}
+          </div>
+
+          {/* Centro */}
+          <div className="flex flex-col items-center gap-2 min-w-[100px]">
+            {finished && game.scoreA !== null && game.scoreB !== null && (
+              <div className="text-xs text-muted-foreground font-medium">Resultado</div>
+            )}
+            {open && !finished ? (
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number" min={0} max={99} placeholder="0" value={betA}
+                  onChange={(e) => setBetInputs((prev) => ({ ...prev, [game.id]: { a: e.target.value, b: prev[game.id]?.b ?? betB } }))}
+                  className="w-12 text-center h-10 text-base font-bold p-0"
+                />
+                <span className="text-muted-foreground font-bold text-sm">×</span>
+                <Input
+                  type="number" min={0} max={99} placeholder="0" value={betB}
+                  onChange={(e) => setBetInputs((prev) => ({ ...prev, [game.id]: { a: prev[game.id]?.a ?? betA, b: e.target.value } }))}
+                  className="w-12 text-center h-10 text-base font-bold p-0"
+                />
+              </div>
+            ) : hasBet ? (
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Meu palpite</p>
+                <p className="text-xl font-black text-primary font-mono">
+                  {myBet!.predictedScoreA} × {myBet!.predictedScoreB}
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
+                <Lock className="w-3 h-3" />
+                {finished ? "Sem palpite" : "Encerrado"}
+              </div>
+            )}
+            {finished && hasBet && (
+              <p className={`text-sm font-bold font-mono ${
+                (myBet!.pointsEarned ?? 0) > 0 ? "text-primary" : "text-muted-foreground"
+              }`}>
+                +{myBet!.pointsEarned ?? 0} pts
+              </p>
+            )}
+            {open && !finished && (
+              <Button
+                size="sm" className="h-8 px-4 text-xs mt-1"
+                onClick={() => handleBetSubmit(game.id)}
+                disabled={placeBetPending}
+              >
+                {placeBetPending ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : hasBet ? (
+                  <><Check className="w-3 h-3 mr-1" /> Atualizar</>
+                ) : (
+                  "Apostar"
+                )}
+              </Button>
+            )}
+          </div>
+
+          {/* Time B */}
+          <div className="text-left">
+            {game.teamBFlag && (
+              <img src={game.teamBFlag} alt="" className="w-8 h-8 object-contain mr-auto mb-1" />
+            )}
+            <p className="font-bold text-sm leading-tight">{game.teamBName ?? "Time B"}</p>
+            {finished && game.scoreB !== null && (
+              <p className="text-2xl font-black text-foreground font-mono mt-1">{game.scoreB}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Badges de pontuação */}
+        {finished && hasBet && (
+          <div className="mt-3 flex justify-center">
+            <BetBreakdownBadges bet={myBet!} compact />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
