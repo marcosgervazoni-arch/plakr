@@ -590,3 +590,11 @@
 - [x] [Fullstack] getPublicProfile: filtrar bolões com status != 'deleted' na seção "Bolões que participa"
 - [x] [Fullstack] getUserActivity (admin): filtrar bolões deletados na lista de bolões do usuário
 - [x] [Fullstack] myPools já filtrava corretamente (status = 'active' via getPoolsByUser)
+
+## Sprint 24/03/2026 — Auditoria de Bolões Deletados em Todas as Telas
+
+- [x] [Fullstack] getPoolById e getPoolBySlug: filtro status != 'deleted' aplicado na camada db.ts (cobre automaticamente getBySlug, getMemberProfile, getScoringRulesPublic, getBracket e todas as procedures que usam essas funções)
+- [x] [Fullstack] getPoolByInviteToken/getPoolByInviteCode: já verificavam status == 'active', sem alteração necessária
+- [x] [Fullstack] listPublic: já filtrava status == 'active', sem alteração necessária
+- [x] [Fullstack] joinPublic/joinByCode/joinByToken: já verificavam status == 'active', sem alteração necessária
+- [x] [Fullstack] recalculatePool (admin): filtro status != 'deleted' adicionado

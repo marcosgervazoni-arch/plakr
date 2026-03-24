@@ -694,9 +694,10 @@ export const appRouter = router({
         const db = await (await import("./db")).getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         const { pools: poolsT, poolMembers } = await import("../drizzle/schema");
-        const { eq } = await import("drizzle-orm");
-        // Find all pools for this tournament
-        const pools = await db.select({ id: poolsT.id }).from(poolsT).where(eq(poolsT.tournamentId, input.tournamentId));
+        const { eq, and, sql } = await import("drizzle-orm");
+        // Find all non-deleted pools for this tournament
+        const pools = await db.select({ id: poolsT.id }).from(poolsT)
+          .where(and(eq(poolsT.tournamentId, input.tournamentId), sql`${poolsT.status} != 'deleted'`));
         let totalRecalculated = 0;
         for (const pool of pools) {
           const members = await db.select({ userId: poolMembers.userId }).from(poolMembers).where(eq(poolMembers.poolId, pool.id));

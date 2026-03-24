@@ -251,14 +251,20 @@ export async function createPool(data: InsertPool): Promise<number> {
 export async function getPoolById(id: number): Promise<Pool | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(pools).where(eq(pools.id, id)).limit(1);
+  // Soft-delete: nunca expor bolões com status 'deleted'
+  const result = await db.select().from(pools)
+    .where(and(eq(pools.id, id), sql`${pools.status} != 'deleted'`))
+    .limit(1);
   return result[0];
 }
 
 export async function getPoolBySlug(slug: string): Promise<Pool | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(pools).where(eq(pools.slug, slug)).limit(1);
+  // Soft-delete: nunca expor bolões com status 'deleted'
+  const result = await db.select().from(pools)
+    .where(and(eq(pools.slug, slug), sql`${pools.status} != 'deleted'`))
+    .limit(1);
   return result[0];
 }
 
