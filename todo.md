@@ -913,3 +913,12 @@
 
 ### Frontend — Sidebar reorganizada
 - [x] AdminLayout: 7 grupos finais bem definidos (Visão Geral, Campeonato, Participantes, Comunicação, Financeiro, Configurações, Sistema)
+
+## Sprint MVP Launch — 6 Melhorias de Prontidão (24/03/2026) ✅
+
+- [x] Bloqueador 1: Preservar link de convite após login OAuth (returnPath no state)
+- [x] Bloqueador 2: Corrigir e-mails com URL dinâmica via APP_BASE_URL (variável APP_BASE_URL)
+- [x] Bloqueador 3: Traduzir tela de erro (ErrorBoundary) para português com UX melhorada
+- [x] Melhoria 4: Compartilhamento de link para participantes (Web Share API + clipboard)
+- [x] Melhoria 5: Seção Stripe no AdminSettings já tinha instruções completas (validado, sem alteração)
+- [x] Melhoria 6: WelcomeCard para novos usuários (conta criada há < 10 min, com 3 passos e CTAs)

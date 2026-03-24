@@ -74,7 +74,7 @@ export default function JoinPool() {
             <p className="text-sm text-muted-foreground mb-1">Você foi convidado para um bolão.</p>
             <h1 className="font-bold text-xl">Entre para confirmar seu ingresso</h1>
           </div>
-          <a href={getLoginUrl()}>
+          <a href={getLoginUrl(window.location.pathname)}>
             <Button className="w-full" size="lg">Entrar com Manus</Button>
           </a>
         </div>

@@ -9,6 +9,34 @@ function getQueryParam(req: Request, key: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+/**
+ * Parse the state parameter from the OAuth callback.
+ * Supports two formats:
+ * 1. Legacy: base64(redirectUri) — plain string
+ * 2. New: base64(JSON { redirectUri, returnPath }) — preserves post-login destination
+ */
+function parseState(state: string): { redirectUri: string; returnPath: string } {
+  try {
+    const decoded = atob(state);
+    // Try JSON format first (new format)
+    try {
+      const parsed = JSON.parse(decoded);
+      if (parsed.redirectUri) {
+        return {
+          redirectUri: parsed.redirectUri,
+          returnPath: parsed.returnPath ?? "/dashboard",
+        };
+      }
+    } catch {
+      // Not JSON — legacy format: decoded is the redirectUri directly
+    }
+    // Legacy format: the decoded value is just the redirectUri
+    return { redirectUri: decoded, returnPath: "/dashboard" };
+  } catch {
+    return { redirectUri: "", returnPath: "/dashboard" };
+  }
+}
+
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
@@ -44,7 +72,11 @@ export function registerOAuthRoutes(app: Express) {
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-      res.redirect(302, "/dashboard");
+      // Redirect to the returnPath (e.g. /join/TOKEN) or fallback to /dashboard
+      const { returnPath } = parseState(state);
+      // Sanitize: only allow relative paths to prevent open redirect
+      const safePath = returnPath.startsWith("/") ? returnPath : "/dashboard";
+      res.redirect(302, safePath);
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
       res.status(500).json({ error: "OAuth callback failed" });

@@ -58,9 +58,9 @@ function baseTemplate(title: string, content: string): string {
             <td style="background:#0d0d0d;border-radius:0 0 16px 16px;padding:20px 32px;border-top:1px solid #1f1f1f;">
               <p style="margin:0;font-size:12px;color:${MUTED};text-align:center;">
                 Você está recebendo este e-mail porque tem uma conta no ApostAI.<br/>
-                <a href="https://apostai-bolao-djv8mgeh.manus.space" style="color:${BRAND};text-decoration:none;">Acessar plataforma</a>
+                <a href="${ENV.appBaseUrl}" style="color:${BRAND};text-decoration:none;">Acessar plataforma</a>
                 &nbsp;·&nbsp;
-                <a href="https://apostai-bolao-djv8mgeh.manus.space/settings/notifications" style="color:${MUTED};text-decoration:none;">Gerenciar notificações</a>
+                <a href="${ENV.appBaseUrl}/settings/notifications" style="color:${MUTED};text-decoration:none;">Gerenciar notificações</a>
               </p>
             </td>
           </tr>
@@ -91,7 +91,7 @@ export function templateWelcome(name: string): { subject: string; html: string }
         <p style="margin:0 0 8px;color:${MUTED};">🏅 Acompanhar o ranking em tempo real</p>
         <p style="margin:0;color:${MUTED};">🎯 Criar seu próprio bolão (Plano Gratuito: 2 bolões, 50 participantes)</p>
       </div>
-      ${ctaButton("Acessar minha conta", "https://apostai-bolao-djv8mgeh.manus.space")}
+      ${ctaButton("Acessar minha conta", ENV.appBaseUrl)}
     `),
   };
 }
@@ -118,7 +118,7 @@ export function templateBetReminder(opts: {
         <p style="margin:0 0 4px;font-size:13px;color:${MUTED};">Início: ${opts.matchTime}</p>
         <p style="margin:0;font-size:13px;color:${opts.minutesLeft <= 30 ? "#ef4444" : "#f59e0b"};font-weight:600;">⏱ ${opts.minutesLeft} minutos restantes para palpitar</p>
       </div>
-      ${ctaButton("Fazer meu palpite agora", `https://apostai-bolao-djv8mgeh.manus.space/pool/${opts.poolSlug}`)}
+      ${ctaButton("Fazer meu palpite agora", `${ENV.appBaseUrl}/pool/${opts.poolSlug}`)}
     `),
   };
 }
@@ -146,7 +146,7 @@ export function templateResultAvailable(opts: {
         <p style="margin:0 0 4px;font-size:13px;color:${MUTED};">Seu palpite: <strong style="color:${TEXT};">${opts.betDescription}</strong></p>
         <p style="margin:0;font-size:20px;font-weight:800;color:${opts.pointsEarned >= 10 ? BRAND : opts.pointsEarned >= 5 ? "#f59e0b" : "#ef4444"};">+${opts.pointsEarned} pontos</p>
       </div>
-      ${ctaButton("Ver ranking do bolão", `https://apostai-bolao-djv8mgeh.manus.space/pool/${opts.poolSlug}`)}
+      ${ctaButton("Ver ranking do bolão", `${ENV.appBaseUrl}/pool/${opts.poolSlug}`)}
     `),
   };
 }
@@ -170,7 +170,7 @@ export function templatePlanExpiring(opts: {
         <p style="margin:0 0 8px;color:#ef4444;">❌ Campeonatos personalizados</p>
         <p style="margin:0;color:#ef4444;">❌ Registro de resultados próprios</p>
       </div>
-      ${ctaButton("Renovar Plano Pro", "https://apostai-bolao-djv8mgeh.manus.space/subscription")}
+      ${ctaButton("Renovar Plano Pro", `${ENV.appBaseUrl}/subscription`)}
     `),
   };
 }

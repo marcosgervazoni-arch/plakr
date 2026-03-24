@@ -61,6 +61,13 @@ export default function Dashboard() {
   );
   const { data: recentBets = [] } = trpc.users.recentBets.useQuery(undefined, { enabled: isAuthenticated });
 
+  // Detectar usuário novo: conta criada há menos de 10 minutos
+  const isNewUser = useMemo(() => {
+    if (!userData?.user?.createdAt) return false;
+    const createdAt = new Date(userData.user.createdAt).getTime();
+    return Date.now() - createdAt < 10 * 60 * 1000;
+  }, [userData?.user?.createdAt]);
+
   // Pool selector — no "all" option; user must select a specific pool
   const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
   const { data: poolStats } = trpc.users.myStatsByPool.useQuery(
@@ -254,6 +261,13 @@ export default function Dashboard() {
               {poolsError ? (
                 <ErrorCard error={poolsError} onRetry={() => refetchPools()} />
               ) : pools.length === 0 ? (
+                isNewUser ? (
+                  <WelcomeCard
+                    name={userData?.user?.name ?? user?.name ?? ""}
+                    onCreatePool={() => setShowCreateModal(true)}
+                    onEnterPool={() => navigate("/enter-pool")}
+                  />
+                ) : (
                 <EmptyState
                   icon={Trophy}
                   title="Nenhum bolão ainda"
@@ -263,6 +277,7 @@ export default function Dashboard() {
                   secondaryLabel="Entrar por código"
                   onSecondary={() => navigate("/enter-pool")}
                 />
+                )
               ) : (
                 <div className="space-y-2">
                   {(pools as any[]).map(({ pool, member, rankPosition, totalMembers, pendingBetsCount }: { pool: any; member: any; rankPosition: number | null; totalMembers: number; pendingBetsCount: number }) => (
@@ -530,5 +545,71 @@ export default function Dashboard() {
         />
       )}
     </AppShell>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+ * WelcomeCard — tela de boas-vindas para novos usuários (conta criada há < 10 min)
+ * ─────────────────────────────────────────────────────────────────────────────── */
+function WelcomeCard({
+  name,
+  onCreatePool,
+  onEnterPool,
+}: {
+  name: string;
+  onCreatePool: () => void;
+  onEnterPool: () => void;
+}) {
+  const firstName = name.split(" ")[0] || "Apostador";
+  return (
+    <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/10 p-6 space-y-5 text-center">
+      {/* Emoji animado */}
+      <div className="text-5xl select-none" role="img" aria-label="trofeu">
+        🏆
+      </div>
+
+      {/* Mensagem de boas-vindas */}
+      <div className="space-y-1.5">
+        <h2 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
+          Bem-vindo ao ApostAI, {firstName}!
+        </h2>
+        <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+          Aqui você cria bolões esportivos, faz palpites e compete com amigos em tempo real.
+          Comece criando seu primeiro bolão ou entre em um que já existe.
+        </p>
+      </div>
+
+      {/* Passos rápidos */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+        {[
+          { icon: "🏆", step: "1", title: "Crie um bolão", desc: "Escolha um campeonato e configure as regras" },
+          { icon: "👥", step: "2", title: "Convide amigos", desc: "Compartilhe o link de convite no WhatsApp" },
+          { icon: "🎯", step: "3", title: "Faça palpites", desc: "Aposte nos resultados antes dos jogos" },
+        ].map(({ icon, step, title, desc }) => (
+          <div key={step} className="flex items-start gap-3 bg-card/60 border border-border/30 rounded-xl p-3">
+            <span className="text-2xl shrink-0">{icon}</span>
+            <div>
+              <p className="text-xs font-bold text-primary uppercase tracking-wider mb-0.5">Passo {step}</p>
+              <p className="text-sm font-semibold">{title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTAs */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <Button onClick={onCreatePool} className="gap-2" size="lg">
+          <Plus className="w-4 h-4" /> Criar meu primeiro bolão
+        </Button>
+        <Button onClick={onEnterPool} variant="outline" className="gap-2" size="lg">
+          <Search className="w-4 h-4" /> Entrar com código
+        </Button>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Plano gratuito inclui até 2 bolões e 50 participantes por bolão.
+      </p>
+    </div>
   );
 }

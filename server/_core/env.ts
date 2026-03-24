@@ -7,4 +7,8 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Base URL used in e-mails and invite links.
+  // Update APP_BASE_URL in Settings → Secrets when you configure a custom domain.
+  // Falls back to the default Manus domain until then.
+  appBaseUrl: process.env.APP_BASE_URL ?? "https://apostai-bolao-djv8mgeh.manus.space",
 };

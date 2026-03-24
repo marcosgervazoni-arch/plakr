@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw, Home } from "lucide-react";
 import { Component, ReactNode } from "react";
 
 interface Props {
@@ -25,31 +25,40 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex items-center justify-center min-h-screen p-8 bg-background">
-          <div className="flex flex-col items-center w-full max-w-2xl p-8">
-            <AlertTriangle
-              size={48}
-              className="text-destructive mb-6 flex-shrink-0"
-            />
-
-            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
-
-            <div className="p-4 w-full rounded bg-muted overflow-auto mb-6">
-              <pre className="text-sm text-muted-foreground whitespace-break-spaces">
-                {this.state.error?.stack}
-              </pre>
+          <div className="flex flex-col items-center w-full max-w-md text-center">
+            <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-6">
+              <AlertTriangle size={32} className="text-destructive" />
             </div>
 
-            <button
-              onClick={() => window.location.reload()}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg",
-                "bg-primary text-primary-foreground",
-                "hover:opacity-90 cursor-pointer"
-              )}
-            >
-              <RotateCcw size={16} />
-              Reload Page
-            </button>
+            <h2 className="text-2xl font-bold mb-2">Algo deu errado</h2>
+            <p className="text-muted-foreground mb-8 leading-relaxed">
+              Ocorreu um erro inesperado. Tente recarregar a página — se o problema persistir, entre em contato com o suporte.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => window.location.href = "/dashboard"}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
+                  "border border-border bg-transparent text-foreground",
+                  "hover:bg-muted cursor-pointer transition-colors"
+                )}
+              >
+                <Home size={15} />
+                Ir para o início
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
+                  "bg-primary text-primary-foreground",
+                  "hover:opacity-90 cursor-pointer transition-opacity"
+                )}
+              >
+                <RotateCcw size={15} />
+                Recarregar página
+              </button>
+            </div>
           </div>
         </div>
       );

@@ -434,9 +434,11 @@ export default function PoolPage() {
             </div>
           </div>
 
-          {/* Invite banner para organizador */}
-          {isOrganizer && pool.inviteToken && (
-            <InviteBanner inviteToken={pool.inviteToken} onCopy={copyInviteLink} />
+          {/* Invite banner — organizador vê o banner completo; participante vê botão discreto de compartilhar */}
+          {pool.inviteToken && (
+            isOrganizer
+              ? <InviteBanner inviteToken={pool.inviteToken} onCopy={copyInviteLink} />
+              : <ParticipantShareButton inviteToken={pool.inviteToken} poolName={pool.name} />
           )}
         </div>
       </div>
@@ -1026,6 +1028,42 @@ function InviteBanner({ inviteToken, onCopy }: { inviteToken: string; onCopy: ()
           <Copy className="w-3 h-3" /> Copiar
         </Button>
       </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+ * ParticipantShareButton — botão discreto para participantes convidarem amigos
+ * ─────────────────────────────────────────────────────────────────────────────── */
+function ParticipantShareButton({ inviteToken, poolName }: { inviteToken: string; poolName: string }) {
+  const inviteUrl = `${window.location.origin}/join/${inviteToken}`;
+
+  const handleShare = async () => {
+    const shareText = `🏆 Participe do bolão "${poolName}" no ApostAI! Faça seus palpites e dispute o ranking.`;
+    // Usa Web Share API se disponível (mobile), senão copia para clipboard
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: poolName, text: shareText, url: inviteUrl });
+      } catch {
+        // Usuário cancelou o compartilhamento — sem ação necessária
+      }
+    } else {
+      navigator.clipboard.writeText(inviteUrl);
+      toast.success("Link copiado!", { description: "Compartilhe com seus amigos." });
+    }
+  };
+
+  return (
+    <div className="mt-3">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={handleShare}
+        className="h-8 text-xs gap-1.5 border-primary/20 text-primary hover:bg-primary/5"
+      >
+        <Copy className="w-3 h-3" />
+        Convidar amigos
+      </Button>
     </div>
   );
 }
