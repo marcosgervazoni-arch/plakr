@@ -504,3 +504,6 @@
 
 ## Sprint 24/03/2026 — Fix Exclusão de Torneio (cascata completa)
 - [x] Fix: exclusão de torneio agora deleta em cascata completa: bets, pool_member_stats, pool_scoring_rules, pool_members, pools, sheets_sync_log, games, teams, tournament_phases, tournaments
+
+## Sprint 24/03/2026 — Fix Bolões Públicos
+- [x] Fix: bolões públicos não apareciam na busca — subquery usava pm.pool_id (snake_case) em vez de pm.poolId (camelCase)

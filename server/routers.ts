@@ -1132,7 +1132,7 @@ export const appRouter = router({
             pool: poolsTable,
             tournamentName: tournaments.name,
             ownerName: usersTable.name,
-            memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = ${poolsTable.id})`,
+            memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.\`poolId\` = ${poolsTable.id})`,
           })
           .from(poolsTable)
           .leftJoin(tournaments, eq(poolsTable.tournamentId, tournaments.id))
