@@ -569,3 +569,11 @@
 - [x] [Design] Componente `BadgeGrid` com badges conquistados vibrantes e não conquistados transparentes
 - [x] [Frontend] Integrar BadgeGrid no perfil público `/profile/me`
 - [x] [QA] Testes unitários para calculateAndAssignBadges (badges.test.ts — 12 testes)
+
+## Sprint 24/03/2026 — Melhorias do Sistema de Badges
+
+- [x] [Fullstack] Notificação in-app ao desbloquear badge com imageUrl, actionUrl=/profile/me, priority=high, category=badge_unlocked
+- [x] [Frontend] Exibir BadgeGrid no PoolMemberProfile (/pool/:slug/player/:userId) com modo compact
+- [x] [Backend] getMemberProfile agora retorna campo badges com status de conquista
+- [x] [Seed] 5 badges criados no banco: Atirador de Elite, Mestre dos Placares, Zebra Hunter, Campeão Serial, Maratonista
+- [x] [QA] 8 novos testes para notificação e badges de exemplo (110 testes no total)

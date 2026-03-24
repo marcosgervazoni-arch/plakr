@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, name, criterionType, criterionValue, isActive FROM badges ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, name, criterionType, criterionValue, isActive FROM badges ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Atirador de Elite",
+      "criterionType": "accuracy_in_pool",
+      "criterionValue": "80",
+      "isActive": "1"
+    },
+    {
+      "id": "2",
+      "name": "Mestre dos Placares",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "10",
+      "isActive": "1"
+    },
+    {
+      "id": "3",
+      "name": "Zebra Hunter",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "5",
+      "isActive": "1"
+    },
+    {
+      "id": "4",
+      "name": "Campeão Serial",
+      "criterionType": "first_place_pools",
+      "criterionValue": "2",
+      "isActive": "1"
+    },
+    {
+      "id": "5",
+      "name": "Maratonista",
+      "criterionType": "complete_pool_no_blank",
+      "criterionValue": "3",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcriterionType\tcriterionValue\tisActive\n1\tAtirador de Elite\taccuracy_in_pool\t80\t1\n2\tMestre dos Placares\texact_scores_career\t10\t1\n3\tZebra Hunter\tzebra_scores_career\t5\t1\n4\tCampeão Serial\tfirst_place_pools\t2\t1\n5\tMaratonista\tcomplete_pool_no_blank\t3\t1\n",
+  "stderr": "",
+  "execution_time_ms": 503
+}

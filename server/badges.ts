@@ -257,13 +257,18 @@ export async function calculateAndAssignBadges(userId: number): Promise<{ badgeI
     // Atribuir badge
     await db.insert(userBadges).values({ userId, badgeId: badge.id, notified: false });
 
-    // Criar notificação in-app
+    // Criar notificação in-app com ícone e link de ação
     await db.insert(notifications).values({
       userId,
       type: "system",
-      title: `Badge desbloqueado: ${badge.name}!`,
+      title: `🏅 Badge desbloqueado: ${badge.name}!`,
       message: badge.description,
       isRead: false,
+      imageUrl: badge.iconUrl ?? undefined,
+      actionUrl: `/profile/me`,
+      actionLabel: "Ver meu perfil",
+      priority: "high",
+      category: "badge_unlocked",
     }).catch(() => {}); // não falhar se notificação falhar
 
     newlyEarned.push({ badgeId: badge.id, name: badge.name });
@@ -320,9 +325,14 @@ export async function assignBadgeRetroactively(badgeId: number): Promise<number>
     await db.insert(notifications).values({
       userId: user.id,
       type: "system",
-      title: `Badge desbloqueado: ${badge.name}!`,
+      title: `🏅 Badge desbloqueado: ${badge.name}!`,
       message: badge.description,
       isRead: false,
+      imageUrl: badge.iconUrl ?? undefined,
+      actionUrl: `/profile/me`,
+      actionLabel: "Ver meu perfil",
+      priority: "high",
+      category: "badge_unlocked",
     }).catch(() => {});
 
     assigned++;

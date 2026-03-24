@@ -1573,7 +1573,7 @@ export const appRouter = router({
         const db = await (await import("./db")).getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         const { eq, desc, and } = await import("drizzle-orm");
-        const { users: usersT, poolMemberStats, bets: betsT, games: gamesT, userPlans } = await import("../drizzle/schema");
+        const { users: usersT, poolMemberStats, bets: betsT, games: gamesT, userPlans, badges: badgesT, userBadges } = await import("../drizzle/schema");
         // Verificar se o solicitante é membro ou admin
         const requester = await getPoolMember(input.poolId, ctx.user.id);
         const pool = await getPoolById(input.poolId);
@@ -1640,6 +1640,23 @@ export const appRouter = router({
             pointsCorrectResult: Number(b.pointsCorrectResult ?? 0), pointsGoalDiff: Number(b.pointsGoalDiff ?? 0),
             pointsZebra: Number(b.pointsZebra ?? 0),
           })),
+          badges: await (async () => {
+            const allBadges = await db.select().from(badgesT).where(eq(badgesT.isActive, true));
+            const earned = await db.select({
+              badgeId: userBadges.badgeId,
+              earnedAt: userBadges.earnedAt,
+            }).from(userBadges).where(eq(userBadges.userId, input.userId));
+            const earnedMap = new Map(earned.map((e) => [e.badgeId, e.earnedAt]));
+            return allBadges.map((b) => ({
+              id: b.id,
+              name: b.name,
+              description: b.description,
+              iconUrl: b.iconUrl,
+              criterionType: b.criterionType,
+              criterionValue: b.criterionValue,
+              earnedAt: earnedMap.get(b.id) ?? null,
+            }));
+          })(),
         };
       }),
 

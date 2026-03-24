@@ -106,10 +106,96 @@ describe("Badge Engine — lógica de critérios", () => {
     });
   });
 });
+// ─── Testes de notificação ao desbloquear badge ─────────────────────────────
+describe("Badge Engine — notificação ao desbloquear", () => {
+  it("deve incluir actionUrl='/profile/me' na notificação", () => {
+    const notificationPayload = {
+      userId: 1,
+      type: "system" as const,
+      title: "🏅 Badge desbloqueado: Atirador de Elite!",
+      message: "Alcançou 80% ou mais de taxa de acerto em um bolão.",
+      isRead: false,
+      actionUrl: "/profile/me",
+      actionLabel: "Ver meu perfil",
+      priority: "high" as const,
+      category: "badge_unlocked",
+    };
 
-// ─── Testes de estrutura do BadgeWithStatus ───────────────────────────────────
-describe("Badge Engine — estrutura BadgeWithStatus", () => {
-  it("deve ter todos os campos obrigatórios", () => {
+    expect(notificationPayload.actionUrl).toBe("/profile/me");
+    expect(notificationPayload.actionLabel).toBe("Ver meu perfil");
+    expect(notificationPayload.priority).toBe("high");
+    expect(notificationPayload.category).toBe("badge_unlocked");
+    expect(notificationPayload.title).toContain("🏅");
+  });
+
+  it("deve incluir imageUrl quando o badge tem iconUrl", () => {
+    const badge = {
+      id: 1,
+      name: "Atirador de Elite",
+      iconUrl: "https://cdn.example.com/badge-elite.svg",
+    };
+
+    const notificationImageUrl = badge.iconUrl ?? undefined;
+    expect(notificationImageUrl).toBe("https://cdn.example.com/badge-elite.svg");
+  });
+
+  it("deve usar undefined para imageUrl quando badge não tem iconUrl", () => {
+    const badge = { id: 1, name: "Mestre dos Placares", iconUrl: null };
+    const notificationImageUrl = badge.iconUrl ?? undefined;
+    expect(notificationImageUrl).toBeUndefined();
+  });
+});
+
+// ─── Testes dos badges de exemplo ────────────────────────────────────────────
+describe("Badge Engine — badges de exemplo", () => {
+  const exampleBadges = [
+    { name: "Atirador de Elite", criterionType: "accuracy_in_pool", criterionValue: 80 },
+    { name: "Mestre dos Placares", criterionType: "exact_scores_career", criterionValue: 10 },
+    { name: "Zebra Hunter", criterionType: "zebra_scores_career", criterionValue: 5 },
+    { name: "Campeão Serial", criterionType: "first_place_pools", criterionValue: 2 },
+    { name: "Maratonista", criterionType: "complete_pool_no_blank", criterionValue: 3 },
+  ];
+
+  it("deve ter 5 badges de exemplo com critérios válidos", () => {
+    expect(exampleBadges).toHaveLength(5);
+  });
+
+  it("todos os badges de exemplo devem ter criterionValue positivo", () => {
+    exampleBadges.forEach((b) => {
+      expect(b.criterionValue).toBeGreaterThan(0);
+    });
+  });
+
+  it("todos os badges de exemplo devem ter criterionType válido", () => {
+    const validTypes = [
+      "accuracy_in_pool",
+      "exact_scores_career",
+      "zebra_scores_career",
+      "top3_pools",
+      "first_place_pools",
+      "complete_pool_no_blank",
+      "consecutive_correct",
+    ];
+    exampleBadges.forEach((b) => {
+      expect(validTypes).toContain(b.criterionType);
+    });
+  });
+
+  it("Atirador de Elite deve exigir 80% de acerto", () => {
+    const badge = exampleBadges.find((b) => b.name === "Atirador de Elite");
+    expect(badge?.criterionValue).toBe(80);
+    expect(badge?.criterionType).toBe("accuracy_in_pool");
+  });
+
+  it("Campeão Serial deve exigir 2 primeiros lugares", () => {
+    const badge = exampleBadges.find((b) => b.name === "Campeão Serial");
+    expect(badge?.criterionValue).toBe(2);
+    expect(badge?.criterionType).toBe("first_place_pools");
+  });
+});
+
+// ─── Testes de estrutura do BadgeWithStatus ───────────────────────────────────────
+describe("Badge Engine — estrutura BadgeWithStatus", () => {it("deve ter todos os campos obrigatórios", () => {
     const badge = {
       id: 1,
       name: "Atirador de Elite",

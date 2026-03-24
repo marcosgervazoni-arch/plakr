@@ -1,12 +1,13 @@
 /**
  * Perfil Contextual do Apostador no Bolão — /pool/:slug/player/:userId
- * Exibe stats, gráfico de evolução de pontos e palpites recentes no contexto de um bolão específico.
+ * Exibe stats, gráfico de evolução de pontos, palpites recentes e badges no contexto de um bolão específico.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import AppShell from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import BadgeGrid from "@/components/BadgeGrid";
 import {
   Trophy, Crown, Target, CheckCircle2, Users, TrendingUp,
   ChevronLeft, Loader2, AlertCircle, Share2, Zap, Star,
@@ -29,7 +30,6 @@ export default function PoolMemberProfile() {
     { slug: slug ?? "" },
     { enabled: !!slug }
   );
-
   const poolId = poolData?.pool.id;
 
   const { data, isLoading, error } = trpc.pools.getMemberProfile.useQuery(
@@ -83,9 +83,10 @@ export default function PoolMemberProfile() {
     );
   }
 
-  const { user, plan, pool, stats, pointsHistory, recentBets } = data;
+  const { user, plan, pool, stats, pointsHistory, recentBets, badges } = data;
   const isPro = plan?.plan === "pro" && plan?.isActive;
   const initials = user.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
+  const earnedBadgesCount = badges?.filter((b: any) => b.earnedAt).length ?? 0;
 
   return (
     <AppShell>
@@ -163,6 +164,11 @@ export default function PoolMemberProfile() {
                 {isOwnProfile && (
                   <Badge variant="outline" className="text-xs text-muted-foreground">Você</Badge>
                 )}
+                {earnedBadgesCount > 0 && (
+                  <Badge variant="outline" className="text-xs gap-1 text-amber-500 border-amber-500/30">
+                    <Award className="w-3 h-3" /> {earnedBadgesCount} badge{earnedBadgesCount !== 1 ? "s" : ""}
+                  </Badge>
+                )}
               </div>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Participando de <span className="font-medium text-foreground">{pool.name}</span>
@@ -194,6 +200,28 @@ export default function PoolMemberProfile() {
           <div className="bg-card border border-border/30 rounded-xl p-6 text-center space-y-2">
             <Trophy className="w-8 h-8 text-muted-foreground/20 mx-auto" />
             <p className="text-sm text-muted-foreground">Nenhum palpite registrado ainda neste bolão.</p>
+          </div>
+        )}
+
+        {/* ── Badges / Conquistas ── */}
+        {badges && badges.length > 0 && (
+          <div className="bg-card border border-border/30 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-500" />
+                <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
+                  Conquistas
+                </h3>
+              </div>
+              {isOwnProfile && (
+                <Link href="/profile/me">
+                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7">
+                    Ver perfil completo →
+                  </Button>
+                </Link>
+              )}
+            </div>
+            <BadgeGrid badges={badges} compact />
           </div>
         )}
 
