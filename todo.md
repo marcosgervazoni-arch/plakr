@@ -539,3 +539,17 @@
 - [x] Agrupar jogos por fase com cabeçalhos colapsáveis quando há chaveamento
 - [x] Implementar "mostrar mais" com colapso por rodada quando não há fases distintas (apenas group_stage)
 - [x] Fase ativa (com jogos abertos ou ao vivo) expandida por padrão, demais colapsadas
+
+## Revisão Completa da Página do Bolão — 10 Correções (24/03/2026)
+- [x] [CTO] Inferir tipo de game em GameCardProps do retorno da procedure getBySlug
+- [x] [Fullstack] Criar procedure myPoolPosition (posição e pontos do usuário no bolão)
+- [x] [Fullstack] Carregar myPoolPosition junto com dados principais (sem depender da aba Ranking)
+- [x] [Fullstack+Product] Atualização otimista no placeBet (botão muda imediatamente)
+- [x] [Product] Trocar texto "Apostar" por "Salvar palpite" / "Atualizar palpite"
+- [x] [UX] Aumentar inputs de placar para h-11 (44px mínimo para toque)
+- [x] [Product+Design] Indicador de urgência para jogos com prazo < 2h (âmbar) e < 30min (vermelho)
+- [x] [Design+QA] Pódio adaptável: funcionar com 1, 2 ou 3 participantes
+- [x] [UX] Mover AdBanner para o final da lista de jogos
+- [x] [Design] Corrigir contraste do 2º lugar no pódio (gray-400 → slate-300)
+- [x] [CSO] Mascarar token de convite no hero com botão "Revelar"
+- [x] [QA] Fallback visual para imagem de time com erro (img onError)

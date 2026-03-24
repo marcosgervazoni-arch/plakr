@@ -66,17 +66,64 @@ export default function PoolPage() {
     { enabled: !!data?.pool.id && activeTab === "ranking", refetchInterval: 30_000 }
   );
 
+  const utils = trpc.useUtils();
+  const { data: myPosition } = trpc.rankings.myPoolPosition.useQuery(
+    { poolId: data?.pool.id ?? 0 },
+    { enabled: !!data?.pool.id }
+  );
+
   const { data: members } = trpc.pools.getMembers.useQuery(
     { poolId: data?.pool.id ?? 0 },
     { enabled: !!data?.pool.id && activeTab === "members" }
   );
 
   const placeBet = trpc.bets.placeBet.useMutation({
-    onSuccess: () => {
-      toast.success("Palpite registrado!");
-      refetchBets();
+    onMutate: async (vars) => {
+      // Atualização otimista: atualiza o cache local imediatamente
+      await utils.bets.myBets.cancel();
+      const prev = utils.bets.myBets.getData({ poolId: vars.poolId });
+      utils.bets.myBets.setData({ poolId: vars.poolId }, (old) => {
+        if (!old) return old;
+        const existing = old.findIndex((b) => b.gameId === vars.gameId);
+        const newBet = {
+          id: -1,
+          gameId: vars.gameId,
+          poolId: vars.poolId,
+          userId: user?.id ?? 0,
+          predictedScoreA: vars.predictedScoreA,
+          predictedScoreB: vars.predictedScoreB,
+          pointsEarned: 0,
+          pointsExactScore: 0,
+          pointsCorrectResult: 0,
+          pointsTotalGoals: 0,
+          pointsGoalDiff: 0,
+          pointsOneTeamGoals: 0,
+          pointsLandslide: 0,
+          pointsZebra: 0,
+          isZebra: false,
+          resultType: "pending" as const,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        if (existing >= 0) {
+          const updated = [...old];
+          updated[existing] = { ...updated[existing], ...newBet };
+          return updated;
+        }
+        return [...old, newBet];
+      });
+      return { prev };
     },
-    onError: (err) => toast.error("Erro ao registrar palpite", { description: err.message }),
+    onSuccess: () => {
+      toast.success("Palpite salvo!");
+      refetchBets();
+      utils.rankings.myPoolPosition.invalidate({ poolId: data?.pool.id });
+    },
+    onError: (err, vars, ctx) => {
+      // Rollback otimista em caso de erro
+      if (ctx?.prev) utils.bets.myBets.setData({ poolId: vars.poolId }, ctx.prev);
+      toast.error("Erro ao salvar palpite", { description: err.message });
+    },
   });
 
   /* ── Agrupamento de jogos por fase ── (hooks ANTES dos returns condicionais) */
@@ -205,10 +252,8 @@ export default function PoolPage() {
   const totalGames = games.length;
   const progressPct = totalGames > 0 ? Math.round((finishedGames / totalGames) * 100) : 0;
 
-  /* Posição do usuário no ranking (carregada junto com a aba ranking) */
-  const myRankEntry = ranking?.find((r) => r.user.id === user?.id);
-  const myPosition = myRankEntry ? ranking!.indexOf(myRankEntry) + 1 : null;
-  const myPoints = myRankEntry?.stats.totalPoints ?? null;
+  /* Posição do usuário no ranking — usa myPoolPosition (carregada na abertura da página) */
+  const myPoints = myPosition?.points ?? null;
 
   /* Próximo jogo */
   const nextGame = games
@@ -348,9 +393,9 @@ export default function PoolPage() {
           <div className="mt-4 grid grid-cols-3 gap-2">
             {/* Minha posição */}
             <div className="bg-background/60 backdrop-blur-sm border border-border/40 rounded-xl p-3 text-center">
-              {myPosition !== null ? (
+              {myPosition?.position != null ? (
                 <>
-                  <p className="text-2xl font-bold text-primary font-mono leading-none">#{myPosition}</p>
+                  <p className="text-2xl font-bold text-primary font-mono leading-none">#{myPosition.position}</p>
                   <p className="text-xs text-muted-foreground mt-1">Minha posição</p>
                   {myPoints !== null && (
                     <p className="text-xs font-semibold text-primary mt-0.5">{myPoints} pts</p>
@@ -382,18 +427,8 @@ export default function PoolPage() {
           </div>
 
           {/* Invite banner para organizador */}
-          {isOrganizer && (
-            <div className="mt-3 flex items-center justify-between gap-3 bg-background/50 border border-primary/20 rounded-xl px-3 py-2.5">
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-primary">Link de convite</p>
-                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                  {`${window.location.origin}/join/${pool.inviteToken}`}
-                </p>
-              </div>
-              <Button size="sm" variant="outline" onClick={copyInviteLink} className="shrink-0 h-7 text-xs gap-1.5">
-                <Copy className="w-3 h-3" /> Copiar
-              </Button>
-            </div>
+          {isOrganizer && pool.inviteToken && (
+            <InviteBanner inviteToken={pool.inviteToken} onCopy={copyInviteLink} />
           )}
         </div>
       </div>
@@ -416,8 +451,6 @@ export default function PoolPage() {
 
           {/* ══ ABA JOGOS ══ */}
           <TabsContent value="games" className="space-y-3 mt-0">
-            <AdBanner position="top" className="w-full" />
-
             {games.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
                 <Calendar className="w-10 h-10 mx-auto mb-3 opacity-20" />
@@ -555,6 +588,9 @@ export default function PoolPage() {
                 )}
               </div>
             )}
+
+            {/* AdBanner no final — não empurra o conteúdo principal */}
+            {games.length > 0 && <AdBanner position="top" className="w-full" />}
           </TabsContent>
 
           {/* ══ ABA RANKING ══ */}
@@ -571,28 +607,36 @@ export default function PoolPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Pódio top-3 */}
-                {ranking.length >= 3 && (
-                  <div className="grid grid-cols-3 gap-2 mb-5">
-                    {/* 2º lugar */}
-                    <div className={`flex flex-col items-center gap-1.5 pt-6 pb-4 px-2 rounded-xl border ${
-                      ranking[1].user.id === user?.id
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border/30 bg-card/60"
-                    }`}>
-                      <div className="w-10 h-10 rounded-full bg-gray-400/20 border-2 border-gray-400/40 flex items-center justify-center text-sm font-bold text-gray-400">
-                        {ranking[1].user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                {/* Pódio adaptável: 1, 2 ou 3 participantes */}
+                {ranking.length >= 1 && (
+                  <div className={`grid gap-2 mb-5 ${
+                    ranking.length === 1 ? "grid-cols-1 max-w-[140px] mx-auto" :
+                    ranking.length === 2 ? "grid-cols-2" :
+                    "grid-cols-3"
+                  }`}>
+                    {/* 2º lugar — só aparece se houver >= 2 participantes */}
+                    {ranking.length >= 2 && (
+                      <div className={`flex flex-col items-center gap-1.5 pt-6 pb-4 px-2 rounded-xl border ${
+                        ranking[1].user.id === user?.id
+                          ? "border-primary/40 bg-primary/5"
+                          : "border-border/30 bg-card/60"
+                      }`}>
+                        <div className="w-10 h-10 rounded-full bg-slate-400/20 border-2 border-slate-400/40 flex items-center justify-center text-sm font-bold text-slate-300">
+                          {ranking[1].user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                        </div>
+                        <Medal className="w-4 h-4 text-slate-300" />
+                        <a href={`/pool/${slug}/player/${ranking[1].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
+                          {ranking[1].user.name?.split(" ")[0]}
+                        </a>
+                        <p className="text-lg font-black font-mono text-slate-300">{ranking[1].stats.totalPoints}</p>
+                        <p className="text-xs text-muted-foreground">pts</p>
                       </div>
-                      <Medal className="w-4 h-4 text-gray-400" />
-                      <a href={`/pool/${slug}/player/${ranking[1].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
-                        {ranking[1].user.name?.split(" ")[0]}
-                      </a>
-                      <p className="text-lg font-black font-mono text-gray-400">{ranking[1].stats.totalPoints}</p>
-                      <p className="text-xs text-muted-foreground">pts</p>
-                    </div>
+                    )}
 
-                    {/* 1º lugar */}
-                    <div className={`flex flex-col items-center gap-1.5 pb-4 px-2 rounded-xl border -mt-3 ${
+                    {/* 1º lugar — sempre visível, centralizado quando sozinho */}
+                    <div className={`flex flex-col items-center gap-1.5 pb-4 px-2 rounded-xl border ${
+                      ranking.length >= 2 ? "-mt-3" : ""
+                    } ${
                       ranking[0].user.id === user?.id
                         ? "border-primary/60 bg-primary/10"
                         : "border-yellow-500/30 bg-yellow-500/5"
@@ -608,22 +652,24 @@ export default function PoolPage() {
                       <p className="text-xs text-muted-foreground">pts</p>
                     </div>
 
-                    {/* 3º lugar */}
-                    <div className={`flex flex-col items-center gap-1.5 pt-6 pb-4 px-2 rounded-xl border ${
-                      ranking[2].user.id === user?.id
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border/30 bg-card/60"
-                    }`}>
-                      <div className="w-10 h-10 rounded-full bg-orange-500/20 border-2 border-orange-500/40 flex items-center justify-center text-sm font-bold text-orange-400">
-                        {ranking[2].user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                    {/* 3º lugar — só aparece se houver >= 3 participantes */}
+                    {ranking.length >= 3 && (
+                      <div className={`flex flex-col items-center gap-1.5 pt-6 pb-4 px-2 rounded-xl border ${
+                        ranking[2].user.id === user?.id
+                          ? "border-primary/40 bg-primary/5"
+                          : "border-border/30 bg-card/60"
+                      }`}>
+                        <div className="w-10 h-10 rounded-full bg-orange-500/20 border-2 border-orange-500/40 flex items-center justify-center text-sm font-bold text-orange-400">
+                          {ranking[2].user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                        </div>
+                        <Medal className="w-4 h-4 text-orange-400" />
+                        <a href={`/pool/${slug}/player/${ranking[2].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
+                          {ranking[2].user.name?.split(" ")[0]}
+                        </a>
+                        <p className="text-lg font-black font-mono text-orange-400">{ranking[2].stats.totalPoints}</p>
+                        <p className="text-xs text-muted-foreground">pts</p>
                       </div>
-                      <Medal className="w-4 h-4 text-orange-400" />
-                      <a href={`/pool/${slug}/player/${ranking[2].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
-                        {ranking[2].user.name?.split(" ")[0]}
-                      </a>
-                      <p className="text-lg font-black font-mono text-orange-400">{ranking[2].stats.totalPoints}</p>
-                      <p className="text-xs text-muted-foreground">pts</p>
-                    </div>
+                    )}
                   </div>
                 )}
 
@@ -786,10 +832,23 @@ function GameCard({
   game, myBet, open, finished, live, betA, betB, hasBet,
   betInputs, setBetInputs, handleBetSubmit, placeBetPending,
 }: GameCardProps) {
+  // Calcula urgência do prazo
+  const minutesUntilDeadline = open && !finished
+    ? Math.floor((new Date(game.matchDate).getTime() - Date.now()) / 60000)
+    : null;
+  const isUrgent = minutesUntilDeadline !== null && minutesUntilDeadline <= 120;
+  const isCritical = minutesUntilDeadline !== null && minutesUntilDeadline <= 30;
+
+  const urgencyLabel = isCritical
+    ? `Fecha em ${minutesUntilDeadline}min`
+    : isUrgent
+    ? `Fecha em ${Math.floor(minutesUntilDeadline! / 60)}h ${minutesUntilDeadline! % 60}min`
+    : null;
+
   return (
     <div
       className={`bg-card transition-all ${
-        live ? "bg-red-500/5" : finished ? "bg-card/60" : ""
+        live ? "bg-red-500/5" : finished ? "opacity-80" : ""
       }`}
     >
       {/* Linha de status + data */}
@@ -809,6 +868,19 @@ function GameCard({
               {open ? "Aberto para palpites" : "Prazo encerrado"}
             </span>
           )}
+          {/* Indicador de urgência */}
+          {urgencyLabel && (
+            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+              isCritical
+                ? "bg-red-500/15 text-red-400 border border-red-500/25"
+                : "bg-amber-500/15 text-amber-400 border border-amber-500/25"
+            }`}>
+              <span className={`w-1 h-1 rounded-full ${
+                isCritical ? "bg-red-400 animate-pulse" : "bg-amber-400"
+              }`} />
+              {urgencyLabel}
+            </span>
+          )}
         </div>
         <span className="text-xs text-muted-foreground">
           {format(new Date(game.matchDate), "dd/MM 'às' HH:mm", { locale: ptBR })}
@@ -820,9 +892,13 @@ function GameCard({
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           {/* Time A */}
           <div className="text-right">
-            {game.teamAFlag && (
-              <img src={game.teamAFlag} alt="" className="w-8 h-8 object-contain ml-auto mb-1" />
-            )}
+            {game.teamAFlag ? (
+              <img
+                src={game.teamAFlag} alt=""
+                className="w-8 h-8 object-contain ml-auto mb-1"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            ) : null}
             <p className="font-bold text-sm leading-tight">{game.teamAName ?? "Time A"}</p>
             {finished && game.scoreA !== null && (
               <p className="text-2xl font-black text-foreground font-mono mt-1">{game.scoreA}</p>
@@ -830,22 +906,24 @@ function GameCard({
           </div>
 
           {/* Centro */}
-          <div className="flex flex-col items-center gap-2 min-w-[100px]">
+          <div className="flex flex-col items-center gap-2 min-w-[110px]">
             {finished && game.scoreA !== null && game.scoreB !== null && (
               <div className="text-xs text-muted-foreground font-medium">Resultado</div>
             )}
             {open && !finished ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Input
                   type="number" min={0} max={99} placeholder="0" value={betA}
                   onChange={(e) => setBetInputs((prev) => ({ ...prev, [game.id]: { a: e.target.value, b: prev[game.id]?.b ?? betB } }))}
-                  className="w-12 text-center h-10 text-base font-bold p-0"
+                  className="w-14 text-center h-11 text-lg font-bold p-0"
+                  inputMode="numeric"
                 />
-                <span className="text-muted-foreground font-bold text-sm">×</span>
+                <span className="text-muted-foreground/70 font-bold text-base select-none">VS</span>
                 <Input
                   type="number" min={0} max={99} placeholder="0" value={betB}
                   onChange={(e) => setBetInputs((prev) => ({ ...prev, [game.id]: { a: prev[game.id]?.a ?? betA, b: e.target.value } }))}
-                  className="w-12 text-center h-10 text-base font-bold p-0"
+                  className="w-14 text-center h-11 text-lg font-bold p-0"
+                  inputMode="numeric"
                 />
               </div>
             ) : hasBet ? (
@@ -870,16 +948,16 @@ function GameCard({
             )}
             {open && !finished && (
               <Button
-                size="sm" className="h-8 px-4 text-xs mt-1"
+                size="sm" className="h-9 px-4 text-xs mt-1 min-w-[100px]"
                 onClick={() => handleBetSubmit(game.id)}
                 disabled={placeBetPending}
               >
                 {placeBetPending ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
                 ) : hasBet ? (
-                  <><Check className="w-3 h-3 mr-1" /> Atualizar</>
+                  <><Check className="w-3 h-3 mr-1" /> Atualizar palpite</>
                 ) : (
-                  "Apostar"
+                  "Salvar palpite"
                 )}
               </Button>
             )}
@@ -887,9 +965,13 @@ function GameCard({
 
           {/* Time B */}
           <div className="text-left">
-            {game.teamBFlag && (
-              <img src={game.teamBFlag} alt="" className="w-8 h-8 object-contain mr-auto mb-1" />
-            )}
+            {game.teamBFlag ? (
+              <img
+                src={game.teamBFlag} alt=""
+                className="w-8 h-8 object-contain mr-auto mb-1"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            ) : null}
             <p className="font-bold text-sm leading-tight">{game.teamBName ?? "Time B"}</p>
             {finished && game.scoreB !== null && (
               <p className="text-2xl font-black text-foreground font-mono mt-1">{game.scoreB}</p>
@@ -897,12 +979,44 @@ function GameCard({
           </div>
         </div>
 
-        {/* Badges de pontuação */}
+        {/* Badges de pontução */}
         {finished && hasBet && (
           <div className="mt-3 flex justify-center">
             <BetBreakdownBadges bet={myBet!} compact />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * InviteBanner — link de convite mascarado com botão revelar/copiar
+ * ──────────────────────────────────────────────────────────────────────────── */
+function InviteBanner({ inviteToken, onCopy }: { inviteToken: string; onCopy: () => void }) {
+  const [revealed, setRevealed] = useState(false);
+  const fullUrl = `${window.location.origin}/join/${inviteToken}`;
+  const maskedUrl = `${window.location.origin}/join/${"•".repeat(8)}`;
+
+  return (
+    <div className="mt-3 flex items-center justify-between gap-3 bg-background/50 border border-primary/20 rounded-xl px-3 py-2.5">
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-primary">Link de convite</p>
+        <p className="text-xs text-muted-foreground truncate max-w-[200px] font-mono">
+          {revealed ? fullUrl : maskedUrl}
+        </p>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <Button
+          size="sm" variant="ghost"
+          onClick={() => setRevealed((v) => !v)}
+          className="h-7 text-xs px-2 text-muted-foreground"
+        >
+          {revealed ? "Ocultar" : "Revelar"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={onCopy} className="h-7 text-xs gap-1.5">
+          <Copy className="w-3 h-3" /> Copiar
+        </Button>
       </div>
     </div>
   );
