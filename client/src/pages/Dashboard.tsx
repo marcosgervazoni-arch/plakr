@@ -141,7 +141,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
 
           {/* ── LEFT: Profile card ── */}
-          <div className="space-y-4">
+          {/* Em mobile: order-2 (aparece depois dos bolões); em desktop: order-none (coluna esquerda) */}
+          <div className="space-y-4 order-2 lg:order-none">
             <div className="bg-card border border-border/30 rounded-xl p-5 space-y-4">
               {/* Avatar + name */}
               <div className="flex flex-col items-center text-center gap-3">
@@ -247,7 +248,8 @@ export default function Dashboard() {
           </div>
 
           {/* ── RIGHT: Content ── */}
-          <div className="space-y-6">
+          {/* Em mobile: order-1 (aparece primeiro, acima do perfil); em desktop: order-none */}
+          <div className="space-y-6 order-1 lg:order-none">
 
             {/* My pools */}
             <section>
@@ -279,28 +281,34 @@ export default function Dashboard() {
                 />
                 )
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {(pools as any[]).map(({ pool, member, rankPosition, totalMembers, pendingBetsCount }: { pool: any; member: any; rankPosition: number | null; totalMembers: number; pendingBetsCount: number }) => (
                     <Link key={pool.id} href={`/pool/${pool.slug}`}>
-                      <div className="group flex items-center gap-3 bg-card border border-border/30 rounded-xl px-4 py-3 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer">
+                      <div className={`group flex items-center gap-3 rounded-xl px-4 py-3.5 transition-all cursor-pointer border ${
+                        pendingBetsCount > 0
+                          ? "bg-amber-500/5 border-amber-500/30 hover:bg-amber-500/10 hover:border-amber-500/50"
+                          : "bg-card border-border/40 hover:border-primary/40 hover:bg-primary/5"
+                      }`}>
                         <div className="relative">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${
+                            pendingBetsCount > 0 ? "bg-amber-500/15" : "bg-primary/10"
+                          }`}>
                             {pool.logoUrl ? (
                               <img src={pool.logoUrl} alt={pool.name} className="w-full h-full object-cover" />
                             ) : (
-                              <Trophy className="w-5 h-5 text-primary" />
+                              <Trophy className={`w-5 h-5 ${pendingBetsCount > 0 ? "text-amber-500" : "text-primary"}`} />
                             )}
                           </div>
                           {/* Pending bets badge */}
                           {pendingBetsCount > 0 && (
-                            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-[10px] font-bold text-white flex items-center justify-center px-1 leading-none border-2 border-card">
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-[10px] font-bold text-white flex items-center justify-center px-1 leading-none border-2 border-card shadow-sm">
                               {pendingBetsCount > 9 ? "9+" : pendingBetsCount}
                             </span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-sm truncate">{pool.name}</p>
+                            <p className="font-semibold text-sm truncate">{pool.name}</p>
                             {pool.plan === "pro" && <Crown className="w-3 h-3 text-primary shrink-0" />}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -314,7 +322,7 @@ export default function Dashboard() {
                               </span>
                             )}
                             {pendingBetsCount > 0 && (
-                              <span className="text-xs text-amber-400 font-medium">
+                              <span className="text-xs font-semibold text-amber-500">
                                 · {pendingBetsCount} palpite{pendingBetsCount > 1 ? "s" : ""} pendente{pendingBetsCount > 1 ? "s" : ""}
                               </span>
                             )}

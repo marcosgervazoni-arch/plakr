@@ -922,3 +922,10 @@
 - [x] Melhoria 4: Compartilhamento de link para participantes (Web Share API + clipboard)
 - [x] Melhoria 5: Seção Stripe no AdminSettings já tinha instruções completas (validado, sem alteração)
 - [x] Melhoria 6: WelcomeCard para novos usuários (conta criada há < 10 min, com 3 passos e CTAs)
+
+## Sprint UX — Navegação e Dashboard (24/03/2026)
+
+- [x] AppShell: bolões ativos do usuário como itens diretos no menu lateral (com badge de palpites pendentes)
+- [x] AppShell: botões Criar e Entrar no menu lateral abaixo dos bolões
+- [x] Dashboard mobile: reordenar para mostrar bolões antes do perfil (order-1/order-2)
+- [x] Dashboard: cards de bolões com mais destaque visual — fundo âmbar para palpites pendentes, borda mais visível, fonte semibold
