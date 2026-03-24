@@ -663,3 +663,12 @@
 - [x] [Backend] `useInviteCode` já prevenia duplicatas (isNull(inviteeId) + inviterId !== newUserId)
 - [x] [Backend] Notificação de progresso a cada convite aceito ("Faltam X cadastros")
 - [x] [Backend] Notificação de celebração ao atingir exatamente 5 convidados (priority=high, category=badge_unlocked)
+
+## Sprint 24/03/2026 — Melhorias do Menu de Navegação (AppShell)
+
+- [x] [Frontend] Item "Ranking" adicionado ao menu (rota /ranking, ícone Medal)
+- [x] [Frontend] "Meus Bolões" renomeado para "Dashboard"
+- [x] [Frontend] Item "Meu Perfil" removido da lista de nav (card do topo já é o acesso)
+- [x] [Frontend] Separador visual com label "Ações" entre seções e ações
+- [x] [Frontend] Estado ativo corrigido para rotas filhas via matchFn (cobre /pool/:slug e todas as sub-rotas)
+- [x] [Frontend] Badge vermelho de notificações não lidas no botão de menu mobile (top bar)

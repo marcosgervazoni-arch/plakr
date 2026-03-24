@@ -14,7 +14,6 @@ import {
   LayoutDashboard,
   Search,
   KeyRound,
-  User,
   Crown,
   Shield,
   LogOut,
@@ -22,6 +21,7 @@ import {
   X,
   ChevronRight,
   Plus,
+  Medal,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
@@ -31,30 +31,41 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-const navItems = [
+// Itens de navegação principais (seções)
+const navSections = [
   {
     id: "dashboard",
-    label: "Meus Bolões",
+    label: "Dashboard",
     icon: LayoutDashboard,
     href: "/dashboard",
+    // Ativo também em rotas filhas de bolão
+    matchFn: (loc: string) =>
+      loc === "/dashboard" || loc.startsWith("/pool/"),
+  },
+  {
+    id: "ranking",
+    label: "Ranking",
+    icon: Medal,
+    href: "/ranking",
+    matchFn: (loc: string) => loc.startsWith("/ranking"),
   },
   {
     id: "public",
     label: "Bolões Públicos",
     icon: Search,
     href: "/pools/public",
+    matchFn: (loc: string) => loc.startsWith("/pools/public"),
   },
+];
+
+// Itens de ação (separados visualmente das seções)
+const actionItems = [
   {
     id: "enter",
     label: "Entrar por Código",
     icon: KeyRound,
     href: "/enter-pool",
-  },
-  {
-    id: "profile",
-    label: "Meu Perfil",
-    icon: User,
-    href: "/my-profile",
+    matchFn: (loc: string) => loc.startsWith("/enter-pool"),
   },
 ];
 
@@ -67,13 +78,19 @@ export default function AppShell({ children }: AppShellProps) {
     enabled: isAuthenticated,
   });
 
+  // Buscar contagem de notificações não lidas para badge no mobile
+  const { data: notifications } = trpc.notifications.list.useQuery({}, {
+    enabled: isAuthenticated,
+  });
+  const unreadCount = notifications?.filter((n) => !n.isRead).length ?? 0;
+
   const isPro =
     userData?.plan?.plan === "pro" && userData?.plan?.isActive;
   const isAdmin =
     userData?.user?.role === "admin" || user?.role === "admin";
   const isBlocked = userData?.user?.isBlocked === true;
 
-  // Redirect blocked users to suspended page
+  // Redirecionar usuários bloqueados
   useEffect(() => {
     if (isAuthenticated && isBlocked) {
       window.location.href = "/suspended";
@@ -87,15 +104,6 @@ export default function AppShell({ children }: AppShellProps) {
       .slice(0, 2)
       .join("")
       .toUpperCase() ?? "?";
-
-  const getActiveSection = () => {
-    if (location === "/dashboard") return "dashboard";
-    if (location.startsWith("/pools/public")) return "public";
-    if (location.startsWith("/enter-pool")) return "enter";
-    if (location.startsWith("/my-profile")) return "profile";
-    return "";
-  };
-  const activeSection = getActiveSection();
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -116,12 +124,12 @@ export default function AppShell({ children }: AppShellProps) {
         </Link>
       </div>
 
-      {/* User info */}
+      {/* Card do usuário — clicável para /my-profile */}
       {isAuthenticated && (
         <div className="p-3 border-b border-border/30">
           <Link href="/my-profile" onClick={() => setSidebarOpen(false)}>
             <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-xs font-bold text-primary">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-xs font-bold text-primary overflow-hidden">
                 {user?.avatarUrl ? (
                   <img
                     src={user.avatarUrl ?? undefined}
@@ -153,10 +161,11 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
       )}
 
-      {/* Nav items */}
+      {/* Navegação principal */}
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = activeSection === item.id;
+        {/* Seções de navegação */}
+        {navSections.map((item) => {
+          const isActive = item.matchFn(location);
           return (
             <Link
               key={item.id}
@@ -178,17 +187,47 @@ export default function AppShell({ children }: AppShellProps) {
           );
         })}
 
-        {/* Criar bolão CTA */}
-        <div className="pt-2">
-          <Link href="/create-pool" onClick={() => setSidebarOpen(false)}>
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20">
-              <Plus className="w-4 h-4 shrink-0" />
-              <span className="flex-1 truncate font-medium">Criar Bolão</span>
-            </button>
-          </Link>
+        {/* Separador visual entre seções e ações */}
+        <div className="pt-2 pb-1">
+          <div className="border-t border-border/30" />
+          <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider px-3 pt-2">
+            Ações
+          </p>
         </div>
 
-        {/* Admin link */}
+        {/* Criar Bolão — CTA primário */}
+        <Link href="/create-pool" onClick={() => setSidebarOpen(false)}>
+          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20">
+            <Plus className="w-4 h-4 shrink-0" />
+            <span className="flex-1 truncate font-medium">Criar Bolão</span>
+          </button>
+        </Link>
+
+        {/* Itens de ação secundários */}
+        {actionItems.map((item) => {
+          const isActive = item.matchFn(location);
+          return (
+            <Link
+              key={item.id}
+              href={item.href}
+              onClick={() => setSidebarOpen(false)}
+            >
+              <button
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
+                  isActive
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                )}
+              >
+                <item.icon className="w-4 h-4 shrink-0" />
+                <span className="flex-1 truncate">{item.label}</span>
+              </button>
+            </Link>
+          );
+        })}
+
+        {/* Link de Admin — apenas para administradores */}
         {isAdmin && (
           <div className="pt-1">
             <Link href="/admin" onClick={() => setSidebarOpen(false)}>
@@ -254,14 +293,23 @@ export default function AppShell({ children }: AppShellProps) {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Mobile top bar */}
       <div className="lg:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border/30 px-4 h-14 flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="w-8 h-8 shrink-0"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <Menu className="w-4 h-4" />
-        </Button>
+        {/* Botão de menu com badge de notificações não lidas */}
+        <div className="relative shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-8 h-8"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="w-4 h-4" />
+          </Button>
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center pointer-events-none">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </div>
+
         <Link href="/dashboard" className="flex items-center gap-2 flex-1 min-w-0">
           <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center shrink-0">
             <Trophy className="w-3.5 h-3.5 text-primary-foreground" />
@@ -273,6 +321,7 @@ export default function AppShell({ children }: AppShellProps) {
             ApostAI
           </span>
         </Link>
+
         <div className="flex items-center gap-1.5 shrink-0">
           <NotificationBell />
         </div>
