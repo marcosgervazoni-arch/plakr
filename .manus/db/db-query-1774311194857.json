@@ -1,0 +1,40 @@
+{
+  "query": "\nSELECT \n  TABLE_NAME,\n  COLUMN_NAME,\n  CONSTRAINT_NAME\nFROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE\nWHERE REFERENCED_TABLE_NAME = 'pools'\n  AND TABLE_SCHEMA = DATABASE()\nORDER BY TABLE_NAME;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT \n  TABLE_NAME,\n  COLUMN_NAME,\n  CONSTRAINT_NAME\nFROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE\nWHERE REFERENCED_TABLE_NAME = 'pools'\n  AND TABLE_SCHEMA = DATABASE()\nORDER BY TABLE_NAME;\n",
+  "rows": [
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "poolId",
+      "CONSTRAINT_NAME": "admin_logs_poolId_pools_id_fk"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "poolId",
+      "CONSTRAINT_NAME": "bets_poolId_pools_id_fk"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "poolId",
+      "CONSTRAINT_NAME": "notifications_poolId_pools_id_fk"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "poolId",
+      "CONSTRAINT_NAME": "pool_member_stats_poolId_pools_id_fk"
+    },
+    {
+      "TABLE_NAME": "pool_members",
+      "COLUMN_NAME": "poolId",
+      "CONSTRAINT_NAME": "pool_members_poolId_pools_id_fk"
+    },
+    {
+      "TABLE_NAME": "pool_scoring_rules",
+      "COLUMN_NAME": "poolId",
+      "CONSTRAINT_NAME": "pool_scoring_rules_poolId_pools_id_fk"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\tCOLUMN_NAME\tCONSTRAINT_NAME\nadmin_logs\tpoolId\tadmin_logs_poolId_pools_id_fk\nbets\tpoolId\tbets_poolId_pools_id_fk\nnotifications\tpoolId\tnotifications_poolId_pools_id_fk\npool_member_stats\tpoolId\tpool_member_stats_poolId_pools_id_fk\npool_members\tpoolId\tpool_members_poolId_pools_id_fk\npool_scoring_rules\tpoolId\tpool_scoring_rules_poolId_pools_id_fk\n",
+  "stderr": "",
+  "execution_time_ms": 362
+}

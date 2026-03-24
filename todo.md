@@ -501,3 +501,6 @@
 
 ## Sprint 24/03/2026 — Fix Exclusão de Torneio (definitivo)
 - [x] Fix: exclusão do torneio id=1 corrigida — pools desvinculados (tournamentId=NULL) + sheets_sync_log deletado antes do torneio
+
+## Sprint 24/03/2026 — Fix Exclusão de Torneio (cascata completa)
+- [x] Fix: exclusão de torneio agora deleta em cascata completa: bets, pool_member_stats, pool_scoring_rules, pool_members, pools, sheets_sync_log, games, teams, tournament_phases, tournaments

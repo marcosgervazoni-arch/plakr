@@ -689,18 +689,26 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const db = await (await import("./db")).getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        const { tournaments, pools: poolsT, poolMembers, games: gamesT, teams: teamsT, tournamentPhases, sheetsSyncLog } = await import("../drizzle/schema");
-        const { eq, inArray, sql } = await import("drizzle-orm");
+        const {
+          tournaments, pools: poolsT, poolMembers, games: gamesT, teams: teamsT,
+          tournamentPhases, sheetsSyncLog, bets, poolMemberStats, poolScoringRules,
+          notifications: notificationsT, adminLogs
+        } = await import("../drizzle/schema");
+        const { eq, inArray } = await import("drizzle-orm");
         const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, input.id)).limit(1);
         if (!tournament) throw new TRPCError({ code: "NOT_FOUND", message: "Campeonato não encontrado." });
         const isAdmin = ctx.user.role === "admin";
         const isCreator = tournament.createdBy === ctx.user.id;
         if (!isAdmin && !isCreator) throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o criador ou um administrador pode excluir este campeonato." });
-        // Buscar bolões vinculados
+
+        // Buscar bolões vinculados ao torneio
         const linkedPools = await db.select({ id: poolsT.id, ownerId: poolsT.ownerId, name: poolsT.name })
           .from(poolsT).where(eq(poolsT.tournamentId, input.id));
+
         if (linkedPools.length > 0) {
           const poolIds = linkedPools.map(p => p.id);
+
+          // Notificar donos e membros antes de deletar
           const ownerIds = Array.from(new Set(linkedPools.map(p => p.ownerId).filter(id => id !== ctx.user.id)));
           for (const ownerId of ownerIds) {
             await createNotification({ userId: ownerId, type: "system", title: "Campeonato excluído",
@@ -715,22 +723,25 @@ export const appRouter = router({
               message: `O campeonato "${tournament.name}" foi excluído. Seu bolão vinculado foi encerrado.` });
             notifiedIds.add(m.userId);
           }
-          // Desvincular bolões do torneio (nullificar tournamentId) para liberar a FK
-          // antes de deletar o torneio. O status já foi marcado como 'deleted' acima.
-          // Usa sql`NULL` porque a coluna é notNull() no schema TypeScript mas aceita NULL no banco
-          await db.update(poolsT).set({ status: "deleted", tournamentId: sql`NULL` }).where(inArray(poolsT.id, poolIds));
+
+          // Deletar todas as dependências dos bolões em cascata (ordem: folhas -> raiz)
+          await db.delete(bets).where(inArray(bets.poolId, poolIds));
+          await db.delete(poolMemberStats).where(inArray(poolMemberStats.poolId, poolIds));
+          await db.delete(poolScoringRules).where(inArray(poolScoringRules.poolId, poolIds));
+          await db.delete(poolMembers).where(inArray(poolMembers.poolId, poolIds));
+          // Desvincular notificações e logs (não deletar, apenas desvincular do pool)
+          await db.update(notificationsT).set({ poolId: null }).where(inArray(notificationsT.poolId as any, poolIds));
+          await db.update(adminLogs).set({ entityId: null } as any).where(inArray(adminLogs.poolId as any, poolIds));
+          // Agora deletar os próprios bolões
+          await db.delete(poolsT).where(inArray(poolsT.id, poolIds));
         }
-        // Deletar na ordem correta para respeitar TODAS as FK constraints:
-        // 1. sheets_sync_log (FK para tournaments)
-        // 2. Jogos (FK para tournaments)
-        // 3. Times (FK para tournaments)
-        // 4. Fases (FK para tournaments com ON DELETE NO ACTION)
-        // 5. Torneio
-        // Nota: pools já foram desvinculados acima (tournamentId = null)
+
+        // Deletar dependências diretas do torneio
         await db.delete(sheetsSyncLog).where(eq(sheetsSyncLog.tournamentId, input.id));
         await db.delete(gamesT).where(eq(gamesT.tournamentId, input.id));
         await db.delete(teamsT).where(eq(teamsT.tournamentId, input.id));
         await db.delete(tournamentPhases).where(eq(tournamentPhases.tournamentId, input.id));
+        // Finalmente deletar o torneio
         await db.delete(tournaments).where(eq(tournaments.id, input.id));
         await createAdminLog(ctx.user.id, "delete_tournament", "tournament", input.id, { name: tournament.name, linkedPools: linkedPools.length });
         return { success: true };
