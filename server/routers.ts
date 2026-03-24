@@ -328,7 +328,7 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const db = await (await import("./db")).getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        const { eq, sql, desc } = await import("drizzle-orm");
+        const { eq, sql, desc, and } = await import("drizzle-orm");
         const { users: usersT, poolMembers, poolMemberStats, pools: poolsT, userPlans, badges: badgesT, userBadges } = await import("../drizzle/schema");
         const userRows = await db.select({
           id: usersT.id,
@@ -360,7 +360,7 @@ export const appRouter = router({
         }).from(poolMembers)
           .innerJoin(poolsT, eq(poolMembers.poolId, poolsT.id))
           .leftJoin(poolMemberStats, eq(poolMemberStats.userId, poolMembers.userId))
-          .where(eq(poolMembers.userId, input.userId))
+          .where(and(eq(poolMembers.userId, input.userId), sql`${poolsT.status} != 'deleted'`))
           .orderBy(desc(poolsT.createdAt))
           .limit(5);
         return {
@@ -433,7 +433,7 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const db = await (await import("./db")).getDb();
         if (!db) return { logs: [], adminActions: [], bets: [], pools: [], lastSignedIn: null, createdAt: null };
-        const { eq, desc, and, or } = await import("drizzle-orm");
+        const { eq, desc, and, or, sql } = await import("drizzle-orm");
         const { adminLogs, bets, games, pools: poolsT, poolMembers, poolMemberStats, users: usersT } = await import("../drizzle/schema");
         // Dados básicos do usuário (lastSignedIn, createdAt)
         const [userRow] = await db.select({ lastSignedIn: usersT.lastSignedIn, createdAt: usersT.createdAt })
@@ -469,7 +469,7 @@ export const appRouter = router({
           .from(poolMembers)
           .innerJoin(poolsT, eq(poolMembers.poolId, poolsT.id))
           .leftJoin(poolMemberStats, and(eq(poolMemberStats.userId, poolMembers.userId), eq(poolMemberStats.poolId, poolMembers.poolId)))
-          .where(eq(poolMembers.userId, input.userId))
+          .where(and(eq(poolMembers.userId, input.userId), sql`${poolsT.status} != 'deleted'`))
           .orderBy(desc(poolMembers.joinedAt))
           .limit(20);
         return {

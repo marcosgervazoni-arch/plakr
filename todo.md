@@ -584,3 +584,9 @@
 - [x] [Frontend] /profile/me sem login exibe mensagem amigável em vez de loading infinito
 - [x] [Frontend] Link "Ver perfil completo" no PoolMemberProfile usa /profile/{currentUser.id}
 - [x] [Frontend] Botão "Ver perfil público" no Dashboard usa /profile/{user.id}
+
+## Sprint 24/03/2026 — Fix Bolões Excluídos no Perfil Público
+
+- [x] [Fullstack] getPublicProfile: filtrar bolões com status != 'deleted' na seção "Bolões que participa"
+- [x] [Fullstack] getUserActivity (admin): filtrar bolões deletados na lista de bolões do usuário
+- [x] [Fullstack] myPools já filtrava corretamente (status = 'active' via getPoolsByUser)
