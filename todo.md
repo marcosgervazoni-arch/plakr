@@ -757,3 +757,9 @@
 - [x] B4 — Vinculação automática do campeonato ao bolão após wizard (pools.update aceita tournamentId)
 - [x] B5 — Regeneração de código/link de acesso: procedure dedicada regenerateAccessCode (sem depender de mudança de accessType)
 - [x] B6 — Estatísticas reais de ingresso por canal: procedure getAccessStats + campo joinSource no schema + migração aplicada
+
+## Sprint C — Experiência Avançada do Módulo Organizer (24/03/2026) ✅
+
+- [x] C1 — Sidebar do Organizer com grupos colapsáveis (Visão Geral / Participantes / Configuração / Financeiro)
+- [x] C2 — Prazo de palpite configurável na UI: slider bettingDeadlineMinutes (0–120 min) na tela de Regras (Pro)
+- [x] C3 — Gráfico de ingressos por dia (série temporal 7 dias, Pro) na tela de Acesso; teaser para Free

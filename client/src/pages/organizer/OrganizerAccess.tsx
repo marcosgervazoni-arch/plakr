@@ -27,6 +27,8 @@ import {
   Loader2,
   Users,
   QrCode,
+  Crown,
+  TrendingUp,
 } from "lucide-react";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -255,6 +257,44 @@ export default function OrganizerAccess() {
               </div>
             ))}
           </div>
+
+          {/* Série temporal 7 dias (Pro) */}
+          {accessStats?.daily && accessStats.daily.length > 0 ? (
+            <div className="bg-card border border-border/30 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Ingressos — últimos 7 dias</span>
+              </div>
+              <div className="flex items-end gap-1 h-16">
+                {accessStats.daily.map((d) => {
+                  const maxCount = Math.max(...accessStats.daily!.map((x) => x.count), 1);
+                  const heightPct = Math.max((d.count / maxCount) * 100, d.count > 0 ? 8 : 2);
+                  const dayLabel = new Date(d.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "short" });
+                  return (
+                    <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
+                      <div
+                        className="w-full rounded-sm bg-primary/60 transition-all"
+                        style={{ height: `${heightPct}%` }}
+                        title={`${d.count} ingresso${d.count !== 1 ? "s" : ""} em ${d.date}`}
+                      />
+                      <span className="text-[10px] text-muted-foreground capitalize">{dayLabel.replace(".", "")}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total no período: <strong>{accessStats.daily.reduce((s, d) => s + d.count, 0)} ingressos</strong>
+              </p>
+            </div>
+          ) : pool?.plan !== "pro" ? (
+            <div className="bg-card border border-border/30 rounded-xl p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Gráfico de ingressos por dia disponível no Plano Pro</p>
+              </div>
+              <Crown className="w-4 h-4 text-primary shrink-0" />
+            </div>
+          ) : null}
         </div>
       </div>
 

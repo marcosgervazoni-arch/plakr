@@ -1,7 +1,7 @@
 /**
  * OrganizerLayout — Layout com sidebar fixa para todas as telas do Organizador (O2–O6)
- * Especificação: sidebar 240px fixa à esquerda, conteúdo principal à direita.
- * Em mobile: sidebar colapsa em menu hambúrguer.
+ * C1: Sidebar reorganizada com grupos colapsáveis para melhor navegação.
+ * Grupos: Visão Geral / Participantes / Configuração / Financeiro
  */
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import {
   Trophy,
   Settings2,
   ChevronLeft,
+  ChevronDown,
+  ChevronRight,
   Menu,
   X,
   Crown,
@@ -35,6 +37,19 @@ export type OrganizerSection =
   | "communication"
   | "tournament"
   | "plan";
+
+interface NavItem {
+  id: OrganizerSection;
+  label: string;
+  icon: React.ElementType;
+  proOnly?: boolean;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+  defaultOpen?: boolean;
+}
 
 interface OrganizerLayoutProps {
   slug: string;
@@ -64,27 +79,32 @@ export default function OrganizerLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [, navigate] = useLocation();
 
+  // Grupos colapsáveis — inicializa com o grupo ativo aberto
+  const getInitialOpenGroups = (): Record<string, boolean> => {
+    const participantsItems: OrganizerSection[] = ["members", "access", "communication"];
+    const configItems: OrganizerSection[] = ["identity", "rules", "games", "tournament"];
+    return {
+      overview: true,
+      participants: participantsItems.includes(activeSection),
+      config: configItems.includes(activeSection),
+      financial: activeSection === "plan",
+    };
+  };
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(getInitialOpenGroups);
+
+  const toggleGroup = (key: string) => {
+    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   // Guard: if slug is empty (malformed URL), redirect to dashboard
   useEffect(() => {
-    if (!slug) {
-      navigate("/dashboard");
-    }
+    if (!slug) navigate("/dashboard");
   }, [slug, navigate]);
 
   if (!slug) return null;
-  const statusConfig = STATUS_LABELS[poolStatus] ?? STATUS_LABELS.active;
 
-  const navItems: { id: OrganizerSection; label: string; icon: React.ElementType; proOnly?: boolean }[] = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "members", label: "Membros", icon: Users },
-    { id: "access", label: "Controle de Acesso", icon: Link2 },
-    { id: "identity", label: "Identidade Visual", icon: Palette },
-    { id: "rules", label: "Regras de Pontuação", icon: Settings2 },
-    { id: "games", label: "Jogos e Resultados", icon: ClipboardList, proOnly: true },
-    { id: "communication", label: "Comunicação", icon: MessageSquare, proOnly: true },
-    { id: "tournament", label: "Campeonato", icon: Trophy, proOnly: true },
-    { id: "plan", label: "Plano e Assinatura", icon: Crown },
-  ];
+  const statusConfig = STATUS_LABELS[poolStatus] ?? STATUS_LABELS.active;
 
   const sectionPaths: Record<OrganizerSection, string> = {
     dashboard: `/pool/${slug}/manage`,
@@ -96,6 +116,66 @@ export default function OrganizerLayout({
     communication: `/pool/${slug}/manage/communication`,
     tournament: `/pool/${slug}/manage/tournament`,
     plan: `/pool/${slug}/manage/plan`,
+  };
+
+  const navGroups: NavGroup[] = [
+    {
+      label: "Visão Geral",
+      items: [
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+      ],
+      defaultOpen: true,
+    },
+    {
+      label: "Participantes",
+      items: [
+        { id: "members", label: "Membros", icon: Users },
+        { id: "access", label: "Controle de Acesso", icon: Link2 },
+        { id: "communication", label: "Comunicação", icon: MessageSquare, proOnly: true },
+      ],
+    },
+    {
+      label: "Configuração",
+      items: [
+        { id: "identity", label: "Identidade Visual", icon: Palette },
+        { id: "rules", label: "Regras de Pontuação", icon: Settings2 },
+        { id: "games", label: "Jogos e Resultados", icon: ClipboardList, proOnly: true },
+        { id: "tournament", label: "Campeonato", icon: Trophy, proOnly: true },
+      ],
+    },
+    {
+      label: "Financeiro",
+      items: [
+        { id: "plan", label: "Plano e Assinatura", icon: Crown },
+      ],
+    },
+  ];
+
+  const groupKeys = ["overview", "participants", "config", "financial"];
+
+  const NavItemButton = ({ item }: { item: NavItem }) => {
+    const isActive = activeSection === item.id;
+    const isLocked = item.proOnly && !isPro;
+    const isReadOnly = item.proOnly && isPro && isProExpired;
+
+    return (
+      <Link key={item.id} href={sectionPaths[item.id]}>
+        <button
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left",
+            isActive
+              ? "bg-primary/10 text-primary font-medium"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+          onClick={() => setSidebarOpen(false)}
+        >
+          <item.icon className="w-4 h-4 shrink-0" />
+          <span className="flex-1 truncate">{item.label}</span>
+          {isLocked && <Lock className="w-3 h-3 text-muted-foreground/50 shrink-0" />}
+          {isReadOnly && <Lock className="w-3 h-3 text-yellow-400/70 shrink-0" />}
+        </button>
+      </Link>
+    );
   };
 
   const SidebarContent = () => (
@@ -129,30 +209,45 @@ export default function OrganizerLayout({
         </div>
       </div>
 
-      {/* Nav items */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = activeSection === item.id;
-          const isLocked = item.proOnly && !isPro;
-          const isReadOnly = item.proOnly && isPro && isProExpired;
+      {/* Nav groups */}
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {navGroups.map((group, idx) => {
+          const key = groupKeys[idx];
+          const isOpen = openGroups[key];
+          const hasActiveItem = group.items.some((i) => i.id === activeSection);
 
           return (
-            <Link key={item.id} href={sectionPaths[item.id]}>
-              <button
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
-                  isActive
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                )}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <item.icon className="w-4 h-4 shrink-0" />
-                <span className="flex-1 truncate">{item.label}</span>
-                {isLocked && <Lock className="w-3 h-3 text-muted-foreground/50 shrink-0" />}
-                {isReadOnly && <Lock className="w-3 h-3 text-yellow-400/70 shrink-0" />}
-              </button>
-            </Link>
+            <div key={key}>
+              {/* Group header — "Visão Geral" não tem toggle, sempre visível */}
+              {group.items.length === 1 && group.label === "Visão Geral" ? (
+                <NavItemButton item={group.items[0]} />
+              ) : (
+                <>
+                  <button
+                    onClick={() => toggleGroup(key)}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors",
+                      hasActiveItem
+                        ? "text-primary"
+                        : "text-muted-foreground/60 hover:text-muted-foreground"
+                    )}
+                  >
+                    <span className="flex-1 text-left">{group.label}</span>
+                    {isOpen
+                      ? <ChevronDown className="w-3 h-3 shrink-0" />
+                      : <ChevronRight className="w-3 h-3 shrink-0" />
+                    }
+                  </button>
+                  {isOpen && (
+                    <div className="mt-0.5 space-y-0.5 pl-1">
+                      {group.items.map((item) => (
+                        <NavItemButton key={item.id} item={item} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           );
         })}
       </nav>

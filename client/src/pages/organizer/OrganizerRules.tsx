@@ -27,6 +27,7 @@ import {
   Crosshair,
   Flame,
   Shuffle,
+  Clock,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { useState, useEffect } from "react";
@@ -281,6 +282,8 @@ export default function OrganizerRules() {
 
   const [form, setForm] = useState<Record<string, number | boolean>>({});
 
+  const [deadlineMinutes, setDeadlineMinutes] = useState<number>(60);
+
   useEffect(() => {
     if (rules) {
       setForm({
@@ -296,6 +299,7 @@ export default function OrganizerRules() {
         zebraEnabled:        rules.zebraEnabled        ?? true,
         zebraCountDraw:      rules.zebraCountDraw      ?? false,
       });
+      setDeadlineMinutes(rules.bettingDeadlineMinutes ?? 60);
     }
   }, [rules]);
 
@@ -319,17 +323,18 @@ export default function OrganizerRules() {
     if (!pool?.id) return;
     updateRulesMutation.mutate({
       poolId: pool.id,
-      exactScorePoints:    Number(form.exactScorePoints),
-      correctResultPoints: Number(form.correctResultPoints),
-      totalGoalsPoints:    Number(form.totalGoalsPoints),
-      goalDiffPoints:      Number(form.goalDiffPoints),
-      oneTeamGoalsPoints:  Number(form.oneTeamGoalsPoints),
-      landslidePoints:     Number(form.landslidePoints),
-      landslideMinDiff:    Number(form.landslideMinDiff),
-      zebraPoints:         Number(form.zebraPoints),
-      zebraThreshold:      Number(form.zebraThreshold),
-      zebraEnabled:        Boolean(form.zebraEnabled),
-      zebraCountDraw:      Boolean(form.zebraCountDraw),
+      exactScorePoints:       Number(form.exactScorePoints),
+      correctResultPoints:    Number(form.correctResultPoints),
+      totalGoalsPoints:       Number(form.totalGoalsPoints),
+      goalDiffPoints:         Number(form.goalDiffPoints),
+      oneTeamGoalsPoints:     Number(form.oneTeamGoalsPoints),
+      landslidePoints:        Number(form.landslidePoints),
+      landslideMinDiff:       Number(form.landslideMinDiff),
+      zebraPoints:            Number(form.zebraPoints),
+      zebraThreshold:         Number(form.zebraThreshold),
+      zebraEnabled:           Boolean(form.zebraEnabled),
+      zebraCountDraw:         Boolean(form.zebraCountDraw),
+      bettingDeadlineMinutes: deadlineMinutes,
     });
   };
 
@@ -479,6 +484,57 @@ export default function OrganizerRules() {
             </Button>
           </div>
         )}
+
+        {/* Prazo de encerramento de palpites (Pro) */}
+        <div className="bg-card border border-border/30 rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/20 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-sm">Prazo de Encerramento dos Palpites</h3>
+            {!isPro && (
+              <Badge className="text-xs py-0 px-1.5 bg-primary/10 text-primary border-primary/20 ml-auto">
+                <Crown className="w-2.5 h-2.5 mr-1" /> Pro
+              </Badge>
+            )}
+          </div>
+          <div className="p-4 space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Define quantos minutos antes do início de cada jogo os palpites são encerrados automaticamente.
+            </p>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <input
+                  type="range"
+                  min={0}
+                  max={120}
+                  step={5}
+                  value={deadlineMinutes}
+                  disabled={!canEdit}
+                  onChange={(e) => setDeadlineMinutes(Number(e.target.value))}
+                  className="w-full accent-primary disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>0 min (até o apito)</span>
+                  <span>120 min (2h antes)</span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p
+                  className="font-bold text-2xl text-primary"
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                >
+                  {deadlineMinutes}
+                </p>
+                <p className="text-xs text-muted-foreground">minutos</p>
+              </div>
+            </div>
+            {deadlineMinutes === 0 && (
+              <p className="text-xs text-yellow-400 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Palpites aceitos até o apito inicial — sem prazo de corte.
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Upgrade para Pro */}
         {!isPro && (

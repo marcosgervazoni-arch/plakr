@@ -1984,7 +1984,39 @@ export const appRouter = router({
           bySource[src] = Number(r.count);
         }
         const total = Object.values(bySource).reduce((a, b) => a + b, 0);
-        return { bySource, total };
+
+        // Série temporal dos últimos 7 dias (Pro)
+        const pool = await getPoolById(input.poolId);
+        const isPro = pool?.plan === "pro";
+        let daily: { date: string; count: number }[] = [];
+        if (isPro) {
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+          sevenDaysAgo.setHours(0, 0, 0, 0);
+          const dailyRows = await db
+            .select({
+              day: sqlFn<string>`DATE(${poolMembers.joinedAt})`.as("day"),
+              count: sqlFn<number>`COUNT(*)`.as("count"),
+            })
+            .from(poolMembers)
+            .where(and(
+              eq(poolMembers.poolId, input.poolId),
+              gte(poolMembers.joinedAt, sevenDaysAgo)
+            ))
+            .groupBy(sqlFn`DATE(${poolMembers.joinedAt})`);
+          const dailyMap: Record<string, number> = {};
+          for (const r of dailyRows) {
+            dailyMap[r.day as string] = Number(r.count);
+          }
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().slice(0, 10);
+            daily.push({ date: key, count: dailyMap[key] ?? 0 });
+          }
+        }
+
+        return { bySource, total, daily };
       }),
 
     // Regenerar código/link de acesso do bolão
