@@ -525,3 +525,11 @@
 - [x] Backend: incluir totalGames, finishedGames e nextMatchDate na procedure listPublic
 - [x] Frontend: badge "Aguardando início" quando nenhum jogo foi realizado
 - [x] Frontend: barra de progresso com percentual de conclusão quando o bolão já iniciou
+
+## Redesign Digital-First da Página do Bolão (24/03/2026)
+- [x] Hero com gradiente, logo, nome, campeonato e pontuação do usuário em destaque
+- [x] Navegação por abas redesenhada com indicador expressivo
+- [x] Cards de jogos em layout 3 colunas (Time A | Palpite | Time B)
+- [x] Ranking com pódio visual para os 3 primeiros
+- [x] Aba Membros compacta com avatar e nome clicável
+- [x] Menu de ações contextuais (Meus Palpites, Chaveamento, Regulamento)

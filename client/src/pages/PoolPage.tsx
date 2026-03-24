@@ -1,19 +1,33 @@
+/**
+ * Página do Bolão — redesign digital-first
+ *
+ * Estrutura:
+ * 1. Header sticky compacto (voltar, nome, ações)
+ * 2. Hero com gradiente — identidade do bolão + stats do usuário
+ * 3. Abas: Jogos | Ranking | Membros
+ *    - Jogos: card 3 colunas (Time A | Palpite | Time B)
+ *    - Ranking: pódio visual top-3 + lista compacta
+ *    - Membros: lista com avatar e nome clicável
+ */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   ArrowLeft,
   Calendar,
   Check,
   Copy,
+  Crown,
+  ExternalLink,
   Loader2,
   Lock,
+  Medal,
+  MoreHorizontal,
   Settings,
   Trophy,
   Users,
@@ -24,6 +38,12 @@ import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { AdBanner } from "@/components/AdBanner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function PoolPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -59,33 +79,33 @@ export default function PoolPage() {
     onError: (err) => toast.error("Erro ao registrar palpite", { description: err.message }),
   });
 
+  /* ── Loading ── */
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl bg-muted animate-pulse" />
-            <div className="space-y-2">
-              <div className="h-6 w-48 bg-muted rounded animate-pulse" />
-              <div className="h-4 w-32 bg-muted rounded animate-pulse" />
-            </div>
+        <div className="h-14 border-b border-border/40 bg-background/80 flex items-center px-4 gap-3">
+          <div className="w-8 h-8 rounded-lg bg-muted animate-pulse" />
+          <div className="space-y-1.5">
+            <div className="h-4 w-36 bg-muted rounded animate-pulse" />
+            <div className="h-3 w-24 bg-muted rounded animate-pulse" />
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            {[0,1,2].map(i => <div key={i} className="h-20 bg-muted rounded-xl animate-pulse" />)}
-          </div>
-          <div className="space-y-3">
-            {[0,1,2,3].map(i => <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />)}
-          </div>
+        </div>
+        <div className="h-40 bg-muted/30 animate-pulse" />
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-24 bg-muted rounded-xl animate-pulse" />
+          ))}
         </div>
       </div>
     );
   }
 
+  /* ── Error ── */
   if (error || !data) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4">
-        <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-          <Trophy className="w-7 h-7 text-red-400" />
+        <div className="w-14 h-14 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center">
+          <Trophy className="w-7 h-7 text-destructive" />
         </div>
         <div className="text-center">
           <h3 className="font-semibold text-base mb-1">Bolão não encontrado</h3>
@@ -102,8 +122,13 @@ export default function PoolPage() {
 
   const { pool, tournament, games, rules, memberCount, myRole } = data;
   const isOrganizer = myRole === "organizer" || user?.role === "admin";
-
   const betsByGame = new Map(myBets?.map((b) => [b.gameId, b]) ?? []);
+  const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
+
+  const isGameOpen = (matchDate: Date) => {
+    const deadline = new Date(new Date(matchDate).getTime() - deadlineMinutes * 60 * 1000);
+    return new Date() < deadline;
+  };
 
   const handleBetSubmit = (gameId: number) => {
     const input = betInputs[gameId];
@@ -114,125 +139,233 @@ export default function PoolPage() {
     placeBet.mutate({ poolId: pool.id, gameId, predictedScoreA: a, predictedScoreB: b });
   };
 
-  const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
-
-  const isGameOpen = (matchDate: Date) => {
-    const deadline = new Date(matchDate.getTime() - deadlineMinutes * 60 * 1000);
-    return new Date() < deadline;
-  };
-
   const copyInviteLink = () => {
     const link = `${window.location.origin}/join/${pool.inviteToken}`;
     navigator.clipboard.writeText(link);
     toast.success("Link copiado!");
   };
 
+  /* Stats para o hero */
+  const finishedGames = games.filter((g) => g.status === "finished").length;
+  const scheduledGames = games.filter((g) => g.status === "scheduled").length;
+  const liveGames = games.filter((g) => g.status === "live").length;
+  const totalGames = games.length;
+  const progressPct = totalGames > 0 ? Math.round((finishedGames / totalGames) * 100) : 0;
+
+  /* Posição do usuário no ranking (carregada junto com a aba ranking) */
+  const myRankEntry = ranking?.find((r) => r.user.id === user?.id);
+  const myPosition = myRankEntry ? ranking!.indexOf(myRankEntry) + 1 : null;
+  const myPoints = myRankEntry?.stats.totalPoints ?? null;
+
+  /* Próximo jogo */
+  const nextGame = games
+    .filter((g) => g.status === "scheduled")
+    .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())[0];
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+
+      {/* ── Header sticky ── */}
+      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-md">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
             <Link href="/dashboard">
-              <Button variant="ghost" size="icon" className="w-8 h-8">
+              <Button variant="ghost" size="icon" className="w-8 h-8 shrink-0">
                 <ArrowLeft className="w-4 h-4" />
               </Button>
             </Link>
             <div className="min-w-0">
-              <h1 className="font-semibold text-sm truncate">{pool.name}</h1>
-              <p className="text-xs text-muted-foreground truncate">{tournament?.name}</p>
+              <p className="font-semibold text-sm leading-tight truncate">{pool.name}</p>
+              {tournament?.name && (
+                <p className="text-xs text-muted-foreground truncate">{tournament.name}</p>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className={pool.plan === "pro" ? "border-brand-500/40 text-brand-400" : ""}>
-              {pool.plan === "pro" ? "Pro" : "Free"}
-            </Badge>
-            <NotificationBell />
-            {isOrganizer && (
-              <Link href={`/pool/${slug}/settings`}>
-                <Button variant="ghost" size="icon" className="w-8 h-8">
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </Link>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {pool.plan === "pro" && (
+              <Badge className="bg-primary/10 text-primary border-primary/20 text-xs gap-1 py-0">
+                <Crown className="w-2.5 h-2.5" /> Pro
+              </Badge>
             )}
+            <NotificationBell />
+            {/* Menu de ações */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="w-8 h-8">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href={`/pool/${slug}/history`} className="flex items-center gap-2 cursor-pointer">
+                    <Trophy className="w-3.5 h-3.5" /> Meus Palpites
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/pool/${slug}/bracket`} className="flex items-center gap-2 cursor-pointer">
+                    <Medal className="w-3.5 h-3.5" /> Chaveamento
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/pool/${slug}/rules`} className="flex items-center gap-2 cursor-pointer">
+                    <Lock className="w-3.5 h-3.5" /> Regulamento
+                  </Link>
+                </DropdownMenuItem>
+                {isOrganizer && (
+                  <DropdownMenuItem asChild>
+                    <Link href={`/pool/${slug}/manage`} className="flex items-center gap-2 cursor-pointer">
+                      <Settings className="w-3.5 h-3.5" /> Gerenciar bolão
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6">
-        {/* Invite Banner */}
-        {isOrganizer && (
-          <Card className="bg-brand-500/5 border-brand-500/20 mb-6">
-            <CardContent className="py-3 px-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium">Link de convite</p>
-                <p className="text-xs text-muted-foreground truncate max-w-xs">
-                  {`${window.location.origin}/join/${pool.inviteToken}`}
-                </p>
-              </div>
-              <Button size="sm" variant="outline" onClick={copyInviteLink} className="shrink-0">
-                <Copy className="w-3 h-3 mr-2" /> Copiar link
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <Card className="bg-card border-border/50">
-            <CardContent className="p-3 text-center">
-              <p className="text-2xl font-bold">{memberCount}</p>
-              <p className="text-xs text-muted-foreground">Participantes</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border/50">
-            <CardContent className="p-3 text-center">
-              <p className="text-2xl font-bold">{games.filter((g) => g.status === "finished").length}</p>
-              <p className="text-xs text-muted-foreground">Jogos encerrados</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border/50">
-            <CardContent className="p-3 text-center">
-              <p className="text-2xl font-bold">{games.filter((g) => g.status === "scheduled").length}</p>
-              <p className="text-xs text-muted-foreground">Próximos jogos</p>
-            </CardContent>
-          </Card>
+      {/* ── Hero ── */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary/20 via-primary/8 to-background border-b border-border/30">
+        {/* Fundo decorativo */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute -bottom-8 -left-8 w-48 h-48 rounded-full bg-primary/5 blur-2xl" />
         </div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
-            <TabsList className="bg-card border border-border/50">
-              <TabsTrigger value="games">Jogos & Palpites</TabsTrigger>
-              <TabsTrigger value="ranking">Ranking</TabsTrigger>
-              <TabsTrigger value="members">Membros</TabsTrigger>
-            </TabsList>
-            <div className="flex items-center gap-2">
-              <Link href={`/pool/${slug}/history`}>
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                  <Trophy className="w-3.5 h-3.5" /> Meus Palpites
-                </Button>
-              </Link>
-              <Link href={`/pool/${slug}/bracket`}>
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                  <Trophy className="w-3.5 h-3.5" /> Chaveamento
-                </Button>
-              </Link>
-              <Link href={`/pool/${slug}/rules`}>
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                  <Lock className="w-3.5 h-3.5" /> Regulamento
-                </Button>
-              </Link>
+        <div className="relative max-w-2xl mx-auto px-4 py-5">
+          <div className="flex items-start gap-4">
+            {/* Logo */}
+            <div className="w-16 h-16 rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
+              {pool.logoUrl ? (
+                <img src={pool.logoUrl} alt={pool.name} className="w-full h-full object-cover" />
+              ) : (
+                <Trophy className="w-8 h-8 text-primary" />
+              )}
+            </div>
+
+            {/* Info principal */}
+            <div className="flex-1 min-w-0">
+              <h1 className="font-bold text-lg leading-tight truncate" style={{ fontFamily: "'Syne', sans-serif" }}>
+                {pool.name}
+              </h1>
+              {tournament?.name && (
+                <p className="text-sm text-muted-foreground mt-0.5">{tournament.name}</p>
+              )}
+
+              {/* Status do campeonato */}
+              <div className="mt-2">
+                {liveGames > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                    {liveGames} jogo{liveGames > 1 ? "s" : ""} ao vivo
+                  </span>
+                ) : finishedGames === 0 && totalGames > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <Calendar className="w-3 h-3" />
+                    {nextGame
+                      ? `Começa ${formatDistanceToNow(new Date(nextGame.matchDate), { locale: ptBR, addSuffix: true })}`
+                      : "Aguardando início"}
+                  </span>
+                ) : finishedGames >= totalGames && totalGames > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-muted/60 text-muted-foreground border border-border/40">
+                    Campeonato encerrado
+                  </span>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Progresso</span>
+                      <span className="text-xs font-mono font-semibold text-primary">{progressPct}%</span>
+                    </div>
+                    <div className="h-1.5 w-full max-w-[180px] rounded-full bg-muted/50 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-700"
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* GAMES TAB */}
-          <TabsContent value="games" className="space-y-3">
-            {/* Ad top of games section */}
+          {/* Stats row */}
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {/* Minha posição */}
+            <div className="bg-background/60 backdrop-blur-sm border border-border/40 rounded-xl p-3 text-center">
+              {myPosition !== null ? (
+                <>
+                  <p className="text-2xl font-bold text-primary font-mono leading-none">#{myPosition}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Minha posição</p>
+                  {myPoints !== null && (
+                    <p className="text-xs font-semibold text-primary mt-0.5">{myPoints} pts</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl font-bold text-muted-foreground font-mono leading-none">—</p>
+                  <p className="text-xs text-muted-foreground mt-1">Minha posição</p>
+                </>
+              )}
+            </div>
+
+            {/* Participantes */}
+            <div className="bg-background/60 backdrop-blur-sm border border-border/40 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold font-mono leading-none">{memberCount}</p>
+              <p className="text-xs text-muted-foreground mt-1">Participantes</p>
+            </div>
+
+            {/* Jogos */}
+            <div className="bg-background/60 backdrop-blur-sm border border-border/40 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold font-mono leading-none">
+                {scheduledGames > 0 ? scheduledGames : finishedGames}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {scheduledGames > 0 ? "Próximos" : "Encerrados"}
+              </p>
+            </div>
+          </div>
+
+          {/* Invite banner para organizador */}
+          {isOrganizer && (
+            <div className="mt-3 flex items-center justify-between gap-3 bg-background/50 border border-primary/20 rounded-xl px-3 py-2.5">
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-primary">Link de convite</p>
+                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                  {`${window.location.origin}/join/${pool.inviteToken}`}
+                </p>
+              </div>
+              <Button size="sm" variant="outline" onClick={copyInviteLink} className="shrink-0 h-7 text-xs gap-1.5">
+                <Copy className="w-3 h-3" /> Copiar
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Conteúdo principal ── */}
+      <main className="max-w-2xl mx-auto px-4 py-5">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          {/* Abas */}
+          <TabsList className="w-full bg-card border border-border/50 mb-5 h-10">
+            <TabsTrigger value="games" className="flex-1 text-sm gap-1.5">
+              <Calendar className="w-3.5 h-3.5" /> Jogos
+            </TabsTrigger>
+            <TabsTrigger value="ranking" className="flex-1 text-sm gap-1.5">
+              <Trophy className="w-3.5 h-3.5" /> Ranking
+            </TabsTrigger>
+            <TabsTrigger value="members" className="flex-1 text-sm gap-1.5">
+              <Users className="w-3.5 h-3.5" /> Membros
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ══ ABA JOGOS ══ */}
+          <TabsContent value="games" className="space-y-3 mt-0">
             <AdBanner position="top" className="w-full" />
+
             {games.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Calendar className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <div className="text-center py-16 text-muted-foreground">
+                <Calendar className="w-10 h-10 mx-auto mb-3 opacity-20" />
                 <p className="text-sm">Nenhum jogo cadastrado ainda.</p>
               </div>
             ) : (
@@ -240,49 +373,75 @@ export default function PoolPage() {
                 const myBet = betsByGame.get(game.id);
                 const open = isGameOpen(game.matchDate);
                 const finished = game.status === "finished";
+                const live = game.status === "live";
                 const betA = betInputs[game.id]?.a ?? (myBet ? String(myBet.predictedScoreA) : "");
                 const betB = betInputs[game.id]?.b ?? (myBet ? String(myBet.predictedScoreB) : "");
+                const hasBet = !!myBet;
 
                 return (
-                  <Card key={game.id} className={`bg-card border-border/50 ${finished ? "opacity-80" : ""}`}>
-                    <CardContent className="p-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        {/* Game info */}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge
-                              variant="outline"
-                              className={`text-xs ${
-                                finished
-                                  ? "border-green-500/40 text-green-400"
-                                  : game.status === "live"
-                                  ? "border-red-500/40 text-red-400 animate-pulse"
-                                  : "border-border/50"
-                              }`}
-                            >
-                              {finished ? "Encerrado" : game.status === "live" ? "Ao vivo" : "Agendado"}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">{game.phase}</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="font-semibold text-sm">{game.teamAName}</span>
-                            <span className="text-muted-foreground text-xs">vs</span>
-                            <span className="font-semibold text-sm">{game.teamBName}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(game.matchDate), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </p>
-                          {finished && game.scoreA !== null && game.scoreB !== null && (
-                            <p className="text-sm font-bold text-brand-400 mt-1">
-                              Resultado: {game.scoreA} × {game.scoreB}
-                            </p>
+                  <div
+                    key={game.id}
+                    className={`rounded-xl border overflow-hidden transition-all ${
+                      live
+                        ? "border-red-500/30 bg-red-500/5"
+                        : finished
+                        ? "border-border/30 bg-card/60"
+                        : "border-border/40 bg-card"
+                    }`}
+                  >
+                    {/* Topo do card: fase + data + status */}
+                    <div className={`px-4 py-2 flex items-center justify-between border-b ${
+                      live ? "border-red-500/20 bg-red-500/10" : "border-border/30 bg-muted/20"
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        {live && (
+                          <span className="flex items-center gap-1 text-xs font-semibold text-red-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                            AO VIVO
+                          </span>
+                        )}
+                        {finished && (
+                          <span className="text-xs font-medium text-green-400">Encerrado</span>
+                        )}
+                        {!live && !finished && (
+                          <span className="text-xs text-muted-foreground">
+                            {open ? "Aberto para palpites" : "Prazo encerrado"}
+                          </span>
+                        )}
+                        {game.phase && (
+                          <span className="text-xs text-muted-foreground/60">· {game.phase}</span>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(game.matchDate), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                      </span>
+                    </div>
+
+                    {/* Corpo: Time A | Placar/Palpite | Time B */}
+                    <div className="px-4 py-4">
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+
+                        {/* Time A */}
+                        <div className="text-right">
+                          {game.teamAFlag && (
+                            <img src={game.teamAFlag} alt="" className="w-8 h-8 object-contain ml-auto mb-1" />
+                          )}
+                          <p className="font-bold text-sm leading-tight">{game.teamAName ?? "Time A"}</p>
+                          {finished && game.scoreA !== null && (
+                            <p className="text-2xl font-black text-foreground font-mono mt-1">{game.scoreA}</p>
                           )}
                         </div>
 
-                        {/* Bet input */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        {/* Centro: palpite ou resultado */}
+                        <div className="flex flex-col items-center gap-2 min-w-[100px]">
+                          {/* Resultado real (encerrado) */}
+                          {finished && game.scoreA !== null && game.scoreB !== null && (
+                            <div className="text-xs text-muted-foreground font-medium">Resultado</div>
+                          )}
+
+                          {/* Palpite do usuário ou inputs */}
                           {open && !finished ? (
-                            <>
+                            <div className="flex items-center gap-1.5">
                               <Input
                                 type="number"
                                 min={0}
@@ -295,9 +454,9 @@ export default function PoolPage() {
                                     [game.id]: { a: e.target.value, b: prev[game.id]?.b ?? betB },
                                   }))
                                 }
-                                className="w-14 text-center h-9 text-sm"
+                                className="w-12 text-center h-10 text-base font-bold p-0"
                               />
-                              <span className="text-muted-foreground text-sm font-bold">×</span>
+                              <span className="text-muted-foreground font-bold text-sm">×</span>
                               <Input
                                 type="number"
                                 min={0}
@@ -310,138 +469,252 @@ export default function PoolPage() {
                                     [game.id]: { a: prev[game.id]?.a ?? betA, b: e.target.value },
                                   }))
                                 }
-                                className="w-14 text-center h-9 text-sm"
+                                className="w-12 text-center h-10 text-base font-bold p-0"
                               />
-                              <Button
-                                size="sm"
-                                className="bg-brand-600 hover:bg-brand-700 text-white h-9"
-                                onClick={() => handleBetSubmit(game.id)}
-                                disabled={placeBet.isPending}
-                              >
-                                {myBet ? <Check className="w-4 h-4" /> : "Apostar"}
-                              </Button>
-                            </>
-                          ) : (
-                            <div className="text-center">
-                              {myBet ? (
-                                <div className="text-sm">
-                                  <span className="font-semibold text-brand-400">
-                                    {myBet.predictedScoreA} × {myBet.predictedScoreB}
-                                  </span>
-                                  {finished && (
-                                    <>
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        +{myBet.pointsEarned} pts
-                                      </p>
-                                      <BetBreakdownBadges bet={myBet} compact />
-                                    </>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Lock className="w-3 h-3" />
-                                  {finished ? "Sem palpite" : "Prazo encerrado"}
-                                </div>
-                              )}
                             </div>
+                          ) : hasBet ? (
+                            <div className="text-center">
+                              <p className="text-xs text-muted-foreground mb-1">Meu palpite</p>
+                              <p className="text-xl font-black text-primary font-mono">
+                                {myBet!.predictedScoreA} × {myBet!.predictedScoreB}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground/60">
+                              <Lock className="w-3 h-3" />
+                              {finished ? "Sem palpite" : "Encerrado"}
+                            </div>
+                          )}
+
+                          {/* Pontos ganhos */}
+                          {finished && hasBet && (
+                            <div className="text-center">
+                              <p className={`text-sm font-bold font-mono ${
+                                (myBet!.pointsEarned ?? 0) > 0 ? "text-primary" : "text-muted-foreground"
+                              }`}>
+                                +{myBet!.pointsEarned ?? 0} pts
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Botão apostar */}
+                          {open && !finished && (
+                            <Button
+                              size="sm"
+                              className="h-8 px-4 text-xs mt-1"
+                              onClick={() => handleBetSubmit(game.id)}
+                              disabled={placeBet.isPending}
+                            >
+                              {placeBet.isPending ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : hasBet ? (
+                                <><Check className="w-3 h-3 mr-1" /> Atualizar</>
+                              ) : (
+                                "Apostar"
+                              )}
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Time B */}
+                        <div className="text-left">
+                          {game.teamBFlag && (
+                            <img src={game.teamBFlag} alt="" className="w-8 h-8 object-contain mr-auto mb-1" />
+                          )}
+                          <p className="font-bold text-sm leading-tight">{game.teamBName ?? "Time B"}</p>
+                          {finished && game.scoreB !== null && (
+                            <p className="text-2xl font-black text-foreground font-mono mt-1">{game.scoreB}</p>
                           )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+
+                      {/* Badges de pontuação */}
+                      {finished && hasBet && (
+                        <div className="mt-3 flex justify-center">
+                          <BetBreakdownBadges bet={myBet!} compact />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 );
               })
             )}
           </TabsContent>
 
-          {/* RANKING TAB */}
-          <TabsContent value="ranking">
+          {/* ══ ABA RANKING ══ */}
+          <TabsContent value="ranking" className="mt-0">
             {rankingLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-brand-400" />
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : !ranking || ranking.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <div className="text-center py-16 text-muted-foreground">
+                <Trophy className="w-10 h-10 mx-auto mb-3 opacity-20" />
                 <p className="text-sm">Nenhuma pontuação registrada ainda.</p>
+                <p className="text-xs mt-1">Os pontos aparecem após os jogos serem encerrados.</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {ranking.map(({ stats, user: rankUser }, idx) => (
-                  <Card
-                    key={stats.id}
-                    className={`bg-card border-border/50 ${rankUser.id === user?.id ? "border-brand-500/40" : ""}`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                            idx === 0
-                              ? "bg-yellow-500/20 text-yellow-400"
-                              : idx === 1
-                              ? "bg-gray-400/20 text-gray-400"
-                              : idx === 2
-                              ? "bg-orange-500/20 text-orange-400"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
+              <div className="space-y-3">
+                {/* Pódio top-3 */}
+                {ranking.length >= 3 && (
+                  <div className="grid grid-cols-3 gap-2 mb-5">
+                    {/* 2º lugar */}
+                    <div className={`flex flex-col items-center gap-1.5 pt-6 pb-4 px-2 rounded-xl border ${
+                      ranking[1].user.id === user?.id
+                        ? "border-primary/40 bg-primary/5"
+                        : "border-border/30 bg-card/60"
+                    }`}>
+                      <div className="w-10 h-10 rounded-full bg-gray-400/20 border-2 border-gray-400/40 flex items-center justify-center text-sm font-bold text-gray-400">
+                        {ranking[1].user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                      </div>
+                      <Medal className="w-4 h-4 text-gray-400" />
+                      <a href={`/pool/${slug}/player/${ranking[1].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
+                        {ranking[1].user.name?.split(" ")[0]}
+                      </a>
+                      <p className="text-lg font-black font-mono text-gray-400">{ranking[1].stats.totalPoints}</p>
+                      <p className="text-xs text-muted-foreground">pts</p>
+                    </div>
+
+                    {/* 1º lugar */}
+                    <div className={`flex flex-col items-center gap-1.5 pb-4 px-2 rounded-xl border -mt-3 ${
+                      ranking[0].user.id === user?.id
+                        ? "border-primary/60 bg-primary/10"
+                        : "border-yellow-500/30 bg-yellow-500/5"
+                    }`}>
+                      <Crown className="w-5 h-5 text-yellow-400 mt-3" />
+                      <div className="w-12 h-12 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center text-base font-bold text-yellow-400">
+                        {ranking[0].user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                      </div>
+                      <a href={`/pool/${slug}/player/${ranking[0].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
+                        {ranking[0].user.name?.split(" ")[0]}
+                      </a>
+                      <p className="text-xl font-black font-mono text-yellow-400">{ranking[0].stats.totalPoints}</p>
+                      <p className="text-xs text-muted-foreground">pts</p>
+                    </div>
+
+                    {/* 3º lugar */}
+                    <div className={`flex flex-col items-center gap-1.5 pt-6 pb-4 px-2 rounded-xl border ${
+                      ranking[2].user.id === user?.id
+                        ? "border-primary/40 bg-primary/5"
+                        : "border-border/30 bg-card/60"
+                    }`}>
+                      <div className="w-10 h-10 rounded-full bg-orange-500/20 border-2 border-orange-500/40 flex items-center justify-center text-sm font-bold text-orange-400">
+                        {ranking[2].user.name?.charAt(0)?.toUpperCase() ?? "?"}
+                      </div>
+                      <Medal className="w-4 h-4 text-orange-400" />
+                      <a href={`/pool/${slug}/player/${ranking[2].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
+                        {ranking[2].user.name?.split(" ")[0]}
+                      </a>
+                      <p className="text-lg font-black font-mono text-orange-400">{ranking[2].stats.totalPoints}</p>
+                      <p className="text-xs text-muted-foreground">pts</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Lista completa */}
+                <div className="space-y-1.5">
+                  {ranking.map(({ stats, user: rankUser }, idx) => {
+                    const isMe = rankUser.id === user?.id;
+                    return (
+                      <div
+                        key={stats.id}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+                          isMe
+                            ? "border-primary/40 bg-primary/5"
+                            : "border-border/30 bg-card/60 hover:border-border/50"
+                        }`}
+                      >
+                        {/* Posição */}
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          idx === 0
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : idx === 1
+                            ? "bg-gray-400/20 text-gray-400"
+                            : idx === 2
+                            ? "bg-orange-500/20 text-orange-400"
+                            : "bg-muted text-muted-foreground"
+                        }`}>
                           {idx + 1}
                         </div>
+
+                        {/* Avatar */}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
+                          isMe ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                        }`}>
+                          {rankUser.name?.charAt(0)?.toUpperCase() ?? "?"}
+                        </div>
+
+                        {/* Nome + stats */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate">
-                            <a href={`/pool/${slug}/player/${rankUser.id}`} className="hover:text-primary transition-colors">
-                              {rankUser.name}
-                            </a>
-                            {rankUser.id === user?.id && (
-                              <span className="text-brand-400 text-xs ml-2">(você)</span>
-                            )}
-                          </p>
+                          <a
+                            href={`/pool/${slug}/player/${rankUser.id}`}
+                            className={`text-sm font-semibold truncate block hover:text-primary transition-colors ${isMe ? "text-primary" : ""}`}
+                          >
+                            {rankUser.name}
+                            {isMe && <span className="text-xs font-normal ml-1.5 opacity-70">(você)</span>}
+                          </a>
                           <p className="text-xs text-muted-foreground">
-                            {stats.exactScoreCount} exatos · {stats.correctResultCount} resultados
+                            {stats.exactScoreCount} 🎯 · {stats.correctResultCount} ✅ · {stats.totalBets} palpites
                           </p>
                         </div>
+
+                        {/* Pontos */}
                         <div className="text-right shrink-0">
-                          <p className="text-xl font-bold text-brand-400">{stats.totalPoints}</p>
-                          <p className="text-xs text-muted-foreground">pontos</p>
+                          <p className={`text-lg font-black font-mono ${isMe ? "text-primary" : "text-foreground"}`}>
+                            {stats.totalPoints}
+                          </p>
+                          <p className="text-xs text-muted-foreground">pts</p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </TabsContent>
 
-          {/* MEMBERS TAB */}
-          <TabsContent value="members">
+          {/* ══ ABA MEMBROS ══ */}
+          <TabsContent value="members" className="mt-0">
             {!members ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-brand-400" />
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {members.map(({ member, user: memberUser }) => (
-                  <Card key={member.id} className="bg-card border-border/50">
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-brand-500/10 flex items-center justify-center text-sm font-semibold text-brand-400">
-                          {memberUser.name?.charAt(0)?.toUpperCase() ?? "?"}
-                        </div>
-                        <div>
-                          <a href={`/pool/${slug}/player/${memberUser.id}`} className="text-sm font-medium hover:text-primary transition-colors">{memberUser.name}</a>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(member.joinedAt), "dd/MM/yyyy", { locale: ptBR })}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={member.role === "organizer" ? "border-brand-500/40 text-brand-400" : ""}
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/30 bg-card/60 hover:border-border/50 transition-all"
+                  >
+                    {/* Avatar */}
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
+                      member.role === "organizer"
+                        ? "bg-primary/15 text-primary"
+                        : "bg-muted text-muted-foreground"
+                    }`}>
+                      {memberUser.name?.charAt(0)?.toUpperCase() ?? "?"}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <a
+                        href={`/pool/${slug}/player/${memberUser.id}`}
+                        className="text-sm font-medium hover:text-primary transition-colors truncate block"
                       >
-                        {member.role === "organizer" ? "Organizador" : "Participante"}
+                        {memberUser.name}
+                      </a>
+                      <p className="text-xs text-muted-foreground">
+                        Entrou {format(new Date(member.joinedAt), "dd/MM/yyyy", { locale: ptBR })}
+                      </p>
+                    </div>
+
+                    {/* Role */}
+                    {member.role === "organizer" && (
+                      <Badge className="shrink-0 bg-primary/10 text-primary border-primary/20 text-xs gap-1 py-0">
+                        <Crown className="w-2.5 h-2.5" /> Organizador
                       </Badge>
-                    </CardContent>
-                  </Card>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
