@@ -1136,6 +1136,9 @@ export const appRouter = router({
             ownerName: usersTable.name,
             memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.\`poolId\` = ${poolsTable.id})`,
             isMember: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.\`poolId\` = ${poolsTable.id} AND pm.\`userId\` = ${userId})`,
+            totalGames: sql<number>`(SELECT COUNT(*) FROM games g WHERE g.\`tournamentId\` = ${poolsTable.tournamentId})`,
+            finishedGames: sql<number>`(SELECT COUNT(*) FROM games g WHERE g.\`tournamentId\` = ${poolsTable.tournamentId} AND g.\`status\` = 'finished')`,
+            nextMatchDate: sql<Date | null>`(SELECT MIN(g.\`matchDate\`) FROM games g WHERE g.\`tournamentId\` = ${poolsTable.tournamentId} AND g.\`status\` = 'scheduled')`,
           })
           .from(poolsTable)
           .leftJoin(tournaments, eq(poolsTable.tournamentId, tournaments.id))
@@ -1157,6 +1160,9 @@ export const appRouter = router({
             ownerName: r.ownerName ?? null,
             memberCount: Number(r.memberCount),
             isMember: Number(r.isMember) > 0,
+            totalGames: Number(r.totalGames),
+            finishedGames: Number(r.finishedGames),
+            nextMatchDate: r.nextMatchDate ?? null,
           })),
           total: rows.length,
         };

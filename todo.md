@@ -520,3 +520,8 @@
 - [x] Backend: incluir campo isMember na procedure listPublic para indicar se o usuário já participa do bolão
 - [x] Frontend: modal de confirmação antes de entrar (card com detalhes do bolão + botão confirmar)
 - [x] Frontend: indicador "Você já participa" nos cards onde o usuário já é membro (badge + link direto)
+
+## Indicadores de Status nos Cards de Bolões Públicos (24/03/2026)
+- [x] Backend: incluir totalGames, finishedGames e nextMatchDate na procedure listPublic
+- [x] Frontend: badge "Aguardando início" quando nenhum jogo foi realizado
+- [x] Frontend: barra de progresso com percentual de conclusão quando o bolão já iniciou
