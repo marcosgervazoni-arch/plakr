@@ -553,3 +553,19 @@
 - [x] [Design] Corrigir contraste do 2º lugar no pódio (gray-400 → slate-300)
 - [x] [CSO] Mascarar token de convite no hero com botão "Revelar"
 - [x] [QA] Fallback visual para imagem de time com erro (img onError)
+
+## Sistema de Badges Configuráveis
+
+- [x] [CTO] Adicionar tabelas `badges` e `user_badges` ao schema Drizzle
+- [x] [CTO] Gerar e aplicar migração SQL
+- [x] [Fullstack] Procedures CRUD de badges para admin (criar, editar, listar, ativar/desativar)
+- [x] [Fullstack] Endpoint de upload de SVG para S3
+- [x] [Fullstack] Função `calculateAndAssignBadges(userId)` no server/badges.ts
+- [x] [Fullstack] Verificação retroativa ao publicar badge com retroatividade ativada
+- [x] [Fullstack] Integrar motor de atribuição ao fluxo de pontuação pós-jogo
+- [x] [Fullstack] Adicionar campo `badges` ao retorno de `getPublicProfile`
+- [x] [Admin UI] Página de gestão de badges no painel admin (AdminBadges.tsx)
+- [x] [Admin UI] Formulário de criação/edição com upload SVG e preview
+- [x] [Design] Componente `BadgeGrid` com badges conquistados vibrantes e não conquistados transparentes
+- [x] [Frontend] Integrar BadgeGrid no perfil público `/profile/me`
+- [x] [QA] Testes unitários para calculateAndAssignBadges (badges.test.ts — 12 testes)

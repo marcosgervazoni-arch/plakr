@@ -1,0 +1,19 @@
+{
+  "query": "SHOW TABLES LIKE 'badges'; SHOW TABLES LIKE 'user_badges';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW TABLES LIKE 'badges'; SHOW TABLES LIKE 'user_badges';",
+  "rows": [
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW (badges)": "badges"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW (badges)": "Tables_in_dJv8mGehu4r2vn8N2SWpLW (user_badges)"
+    },
+    {
+      "Tables_in_dJv8mGehu4r2vn8N2SWpLW (badges)": "user_badges"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_dJv8mGehu4r2vn8N2SWpLW (badges)\nbadges\nTables_in_dJv8mGehu4r2vn8N2SWpLW (user_badges)\nuser_badges\n",
+  "stderr": "",
+  "execution_time_ms": 509
+}

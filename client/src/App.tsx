@@ -47,6 +47,7 @@ import AdminAds from "./pages/admin/AdminAds";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminAudit from "./pages/admin/AdminAudit";
 import AdminIntegrations from "./pages/admin/AdminIntegrations";
+import AdminBadges from "./pages/admin/AdminBadges";
 import { useAnalytics } from "./hooks/useAnalytics";
 
 function Router() {
@@ -98,6 +99,7 @@ function Router() {
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/audit" component={AdminAudit} />
       <Route path="/admin/integrations" component={AdminIntegrations} />
+      <Route path="/admin/badges" component={AdminBadges} />
       {/* Legacy admin panel */}
       <Route path="/admin-legacy" component={AdminPanel} />
 

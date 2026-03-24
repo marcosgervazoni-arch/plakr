@@ -61,6 +61,7 @@ import {
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { badgesRouter } from "./routers/badges";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { calculateBetScore, calculateZebraContext, type ScoringRules } from "./scoring";
 
@@ -107,6 +108,7 @@ function buildEffectiveRules(rules: Awaited<ReturnType<typeof getPoolScoringRule
 
 export const appRouter = router({
   system: systemRouter,
+  badges: badgesRouter,
 
   // ─── AUTH ──────────────────────────────────────────────────────────────────
   auth: router({
@@ -327,7 +329,7 @@ export const appRouter = router({
         const db = await (await import("./db")).getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
         const { eq, sql, desc } = await import("drizzle-orm");
-        const { users: usersT, poolMembers, poolMemberStats, pools: poolsT, userPlans } = await import("../drizzle/schema");
+        const { users: usersT, poolMembers, poolMemberStats, pools: poolsT, userPlans, badges: badgesT, userBadges } = await import("../drizzle/schema");
         const userRows = await db.select({
           id: usersT.id,
           name: usersT.name,
@@ -375,6 +377,23 @@ export const appRouter = router({
               : 0,
           },
           recentPools,
+          badges: await (async () => {
+            const allBadges = await db.select().from(badgesT).where(eq(badgesT.isActive, true));
+            const earned = await db.select({
+              badgeId: userBadges.badgeId,
+              earnedAt: userBadges.earnedAt,
+            }).from(userBadges).where(eq(userBadges.userId, input.userId));
+            const earnedMap = new Map(earned.map((e) => [e.badgeId, e.earnedAt]));
+            return allBadges.map((b) => ({
+              id: b.id,
+              name: b.name,
+              description: b.description,
+              iconUrl: b.iconUrl,
+              criterionType: b.criterionType,
+              criterionValue: b.criterionValue,
+              earnedAt: earnedMap.get(b.id) ?? null,
+            }));
+          })(),
         };
       }),
 
@@ -645,6 +664,12 @@ export const appRouter = router({
           const affectedUsers = Array.from(affectedUsersSet);
           for (const userId of affectedUsers) {
             await recalculateMemberStats(poolId, userId);
+            // Verificar badges desbloqueados após recálculo
+            import("./badges").then(({ calculateAndAssignBadges }) =>
+              calculateAndAssignBadges(userId).catch((e: unknown) =>
+                console.error("[Badges] Erro ao calcular badges:", e)
+              )
+            );
           }
         }
         return { success: true, affectedBets: allBets.length };
@@ -1486,6 +1511,12 @@ export const appRouter = router({
         const affectedUsers = Array.from(affectedUsersSet);
         for (const userId of affectedUsers) {
           await recalculateMemberStats(input.poolId, userId);
+          // Verificar badges desbloqueados após recálculo
+          import("./badges").then(({ calculateAndAssignBadges }) =>
+            calculateAndAssignBadges(userId).catch((e: unknown) =>
+              console.error("[Badges] Erro ao calcular badges:", e)
+            )
+          );
         }
         // Notificar membros que o resultado foi registrado
         const members = await getPoolMembers(input.poolId);

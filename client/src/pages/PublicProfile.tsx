@@ -1,16 +1,16 @@
 /**
  * Ficha Pública do Usuário — /profile/:userId
- * Exibe apenas dados de apresentação: avatar, nome, plano, membro desde e lista de bolões.
- * Métricas de desempenho são exibidas no perfil contextual /pool/:slug/player/:userId.
+ * Exibe dados de apresentação: avatar, nome, plano, membro desde, bolões e badges.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import AppShell from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import BadgeGrid from "@/components/BadgeGrid";
 import {
   Trophy, Crown, Loader2, AlertCircle, Calendar,
-  MessageCircle, Send, ExternalLink, Share2, TrendingUp,
+  MessageCircle, Send, ExternalLink, Share2, TrendingUp, Award,
 } from "lucide-react";
 import { useParams, Link } from "wouter";
 import { useEffect, useState } from "react";
@@ -70,10 +70,11 @@ export default function PublicProfile() {
     );
   }
 
-  const { user, plan, recentPools } = data;
+  const { user, plan, recentPools, badges } = data;
   const isPro = plan?.plan === "pro" && plan?.isActive;
   const isOwnProfile = isAuthenticated && currentUser?.id === resolvedId;
   const initials = user.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
+  const earnedBadgesCount = badges?.filter((b: any) => b.earnedAt).length ?? 0;
 
   return (
     <AppShell>
@@ -144,6 +145,11 @@ export default function PublicProfile() {
                 {isOwnProfile && (
                   <Badge variant="outline" className="text-xs text-muted-foreground">Você</Badge>
                 )}
+                {earnedBadgesCount > 0 && (
+                  <Badge variant="outline" className="text-xs gap-1 text-amber-500 border-amber-500/30">
+                    <Award className="w-3 h-3" /> {earnedBadgesCount} badge{earnedBadgesCount !== 1 ? "s" : ""}
+                  </Badge>
+                )}
               </div>
               {user.createdAt && (
                 <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
@@ -154,6 +160,19 @@ export default function PublicProfile() {
             </div>
           </div>
         </div>
+
+        {/* ── Badges / Conquistas ── */}
+        {badges && badges.length > 0 && (
+          <div className="bg-card border border-border/30 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Award className="w-4 h-4 text-amber-500" />
+              <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
+                Conquistas
+              </h3>
+            </div>
+            <BadgeGrid badges={badges} />
+          </div>
+        )}
 
         {/* ── Bolões que participa ── */}
         <div className="space-y-3">

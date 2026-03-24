@@ -520,6 +520,50 @@ export const notificationTemplates = mysqlTable("notification_templates", {
 
 export type NotificationTemplate = typeof notificationTemplates.$inferSelect;
 
+// ─── BADGES CONFIGURÁVEIS ───────────────────────────────────────────────────
+
+// Tipos de critério disponíveis para badges
+export const BADGE_CRITERION_TYPES = [
+  "exact_scores_career",       // Placares exatos na carreira >= N
+  "zebra_scores_career",       // Zebras acertadas na carreira >= N
+  "top3_pools",                // Top 3 em bolões >= N
+  "first_place_pools",         // 1º lugar em bolões >= N
+  "accuracy_in_pool",          // Taxa de acerto >= N% em um bolão completo (mín. 10 jogos)
+  "complete_pool_no_blank",    // Bolões completados sem jogo em branco >= N
+  "consecutive_correct",       // Sequência de acertos consecutivos >= N
+] as const;
+
+export type BadgeCriterionType = typeof BADGE_CRITERION_TYPES[number];
+
+export const badges = mysqlTable("badges", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description").notNull(),
+  iconUrl: text("iconUrl"),                          // URL S3 do SVG
+  criterionType: varchar("criterionType", { length: 64 }).notNull(), // BadgeCriterionType
+  criterionValue: int("criterionValue").notNull(),   // Valor mínimo para o critério
+  isRetroactive: boolean("isRetroactive").default(true).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdBy: int("createdBy").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Badge = typeof badges.$inferSelect;
+export type InsertBadge = typeof badges.$inferInsert;
+
+export const userBadges = mysqlTable("user_badges", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  badgeId: int("badgeId").notNull().references(() => badges.id, { onDelete: "cascade" }),
+  earnedAt: timestamp("earnedAt").defaultNow().notNull(),
+  notified: boolean("notified").default(false).notNull(), // se já enviou notificação
+}, (t) => ({
+  unique_user_badge: unique().on(t.userId, t.badgeId),
+}));
+
+export type UserBadge = typeof userBadges.$inferSelect;
+
 // ─── EXPORTS DE TIPOS ADICIONAIS ────────────────────────────────────────────
 export type InsertUserPlan = typeof userPlans.$inferInsert;
 export type InsertPool = typeof pools.$inferInsert;

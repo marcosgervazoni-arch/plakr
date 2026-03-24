@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
+  Award,
   BarChart3,
   Bell,
   BookOpen,
@@ -35,7 +36,8 @@ export type AdminSection =
   | "ads"
   | "settings"
   | "audit"
-  | "integrations";
+  | "integrations"
+  | "badges";
 
 interface NavItem {
   id: AdminSection;
@@ -75,6 +77,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Users,
     items: [
       { id: "users", label: "Usuários", icon: Users, path: "/admin/users" },
+      { id: "badges", label: "Badges", icon: Award, path: "/admin/badges" },
     ],
   },
   {
