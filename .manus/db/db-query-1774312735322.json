@@ -1,0 +1,730 @@
+{
+  "query": "\nSELECT TABLE_NAME, COLUMN_NAME \nFROM INFORMATION_SCHEMA.COLUMNS \nWHERE TABLE_SCHEMA = DATABASE() \n  AND TABLE_NAME IN ('pool_members','bets','pool_member_stats','pools','games','tournaments','users','ads','ad_clicks','email_queue','notification_templates','admin_logs','notifications')\nORDER BY TABLE_NAME, ORDINAL_POSITION;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT TABLE_NAME, COLUMN_NAME \nFROM INFORMATION_SCHEMA.COLUMNS \nWHERE TABLE_SCHEMA = DATABASE() \n  AND TABLE_NAME IN ('pool_members','bets','pool_member_stats','pools','games','tournaments','users','ads','ad_clicks','email_queue','notification_templates','admin_logs','notifications')\nORDER BY TABLE_NAME, ORDINAL_POSITION;\n",
+  "rows": [
+    {
+      "TABLE_NAME": "ad_clicks",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "ad_clicks",
+      "COLUMN_NAME": "adId"
+    },
+    {
+      "TABLE_NAME": "ad_clicks",
+      "COLUMN_NAME": "userId"
+    },
+    {
+      "TABLE_NAME": "ad_clicks",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "adminId"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "poolId"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "action"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "entityType"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "entityId"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "details"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "previousValue"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "correlationId"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "level"
+    },
+    {
+      "TABLE_NAME": "admin_logs",
+      "COLUMN_NAME": "ipAddress"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "title"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "type"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "assetUrl"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "scriptCode"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "linkUrl"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "position"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "isActive"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "sortOrder"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "startAt"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "endAt"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "popupFrequency"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "device"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "carouselInterval"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "createdBy"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "ads",
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "poolId"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "userId"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "gameId"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "predictedScoreA"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "predictedScoreB"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "pointsEarned"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "pointsExactScore"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "pointsCorrectResult"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "pointsTotalGoals"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "pointsGoalDiff"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "pointsOneTeamGoals"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "pointsLandslide"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "pointsZebra"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "isZebra"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "resultType"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "bets",
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "userId"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "toEmail"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "toName"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "subject"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "htmlBody"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "status"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "attempts"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "errorMessage"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "sentAt"
+    },
+    {
+      "TABLE_NAME": "email_queue",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "tournamentId"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "externalId"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "teamAId"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "teamBId"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "teamAName"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "teamBName"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "teamAFlag"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "teamBFlag"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "groupName"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "phase"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "matchDate"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "venue"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "status"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "scoreA"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "scoreB"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "matchNumber"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "sourceMatchAId"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "sourceMatchBId"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "sourceMatchARole"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "sourceMatchBRole"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "isZebraResult"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "manuallyEdited"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "importedFromSheets"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "reminderSentAt"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "type"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "enabled"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "titleTemplate"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "bodyTemplate"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "pushTitleTemplate"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "pushBodyTemplate"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "emailSubjectTemplate"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "emailBodyTemplate"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "updatedBy"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "TABLE_NAME": "notification_templates",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "userId"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "poolId"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "type"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "title"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "message"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "isRead"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "relatedGameId"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "imageUrl"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "actionUrl"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "actionLabel"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "priority"
+    },
+    {
+      "TABLE_NAME": "notifications",
+      "COLUMN_NAME": "category"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "poolId"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "userId"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "totalPoints"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "exactScoreCount"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "correctResultCount"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "goalDiffCount"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "oneTeamGoalsCount"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "totalGoalsCount"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "landslideCount"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "zebraCount"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "totalBets"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "rankPosition"
+    },
+    {
+      "TABLE_NAME": "pool_member_stats",
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "TABLE_NAME": "pool_members",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "pool_members",
+      "COLUMN_NAME": "poolId"
+    },
+    {
+      "TABLE_NAME": "pool_members",
+      "COLUMN_NAME": "userId"
+    },
+    {
+      "TABLE_NAME": "pool_members",
+      "COLUMN_NAME": "role"
+    },
+    {
+      "TABLE_NAME": "pool_members",
+      "COLUMN_NAME": "isBlocked"
+    },
+    {
+      "TABLE_NAME": "pool_members",
+      "COLUMN_NAME": "joinedAt"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "slug"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "name"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "logoUrl"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "description"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "accessType"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "inviteCode"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "inviteToken"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "status"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "finishedAt"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "scheduledDeleteAt"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "ownerId"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "tournamentId"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "plan"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "stripeSubscriptionId"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "planExpiresAt"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "name"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "slug"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "logoUrl"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "isGlobal"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "poolId"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "createdBy"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "status"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "country"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "season"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "startDate"
+    },
+    {
+      "TABLE_NAME": "tournaments",
+      "COLUMN_NAME": "endDate"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "openId"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "name"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "email"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "loginMethod"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "role"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "createdAt"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "updatedAt"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "lastSignedIn"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "avatarUrl"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "whatsappLink"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "telegramLink"
+    },
+    {
+      "TABLE_NAME": "users",
+      "COLUMN_NAME": "isBlocked"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\tCOLUMN_NAME\nad_clicks\tid\nad_clicks\tadId\nad_clicks\tuserId\nad_clicks\tcreatedAt\nadmin_logs\tid\nadmin_logs\tadminId\nadmin_logs\tpoolId\nadmin_logs\taction\nadmin_logs\tentityType\nadmin_logs\tentityId\nadmin_logs\tdetails\nadmin_logs\tcreatedAt\nadmin_logs\tpreviousValue\nadmin_logs\tcorrelationId\nadmin_logs\tlevel\nadmin_logs\tipAddress\nads\tid\nads\ttitle\nads\ttype\nads\tassetUrl\nads\tscriptCode\nads\tlinkUrl\nads\tposition\nads\tisActive\nads\tsortOrder\nads\tstartAt\nads\tendAt\nads\tpopupFrequency\nads\tdevice\nads\tcarouselInterval\nads\tcreatedBy\nads\tcreatedAt\nads\tupdatedAt\nbets\tid\nbets\tpoolId\nbets\tuserId\nbets\tgameId\nbets\tpredictedScoreA\nbets\tpredictedScoreB\nbets\tpointsEarned\nbets\tpointsExactScore\nbets\tpointsCorrectResult\nbets\tpointsTotalGoals\nbets\tpointsGoalDiff\nbets\tpointsOneTeamGoals\nbets\tpointsLandslide\nbets\tpointsZebra\nbets\tisZebra\nbets\tresultType\nbets\tcreatedAt\nbets\tupdatedAt\nemail_queue\tid\nemail_queue\tuserId\nemail_queue\ttoEmail\nemail_queue\ttoName\nemail_queue\tsubject\nemail_queue\thtmlBody\nemail_queue\tstatus\nemail_queue\tattempts\nemail_queue\terrorMessage\nemail_queue\tsentAt\nemail_queue\tcreatedAt\ngames\tid\ngames\ttournamentId\ngames\texternalId\ngames\tteamAId\ngames\tteamBId\ngames\tteamAName\ngames\tteamBName\ngames\tteamAFlag\ngames\tteamBFlag\ngames\tgroupName\ngames\tphase\ngames\tmatchDate\ngames\tvenue\ngames\tstatus\ngames\tscoreA\ngames\tscoreB\ngames\tmatchNumber\ngames\tsourceMatchAId\ngames\tsourceMatchBId\ngames\tsourceMatchARole\ngames\tsourceMatchBRole\ngames\tisZebraResult\ngames\tmanuallyEdited\ngames\timportedFromSheets\ngames\tcreatedAt\ngames\tupdatedAt\ngames\treminderSentAt\nnotification_templates\tid\nnotification_templates\ttype\nnotification_templates\tenabled\nnotification_templates\ttitleTemplate\nnotification_templates\tbodyTemplate\nnotification_templates\tpushTitleTemplate\nnotification_templates\tpushBodyTemplate\nnotification_templates\temailSubjectTemplate\nnotification_templates\temailBodyTemplate\nnotification_templates\tupdatedBy\nnotification_templates\tupdatedAt\nnotification_templates\tcreatedAt\nnotifications\tid\nnotifications\tuserId\nnotifications\tpoolId\nnotifications\ttype\nnotifications\ttitle\nnotifications\tmessage\nnotifications\tisRead\nnotifications\trelatedGameId\nnotifications\tcreatedAt\nnotifications\timageUrl\nnotifications\tactionUrl\nnotifications\tactionLabel\nnotifications\tpriority\nnotifications\tcategory\npool_member_stats\tid\npool_member_stats\tpoolId\npool_member_stats\tuserId\npool_member_stats\ttotalPoints\npool_member_stats\texactScoreCount\npool_member_stats\tcorrectResultCount\npool_member_stats\tgoalDiffCount\npool_member_stats\toneTeamGoalsCount\npool_member_stats\ttotalGoalsCount\npool_member_stats\tlandslideCount\npool_member_stats\tzebraCount\npool_member_stats\ttotalBets\npool_member_stats\trankPosition\npool_member_stats\tupdatedAt\npool_members\tid\npool_members\tpoolId\npool_members\tuserId\npool_members\trole\npool_members\tisBlocked\npool_members\tjoinedAt\npools\tid\npools\tslug\npools\tname\npools\tlogoUrl\npools\tdescription\npools\taccessType\npools\tinviteCode\npools\tinviteToken\npools\tstatus\npools\tfinishedAt\npools\tscheduledDeleteAt\npools\townerId\npools\ttournamentId\npools\tplan\npools\tstripeSubscriptionId\npools\tplanExpiresAt\npools\tcreatedAt\npools\tupdatedAt\ntournaments\tid\ntournaments\tname\ntournaments\tslug\ntournaments\tlogoUrl\ntournaments\tisGlobal\ntournaments\tpoolId\ntournaments\tcreatedBy\ntournaments\tstatus\ntournaments\tcreatedAt\ntournaments\tupdatedAt\ntournaments\tcountry\ntournaments\tseason\ntournaments\tstartDate\ntournaments\tendDate\nusers\tid\nusers\topenId\nusers\tname\nusers\temail\nusers\tloginMethod\nusers\trole\nusers\tcreatedAt\nusers\tupdatedAt\nusers\tlastSignedIn\nusers\tavatarUrl\nusers\twhatsappLink\nusers\ttelegramLink\nusers\tisBlocked\n",
+  "stderr": "",
+  "execution_time_ms": 357
+}

@@ -507,3 +507,6 @@
 
 ## Sprint 24/03/2026 — Fix Bolões Públicos
 - [x] Fix: bolões públicos não apareciam na busca — subquery usava pm.pool_id (snake_case) em vez de pm.poolId (camelCase)
+
+## Sprint 24/03/2026 — Auditoria Global de Subqueries
+- [x] Auditoria: mapear e corrigir todos os subqueries raw com snake_case incorreto no backend — apenas 2 ocorrências encontradas (pm.pool_id), ambas já corrigidas. Demais sql<> usam interpolação Drizzle (segura).
