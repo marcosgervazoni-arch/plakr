@@ -672,3 +672,13 @@
 - [x] [Frontend] Separador visual com label "Ações" entre seções e ações
 - [x] [Frontend] Estado ativo corrigido para rotas filhas via matchFn (cobre /pool/:slug e todas as sub-rotas)
 - [x] [Frontend] Badge vermelho de notificações não lidas no botão de menu mobile (top bar)
+
+## Sprint 24/03/2026 — Submenu de Ranking no AppShell
+
+- [x] [Frontend] Item "Ranking" virou grupo colapsável com chevron animado
+- [x] [Frontend] Submenu "Global" → /ranking
+- [x] [Frontend] Submenu por bolão ativo → /pool/:slug?tab=ranking com posição #N visível
+- [x] [Frontend] Estado ativo do grupo e submenus via matchFn
+- [x] [Frontend] Estado vazio: "Entre em um bolão para ver seu ranking"
+- [x] [Frontend] PoolPage: lê ?tab= da URL para abrir aba correta ao chegar pelo menu
+- [x] [Backend] myPools reutilizado no AppShell (já retorna pool.slug, pool.name e rankPosition)

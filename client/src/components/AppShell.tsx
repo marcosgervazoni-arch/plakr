@@ -22,6 +22,8 @@ import {
   ChevronRight,
   Plus,
   Medal,
+  ChevronDown,
+  Users,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
@@ -31,7 +33,7 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-// Itens de navegação principais (seções)
+// Itens de navegação principais (seções — sem Ranking, que virou grupo colapsável)
 const navSections = [
   {
     id: "dashboard",
@@ -41,13 +43,6 @@ const navSections = [
     // Ativo também em rotas filhas de bolão
     matchFn: (loc: string) =>
       loc === "/dashboard" || loc.startsWith("/pool/"),
-  },
-  {
-    id: "ranking",
-    label: "Ranking",
-    icon: Medal,
-    href: "/ranking",
-    matchFn: (loc: string) => loc.startsWith("/ranking"),
   },
   {
     id: "public",
@@ -73,6 +68,10 @@ export default function AppShell({ children }: AppShellProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Grupo de Ranking colapsável — abre automaticamente se estiver em /ranking
+  const [rankingOpen, setRankingOpen] = useState(() =>
+    typeof window !== "undefined" && window.location.pathname.startsWith("/ranking")
+  );
 
   const { data: userData } = trpc.users.me.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -83,6 +82,14 @@ export default function AppShell({ children }: AppShellProps) {
     enabled: isAuthenticated,
   });
   const unreadCount = notifications?.filter((n) => !n.isRead).length ?? 0;
+
+  // Bolões ativos do usuário para o submenu de Ranking
+  const { data: myPools = [] } = trpc.users.myPools.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const activePools = (myPools as any[]).filter(
+    (p: any) => p.pool?.status === "active"
+  );
 
   const isPro =
     userData?.plan?.plan === "pro" && userData?.plan?.isActive;
@@ -161,31 +168,123 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
       )}
 
-      {/* Navegação principal */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {/* Seções de navegação */}
-        {navSections.map((item) => {
-          const isActive = item.matchFn(location);
-          return (
-            <Link
-              key={item.id}
-              href={item.href}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <button
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
-                  isActive
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                )}
+        {/* Navegação principal */}
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+          {/* Seções de navegação */}
+          {navSections.map((item) => {
+            const isActive = item.matchFn(location);
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
               >
-                <item.icon className="w-4 h-4 shrink-0" />
-                <span className="flex-1 truncate">{item.label}</span>
-              </button>
-            </Link>
-          );
-        })}
+                <button
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
+                    isActive
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="w-4 h-4 shrink-0" />
+                  <span className="flex-1 truncate">{item.label}</span>
+                </button>
+              </Link>
+            );
+          })}
+
+          {/* Grupo colapsável: Ranking */}
+          <div>
+            <button
+              onClick={() => setRankingOpen((v) => !v)}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
+                location.startsWith("/ranking")
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              )}
+            >
+              <Medal className="w-4 h-4 shrink-0" />
+              <span className="flex-1 truncate">Ranking</span>
+              <ChevronDown
+                className={cn(
+                  "w-3.5 h-3.5 shrink-0 transition-transform duration-200",
+                  rankingOpen ? "rotate-180" : ""
+                )}
+              />
+            </button>
+
+            {/* Submenus do Ranking */}
+            {rankingOpen && (
+              <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border/30 pl-3">
+                {/* Ranking Global */}
+                <Link href="/ranking" onClick={() => setSidebarOpen(false)}>
+                  <button
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all text-left",
+                      location === "/ranking"
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    )}
+                  >
+                    <Trophy className="w-3.5 h-3.5 shrink-0" />
+                    <span className="flex-1 truncate">Global</span>
+                  </button>
+                </Link>
+
+                {/* Rankings dos bolões ativos */}
+                {activePools.length > 0 && (
+                  <>
+                    <div className="pt-1 pb-0.5">
+                      <p className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wider px-2">
+                        Meus Bolões
+                      </p>
+                    </div>
+                    {activePools.map((p: any) => {
+                      const poolSlug = p.pool?.slug;
+                      const poolName = p.pool?.name ?? "Bolão";
+                      const rankHref = `/pool/${poolSlug}?tab=ranking`;
+                      const isPoolRankActive =
+                        location === `/pool/${poolSlug}` ||
+                        location.startsWith(`/pool/${poolSlug}`);
+                      return (
+                        <Link
+                          key={poolSlug}
+                          href={rankHref}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          <button
+                            className={cn(
+                              "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all text-left",
+                              isPoolRankActive
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                            )}
+                          >
+                            <Users className="w-3.5 h-3.5 shrink-0" />
+                            <span className="flex-1 truncate text-xs">{poolName}</span>
+                            {p.rankPosition && (
+                              <span className="text-[10px] font-bold text-primary/70 shrink-0">
+                                #{p.rankPosition}
+                              </span>
+                            )}
+                          </button>
+                        </Link>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Estado vazio — sem bolões ativos */}
+                {activePools.length === 0 && isAuthenticated && (
+                  <p className="text-[11px] text-muted-foreground/50 px-2.5 py-1.5 italic">
+                    Entre em um bolão para ver seu ranking
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
         {/* Separador visual entre seções e ações */}
         <div className="pt-2 pb-1">

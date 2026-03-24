@@ -48,7 +48,15 @@ import {
 export default function PoolPage() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("games");
+  // Suporte a ?tab= na URL para abrir aba diretamente (ex: via menu de Ranking)
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab === "ranking" || tab === "games" || tab === "members") return tab;
+    }
+    return "games";
+  });
   const [betInputs, setBetInputs] = useState<Record<number, { a: string; b: string }>>({});
 
   const { data, isLoading, error } = trpc.pools.getBySlug.useQuery(
