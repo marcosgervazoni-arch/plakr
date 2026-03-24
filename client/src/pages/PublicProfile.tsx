@@ -187,11 +187,20 @@ export default function PublicProfile() {
         {/* ── Badges / Conquistas ── */}
         {badges && badges.length > 0 && (
           <div className="bg-card border border-border/30 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-amber-500" />
-              <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
-                Conquistas
-              </h3>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-amber-500" />
+                <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
+                  Conquistas
+                </h3>
+              </div>
+              {isOwnProfile && (
+                <Link href="/conquistas">
+                  <span className="text-xs text-primary hover:underline cursor-pointer">
+                    Ver todas →
+                  </span>
+                </Link>
+              )}
             </div>
             <BadgeGrid badges={badges} />
           </div>

@@ -23,6 +23,7 @@ import BetHistory from "./pages/BetHistory";
 import PoolRules from "./pages/PoolRules";
 import PoolBracket from "./pages/PoolBracket";
 import MyProfile from "./pages/MyProfile";
+import Conquistas from "./pages/Conquistas";
 
 // Organizer pages (Fase 4)
 import CreatePool from "./pages/organizer/CreatePool";
@@ -73,6 +74,7 @@ function Router() {
       <Route path="/pool/:slug/rules" component={PoolRules} />
       <Route path="/pool/:slug/bracket" component={PoolBracket} />
       <Route path="/my-profile" component={MyProfile} />
+      <Route path="/conquistas" component={Conquistas} />
       <Route path="/notifications" component={Notifications} />
       <Route path="/notification-preferences" component={NotificationPreferences} />
       <Route path="/suspended" component={Suspended} />

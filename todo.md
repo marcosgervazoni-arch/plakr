@@ -777,3 +777,11 @@
 ## Sprint 24/03/2026 — Visual Badges Dashboard
 
 - [x] Dashboard: refatorar carrossel de badges para usar visual idêntico ao PublicProfile (BadgeGrid), com badges inativos visíveis quando não há nenhum conquistado
+
+## Sprint 24/03/2026 — Página de Conquistas
+
+- [x] Procedure badges.myProgress: progresso individual, histórico e estatísticas da plataforma
+- [x] Página /conquistas: seção 1 — grade hexagonal com progresso por badge
+- [x] Página /conquistas: seção 2 — histórico de conquistas com data e contexto do bolão
+- [x] Página /conquistas: seção 3 — comparação com a plataforma (% de usuários com cada badge, com fallback)
+- [x] Rota /conquistas registrada no App.tsx + item no AppShell + link no DashboardBadgeCarousel

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Award, Lock, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 interface BadgeItem {
   id: number;
@@ -194,12 +195,21 @@ export default function DashboardBadgeCarousel({ badges }: DashboardBadgeCarouse
         ))}
       </div>
 
-      {/* Rodapé: contador de não conquistados */}
-      {hasEarned && unearned.length > 0 && (
-        <p className="text-xs text-muted-foreground/50">
-          {unearned.length} badge{unearned.length !== 1 ? "s" : ""} ainda não conquistado{unearned.length !== 1 ? "s" : ""}
-        </p>
-      )}
+      {/* Rodapé: link para página completa + contador */}
+      <div className="flex items-center justify-between">
+        {hasEarned && unearned.length > 0 ? (
+          <p className="text-xs text-muted-foreground/50">
+            {unearned.length} badge{unearned.length !== 1 ? "s" : ""} ainda não conquistado{unearned.length !== 1 ? "s" : ""}
+          </p>
+        ) : (
+          <span />
+        )}
+        <Link href="/conquistas">
+          <span className="text-xs text-primary hover:underline cursor-pointer">
+            Ver todas →
+          </span>
+        </Link>
+      </div>
     </div>
   );
 }

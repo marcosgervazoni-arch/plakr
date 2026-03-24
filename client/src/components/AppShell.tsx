@@ -24,6 +24,7 @@ import {
   Medal,
   ChevronDown,
   Users,
+  Award,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
@@ -50,6 +51,13 @@ const navSections = [
     icon: Search,
     href: "/pools/public",
     matchFn: (loc: string) => loc.startsWith("/pools/public"),
+  },
+  {
+    id: "conquistas",
+    label: "Conquistas",
+    icon: Award,
+    href: "/conquistas",
+    matchFn: (loc: string) => loc === "/conquistas",
   },
 ];
 
