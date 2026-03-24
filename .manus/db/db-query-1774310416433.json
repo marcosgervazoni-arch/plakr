@@ -1,0 +1,30 @@
+{
+  "query": "SHOW CREATE TABLE tournament_phases;\nSHOW COLUMNS FROM platform_settings LIKE 'adsEnabled';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW CREATE TABLE tournament_phases;\nSHOW COLUMNS FROM platform_settings LIKE 'adsEnabled';",
+  "rows": [
+    {
+      "Table": "tournament_phases",
+      "Create Table": "CREATE TABLE `tournament_phases` ("
+    }
+  ],
+  "messages": [
+    "  `id` int NOT NULL AUTO_INCREMENT,",
+    "  `tournamentId` int NOT NULL,",
+    "  `key` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,",
+    "  `label` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,",
+    "  `enabled` tinyint(1) NOT NULL DEFAULT '1',",
+    "  `order` int NOT NULL,",
+    "  `slots` int DEFAULT NULL,",
+    "  `isKnockout` tinyint(1) NOT NULL DEFAULT '0',",
+    "  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,",
+    "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,",
+    "  KEY `tournament_phases_tournamentId_tournaments_id_fk` (`tournamentId`),",
+    "  CONSTRAINT `tournament_phases_tournamentId_tournaments_id_fk` FOREIGN KEY (`tournamentId`) REFERENCES `tournaments` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION",
+    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=60001",
+    "Field\tType\tNull\tKey\tDefault\tExtra",
+    "adsEnabled\ttinyint(1)\tNO\t\t1\t"
+  ],
+  "stdout": "Table\tCreate Table\ntournament_phases\tCREATE TABLE `tournament_phases` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `tournamentId` int NOT NULL,\n  `key` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `label` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `enabled` tinyint(1) NOT NULL DEFAULT '1',\n  `order` int NOT NULL,\n  `slots` int DEFAULT NULL,\n  `isKnockout` tinyint(1) NOT NULL DEFAULT '0',\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  KEY `tournament_phases_tournamentId_tournaments_id_fk` (`tournamentId`),\n  CONSTRAINT `tournament_phases_tournamentId_tournaments_id_fk` FOREIGN KEY (`tournamentId`) REFERENCES `tournaments` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=60001\nField\tType\tNull\tKey\tDefault\tExtra\nadsEnabled\ttinyint(1)\tNO\t\t1\t\n",
+  "stderr": "",
+  "execution_time_ms": 436
+}

@@ -495,3 +495,6 @@
 
 ## Sprint 23/03/2026 — Fix Campeonatos
 - [x] Fix: jogos do torneio Copa do Mundo FIFA (id=2) não aparecem em Admin > Campeonatos (match por phase.key em vez de phase.label)
+
+## Sprint 23/03/2026 — Fix Exclusão de Torneio
+- [x] Fix: erro ao excluir torneio — FK constraint da tabela tournament_phases bloqueava a exclusão; corrigido deletando fases antes do torneio

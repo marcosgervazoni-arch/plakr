@@ -689,7 +689,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const db = await (await import("./db")).getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        const { tournaments, pools: poolsT, poolMembers, games: gamesT, teams: teamsT } = await import("../drizzle/schema");
+        const { tournaments, pools: poolsT, poolMembers, games: gamesT, teams: teamsT, tournamentPhases } = await import("../drizzle/schema");
         const { eq, inArray } = await import("drizzle-orm");
         const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, input.id)).limit(1);
         if (!tournament) throw new TRPCError({ code: "NOT_FOUND", message: "Campeonato não encontrado." });
@@ -717,8 +717,14 @@ export const appRouter = router({
           }
           await db.update(poolsT).set({ status: "deleted" }).where(inArray(poolsT.id, poolIds));
         }
+        // Deletar na ordem correta para respeitar FK constraints:
+        // 1. Jogos (FK para tournaments)
+        // 2. Times (FK para tournaments)
+        // 3. Fases (FK para tournaments com ON DELETE NO ACTION — causa o erro de FK se não deletadas antes)
+        // 4. Torneio
         await db.delete(gamesT).where(eq(gamesT.tournamentId, input.id));
         await db.delete(teamsT).where(eq(teamsT.tournamentId, input.id));
+        await db.delete(tournamentPhases).where(eq(tournamentPhases.tournamentId, input.id));
         await db.delete(tournaments).where(eq(tournaments.id, input.id));
         await createAdminLog(ctx.user.id, "delete_tournament", "tournament", input.id, { name: tournament.name, linkedPools: linkedPools.length });
         return { success: true };
