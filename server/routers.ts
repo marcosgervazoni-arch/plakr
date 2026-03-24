@@ -581,8 +581,6 @@ export const appRouter = router({
     updateProfile: protectedProcedure
       .input(z.object({
         avatarUrl: z.string().url().optional(),
-        whatsappLink: z.string().max(255).optional().nullable(),
-        telegramLink: z.string().max(255).optional().nullable(),
       }))
       .mutation(async ({ input, ctx }) => {
         const db = await (await import("./db")).getDb();
@@ -591,10 +589,91 @@ export const appRouter = router({
         const { users: usersT } = await import("../drizzle/schema");
         const updateData: Record<string, unknown> = {};
         if (input.avatarUrl !== undefined) updateData.avatarUrl = input.avatarUrl;
-        if (input.whatsappLink !== undefined) updateData.whatsappLink = input.whatsappLink;
-        if (input.telegramLink !== undefined) updateData.telegramLink = input.telegramLink;
         if (Object.keys(updateData).length === 0) return { success: true };
         await db.update(usersT).set(updateData).where(eq(usersT.id, ctx.user.id));
+        return { success: true };
+      }),
+
+    // ─── PROGRAMA DE CONVITES (MEMBER-GET-MEMBER) ───────────────────────────────
+    getMyInviteCode: protectedProcedure.query(async ({ ctx }) => {
+      const db = await (await import("./db")).getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { eq, and, isNull } = await import("drizzle-orm");
+      const { referrals } = await import("../drizzle/schema");
+
+      // Buscar código existente (sem inviteeId = o código "mestre" do usuário)
+      const existing = await db
+        .select()
+        .from(referrals)
+        .where(and(eq(referrals.inviterId, ctx.user.id), isNull(referrals.inviteeId)))
+        .limit(1);
+
+      if (existing[0]) return { inviteCode: existing[0].inviteCode };
+
+      // Gerar novo código único (base36, 8 chars)
+      const generateCode = () => Math.random().toString(36).substring(2, 10).toUpperCase();
+      let code = generateCode();
+      let attempts = 0;
+      while (attempts < 10) {
+        const conflict = await db.select({ id: referrals.id }).from(referrals).where(eq(referrals.inviteCode, code)).limit(1);
+        if (!conflict[0]) break;
+        code = generateCode();
+        attempts++;
+      }
+      await db.insert(referrals).values({ inviteCode: code, inviterId: ctx.user.id });
+      return { inviteCode: code };
+    }),
+
+    getMyReferralStats: protectedProcedure.query(async ({ ctx }) => {
+      const db = await (await import("./db")).getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { eq, and, isNotNull } = await import("drizzle-orm");
+      const { referrals, users: usersT } = await import("../drizzle/schema");
+
+      const accepted = await db
+        .select({
+          registeredAt: referrals.registeredAt,
+          inviteeName: usersT.name,
+        })
+        .from(referrals)
+        .leftJoin(usersT, eq(usersT.id, referrals.inviteeId))
+        .where(and(eq(referrals.inviterId, ctx.user.id), isNotNull(referrals.registeredAt)));
+
+      return {
+        totalAccepted: accepted.length,
+        goal: 5,
+        referrals: accepted.map((r) => ({
+          registeredAt: r.registeredAt,
+          inviteeName: r.inviteeName ?? "Usuário",
+        })),
+      };
+    }),
+
+    useInviteCode: publicProcedure
+      .input(z.object({ inviteCode: z.string().min(1), newUserId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await (await import("./db")).getDb();
+        if (!db) return { success: false };
+        const { eq, and, isNull } = await import("drizzle-orm");
+        const { referrals } = await import("../drizzle/schema");
+
+        const [invite] = await db
+          .select()
+          .from(referrals)
+          .where(and(eq(referrals.inviteCode, input.inviteCode), isNull(referrals.inviteeId)))
+          .limit(1);
+
+        if (!invite) return { success: false };
+        if (invite.inviterId === input.newUserId) return { success: false };
+
+        await db
+          .update(referrals)
+          .set({ inviteeId: input.newUserId, registeredAt: new Date() })
+          .where(eq(referrals.id, invite.id));
+
+        const { calculateAndAssignBadges } = await import("./badges");
+        await calculateAndAssignBadges(invite.inviterId).catch(() => {});
+
         return { success: true };
       }),
   }),

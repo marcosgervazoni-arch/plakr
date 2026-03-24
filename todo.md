@@ -622,3 +622,35 @@
 - [x] [Backend] myPools: rankPosition, totalMembers e pendingBetsCount calculados por bolão via Promise.all
 - [x] [Frontend] Cards de bolão: posição no ranking com medalhas 🥇🥈🥉 para top 3 e "º de N" para demais
 - [x] [Frontend] Cards de bolão: badge laranja com contador de palpites pendentes no ícone do bolão + texto "X palpites pendentes"
+
+## Sprint 24/03/2026 — Reformulação /my-profile
+
+### Bugs
+- [x] [Fullstack] Anti-pattern setState no render removido (campos de contato eliminados)
+- [x] [Fullstack] Contador de bolões usa stats.poolsCount corretamente
+
+### Remoções
+- [x] [Frontend] Seção de links de contato (WhatsApp/Telegram) removida
+- [x] [Backend] Campos whatsappLink/telegramLink removidos da procedure updateProfile
+
+### Programa de Convites Member-Get-Member
+- [x] [CTO] Tabela `referrals` adicionada ao schema Drizzle e migração aplicada
+- [x] [Backend] Procedure `users.getMyInviteCode` — gera/retorna código único por usuário
+- [x] [Backend] Procedure `users.getMyReferralStats` — conta convites aceitos com lista de convidados
+- [x] [Backend] Procedure `users.useInviteCode` — registra uso do código e dispara calculateAndAssignBadges
+- [x] [Backend] Badge "Líder de Torcida" criado no banco (referrals_count, threshold=5, retroativo=true)
+- [x] [Backend] Critério referrals_count adicionado ao checkCriterion no badges.ts
+- [x] [Frontend] Seção de convites: link pessoal, contador, barra de progresso 0/5, lista de convidados, badge preview
+
+### Melhorias UX/Design
+- [x] [Frontend] Layout duas colunas em desktop (1/3 perfil+stats+plano | 2/3 convites+notif+conta)
+- [x] [Frontend] Preview local imediato do avatar (URL.createObjectURL antes do upload)
+- [x] [Frontend] Botão "Ver perfil público" no header da página
+- [x] [Frontend] Taxa de acerto (accuracy rate) nos stats em vez de contador de exatos brutos
+- [x] [Frontend] Seção de preferências de notificação com toggles (4 categorias in-app)
+- [x] [Frontend] Seção de informações da conta (nome, email, membro desde, plano)
+
+### Monetização
+- [x] [Frontend] Card de plano com status, data de expiração e CTA de upgrade para usuários Free
+- [x] [Frontend] CTA de upgrade com gradiente amarelo/laranja e copy contextualizado
+- [x] [Frontend] Link "Ver histórico de pagamentos" visível apenas para usuários Pro/Unlimited

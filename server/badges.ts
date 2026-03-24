@@ -71,6 +71,16 @@ export async function checkCriterion(
   const { bets, games, poolMemberStats, poolMembers } = await import("../drizzle/schema");
 
   switch (criterionType as BadgeCriterionType) {
+    case "referrals_count": {
+      // Conta convites aceitos (cadastros via link de convite do usuário)
+      const { referrals: referralsT } = await import("../drizzle/schema");
+      const [row] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(referralsT)
+        .where(and(eq(referralsT.inviterId, userId), sql`${referralsT.registeredAt} IS NOT NULL`));
+      return Number(row?.count ?? 0) >= criterionValue;
+    }
+
     case "exact_scores_career": {
       // Conta placares exatos na carreira (pointsEarned > 0 e resultType = 'exact')
       const [row] = await db

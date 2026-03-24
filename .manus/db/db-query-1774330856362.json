@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `referrals` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`inviteCode` varchar(16) NOT NULL,\n\t`inviterId` int NOT NULL,\n\t`inviteeId` int,\n\t`registeredAt` timestamp,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `referrals_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `referrals_inviteCode_unique` UNIQUE(`inviteCode`)\n);\nALTER TABLE `referrals` ADD CONSTRAINT `referrals_inviterId_users_id_fk` FOREIGN KEY (`inviterId`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;\nALTER TABLE `referrals` ADD CONSTRAINT `referrals_inviteeId_users_id_fk` FOREIGN KEY (`inviteeId`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE no action;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute CREATE TABLE `referrals` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`inviteCode` varchar(16) NOT NULL,\n\t`inviterId` int NOT NULL,\n\t`inviteeId` int,\n\t`registeredAt` timestamp,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `referrals_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `referrals_inviteCode_unique` UNIQUE(`inviteCode`)\n);\nALTER TABLE `referrals` ADD CONSTRAINT `referrals_inviterId_users_id_fk` FOREIGN KEY (`inviterId`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;\nALTER TABLE `referrals` ADD CONSTRAINT `referrals_inviteeId_users_id_fk` FOREIGN KEY (`inviteeId`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE no action;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1366
+}

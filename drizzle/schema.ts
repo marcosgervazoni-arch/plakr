@@ -531,6 +531,7 @@ export const BADGE_CRITERION_TYPES = [
   "accuracy_in_pool",          // Taxa de acerto >= N% em um bolão completo (mín. 10 jogos)
   "complete_pool_no_blank",    // Bolões completados sem jogo em branco >= N
   "consecutive_correct",       // Sequência de acertos consecutivos >= N
+  "referrals_count",           // Convites aceitos (cadastros via link) >= N
 ] as const;
 
 export type BadgeCriterionType = typeof BADGE_CRITERION_TYPES[number];
@@ -563,6 +564,24 @@ export const userBadges = mysqlTable("user_badges", {
 }));
 
 export type UserBadge = typeof userBadges.$inferSelect;
+
+// ─── PROGRAMA DE CONVITES (MEMBER-GET-MEMBER) ───────────────────────────────
+
+export const referrals = mysqlTable("referrals", {
+  id: int("id").autoincrement().primaryKey(),
+  // Código único gerado para o usuário convidador (base36, 8 chars)
+  inviteCode: varchar("inviteCode", { length: 16 }).notNull().unique(),
+  // Usuário que gerou o convite
+  inviterId: int("inviterId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  // Usuário que se cadastrou via convite (null enquanto não usado)
+  inviteeId: int("inviteeId").references(() => users.id, { onDelete: "set null" }),
+  // Quando o convidado se cadastrou
+  registeredAt: timestamp("registeredAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Referral = typeof referrals.$inferSelect;
+export type InsertReferral = typeof referrals.$inferInsert;
 
 // ─── EXPORTS DE TIPOS ADICIONAIS ────────────────────────────────────────────
 export type InsertUserPlan = typeof userPlans.$inferInsert;
