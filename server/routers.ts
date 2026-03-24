@@ -137,7 +137,7 @@ export const appRouter = router({
       const db = await (await import("./db")).getDb();
       if (!db) return { totalPoints: 0, exactScores: 0, poolsCount: 0, totalBets: 0, pointsHistory: [], radarData: [] };
       const { sql, eq, and } = await import("drizzle-orm");
-      const { poolMemberStats, bets, games } = await import("../drizzle/schema");
+      const { poolMemberStats, bets, games, pools: poolsT } = await import("../drizzle/schema");
 
       // Total stats across all pools
       const statsRows = await db
@@ -157,11 +157,13 @@ export const appRouter = router({
       const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, correctResults: 0, zebraCount: 0, landslideCount: 0, goalDiffCount: 0, totalBets: 0, poolsCount: 0 };
       const tb = Math.max(Number(stats.totalBets), 1); // avoid division by zero
 
-      // Points history: last 20 scored bets ordered by game date
+      // Points history: last 20 scored bets from non-deleted pools, ordered by game date
+      const { ne } = await import("drizzle-orm");
       const history = await db
         .select({ matchDate: games.matchDate, pointsEarned: bets.pointsEarned })
         .from(bets)
         .innerJoin(games, eq(bets.gameId, games.id))
+        .innerJoin(poolsT, and(eq(poolsT.id, bets.poolId), ne(poolsT.status, "deleted")))
         .where(and(eq(bets.userId, ctx.user.id), sql`${bets.pointsEarned} IS NOT NULL`))
         .orderBy(games.matchDate)
         .limit(20);
@@ -261,13 +263,13 @@ export const appRouter = router({
     recentBets: protectedProcedure.query(async ({ ctx }) => {
       const db = await (await import("./db")).getDb();
       if (!db) return [];
-      const { eq, and, isNotNull, desc } = await import("drizzle-orm");
-      const { bets, games } = await import("../drizzle/schema");
-
+      const { eq, and, isNotNull, desc, ne } = await import("drizzle-orm");
+      const { bets, games, pools: poolsT } = await import("../drizzle/schema");
       const rows = await db
         .select({ bet: bets, game: games })
         .from(bets)
         .innerJoin(games, eq(bets.gameId, games.id))
+        .innerJoin(poolsT, and(eq(poolsT.id, bets.poolId), ne(poolsT.status, "deleted")))
         .where(and(eq(bets.userId, ctx.user.id), isNotNull(games.scoreA)))
         .orderBy(desc(games.matchDate))
         .limit(5);
@@ -480,6 +482,7 @@ export const appRouter = router({
           .select({ bet: bets, game: games })
           .from(bets)
           .innerJoin(games, eq(bets.gameId, games.id))
+          .innerJoin(poolsT, and(eq(poolsT.id, bets.poolId), sql`${poolsT.status} != 'deleted'`))
           .where(eq(bets.userId, input.userId))
           .orderBy(desc(games.matchDate))
           .limit(20);

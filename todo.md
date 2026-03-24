@@ -608,3 +608,11 @@
 - [x] [Frontend] Gráfico de radar: RadarChart com perfil de apostador (Recharts, 5 dimensões)
 - [x] [Frontend] Radar contextual: stats do bolão selecionado ou stats globais com label dinâmico
 - [x] [Frontend] Avatar real do usuário exibido no card de perfil (com fallback para iniciais)
+
+## Sprint 24/03/2026 — Fix Palpites Recentes de Bolões Excluídos
+
+- [x] [Fullstack] recentBets (Dashboard): innerJoin com pools adicionado, filtra status != 'deleted'
+- [x] [Fullstack] recentBets (Admin/getUserActivity): innerJoin com pools adicionado, filtra status != 'deleted'
+- [x] [Fullstack] pointsHistory em myStats: innerJoin com pools adicionado, filtra status != 'deleted'
+- [x] [Fullstack] pointsHistory em myStatsByPool: já filtrava por poolId específico (bolão já deletado não seria acessado)
+- [x] [Fullstack] getMemberProfile/recentBets: opera dentro de um bolão específico via poolId, sem risco
