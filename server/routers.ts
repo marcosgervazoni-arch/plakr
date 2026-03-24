@@ -689,8 +689,8 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const db = await (await import("./db")).getDb();
         if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-        const { tournaments, pools: poolsT, poolMembers, games: gamesT, teams: teamsT, tournamentPhases } = await import("../drizzle/schema");
-        const { eq, inArray } = await import("drizzle-orm");
+        const { tournaments, pools: poolsT, poolMembers, games: gamesT, teams: teamsT, tournamentPhases, sheetsSyncLog } = await import("../drizzle/schema");
+        const { eq, inArray, sql } = await import("drizzle-orm");
         const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, input.id)).limit(1);
         if (!tournament) throw new TRPCError({ code: "NOT_FOUND", message: "Campeonato não encontrado." });
         const isAdmin = ctx.user.role === "admin";
@@ -715,13 +715,19 @@ export const appRouter = router({
               message: `O campeonato "${tournament.name}" foi excluído. Seu bolão vinculado foi encerrado.` });
             notifiedIds.add(m.userId);
           }
-          await db.update(poolsT).set({ status: "deleted" }).where(inArray(poolsT.id, poolIds));
+          // Desvincular bolões do torneio (nullificar tournamentId) para liberar a FK
+          // antes de deletar o torneio. O status já foi marcado como 'deleted' acima.
+          // Usa sql`NULL` porque a coluna é notNull() no schema TypeScript mas aceita NULL no banco
+          await db.update(poolsT).set({ status: "deleted", tournamentId: sql`NULL` }).where(inArray(poolsT.id, poolIds));
         }
-        // Deletar na ordem correta para respeitar FK constraints:
-        // 1. Jogos (FK para tournaments)
-        // 2. Times (FK para tournaments)
-        // 3. Fases (FK para tournaments com ON DELETE NO ACTION — causa o erro de FK se não deletadas antes)
-        // 4. Torneio
+        // Deletar na ordem correta para respeitar TODAS as FK constraints:
+        // 1. sheets_sync_log (FK para tournaments)
+        // 2. Jogos (FK para tournaments)
+        // 3. Times (FK para tournaments)
+        // 4. Fases (FK para tournaments com ON DELETE NO ACTION)
+        // 5. Torneio
+        // Nota: pools já foram desvinculados acima (tournamentId = null)
+        await db.delete(sheetsSyncLog).where(eq(sheetsSyncLog.tournamentId, input.id));
         await db.delete(gamesT).where(eq(gamesT.tournamentId, input.id));
         await db.delete(teamsT).where(eq(teamsT.tournamentId, input.id));
         await db.delete(tournamentPhases).where(eq(tournamentPhases.tournamentId, input.id));

@@ -498,3 +498,6 @@
 
 ## Sprint 23/03/2026 — Fix Exclusão de Torneio
 - [x] Fix: erro ao excluir torneio — FK constraint da tabela tournament_phases bloqueava a exclusão; corrigido deletando fases antes do torneio
+
+## Sprint 24/03/2026 — Fix Exclusão de Torneio (definitivo)
+- [x] Fix: exclusão do torneio id=1 corrigida — pools desvinculados (tournamentId=NULL) + sheets_sync_log deletado antes do torneio

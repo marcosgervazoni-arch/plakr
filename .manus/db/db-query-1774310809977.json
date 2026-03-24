@@ -1,0 +1,30 @@
+{
+  "query": "\nSELECT 'games' as tabela, COUNT(*) as total FROM games WHERE tournamentId = 1\nUNION ALL\nSELECT 'teams', COUNT(*) FROM teams WHERE tournamentId = 1\nUNION ALL\nSELECT 'sheets_sync_log', COUNT(*) FROM sheets_sync_log WHERE tournamentId = 1\nUNION ALL\nSELECT 'tournament_phases', COUNT(*) FROM tournament_phases WHERE tournamentId = 1\nUNION ALL\nSELECT 'pools', COUNT(*) FROM pools WHERE tournamentId = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT 'games' as tabela, COUNT(*) as total FROM games WHERE tournamentId = 1\nUNION ALL\nSELECT 'teams', COUNT(*) FROM teams WHERE tournamentId = 1\nUNION ALL\nSELECT 'sheets_sync_log', COUNT(*) FROM sheets_sync_log WHERE tournamentId = 1\nUNION ALL\nSELECT 'tournament_phases', COUNT(*) FROM tournament_phases WHERE tournamentId = 1\nUNION ALL\nSELECT 'pools', COUNT(*) FROM pools WHERE tournamentId = 1;\n",
+  "rows": [
+    {
+      "tabela": "tournament_phases",
+      "total": "0"
+    },
+    {
+      "tabela": "games",
+      "total": "0"
+    },
+    {
+      "tabela": "teams",
+      "total": "0"
+    },
+    {
+      "tabela": "pools",
+      "total": "2"
+    },
+    {
+      "tabela": "sheets_sync_log",
+      "total": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\ttotal\ntournament_phases\t0\ngames\t0\nteams\t0\npools\t2\nsheets_sync_log\t0\n",
+  "stderr": "",
+  "execution_time_ms": 364
+}

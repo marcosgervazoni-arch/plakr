@@ -1,0 +1,45 @@
+{
+  "query": "\n-- Verificar todas as FKs que referenciam a tabela tournaments\nSELECT \n  TABLE_NAME,\n  COLUMN_NAME,\n  CONSTRAINT_NAME,\n  REFERENCED_TABLE_NAME,\n  REFERENCED_COLUMN_NAME\nFROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE\nWHERE REFERENCED_TABLE_NAME = 'tournaments'\n  AND TABLE_SCHEMA = DATABASE();\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \n-- Verificar todas as FKs que referenciam a tabela tournaments\nSELECT \n  TABLE_NAME,\n  COLUMN_NAME,\n  CONSTRAINT_NAME,\n  REFERENCED_TABLE_NAME,\n  REFERENCED_COLUMN_NAME\nFROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE\nWHERE REFERENCED_TABLE_NAME = 'tournaments'\n  AND TABLE_SCHEMA = DATABASE();\n",
+  "rows": [
+    {
+      "TABLE_NAME": "games",
+      "COLUMN_NAME": "tournamentId",
+      "CONSTRAINT_NAME": "games_tournamentId_tournaments_id_fk",
+      "REFERENCED_TABLE_NAME": "tournaments",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "teams",
+      "COLUMN_NAME": "tournamentId",
+      "CONSTRAINT_NAME": "teams_tournamentId_tournaments_id_fk",
+      "REFERENCED_TABLE_NAME": "tournaments",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "sheets_sync_log",
+      "COLUMN_NAME": "tournamentId",
+      "CONSTRAINT_NAME": "sheets_sync_log_tournamentId_tournaments_id_fk",
+      "REFERENCED_TABLE_NAME": "tournaments",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "tournament_phases",
+      "COLUMN_NAME": "tournamentId",
+      "CONSTRAINT_NAME": "tournament_phases_tournamentId_tournaments_id_fk",
+      "REFERENCED_TABLE_NAME": "tournaments",
+      "REFERENCED_COLUMN_NAME": "id"
+    },
+    {
+      "TABLE_NAME": "pools",
+      "COLUMN_NAME": "tournamentId",
+      "CONSTRAINT_NAME": "pools_tournamentId_tournaments_id_fk",
+      "REFERENCED_TABLE_NAME": "tournaments",
+      "REFERENCED_COLUMN_NAME": "id"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\tCOLUMN_NAME\tCONSTRAINT_NAME\tREFERENCED_TABLE_NAME\tREFERENCED_COLUMN_NAME\ngames\ttournamentId\tgames_tournamentId_tournaments_id_fk\ttournaments\tid\nteams\ttournamentId\tteams_tournamentId_tournaments_id_fk\ttournaments\tid\nsheets_sync_log\ttournamentId\tsheets_sync_log_tournamentId_tournaments_id_fk\ttournaments\tid\ntournament_phases\ttournamentId\ttournament_phases_tournamentId_tournaments_id_fk\ttournaments\tid\npools\ttournamentId\tpools_tournamentId_tournaments_id_fk\ttournaments\tid\n",
+  "stderr": "",
+  "execution_time_ms": 384
+}
