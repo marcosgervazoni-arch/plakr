@@ -763,3 +763,9 @@
 - [x] C1 — Sidebar do Organizer com grupos colapsáveis (Visão Geral / Participantes / Configuração / Financeiro)
 - [x] C2 — Prazo de palpite configurável na UI: slider bettingDeadlineMinutes (0–120 min) na tela de Regras (Pro)
 - [x] C3 — Gráfico de ingressos por dia (série temporal 7 dias, Pro) na tela de Acesso; teaser para Free
+
+## Sprint 24/03/2026 — Ciclo Stripe (melhorias pós-auditoria)
+
+- [x] Stripe: rebaixamento gracioso — aguardar 3 tentativas (attempt_count >= 3) antes de rebaixar para Free no invoice.payment_failed
+- [x] Stripe: notificação de renovação bem-sucedida no invoice.paid (subscription_cycle)
+- [x] Stripe: success_url e cancel_url usando slug do bolão em vez de ID numérico

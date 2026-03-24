@@ -6,7 +6,7 @@
 import { Express, Request, Response } from "express";
 import express from "express";
 import Stripe from "stripe";
-import { createAdminLog, createNotification, getPoolById, updatePool, upsertUserPlan } from "./db";
+import { createAdminLog, createNotification, getPoolById, updatePool, upsertUserPlan, getUserPlan } from "./db";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
   apiVersion: "2026-02-25.clover",
@@ -113,9 +113,10 @@ export function registerStripeWebhook(app: Express) {
             break;
           }
 
-          // ─── Pagamento de fatura falhou: notificar e rebaixar ─────────────
+          // ─── Pagamento de fatura falhou: rebaixamento gracioso após 3 tentativas ─
           case "invoice.payment_failed": {
             const invoice = event.data.object as Stripe.Invoice;
+            const attemptCount = (invoice as unknown as { attempt_count?: number }).attempt_count ?? 1;
             const subscriptionId = (invoice as unknown as { subscription?: string }).subscription;
             const subscription = subscriptionId
               ? await stripe.subscriptions.retrieve(subscriptionId)
@@ -127,25 +128,36 @@ export function registerStripeWebhook(app: Express) {
               ? parseInt(subscription.metadata.user_id)
               : null;
 
-            if (poolId) {
-              await updatePool(poolId, { plan: "free" });
-
-              if (userId) {
+            if (poolId && userId) {
+              if (attemptCount >= 3) {
+                // Após 3 tentativas: rebaixar para Free
+                await updatePool(poolId, { plan: "free", stripeSubscriptionId: null });
                 await createNotification({
                   userId,
                   type: "plan_expired",
-                  title: "Pagamento falhou",
+                  title: "Plano Pro cancelado por falta de pagamento",
                   message:
-                    "Não foi possível processar o pagamento do Plano Pro. O bolão foi rebaixado para o plano gratuito. Atualize seu método de pagamento.",
+                    "Após 3 tentativas sem sucesso, seu Plano Pro foi cancelado. O bolão continua ativo no plano gratuito. Atualize seu método de pagamento no painel do Stripe para reativar.",
+                  priority: "high",
                 });
+                console.log(`[Webhook] Payment failed 3x, pool ${poolId} downgraded to free`);
+              } else {
+                // Tentativas 1 e 2: apenas avisar, manter Pro
+                await createNotification({
+                  userId,
+                  type: "plan_expired",
+                  title: `Pagamento falhou (tentativa ${attemptCount}/3)`,
+                  message:
+                    `Não foi possível processar o pagamento do Plano Pro (tentativa ${attemptCount} de 3). Atualize seu método de pagamento para evitar o cancelamento.`,
+                  priority: "high",
+                });
+                console.log(`[Webhook] Payment failed attempt ${attemptCount}/3 for pool ${poolId}`);
               }
-
-              console.log(`[Webhook] Payment failed, pool ${poolId} downgraded to free`);
             }
             break;
           }
 
-          // ─── Assinatura renovada com sucesso ──────────────────────────────
+          // ─── Assinatura renovada com sucesso ──────────────────────────
           case "invoice.paid": {
             const invoicePaid = event.data.object as Stripe.Invoice;
             if (invoicePaid.billing_reason === "subscription_cycle") {
@@ -170,6 +182,17 @@ export function registerStripeWebhook(app: Express) {
                   stripeSubscriptionId: invSubId ?? null,
                   planExpiresAt: newExpiry,
                 });
+
+                // Notificar organizador sobre renovação bem-sucedida
+                const expiryFormatted = newExpiry.toLocaleDateString("pt-BR");
+                await createNotification({
+                  userId,
+                  type: "system",
+                  title: "Plano Pro renovado com sucesso!",
+                  message: `Seu Plano Pro foi renovado automaticamente e está ativo até ${expiryFormatted}. Obrigado pela confiança!`,
+                  priority: "normal",
+                });
+
                 console.log(`[Webhook] Subscription renewed for pool ${poolId} until ${newExpiry}`);
               }
             }

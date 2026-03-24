@@ -2703,8 +2703,8 @@ export const appRouter = router({
             },
           },
           allow_promotion_codes: true,
-          success_url: `${input.origin}/organizer/${input.poolId}?checkout=success`,
-          cancel_url: `${input.origin}/organizer/${input.poolId}?checkout=cancelled`,
+          success_url: `${input.origin}/pool/${pool.slug}/manage?checkout=success`,
+          cancel_url: `${input.origin}/pool/${pool.slug}/manage?checkout=cancelled`,
         });
 
         return { checkoutUrl: session.url };
@@ -2732,7 +2732,7 @@ export const appRouter = router({
 
         const session = await stripe.billingPortal.sessions.create({
           customer: plan.stripeCustomerId,
-          return_url: `${input.origin}/organizer/${input.poolId}`,
+          return_url: `${input.origin}/pool/${input.poolId}/manage`,
         });
 
         return { portalUrl: session.url };
