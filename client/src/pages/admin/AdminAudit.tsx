@@ -27,7 +27,7 @@ import {
   UserX,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Mapeamento de ações para labels legíveis e ícones
 const ACTION_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
@@ -69,6 +69,7 @@ const LEVEL_META: Record<string, { label: string; icon: React.ElementType; color
 type LogEntry = {
   id: number;
   adminId: number;
+  adminName?: string;
   action: string;
   entityType?: string | null;
   entityId?: number | null;
@@ -177,7 +178,7 @@ function LogCard({ log }: { log: LogEntry }) {
               {format(new Date(log.createdAt), "dd/MM HH:mm", { locale: ptBR })}
             </p>
             <p className="text-xs text-muted-foreground">
-              Admin <span className="font-mono">#{log.adminId}</span>
+              {log.adminName ?? `Admin #${log.adminId}`}
             </p>
             {hasDetails && (
               <Button
@@ -237,31 +238,51 @@ export default function AdminAudit() {
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<"all" | "info" | "warn" | "error">("all");
   const [entityFilter, setEntityFilter] = useState<string>("all");
+  const [cursor, setCursor] = useState<number | undefined>(undefined);
+  const [allLogs, setAllLogs] = useState<LogEntry[]>([]);
 
-  const { data: logs, isLoading } = trpc.platform.getAuditLogs.useQuery({ limit: 500 });
+  const { data: page, isLoading, isFetching } = trpc.adminDashboard.getAuditLogsPaged.useQuery(
+    { limit: 50, cursor, level: levelFilter },
+  );
 
-  const filtered = (logs ?? []).filter((log) => {
-    const typedLog = log as LogEntry;
+  useEffect(() => {
+    if (!page) return;
+    const newLogs = (page.logs ?? []) as LogEntry[];
+    if (!cursor) {
+      setAllLogs(newLogs);
+    } else {
+      setAllLogs((prev) => {
+        const existingIds = new Set(prev.map(l => l.id));
+        return [...prev, ...newLogs.filter(l => !existingIds.has(l.id))];
+      });
+    }
+  }, [page]);
 
-    if (levelFilter !== "all" && (typedLog.level ?? "info") !== levelFilter) return false;
-    if (entityFilter !== "all" && typedLog.entityType !== entityFilter) return false;
+  const handleLevelChange = (v: "all" | "info" | "warn" | "error") => {
+    setLevelFilter(v);
+    setCursor(undefined);
+    setAllLogs([]);
+  };
 
+  const filtered = allLogs.filter((log) => {
+    if (entityFilter !== "all" && log.entityType !== entityFilter) return false;
     if (search) {
-      const meta = ACTION_META[typedLog.action];
-      const label = meta?.label ?? typedLog.action;
+      const meta = ACTION_META[log.action];
+      const label = meta?.label ?? log.action;
       const searchLower = search.toLowerCase();
       return (
         label.toLowerCase().includes(searchLower) ||
-        typedLog.action.toLowerCase().includes(searchLower) ||
-        (typedLog.correlationId ?? "").toLowerCase().includes(searchLower) ||
-        (typedLog.ipAddress ?? "").toLowerCase().includes(searchLower)
+        log.action.toLowerCase().includes(searchLower) ||
+        (log.correlationId ?? "").toLowerCase().includes(searchLower) ||
+        (log.ipAddress ?? "").toLowerCase().includes(searchLower) ||
+        (log.adminName ?? "").toLowerCase().includes(searchLower)
       );
     }
     return true;
   });
 
-  const errorCount = (logs ?? []).filter((l) => (l as LogEntry).level === "error").length;
-  const warnCount = (logs ?? []).filter((l) => (l as LogEntry).level === "warn").length;
+  const errorCount = allLogs.filter((l) => l.level === "error").length;
+  const warnCount = allLogs.filter((l) => l.level === "warn").length;
 
   return (
     <AdminLayout activeSection="audit">
@@ -312,7 +333,7 @@ export default function AdminAudit() {
               className="pl-9"
             />
           </div>
-          <Select value={levelFilter} onValueChange={(v) => setLevelFilter(v as typeof levelFilter)}>
+          <Select value={levelFilter} onValueChange={(v) => handleLevelChange(v as typeof levelFilter)}>
             <SelectTrigger className="w-36 h-10">
               <SelectValue placeholder="Nível" />
             </SelectTrigger>
@@ -350,7 +371,8 @@ export default function AdminAudit() {
 
         {/* Contagem */}
         <p className="text-xs text-muted-foreground">
-          {filtered.length} de {(logs ?? []).length} registros
+          {filtered.length} de {allLogs.length} carregados
+          {page?.nextCursor && " (há mais)"}
         </p>
 
         {/* Lista */}
@@ -371,6 +393,23 @@ export default function AdminAudit() {
                     ? "Nenhum log encontrado para os filtros aplicados."
                     : "Nenhum log de auditoria ainda."}
                 </p>
+              </div>
+            )}
+            {/* Carregar mais */}
+            {page?.nextCursor && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isFetching}
+                  onClick={() => setCursor(page.nextCursor ?? undefined)}
+                >
+                  {isFetching ? (
+                    <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Carregando...</>
+                  ) : (
+                    <>Carregar mais 50 registros</>
+                  )}
+                </Button>
               </div>
             )}
           </div>

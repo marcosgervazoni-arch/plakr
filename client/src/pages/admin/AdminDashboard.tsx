@@ -1,112 +1,198 @@
-import AdminLayout from "@/components/AdminLayout";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { trpc } from "@/lib/trpc";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useState } from "react";
+import { Link } from "wouter";
 import {
-  Activity,
-  BarChart3,
-  Crown,
-  DollarSign,
-  Loader2,
-  TrendingUp,
-  Trophy,
-  Users,
+  Users, Trophy, Target, TrendingUp, DollarSign, Activity,
+  Zap, AlertTriangle, AlertCircle, Info, ChevronRight,
+  ClipboardList, Megaphone, Settings,
 } from "lucide-react";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
 } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import AdminLayout from "@/components/AdminLayout";
+import { trpc } from "@/lib/trpc";
 
+// ─── CARD DE MÉTRICA ─────────────────────────────────────────────────────────
+function MetricCard({
+  title, value, sub, icon: Icon, color, bg,
+}: {
+  title: string; value: string; sub: string;
+  icon: React.ElementType; color: string; bg: string;
+}) {
+  return (
+    <Card className="border-border/50">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground truncate">{title}</p>
+            <p className={`text-2xl font-bold font-mono mt-1 ${color}`}>{value}</p>
+            <p className="text-xs text-muted-foreground mt-1 truncate">{sub}</p>
+          </div>
+          <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center shrink-0 ml-2`}>
+            <Icon className={`h-4 w-4 ${color}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── ALERTA CONTEXTUAL ────────────────────────────────────────────────────────
+function AlertBanner({
+  type, message, action, actionPath,
+}: {
+  type: "warning" | "error" | "info";
+  message: string;
+  action?: string;
+  actionPath?: string;
+}) {
+  const styles = {
+    warning: { bg: "bg-yellow-500/10 border-yellow-500/30", text: "text-yellow-400", Icon: AlertTriangle },
+    error: { bg: "bg-red-500/10 border-red-500/30", text: "text-red-400", Icon: AlertCircle },
+    info: { bg: "bg-blue-500/10 border-blue-500/30", text: "text-blue-400", Icon: Info },
+  }[type];
+
+  return (
+    <div className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg border ${styles.bg}`}>
+      <div className="flex items-center gap-2 min-w-0">
+        <styles.Icon className={`h-4 w-4 shrink-0 ${styles.text}`} />
+        <span className={`text-sm font-medium ${styles.text} truncate`}>{message}</span>
+      </div>
+      {action && actionPath && (
+        <Link href={actionPath}>
+          <Button variant="ghost" size="sm" className={`text-xs shrink-0 ${styles.text}`}>
+            {action} <ChevronRight className="h-3 w-3 ml-1" />
+          </Button>
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// ─── QUICK ACTION ─────────────────────────────────────────────────────────────
+function QuickAction({
+  icon: Icon, label, path, badge,
+}: {
+  icon: React.ElementType; label: string; path: string; badge?: number;
+}) {
+  return (
+    <Link href={path}>
+      <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:border-brand/40 hover:bg-brand/5 transition-all cursor-pointer group">
+        <div className="w-8 h-8 rounded-md bg-brand/10 flex items-center justify-center shrink-0 group-hover:bg-brand/20 transition-colors">
+          <Icon className="h-4 w-4 text-brand" />
+        </div>
+        <span className="text-sm font-medium flex-1">{label}</span>
+        {badge !== undefined && badge > 0 && (
+          <Badge variant="destructive" className="text-xs h-5 min-w-[20px] px-1.5">{badge}</Badge>
+        )}
+        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-brand transition-colors" />
+      </div>
+    </Link>
+  );
+}
+
+// ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const { data: stats, isLoading } = trpc.platform.getStats.useQuery();
+  const [chartMetric, setChartMetric] = useState<"users" | "pools" | "bets">("users");
 
-  const mockGrowthData = [
-    { month: "Out", users: 12, pools: 3, revenue: 0 },
-    { month: "Nov", users: 28, pools: 7, revenue: 0 },
-    { month: "Dez", users: 45, pools: 12, revenue: 0 },
-    { month: "Jan", users: 67, pools: 18, revenue: 0 },
-    { month: "Fev", users: 89, pools: 24, revenue: 0 },
-    { month: "Mar", users: stats?.totalUsers ?? 0, pools: stats?.totalPools ?? 0, revenue: 0 },
-  ];
+  const { data: enriched, isLoading: loadingStats } = trpc.adminDashboard.getEnrichedStats.useQuery();
+  const { data: growth, isLoading: loadingGrowth } = trpc.adminDashboard.getGrowthSeries.useQuery();
+  const { data: alerts, isLoading: loadingAlerts } = trpc.adminDashboard.getDashboardAlerts.useQuery();
+  const { data: pending } = trpc.adminDashboard.getPendingGames.useQuery();
+  const { data: health } = trpc.adminDashboard.getSystemHealth.useQuery();
 
-  const metricCards = [
-    {
-      title: "Total de Usuários",
-      value: stats?.totalUsers ?? 0,
-      icon: Users,
-      color: "text-blue-400",
-      bg: "bg-blue-400/10",
-      sub: "cadastrados na plataforma",
-    },
-    {
-      title: "Bolões Ativos",
-      value: stats?.activePools ?? 0,
-      icon: Trophy,
-      color: "text-green-400",
-      bg: "bg-green-400/10",
-      sub: "em andamento agora",
-    },
-    {
-      title: "Assinaturas Pro",
-      value: stats?.proPlans ?? 0,
-      icon: Crown,
-      color: "text-yellow-400",
-      bg: "bg-yellow-400/10",
-      sub: "bolões com Plano Pro",
-    },
-    {
-      title: "Palpites Registrados",
-      value: stats?.totalBets ?? 0,
-      icon: Activity,
-      color: "text-brand",
-      bg: "bg-brand/10",
-      sub: "total na plataforma",
-    },
-  ];
+  const fmtBrl = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 });
+
+  const metricCards = enriched
+    ? [
+        {
+          title: "Usuários Totais",
+          value: enriched.totalUsers.toLocaleString("pt-BR"),
+          sub: `${enriched.dau} ativos hoje · ${enriched.wau} esta semana`,
+          icon: Users, color: "text-indigo-400", bg: "bg-indigo-500/10",
+        },
+        {
+          title: "MRR Estimado",
+          value: fmtBrl(enriched.mrrBrl),
+          sub: `ARR: ${fmtBrl(enriched.arrBrl)}`,
+          icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10",
+        },
+        {
+          title: "Bolões Ativos",
+          value: enriched.activePools.toLocaleString("pt-BR"),
+          sub: `${enriched.proPlans} Pro · ${enriched.activePools - enriched.proPlans} Free`,
+          icon: Trophy, color: "text-yellow-400", bg: "bg-yellow-500/10",
+        },
+        {
+          title: "Conversão Free→Pro",
+          value: `${enriched.conversionRate}%`,
+          sub: `${enriched.proPlans} de ${enriched.totalPools} bolões`,
+          icon: TrendingUp, color: "text-brand", bg: "bg-brand/10",
+        },
+        {
+          title: "Palpites Hoje",
+          value: enriched.betsToday.toLocaleString("pt-BR"),
+          sub: `${enriched.totalBets.toLocaleString("pt-BR")} no total`,
+          icon: Target, color: "text-orange-400", bg: "bg-orange-500/10",
+        },
+        {
+          title: "Campeonatos",
+          value: enriched.totalTournaments.toLocaleString("pt-BR"),
+          sub: "cadastrados na plataforma",
+          icon: Activity, color: "text-purple-400", bg: "bg-purple-500/10",
+        },
+      ]
+    : [];
+
+  const chartColors = { users: "#6366f1", pools: "#22c55e", bets: "#f59e0b" };
+  const chartLabels = { users: "Usuários", pools: "Bolões", bets: "Palpites" };
 
   return (
     <AdminLayout activeSection="dashboard">
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold font-display">Dashboard Global</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Visão geral da plataforma ApostAI —{" "}
-            {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Visão Geral</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Métricas em tempo real da plataforma</p>
+          </div>
+          <Badge variant="outline" className="text-xs gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Ao vivo
+          </Badge>
         </div>
 
-        {/* Métricas principais */}
-        {isLoading ? (
-          <div className="flex items-center justify-center h-32">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        {/* Alertas contextuais */}
+        {!loadingAlerts && alerts && alerts.length > 0 && (
+          <div className="space-y-2">
+            {alerts.map((a, i) => (
+              <AlertBanner key={i} {...a} />
+            ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {metricCards.map((m) => (
-              <Card key={m.title} className="border-border/50">
+        )}
+
+        {/* Cards de métricas */}
+        {loadingStats ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="border-border/50">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">{m.title}</p>
-                      <p className={`text-2xl font-bold font-mono mt-1 ${m.color}`}>
-                        {m.value.toLocaleString("pt-BR")}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">{m.sub}</p>
-                    </div>
-                    <div className={`w-9 h-9 rounded-lg ${m.bg} flex items-center justify-center`}>
-                      <m.icon className={`h-4 w-4 ${m.color}`} />
-                    </div>
-                  </div>
+                  <Skeleton className="h-4 w-24 mb-2" />
+                  <Skeleton className="h-7 w-16 mb-1" />
+                  <Skeleton className="h-3 w-32" />
                 </CardContent>
               </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {metricCards.map((m) => (
+              <MetricCard key={m.title} {...m} />
             ))}
           </div>
         )}
@@ -114,80 +200,128 @@ export default function AdminDashboard() {
         {/* Gráfico de crescimento */}
         <Card className="border-border/50">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <TrendingUp className="h-4 w-4 text-brand" />
                 Crescimento da Plataforma
               </CardTitle>
-              <Badge variant="outline" className="text-xs">Últimos 6 meses</Badge>
+              <div className="flex items-center gap-1">
+                {(["users", "pools", "bets"] as const).map((m) => (
+                  <Button
+                    key={m}
+                    variant={chartMetric === m ? "default" : "ghost"}
+                    size="sm"
+                    className="text-xs h-7 px-2"
+                    onClick={() => setChartMetric(m)}
+                  >
+                    {chartLabels[m]}
+                  </Button>
+                ))}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={mockGrowthData}>
-                <defs>
-                  <linearGradient id="usersGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="poolsGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                />
-                <Area type="monotone" dataKey="users" stroke="#6366f1" fill="url(#usersGrad)" strokeWidth={2} name="Usuários" />
-                <Area type="monotone" dataKey="pools" stroke="#22c55e" fill="url(#poolsGrad)" strokeWidth={2} name="Bolões" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {loadingGrowth ? (
+              <Skeleton className="h-[220px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={growth ?? []}>
+                  <defs>
+                    <linearGradient id="metricGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={chartColors[chartMetric]} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={chartColors[chartMetric]} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey={chartMetric}
+                    stroke={chartColors[chartMetric]}
+                    fill="url(#metricGrad)"
+                    strokeWidth={2}
+                    name={chartLabels[chartMetric]}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
-        {/* Stats secundárias */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Quick Actions + Status do Sistema */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="border-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Campeonatos Globais</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Zap className="h-4 w-4 text-brand" />
+                Ações Rápidas
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold font-mono text-brand">
-                {stats?.totalTournaments ?? 0}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">cadastrados na plataforma</p>
+            <CardContent className="space-y-2">
+              <QuickAction icon={ClipboardList} label="Registrar Resultados" path="/admin/game-results" badge={pending?.length} />
+              <QuickAction icon={Users} label="Gerenciar Usuários" path="/admin/users" />
+              <QuickAction icon={Trophy} label="Assinaturas Pro" path="/admin/subscriptions" />
+              <QuickAction icon={Megaphone} label="Enviar Broadcast" path="/admin/broadcasts" />
+              <QuickAction icon={Settings} label="Saúde do Sistema" path="/admin/system" badge={health?.emailQueue.failed} />
             </CardContent>
           </Card>
+
           <Card className="border-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Taxa de Conversão Pro</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="h-4 w-4 text-brand" />
+                Status do Sistema
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold font-mono text-yellow-400">
-                {stats?.totalPools
-                  ? `${Math.round(((stats.proPlans ?? 0) / stats.totalPools) * 100)}%`
-                  : "0%"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">bolões que assinaram o Pro</p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Total de Bolões</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold font-mono text-green-400">
-                {stats?.totalPools ?? 0}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">criados na plataforma</p>
+            <CardContent className="space-y-3">
+              {[
+                {
+                  label: "Fila de E-mail",
+                  dot: (health?.emailQueue.failed ?? 0) > 0 ? "bg-red-400" : (health?.emailQueue.pending ?? 0) > 10 ? "bg-yellow-400" : "bg-emerald-400",
+                  value: `${health?.emailQueue.pending ?? 0} pendentes${(health?.emailQueue.failed ?? 0) > 0 ? ` · ${health?.emailQueue.failed} falhas` : ""}`,
+                  valueColor: (health?.emailQueue.failed ?? 0) > 0 ? "text-red-400" : "text-muted-foreground",
+                },
+                {
+                  label: "Push Notifications",
+                  dot: "bg-emerald-400",
+                  value: `${health?.pushSubscriptions ?? 0} assinaturas`,
+                  valueColor: "text-muted-foreground",
+                },
+                {
+                  label: "Resultados Pendentes",
+                  dot: (pending?.length ?? 0) > 0 ? "bg-yellow-400" : "bg-emerald-400",
+                  value: `${pending?.length ?? 0} jogos`,
+                  valueColor: (pending?.length ?? 0) > 0 ? "text-yellow-400" : "text-muted-foreground",
+                },
+                {
+                  label: "Erros Recentes",
+                  dot: (health?.recentErrors.length ?? 0) > 0 ? "bg-red-400" : "bg-emerald-400",
+                  value: `${health?.recentErrors.length ?? 0} erros`,
+                  valueColor: (health?.recentErrors.length ?? 0) > 0 ? "text-red-400" : "text-muted-foreground",
+                },
+              ].map((row, i, arr) => (
+                <div key={row.label} className={`flex items-center justify-between py-2 ${i < arr.length - 1 ? "border-b border-border/30" : ""}`}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${row.dot}`} />
+                    <span className="text-sm">{row.label}</span>
+                  </div>
+                  <span className={`text-xs font-medium ${row.valueColor}`}>{row.value}</span>
+                </div>
+              ))}
+              <Link href="/admin/system">
+                <Button variant="outline" size="sm" className="w-full text-xs mt-1">
+                  Ver detalhes do sistema
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

@@ -29,13 +29,16 @@ import { Link, useLocation } from "wouter";
 export type AdminSection =
   | "dashboard"
   | "tournaments"
+  | "game-results"
   | "users"
   | "pools"
   | "subscriptions"
+  | "referrals"
   | "broadcasts"
   | "ads"
   | "settings"
   | "audit"
+  | "system"
   | "integrations"
   | "badges";
 
@@ -69,6 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "tournaments", label: "Campeonatos", icon: Trophy, path: "/admin/tournaments" },
       { id: "pools", label: "Bolões", icon: BookOpen, path: "/admin/pools" },
+      { id: "game-results", label: "Resultados", icon: ClipboardList, path: "/admin/game-results" },
     ],
   },
   {
@@ -95,6 +99,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Wallet,
     items: [
       { id: "subscriptions", label: "Assinaturas", icon: CreditCard, path: "/admin/subscriptions" },
+      { id: "referrals", label: "Programa de Convites", icon: Zap, path: "/admin/referrals" },
     ],
   },
   {
@@ -112,6 +117,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Shield,
     items: [
       { id: "audit", label: "Logs de Auditoria", icon: ClipboardList, path: "/admin/audit" },
+      { id: "system", label: "Saúde do Sistema", icon: Shield, path: "/admin/system" },
     ],
   },
 ];

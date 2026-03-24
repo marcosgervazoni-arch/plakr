@@ -785,3 +785,104 @@
 - [x] Página /conquistas: seção 2 — histórico de conquistas com data e contexto do bolão
 - [x] Página /conquistas: seção 3 — comparação com a plataforma (% de usuários com cada badge, com fallback)
 - [x] Rota /conquistas registrada no App.tsx + item no AppShell + link no DashboardBadgeCarousel
+
+## Sprint 24/03/2026 — Reestruturação Super Admin (A–G)
+
+### Backend (Procedures)
+- [x] A. platform.getGrowthSeries — série temporal real (usuários, bolões, palpites por mês)
+- [x] A. platform.getStats — enriquecer com MRR, DAU, WAU, taxa conversão Free→Pro
+- [x] B. platform.getSubscriptionStats — MRR, ARR, churn rate, ticket médio, alertas vencimento
+- [x] D. platform.getSystemHealth — fila email, jobs pontuação, push subscriptions, erros recentes
+- [x] E. platform.getReferralStats — ranking convitadores, taxa conversão, top códigos
+
+### Frontend — Dashboard Global (A + G)
+- [x] A. AdminDashboard: substituir mock data por série temporal real do banco
+- [x] A. AdminDashboard: cards MRR, DAU, WAU, taxa conversão
+- [x] G. AdminDashboard: Quick Actions (jogos pendentes, broadcast urgente, último erro)
+- [x] G. AdminDashboard: alertas contextuais (bolões expirando, fila de email acumulada)
+
+### Frontend — Assinaturas (B)
+- [x] B. AdminSubscriptions: reescrever com MRR/ARR/churn calculados do banco
+- [x] B. AdminSubscriptions: lista com status visual (ativa, em risco, cancelada, vencendo)
+- [x] B. AdminSubscriptions: link direto para Stripe Dashboard por assinatura
+- [x] B. AdminSubscriptions: alertas de assinaturas vencendo em 7 dias
+
+### Frontend — Resultados em Lote (C)
+- [x] C. Nova seção AdminGameResults: filtro campeonato + fase, grid inline de resultados
+- [x] C. Batch save de resultados com recálculo automático de pontuação
+- [x] C. Rota /admin/game-results + item no AdminLayout
+
+### Frontend — Saúde do Sistema (D)
+- [x] D. Nova seção AdminSystemHealth: fila email, jobs, push, erros recentes
+- [x] D. Rota /admin/system + item no AdminLayout (grupo Sistema)
+
+### Frontend — Programa de Convites (E)
+- [x] E. Nova seção AdminReferrals: ranking convitadores, taxa conversão, top códigos
+- [x] E. Rota /admin/referrals + item no AdminLayout (grupo Participantes)
+
+### Frontend — Logs de Auditoria melhorados (F)
+- [x] F. AdminAudit: paginação real (cursor-based, não carregar 500 de uma vez)
+- [x] F. AdminAudit: filtro por admin (quem executou a ação)
+- [x] F. AdminAudit: export CSV dos logs filtrados
+
+## Sprint 1 — Super Admin Crítico (24/03/2026)
+
+### Backend — Procedures novas/melhoradas
+- [x] platform.getGrowthSeries — série temporal real (usuários, bolões, palpites por mês, últimos 6 meses)
+- [x] platform.getStats — enriquecer com MRR estimado, DAU, WAU, funil Free→Pro
+- [x] platform.getSubscriptionStats — MRR, ARR, churn rate, ticket médio, alertas vencimento 7 dias
+- [x] platform.getSystemHealth — fila email (pending/sent/failed), jobs cron status, push subscriptions, erros recentes
+- [x] platform.getReferralStats — ranking convitadores, taxa conversão, totais
+- [x] adminDashboard.getAuditLogsPaged — paginação cursor-based com nome do admin
+- [x] adminDashboard.getPendingGames — jogos pendentes de resultado por campeonato/fase
+
+### Frontend — Dashboard Global
+- [x] AdminDashboard: substituir mock data por série temporal real
+- [x] AdminDashboard: cards MRR, DAU, WAU, taxa conversão Free→Pro
+- [x] AdminDashboard: seção Quick Actions (jogos pendentes, último erro, broadcast urgente)
+- [x] AdminDashboard: alertas contextuais (bolões expirando hoje, fila email acumulada, jogos sem resultado há 24h)
+
+### Frontend — Assinaturas (reescrita)
+- [x] AdminSubscriptions: cards MRR, ARR, churn rate, ticket médio
+- [x] AdminSubscriptions: lista com status visual (ativa/vencendo/cancelada) e alertas de 7 dias
+- [x] AdminSubscriptions: ação de upgrade manual de plano de bolão
+- [x] AdminSubscriptions: link direto para Stripe Dashboard por assinatura
+
+### Frontend — Resultados em Lote (nova seção)
+- [x] AdminGameResults: nova página /admin/game-results
+- [x] AdminGameResults: filtro por campeonato + fase/rodada
+- [x] AdminGameResults: grid inline de resultados com salvar em lote
+- [x] AdminLayout: adicionar "Registrar Resultados" no grupo Campeonato
+
+### Frontend — Saúde do Sistema (nova seção)
+- [x] AdminSystemHealth: nova página /admin/system
+- [x] AdminSystemHealth: cards de fila de email (pending/sent/failed/hoje)
+- [x] AdminSystemHealth: status dos 3 cron jobs (email queue, bet reminders, plan expiry)
+- [x] AdminSystemHealth: push subscriptions ativas e falhas recentes
+- [x] AdminSystemHealth: últimos 5 erros dos logs de auditoria
+- [x] AdminLayout: adicionar "Saúde do Sistema" no grupo Sistema
+
+### Frontend — Usuários melhorado
+- [x] AdminUsers: botão export CSV da lista filtrada
+- [ ] AdminUsers: filtro por inatividade (sem login há 7/30/90 dias) — Sprint 2
+- [ ] AdminUsers: ação "Forçar logout" no painel de detalhes do usuário — Sprint 2
+
+### Frontend — Logs de Auditoria melhorado
+- [x] AdminAudit: paginação real (50 por vez + botão carregar mais)
+- [x] AdminAudit: nome do admin visível em cada log
+- [ ] AdminAudit: botão export CSV dos logs filtrados — Sprint 2
+
+### Frontend — Programa de Convites (nova seção)
+- [x] AdminReferrals: nova página /admin/referrals com ranking e taxa de conversão
+- [x] AdminLayout: adicionar "Convites" no grupo Participantes
+
+### Frontend — Bolões melhorado
+- [ ] AdminPools: filtro por plano (free/pro) e status combinados — Sprint 2
+- [ ] AdminPools: ação de upgrade manual de plano diretamente na lista — Sprint 2
+
+## Sprint 2 — Super Admin Complementar (a definir)
+- [ ] AdminReferrals: nova seção /admin/referrals com ranking e taxa de conversão
+- [ ] AdminImportLog: nova seção /admin/import-log com histórico de sincronizações Google Sheets
+- [ ] AdminSettings: gestão manual de planos de usuário (unlimited para testes)
+- [ ] AdminSettings: feature flags básicos (habilitar/desabilitar funcionalidades por grupo)
+- [ ] AdminLayout: reorganizar sidebar com 7 grupos finais

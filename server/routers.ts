@@ -62,6 +62,7 @@ import {
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { badgesRouter } from "./routers/badges";
+import { adminDashboardRouter } from "./routers/adminDashboard";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { calculateBetScore, calculateZebraContext, type ScoringRules } from "./scoring";
 
@@ -109,6 +110,7 @@ function buildEffectiveRules(rules: Awaited<ReturnType<typeof getPoolScoringRule
 export const appRouter = router({
   system: systemRouter,
   badges: badgesRouter,
+  adminDashboard: adminDashboardRouter,
 
   // ─── AUTH ──────────────────────────────────────────────────────────────────
   auth: router({
