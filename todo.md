@@ -654,3 +654,12 @@
 - [x] [Frontend] Card de plano com status, data de expiração e CTA de upgrade para usuários Free
 - [x] [Frontend] CTA de upgrade com gradiente amarelo/laranja e copy contextualizado
 - [x] [Frontend] Link "Ver histórico de pagamentos" visível apenas para usuários Pro/Unlimited
+
+## Sprint 24/03/2026 — Referral OAuth + Notificação Líder de Torcida
+
+- [x] [Frontend] Hook `useReferralCapture` criado: captura `?ref=CODIGO` da URL, salva no localStorage com TTL de 7 dias, limpa o parâmetro da URL sem recarregar
+- [x] [Frontend] Após login OAuth, hook detecta novo usuário (conta criada há < 60s) e chama `users.useInviteCode` automaticamente
+- [x] [Frontend] Hook registrado globalmente no `App.tsx` via `useReferralCapture()` no `Router`
+- [x] [Backend] `useInviteCode` já prevenia duplicatas (isNull(inviteeId) + inviterId !== newUserId)
+- [x] [Backend] Notificação de progresso a cada convite aceito ("Faltam X cadastros")
+- [x] [Backend] Notificação de celebração ao atingir exatamente 5 convidados (priority=high, category=badge_unlocked)

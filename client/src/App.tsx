@@ -49,9 +49,11 @@ import AdminAudit from "./pages/admin/AdminAudit";
 import AdminIntegrations from "./pages/admin/AdminIntegrations";
 import AdminBadges from "./pages/admin/AdminBadges";
 import { useAnalytics } from "./hooks/useAnalytics";
+import { useReferralCapture } from "./hooks/useReferralCapture";
 
 function Router() {
   useAnalytics();
+  useReferralCapture();
   return (
     <Switch>
       {/* Public routes */}

@@ -674,6 +674,45 @@ export const appRouter = router({
         const { calculateAndAssignBadges } = await import("./badges");
         await calculateAndAssignBadges(invite.inviterId).catch(() => {});
 
+        // Notificar o inviter sobre o progresso ou a conquista da meta
+        try {
+          const { isNotNull, count } = await import("drizzle-orm");
+          const [{ total }] = await db
+            .select({ total: count() })
+            .from(referrals)
+            .where(and(eq(referrals.inviterId, invite.inviterId), isNotNull(referrals.registeredAt)));
+          const REFERRAL_GOAL = 5;
+          const totalAccepted = Number(total);
+          if (totalAccepted === REFERRAL_GOAL) {
+            // Meta atingida exatamente agora — notificação de celebração
+            await createNotification({
+              userId: invite.inviterId,
+              type: "system",
+              title: "🏆 Você conquistou o badge Líder de Torcida!",
+              message: `Parabéns! Você convidou ${REFERRAL_GOAL} amigos que se cadastraram na plataforma. O badge exclusivo "Líder de Torcida" foi adicionado ao seu perfil.`,
+              actionUrl: "/profile/me",
+              actionLabel: "Ver meu perfil",
+              priority: "high",
+              category: "badge_unlocked",
+            });
+          } else if (totalAccepted < REFERRAL_GOAL) {
+            // Progresso intermediário — notificar a cada convite aceito
+            const remaining = REFERRAL_GOAL - totalAccepted;
+            await createNotification({
+              userId: invite.inviterId,
+              type: "system",
+              title: "Novo amigo cadastrado! 🎉",
+              message: `Um amigo seu acabou de se cadastrar via seu link de convite. Faltam ${remaining} cadastro${remaining !== 1 ? "s" : ""} para você conquistar o badge "Líder de Torcida".`,
+              actionUrl: "/my-profile",
+              actionLabel: "Ver progresso",
+              priority: "normal",
+              category: "referral_progress",
+            });
+          }
+        } catch (err) {
+          console.error("[Referral] Erro ao enviar notificação de progresso:", err);
+        }
+
         return { success: true };
       }),
   }),
