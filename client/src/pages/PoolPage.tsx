@@ -79,6 +79,59 @@ export default function PoolPage() {
     onError: (err) => toast.error("Erro ao registrar palpite", { description: err.message }),
   });
 
+  /* ── Agrupamento de jogos por fase ── (hooks ANTES dos returns condicionais) */
+  const games = data?.games ?? [];
+  const phases = data?.phases ?? [];
+
+  const phaseLabels = useMemo(() => {
+    const map = new Map<string, string>();
+    phases.forEach((p) => map.set(p.key, p.label));
+    return map;
+  }, [phases]);
+
+  const uniquePhaseKeys = useMemo(() => {
+    return Array.from(new Set(games.map((g) => g.phase ?? "group_stage")));
+  }, [games]);
+
+  const hasMultiplePhases = uniquePhaseKeys.length > 1;
+
+  const gamesByPhase = useMemo(() => {
+    const phaseOrder = new Map<string, number>();
+    phases.forEach((p, i) => phaseOrder.set(p.key, p.order ?? i));
+    const groups = new Map<string, typeof games>();
+    games.forEach((g) => {
+      const key = g.phase ?? "group_stage";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(g);
+    });
+    return Array.from(groups.entries()).sort(([a], [b]) => {
+      const oa = phaseOrder.get(a) ?? 999;
+      const ob = phaseOrder.get(b) ?? 999;
+      return oa - ob;
+    });
+  }, [games, phases]);
+
+  const activePhaseKey = useMemo(() => {
+    const livePhase = games.find((g) => g.status === "live")?.phase;
+    if (livePhase) return livePhase;
+    const nextPhase = games
+      .filter((g) => g.status === "scheduled")
+      .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())[0]?.phase;
+    return nextPhase ?? uniquePhaseKeys[0] ?? "group_stage";
+  }, [games, uniquePhaseKeys]);
+
+  const [showAllGames, setShowAllGames] = useState(false);
+  const [expandedPhases, setExpandedPhases] = useState<Set<string>>(() => new Set([activePhaseKey ?? ""]));
+
+  const togglePhase = (key: string) => {
+    setExpandedPhases((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   /* ── Loading ── */
   if (isLoading) {
     return (
@@ -120,7 +173,7 @@ export default function PoolPage() {
     );
   }
 
-  const { pool, tournament, games, rules, memberCount, myRole, phases } = data;
+  const { pool, tournament, rules, memberCount, myRole } = data;
   const isOrganizer = myRole === "organizer" || user?.role === "admin";
   const betsByGame = new Map(myBets?.map((b) => [b.gameId, b]) ?? []);
   const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
@@ -162,67 +215,7 @@ export default function PoolPage() {
     .filter((g) => g.status === "scheduled")
     .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())[0];
 
-  /* ── Agrupamento de jogos por fase ── */
-  // Mapa de label canônico: key → label (vindo das fases do torneio)
-  const phaseLabels = useMemo(() => {
-    const map = new Map<string, string>();
-    (phases ?? []).forEach((p) => map.set(p.key, p.label));
-    return map;
-  }, [phases]);
-
-  // Detecta se há múltiplas fases distintas (chaveamento)
-  const uniquePhaseKeys = useMemo(() => {
-    const keys = Array.from(new Set(games.map((g) => g.phase ?? "group_stage")));
-    return keys;
-  }, [games]);
-
-  const hasMultiplePhases = uniquePhaseKeys.length > 1;
-
-  // Agrupa jogos por fase, mantendo a ordem das fases do torneio
-  const gamesByPhase = useMemo(() => {
-    const phaseOrder = new Map<string, number>();
-    (phases ?? []).forEach((p, i) => phaseOrder.set(p.key, p.order ?? i));
-
-    const groups = new Map<string, typeof games>();
-    games.forEach((g) => {
-      const key = g.phase ?? "group_stage";
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(g);
-    });
-
-    // Ordena grupos pela ordem das fases; fases desconhecidas vão ao final
-    return Array.from(groups.entries()).sort(([a], [b]) => {
-      const oa = phaseOrder.get(a) ?? 999;
-      const ob = phaseOrder.get(b) ?? 999;
-      return oa - ob;
-    });
-  }, [games, phases]);
-
-  // Para bolões sem múltiplas fases: controla quantos jogos são visíveis
   const INITIAL_GAMES_SHOWN = 5;
-  const [showAllGames, setShowAllGames] = useState(false);
-
-  // Fase ativa = a que tem jogos ao vivo ou, se nenhuma, a com o próximo jogo
-  const activePhaseKey = useMemo(() => {
-    const livePhase = games.find((g) => g.status === "live")?.phase;
-    if (livePhase) return livePhase;
-    const nextPhase = games
-      .filter((g) => g.status === "scheduled")
-      .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())[0]?.phase;
-    return nextPhase ?? uniquePhaseKeys[0] ?? "group_stage";
-  }, [games, uniquePhaseKeys]);
-
-  // Estado de fases expandidas (accordion)
-  const [expandedPhases, setExpandedPhases] = useState<Set<string>>(() => new Set([activePhaseKey ?? ""]));
-
-  const togglePhase = (key: string) => {
-    setExpandedPhases((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background">
