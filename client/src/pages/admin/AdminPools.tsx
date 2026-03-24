@@ -167,6 +167,23 @@ export default function AdminPools() {
     onError: (err) => toast.error("Erro ao atualizar", { description: err.message }),
   });
 
+  const [grantProDays, setGrantProDays] = useState("30");
+  const grantPro = trpc.adminDashboard.grantPoolPro.useMutation({
+    onSuccess: () => {
+      toast.success("Plano Pro concedido com sucesso!");
+      refetch();
+      if (selectedPool) setSelectedPool({ ...selectedPool, plan: "pro" });
+    },
+    onError: (err: { message: string }) => toast.error("Erro ao conceder Pro", { description: err.message }),
+  });
+  const revokePro = trpc.adminDashboard.revokePoolPro.useMutation({
+    onSuccess: () => {
+      toast.success("Plano Pro revogado.");
+      refetch();
+      if (selectedPool) setSelectedPool({ ...selectedPool, plan: "free", planExpiresAt: null });
+    },
+    onError: (err: { message: string }) => toast.error("Erro ao revogar Pro", { description: err.message }),
+  });
   const createPool = trpc.pools.adminCreate.useMutation({
     onSuccess: (data) => {
       toast.success("Bolão criado com sucesso!");
@@ -495,6 +512,63 @@ export default function AdminPools() {
                   }
                   Salvar Alterações
                 </Button>
+
+                <Separator />
+
+                {/* Gestão de Plano */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-yellow-400" />
+                    Gestão de Plano
+                  </h3>
+                  {selectedPool.plan === "free" ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Select value={grantProDays} onValueChange={setGrantProDays}>
+                          <SelectTrigger className="h-9 text-sm flex-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="7">7 dias</SelectItem>
+                            <SelectItem value="30">30 dias</SelectItem>
+                            <SelectItem value="90">90 dias</SelectItem>
+                            <SelectItem value="365">1 ano</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white gap-1 h-9"
+                          disabled={grantPro.isPending}
+                          onClick={() => grantPro.mutate({ poolId: selectedPool.id, durationDays: parseInt(grantProDays) })}
+                        >
+                          {grantPro.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crown className="h-3.5 w-3.5" />}
+                          Conceder Pro
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Concede acesso Pro gratuito por período determinado.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400/10 border border-yellow-400/20">
+                        <Crown className="h-4 w-4 text-yellow-400" />
+                        <span className="text-xs text-yellow-400 font-medium">Plano Pro ativo</span>
+                        {selectedPool.planExpiresAt && (
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            até {format(new Date(selectedPool.planExpiresAt), "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full border-yellow-400/30 text-yellow-500 hover:bg-yellow-400/10 gap-2 h-9"
+                        disabled={revokePro.isPending}
+                        onClick={() => revokePro.mutate({ poolId: selectedPool.id })}
+                      >
+                        {revokePro.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crown className="h-3.5 w-3.5" />}
+                        Revogar Plano Pro
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
                 <Separator />
 

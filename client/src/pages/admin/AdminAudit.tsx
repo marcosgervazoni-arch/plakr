@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ClipboardList,
   Crown,
+  Download,
   FileText,
   Import,
   Info,
@@ -367,6 +368,34 @@ export default function AdminAudit() {
               Limpar filtros
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 ml-auto"
+            disabled={filtered.length === 0}
+            onClick={() => {
+              const header = "ID,Admin,Ação,Tipo,Nível,Data";
+              const rows = filtered.map(l => [
+                l.id,
+                `"${(l.adminName ?? `Admin #${l.adminId}`).replace(/"/g, '""')}"`,
+                `"${(ACTION_META[l.action]?.label ?? l.action).replace(/"/g, '""')}"`,
+                l.entityType ?? "",
+                l.level ?? "info",
+                l.createdAt ? new Date(l.createdAt).toLocaleString("pt-BR") : "",
+              ].join(","));
+              const csv = [header, ...rows].join("\n");
+              const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `logs-auditoria-${new Date().toISOString().slice(0,10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="h-3.5 w-3.5 mr-1.5" />
+            Exportar CSV
+          </Button>
         </div>
 
         {/* Contagem */}

@@ -599,4 +599,86 @@ export const adminDashboardRouter = router({
 
       return [header, ...rows].join("\n");
     }),
+
+  // ─── LOG DE IMPORTAÇÕES (GOOGLE SHEETS) ──────────────────────────────────────
+  getImportLogs: adminProcedure
+    .input(z.object({
+      limit: z.number().default(50),
+      cursor: z.number().optional(),
+      tournamentId: z.number().optional(),
+      status: z.enum(["all", "success", "error", "partial"]).default("all"),
+    }))
+    .query(async ({ input }) => {
+      const db = await (await import("../db")).getDb();
+      if (!db) return { items: [], hasMore: false };
+      const { sheetsSyncLog, tournaments: tourT, users: usersT } = await import("../../drizzle/schema");
+      const { eq, lt, and, desc } = await import("drizzle-orm");
+      const conditions: ReturnType<typeof eq>[] = [];
+      if (input.cursor) conditions.push(lt(sheetsSyncLog.id, input.cursor) as ReturnType<typeof eq>);
+      if (input.tournamentId) conditions.push(eq(sheetsSyncLog.tournamentId, input.tournamentId));
+      if (input.status !== "all") conditions.push(eq(sheetsSyncLog.status, input.status as "success" | "error" | "partial"));
+      const logs = await db.select({
+        id: sheetsSyncLog.id,
+        tournamentId: sheetsSyncLog.tournamentId,
+        tournamentName: tourT.name,
+        sheetUrl: sheetsSyncLog.sheetUrl,
+        status: sheetsSyncLog.status,
+        gamesImported: sheetsSyncLog.gamesImported,
+        gamesUpdated: sheetsSyncLog.gamesUpdated,
+        errors: sheetsSyncLog.errors,
+        triggeredByName: usersT.name,
+        createdAt: sheetsSyncLog.createdAt,
+      })
+        .from(sheetsSyncLog)
+        .leftJoin(tourT, eq(tourT.id, sheetsSyncLog.tournamentId))
+        .leftJoin(usersT, eq(usersT.id, sheetsSyncLog.triggeredBy))
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(sheetsSyncLog.id))
+        .limit(input.limit + 1);
+      const hasMore = logs.length > input.limit;
+      return { items: hasMore ? logs.slice(0, input.limit) : logs, hasMore, nextCursor: hasMore ? logs[input.limit - 1]?.id : undefined };
+    }),
+
+  // ─── EXPORT CSV DE LOGS DE AUDITORIA ─────────────────────────────────────────
+  exportAuditCsv: adminProcedure
+    .input(z.object({
+      adminId: z.number().optional(),
+      level: z.enum(["all", "info", "warn", "error"]).default("all"),
+    }))
+    .query(async ({ input }) => {
+      const db = await (await import("../db")).getDb();
+      if (!db) return "";
+      const { adminLogs, users: usersT } = await import("../../drizzle/schema");
+      const { eq, and, desc } = await import("drizzle-orm");
+      const conditions: ReturnType<typeof eq>[] = [];
+      if (input.adminId) conditions.push(eq(adminLogs.adminId, input.adminId));
+      if (input.level !== "all") conditions.push(eq(adminLogs.level, input.level as "info" | "warn" | "error"));
+      const logs = await db.select({
+        id: adminLogs.id,
+        adminName: usersT.name,
+        action: adminLogs.action,
+        entityType: adminLogs.entityType,
+        entityId: adminLogs.entityId,
+        level: adminLogs.level,
+        createdAt: adminLogs.createdAt,
+      })
+        .from(adminLogs)
+        .leftJoin(usersT, eq(usersT.id, adminLogs.adminId))
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(adminLogs.id))
+        .limit(5000);
+      const header = "ID,Admin,Ação,Tipo,ID Entidade,Nível,Data";
+      const rows = logs.map(l =>
+        [
+          l.id,
+          `"${(l.adminName ?? "Sistema").replace(/"/g, '""')}"`,
+          `"${l.action.replace(/"/g, '""')}"`,
+          l.entityType ?? "",
+          l.entityId ?? "",
+          l.level,
+          l.createdAt ? new Date(l.createdAt).toLocaleString("pt-BR") : "",
+        ].join(",")
+      );
+      return [header, ...rows].join("\n");
+    }),
 });

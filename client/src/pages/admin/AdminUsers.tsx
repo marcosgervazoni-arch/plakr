@@ -61,6 +61,7 @@ type FilterRole = "all" | "admin" | "user" | "blocked";
 export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<FilterRole>("all");
+  const [inactiveDays, setInactiveDays] = useState<string>("all");
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [blockTarget, setBlockTarget] = useState<{ id: number; name: string; blocked: boolean } | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{ id: number; name: string } | null>(null);
@@ -135,7 +136,14 @@ export default function AdminUsers() {
       (filterRole === "admin" && u.role === "admin") ||
       (filterRole === "user" && u.role === "user" && !u.isBlocked) ||
       (filterRole === "blocked" && u.isBlocked);
-    return matchSearch && matchRole;
+    const matchInactive = inactiveDays === "all" || (() => {
+      const days = parseInt(inactiveDays);
+      if (!u.lastSignedIn) return true; // nunca logou = inativo
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      return new Date(u.lastSignedIn) <= cutoff;
+    })();
+    return matchSearch && matchRole && matchInactive;
   });
 
   return (
@@ -198,6 +206,17 @@ export default function AdminUsers() {
               <SelectItem value="admin">Admins</SelectItem>
               <SelectItem value="user">Usuários</SelectItem>
               <SelectItem value="blocked">Bloqueados</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={inactiveDays} onValueChange={setInactiveDays}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Inatividade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Qualquer atividade</SelectItem>
+              <SelectItem value="7">Inativos há 7+ dias</SelectItem>
+              <SelectItem value="30">Inativos há 30+ dias</SelectItem>
+              <SelectItem value="90">Inativos há 90+ dias</SelectItem>
             </SelectContent>
           </Select>
         </div>

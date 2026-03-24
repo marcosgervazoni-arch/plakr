@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ClipboardList,
   CreditCard,
+  FileSpreadsheet,
   Globe,
   Layers,
   Megaphone,
@@ -39,6 +40,7 @@ export type AdminSection =
   | "settings"
   | "audit"
   | "system"
+  | "import-logs"
   | "integrations"
   | "badges";
 
@@ -117,6 +119,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Shield,
     items: [
       { id: "audit", label: "Logs de Auditoria", icon: ClipboardList, path: "/admin/audit" },
+      { id: "import-logs", label: "Log de Importações", icon: FileSpreadsheet, path: "/admin/import-logs" },
       { id: "system", label: "Saúde do Sistema", icon: Shield, path: "/admin/system" },
     ],
   },

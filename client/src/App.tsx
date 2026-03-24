@@ -53,6 +53,7 @@ import AdminBadges from "./pages/admin/AdminBadges";
 import AdminGameResults from "./pages/admin/AdminGameResults";
 import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 import AdminReferrals from "./pages/admin/AdminReferrals";
+import AdminImportLogs from "./pages/admin/AdminImportLogs";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useReferralCapture } from "./hooks/useReferralCapture";
 
@@ -112,6 +113,7 @@ function Router() {
       <Route path="/admin/game-results" component={AdminGameResults} />
       <Route path="/admin/system" component={AdminSystemHealth} />
       <Route path="/admin/referrals" component={AdminReferrals} />
+      <Route path="/admin/import-logs" component={AdminImportLogs} />
       {/* Legacy admin panel */}
       <Route path="/admin-legacy" component={AdminPanel} />
 

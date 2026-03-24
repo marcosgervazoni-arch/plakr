@@ -886,3 +886,30 @@
 - [ ] AdminSettings: gestão manual de planos de usuário (unlimited para testes)
 - [ ] AdminSettings: feature flags básicos (habilitar/desabilitar funcionalidades por grupo)
 - [ ] AdminLayout: reorganizar sidebar com 7 grupos finais
+
+## Sprint 2 — Super Admin Complementar (24/03/2026) ✅
+
+### Backend — Novas procedures
+- [x] adminDashboard.grantPoolPro — upgrade manual de plano de bolão (gratuito, com data de expiração)
+- [x] adminDashboard.revokePoolPro — revogar plano Pro de bolão manualmente
+- [x] adminDashboard.getImportLogs — histórico de importações de jogos via Google Sheets
+- [x] adminDashboard.exportAuditCsv — exportar logs de auditoria filtrados como CSV
+- [x] users.list — filtro por inatividade (lastSignedIn há 7/30/90 dias) adicionado
+
+### Frontend — Usuários melhorado
+- [x] AdminUsers: filtro por inatividade (sem login há 7/30/90 dias)
+- [ ] AdminUsers: ação "Forçar logout" no painel de detalhes do usuário — Sprint 3
+
+### Frontend — Logs de Auditoria
+- [x] AdminAudit: botão export CSV dos logs filtrados
+
+### Frontend — Bolões melhorado
+- [x] AdminPools: ação de upgrade manual de plano (conceder/revogar Pro) no painel de detalhes
+- [ ] AdminPools: filtro por plano (free/pro) e status combinados — Sprint 3
+
+### Frontend — Log de Importações (nova seção)
+- [x] AdminImportLogs: nova página /admin/import-logs com histórico de sincronizações Google Sheets
+- [x] AdminLayout: adicionar "Log de Importações" no grupo Sistema
+
+### Frontend — Sidebar reorganizada
+- [x] AdminLayout: 7 grupos finais bem definidos (Visão Geral, Campeonato, Participantes, Comunicação, Financeiro, Configurações, Sistema)
