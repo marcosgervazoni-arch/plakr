@@ -31,6 +31,7 @@ import { DashboardSkeleton } from "@/components/Skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorCard } from "@/components/ErrorCard";
 import { AdBanner } from "@/components/AdBanner";
+import DashboardBadgeCarousel from "@/components/DashboardBadgeCarousel";
 import {
   AreaChart,
   Area,
@@ -54,6 +55,10 @@ export default function Dashboard() {
   const { data: userData } = trpc.users.me.useQuery(undefined, { enabled: isAuthenticated });
   const { data: pools = [], isLoading: poolsLoading, error: poolsError, refetch: refetchPools } = trpc.users.myPools.useQuery(undefined, { enabled: isAuthenticated });
   const { data: stats, isLoading: statsLoading } = trpc.users.myStats.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: badgesData } = trpc.badges.userBadges.useQuery(
+    { userId: user?.id ?? 0 },
+    { enabled: isAuthenticated && !!user?.id }
+  );
   const { data: recentBets = [] } = trpc.users.recentBets.useQuery(undefined, { enabled: isAuthenticated });
 
   // Pool selector — no "all" option; user must select a specific pool
@@ -223,6 +228,15 @@ export default function Dashboard() {
                 </Button>
               </Link>
             </div>
+
+            {/* Badges carrossel */}
+            {badgesData && badgesData.length > 0 && (
+              <DashboardBadgeCarousel
+                badges={badgesData as any[]}
+                stats={stats ?? null}
+                userId={user?.id}
+              />
+            )}
           </div>
 
           {/* ── RIGHT: Content ── */}

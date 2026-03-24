@@ -769,3 +769,7 @@
 - [x] Stripe: rebaixamento gracioso — aguardar 3 tentativas (attempt_count >= 3) antes de rebaixar para Free no invoice.payment_failed
 - [x] Stripe: notificação de renovação bem-sucedida no invoice.paid (subscription_cycle)
 - [x] Stripe: success_url e cancel_url usando slug do bolão em vez de ID numérico
+
+## Sprint 24/03/2026 — Badges no Dashboard
+
+- [x] Dashboard: seção de badges com carrossel de dois estados (Conquistados / Próximos com barra de progresso)
