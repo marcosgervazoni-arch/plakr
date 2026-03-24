@@ -183,14 +183,14 @@
 - [x] AppShell: header unificado com logo, nav contextual e avatar
 - [x] Perfil público /profile/:userId — avatar, stats globais, histórico, ranking
 - [x] Procedure users.getPublicProfile (publicProcedure com userId)
-- [x] Procedure users.globalRanking (top apostadores da plataforma)
+- [x] Procedure users.globalRanking (top apostadores da plataforma) — mantida no backend para uso futuro
 - [ ] Admin: formulário inline para adicionar times a campeonatos
 - [ ] Admin: formulário inline para adicionar jogos a campeonatos
 - [ ] Admin: visualização de bracket/chaveamento por fase
 - [x] Rota /upgrade independente de bolão específico
 - [x] Banner de upgrade Pro no Dashboard (para usuários sem plano Pro)
 - [x] Links de perfil público nos rankings dos bolões
-- [x] Página de Ranking Global /ranking
+- [x] Página de Ranking Global /ranking — REMOVIDA (feature não agrega valor ao produto)
 - [x] Nomes de usuários como links de perfil no AdminUsers
 
 ## Correções de Bugs — Sprint 22/03/2026
@@ -682,3 +682,27 @@
 - [x] [Frontend] Estado vazio: "Entre em um bolão para ver seu ranking"
 - [x] [Frontend] PoolPage: lê ?tab= da URL para abrir aba correta ao chegar pelo menu
 - [x] [Backend] myPools reutilizado no AppShell (já retorna pool.slug, pool.name e rankPosition)
+
+## Sprint 24/03/2026 — Remoção do Ranking Global
+
+- [ ] [Frontend] Remover item "Global" do submenu de Ranking no AppShell
+- [ ] [Frontend] Se não houver bolões ativos, ocultar o grupo "Ranking" completamente do menu
+- [ ] [Frontend] Remover rota /ranking do App.tsx
+- [ ] [Frontend] Remover link para /ranking de qualquer outro lugar na aplicação
+- [ ] [Backlog] Ideia futura: ranking de badges (quem tem mais badges, ranking por tipo de badge)
+
+## Remoção do Ranking Global — Sprint 24/03/2026 ✅
+- [x] Remover rota /ranking do App.tsx
+- [x] Remover import GlobalRanking do App.tsx
+- [x] Deletar arquivo GlobalRanking.tsx
+- [x] Remover item "Global" do grupo colapsável Ranking no AppShell
+- [x] Grupo Ranking no AppShell agora exibe apenas bolões ativos do usuário
+- [x] Grupo Ranking oculto automaticamente quando usuário não tem bolões ativos
+- [x] Remover teaser "Ranking Global" do PublicProfile.tsx
+- [x] 110 testes passando, 0 erros TypeScript
+
+## Backlog — Ideias Futuras
+- [ ] IDEIA: Ranking por Badges — classificação dos apostadores com mais conquistas/badges desbloqueados (alternativa ao ranking global por pontos, mais engajante e gamificado)
+- [ ] IDEIA: Persistência do estado do menu colapsável (localStorage) para que o usuário não precise reabrir sempre
+- [ ] IDEIA: Seções de bolões no menu principal (padrão Slack/Linear) para acesso direto
+- [ ] IDEIA: Otimização da página /pools/public com filtros avançados e paginação infinita

@@ -68,9 +68,9 @@ export default function AppShell({ children }: AppShellProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Grupo de Ranking colapsável — abre automaticamente se estiver em /ranking
+  // Grupo de Ranking colapsável — abre automaticamente se estiver em /pool/
   const [rankingOpen, setRankingOpen] = useState(() =>
-    typeof window !== "undefined" && window.location.pathname.startsWith("/ranking")
+    typeof window !== "undefined" && window.location.pathname.startsWith("/pool/")
   );
 
   const { data: userData } = trpc.users.me.useQuery(undefined, {
@@ -194,97 +194,65 @@ export default function AppShell({ children }: AppShellProps) {
             );
           })}
 
-          {/* Grupo colapsável: Ranking */}
-          <div>
-            <button
-              onClick={() => setRankingOpen((v) => !v)}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
-                location.startsWith("/ranking")
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-              )}
-            >
-              <Medal className="w-4 h-4 shrink-0" />
-              <span className="flex-1 truncate">Ranking</span>
-              <ChevronDown
+          {/* Grupo colapsável: Ranking dos Bolões — visível apenas quando há bolões ativos */}
+          {isAuthenticated && activePools.length > 0 && (
+            <div>
+              <button
+                onClick={() => setRankingOpen((v) => !v)}
                 className={cn(
-                  "w-3.5 h-3.5 shrink-0 transition-transform duration-200",
-                  rankingOpen ? "rotate-180" : ""
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
+                  location.startsWith("/pool/")
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                 )}
-              />
-            </button>
+              >
+                <Medal className="w-4 h-4 shrink-0" />
+                <span className="flex-1 truncate">Ranking</span>
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 shrink-0 transition-transform duration-200",
+                    rankingOpen ? "rotate-180" : ""
+                  )}
+                />
+              </button>
 
-            {/* Submenus do Ranking */}
-            {rankingOpen && (
-              <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border/30 pl-3">
-                {/* Ranking Global */}
-                <Link href="/ranking" onClick={() => setSidebarOpen(false)}>
-                  <button
-                    className={cn(
-                      "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all text-left",
-                      location === "/ranking"
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                    )}
-                  >
-                    <Trophy className="w-3.5 h-3.5 shrink-0" />
-                    <span className="flex-1 truncate">Global</span>
-                  </button>
-                </Link>
-
-                {/* Rankings dos bolões ativos */}
-                {activePools.length > 0 && (
-                  <>
-                    <div className="pt-1 pb-0.5">
-                      <p className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wider px-2">
-                        Meus Bolões
-                      </p>
-                    </div>
-                    {activePools.map((p: any) => {
-                      const poolSlug = p.pool?.slug;
-                      const poolName = p.pool?.name ?? "Bolão";
-                      const rankHref = `/pool/${poolSlug}?tab=ranking`;
-                      const isPoolRankActive =
-                        location === `/pool/${poolSlug}` ||
-                        location.startsWith(`/pool/${poolSlug}`);
-                      return (
-                        <Link
-                          key={poolSlug}
-                          href={rankHref}
-                          onClick={() => setSidebarOpen(false)}
+              {/* Submenus: um por bolão ativo */}
+              {rankingOpen && (
+                <div className="ml-3 mt-0.5 space-y-0.5 border-l border-border/30 pl-3">
+                  {activePools.map((p: any) => {
+                    const poolSlug = p.pool?.slug;
+                    const poolName = p.pool?.name ?? "Bolão";
+                    const rankHref = `/pool/${poolSlug}?tab=ranking`;
+                    const isPoolRankActive = location.startsWith(`/pool/${poolSlug}`);
+                    return (
+                      <Link
+                        key={poolSlug}
+                        href={rankHref}
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <button
+                          className={cn(
+                            "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all text-left",
+                            isPoolRankActive
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          )}
                         >
-                          <button
-                            className={cn(
-                              "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all text-left",
-                              isPoolRankActive
-                                ? "bg-primary/10 text-primary font-medium"
-                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                            )}
-                          >
-                            <Users className="w-3.5 h-3.5 shrink-0" />
-                            <span className="flex-1 truncate text-xs">{poolName}</span>
-                            {p.rankPosition && (
-                              <span className="text-[10px] font-bold text-primary/70 shrink-0">
-                                #{p.rankPosition}
-                              </span>
-                            )}
-                          </button>
-                        </Link>
-                      );
-                    })}
-                  </>
-                )}
-
-                {/* Estado vazio — sem bolões ativos */}
-                {activePools.length === 0 && isAuthenticated && (
-                  <p className="text-[11px] text-muted-foreground/50 px-2.5 py-1.5 italic">
-                    Entre em um bolão para ver seu ranking
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+                          <Users className="w-3.5 h-3.5 shrink-0" />
+                          <span className="flex-1 truncate text-xs">{poolName}</span>
+                          {p.rankPosition && (
+                            <span className="text-[10px] font-bold text-primary/70 shrink-0">
+                              #{p.rankPosition}
+                            </span>
+                          )}
+                        </button>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
         {/* Separador visual entre seções e ações */}
         <div className="pt-2 pb-1">

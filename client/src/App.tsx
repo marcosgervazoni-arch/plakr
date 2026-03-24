@@ -14,7 +14,6 @@ import ProjectDashboard from "./pages/ProjectDashboard";
 import EnterPool from "./pages/EnterPool";
 import PublicPools from "./pages/PublicPools";
 import PublicProfile from "./pages/PublicProfile";
-import GlobalRanking from "./pages/GlobalRanking";
 import UpgradePage from "./pages/UpgradePage";
 import PoolMemberProfile from "./pages/PoolMemberProfile";
 import Notifications from "./pages/Notifications";
@@ -62,7 +61,6 @@ function Router() {
       <Route path="/enter-pool" component={EnterPool} />
       <Route path="/pools/public" component={PublicPools} />
       <Route path="/profile/:userId" component={PublicProfile} />
-      <Route path="/ranking" component={GlobalRanking} />
       <Route path="/upgrade" component={UpgradePage} />
 
       {/* Participant routes */}

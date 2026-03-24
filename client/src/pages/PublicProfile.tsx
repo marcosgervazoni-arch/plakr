@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import BadgeGrid from "@/components/BadgeGrid";
 import {
   Trophy, Crown, Loader2, AlertCircle, Calendar,
-  MessageCircle, Send, ExternalLink, Share2, TrendingUp, Award,
+  MessageCircle, Send, ExternalLink, Share2, Award,
 } from "lucide-react";
 import { useParams, Link } from "wouter";
 import { useEffect, useState } from "react";
@@ -242,22 +242,6 @@ export default function PublicProfile() {
             {isOwnProfile ? "você" : user.name?.split(" ")[0] ?? "este apostador"}{" "}
             em um bolão específico, clique em "Ver desempenho" ao lado de cada bolão acima.
           </p>
-        </div>
-
-        {/* ── Ranking Global teaser ── */}
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-5 h-5 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm">Ranking Global</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Veja os melhores apostadores de toda a plataforma.
-            </p>
-          </div>
-          <Link href="/ranking">
-            <Button size="sm" variant="outline" className="shrink-0">Ver ranking</Button>
-          </Link>
         </div>
 
       </div>
