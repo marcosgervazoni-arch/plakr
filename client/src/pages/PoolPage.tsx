@@ -996,7 +996,7 @@ function GameCard({
 function InviteBanner({ inviteToken, onCopy }: { inviteToken: string; onCopy: () => void }) {
   const [revealed, setRevealed] = useState(false);
   const fullUrl = `${window.location.origin}/join/${inviteToken}`;
-  const maskedUrl = `${window.location.origin}/join/${"•".repeat(8)}`;
+  const maskedUrl = `••••••••••••••••`;
 
   return (
     <div className="mt-3 flex items-center justify-between gap-3 bg-background/50 border border-primary/20 rounded-xl px-3 py-2.5">
