@@ -73,6 +73,7 @@ export function registerStripeWebhook(app: Express) {
                 message: "Seu bolão foi atualizado para o Plano Pro. Aproveite todos os recursos avançados!",
               });
 
+              // [LOG] Checkout Pro concluído (já existia)
               await createAdminLog(userId, "stripe_checkout_completed", "pool", poolId, {
                 sessionId: session.id,
                 subscriptionId: session.subscription,
@@ -107,6 +108,13 @@ export function registerStripeWebhook(app: Express) {
                   message:
                     "Seu Plano Pro foi cancelado. O bolão continua ativo no plano gratuito com funcionalidades limitadas.",
                 });
+
+                // [LOG F1] Assinatura Pro cancelada pelo Stripe
+                await createAdminLog(userId, "stripe_subscription_cancelled", "pool", poolId ?? undefined, {
+                  subscriptionId: subscription.id,
+                  canceledAt: new Date().toISOString(),
+                  reason: subscription.cancellation_details?.reason ?? "unknown",
+                }, poolId ?? undefined, { level: "warn" });
               }
 
               logger.info({ poolId }, "[Webhook] Pro plan cancelled");
@@ -141,6 +149,15 @@ export function registerStripeWebhook(app: Express) {
                     "Após 3 tentativas sem sucesso, seu Plano Pro foi cancelado. O bolão continua ativo no plano gratuito. Atualize seu método de pagamento no painel do Stripe para reativar.",
                   priority: "high",
                 });
+
+                // [LOG F2] Pagamento falhou — 3ª tentativa → downgrade
+                await createAdminLog(userId, "stripe_payment_failed", "pool", poolId ?? undefined, {
+                  attemptCount,
+                  invoiceId: invoice.id,
+                  subscriptionId,
+                  action: "downgraded_to_free",
+                }, poolId ?? undefined, { level: "error" });
+
                 logger.warn({ poolId }, "[Webhook] Payment failed 3x, pool downgraded to free");
               } else {
                 // Tentativas 1 e 2: apenas avisar, manter Pro
@@ -152,6 +169,15 @@ export function registerStripeWebhook(app: Express) {
                     `Não foi possível processar o pagamento do Plano Pro (tentativa ${attemptCount} de 3). Atualize seu método de pagamento para evitar o cancelamento.`,
                   priority: "high",
                 });
+
+                // [LOG F2] Pagamento falhou — tentativa 1 ou 2
+                await createAdminLog(userId, "stripe_payment_failed", "pool", poolId ?? undefined, {
+                  attemptCount,
+                  invoiceId: invoice.id,
+                  subscriptionId,
+                  action: "notified_keep_pro",
+                }, poolId ?? undefined, { level: "warn" });
+
                 logger.warn({ poolId, attemptCount }, "[Webhook] Payment failed attempt");
               }
             }
@@ -193,6 +219,13 @@ export function registerStripeWebhook(app: Express) {
                   message: `Seu Plano Pro foi renovado automaticamente e está ativo até ${expiryFormatted}. Obrigado pela confiança!`,
                   priority: "normal",
                 });
+
+                // [LOG F3] Renovação de assinatura bem-sucedida
+                await createAdminLog(userId, "stripe_subscription_renewed", "pool", poolId ?? undefined, {
+                  subscriptionId: invSubId,
+                  invoiceId: invoicePaid.id,
+                  newExpiresAt: newExpiry.toISOString(),
+                }, poolId ?? undefined, { level: "info" });
 
                 logger.info({ poolId, newExpiry }, "[Webhook] Subscription renewed");
               }

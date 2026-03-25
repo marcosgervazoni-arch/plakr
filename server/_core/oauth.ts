@@ -57,6 +57,10 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
+      // Verificar se o usuário já existe antes do upsert (para detectar novo cadastro)
+      const existingUser = await db.getUserByOpenId(userInfo.openId);
+      const isNewUser = !existingUser;
+
       await db.upsertUser({
         openId: userInfo.openId,
         name: userInfo.name || null,
@@ -64,6 +68,28 @@ export function registerOAuthRoutes(app: Express) {
         loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
         lastSignedIn: new Date(),
       });
+
+      // [LOG E1 / S1] Registrar novo cadastro ou login de admin
+      try {
+        const loggedUser = await db.getUserByOpenId(userInfo.openId);
+        if (loggedUser) {
+          if (isNewUser) {
+            // [LOG E1] Novo usuário cadastrado na plataforma
+            await db.createAdminLog(loggedUser.id, "user_registered", "user", loggedUser.id, {
+              name: loggedUser.name,
+              email: loggedUser.email,
+              loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+            }, undefined, { level: "info" });
+          } else if (loggedUser.role === "admin") {
+            // [LOG S1] Login de admin
+            await db.createAdminLog(loggedUser.id, "admin_login", "user", loggedUser.id, {
+              name: loggedUser.name,
+              email: loggedUser.email,
+              loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+            }, undefined, { level: "info" });
+          }
+        }
+      } catch { /* não bloquear o login em caso de falha no log */ }
 
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",

@@ -1025,3 +1025,19 @@
 - [x] AdminBroadcasts: AlertDialog de confirmação antes de enviar broadcast + feedback visual padronizado
 - [x] AdminGameResults: feedback visual "Salvo!" padronizado + AlertDialog antes de salvar múltiplos resultados
 - [x] AdminSubscriptions: substituir confirm() nativo por AlertDialog para revogação de Pro
+
+## Sprint Logs de Auditoria — 13 novos eventos (25/03/2026)
+- [x] F1: Log stripe_subscription_cancelled (assinatura Pro cancelada pelo Stripe)
+- [x] F2: Log stripe_payment_failed (pagamento falhou — tentativas 1, 2 e 3)
+- [x] F3: Log stripe_subscription_renewed (renovação bem-sucedida)
+- [x] S1: Log admin_login (primeiro acesso do admin no dia)
+- [x] S2: Log vapid_keys_regenerated (geração de novas chaves VAPID)
+- [x] S3: Log pool_ownership_transferred (transferência de propriedade de bolão)
+- [x] E1: Log user_registered (novo usuário cadastrado)
+- [x] E2: Log pool_created (bolão criado por usuário não-admin)
+- [x] E3: Log pool_joined (usuário entrou em bolão — com canal de entrada)
+- [x] E4: Log pool_left (usuário saiu de bolão)
+- [x] E5: Log pool_member_kicked (membro removido pelo dono)
+- [x] C1: Log notification_template_updated (template de mensagem automática editado)
+- [x] C2: Log notification_template_toggled (template ativado/desativado)
+- [x] REGRA: Avaliar necessidade de log em toda nova feature antes de implementar

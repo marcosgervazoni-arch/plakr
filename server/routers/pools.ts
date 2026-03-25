@@ -154,6 +154,14 @@ export const poolsRouter = router({
       });
       await addPoolMember(poolId, ctx.user.id, "organizer");
       await upsertPoolScoringRules(poolId, {}, ctx.user.id);
+      // [LOG E2] Bolão criado por usuário (não admin)
+      if (ctx.user.role !== "admin") {
+        await createAdminLog(ctx.user.id, "pool_created", "pool", poolId, {
+          name: input.name,
+          accessType: input.accessType,
+          tournamentId: input.tournamentId,
+        }, poolId, { level: "info" });
+      }
       return { poolId, slug, inviteToken };
     }),
 
@@ -291,6 +299,10 @@ export const poolsRouter = router({
         title: "Novo participante",
         message: `${ctx.user.name ?? "Um usuário"} entrou no bolão "${pool.name}".`,
       });
+      // [LOG E3] Usuário entrou no bolão via código
+      await createAdminLog(ctx.user.id, "pool_joined", "pool", pool.id, {
+        poolName: pool.name, channel: "code",
+      }, pool.id, { level: "info" });
       return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
     }),
 
@@ -316,6 +328,10 @@ export const poolsRouter = router({
         title: "Novo participante",
         message: `${ctx.user.name ?? "Um usuário"} entrou no bolão "${pool.name}".`,
       });
+      // [LOG E3] Usuário entrou no bolão via token/link
+      await createAdminLog(ctx.user.id, "pool_joined", "pool", pool.id, {
+        poolName: pool.name, channel: "invite_link",
+      }, pool.id, { level: "info" });
       return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
     }),
 
@@ -342,6 +358,10 @@ export const poolsRouter = router({
         title: "Novo participante",
         message: `${ctx.user.name ?? "Um usuário"} entrou no bolão "${pool.name}".`,
       });
+      // [LOG E3] Usuário entrou no bolão público
+      await createAdminLog(ctx.user.id, "pool_joined", "pool", pool.id, {
+        poolName: pool.name, channel: "public",
+      }, pool.id, { level: "info" });
       return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
     }),
 
@@ -453,6 +473,11 @@ export const poolsRouter = router({
           await anonymizeUser(input.userId);
         }
       }
+      // [LOG E5] Membro removido pelo organizador ou admin
+      await createAdminLog(ctx.user.id, "pool_member_kicked", "pool", input.poolId, {
+        removedUserId: input.userId,
+        anonymized: input.anonymize && ctx.user.role === "admin",
+      }, input.poolId, { level: "info" });
       return { success: true };
     }),
 
@@ -468,6 +493,30 @@ export const poolsRouter = router({
       await updatePoolMemberRole(input.poolId, ctx.user.id, "participant");
       await updatePoolMemberRole(input.poolId, input.newOwnerId, "organizer");
       await updatePool(input.poolId, { ownerId: input.newOwnerId });
+      // [LOG S3] Transferência de propriedade do bolão
+      await createAdminLog(ctx.user.id, "pool_ownership_transferred", "pool", input.poolId, {
+        previousOwnerId: ctx.user.id,
+        newOwnerId: input.newOwnerId,
+        newOwnerName: newOwner.name,
+      }, input.poolId, { level: "info" });
+      return { success: true };
+    }),
+
+  // [LOG E4] Usuário sai voluntariamente de um bolão
+  leave: protectedProcedure
+    .input(z.object({ poolId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Você não é membro deste bolão." });
+      if (member.role === "organizer") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "O organizador não pode sair do bolão. Transfira a propriedade primeiro." });
+      }
+      const pool = await getPoolById(input.poolId);
+      await removePoolMember(input.poolId, ctx.user.id);
+      // [LOG E4] Usuário saiu voluntariamente
+      await createAdminLog(ctx.user.id, "pool_left", "pool", input.poolId, {
+        poolName: pool?.name ?? null,
+      }, input.poolId, { level: "info" });
       return { success: true };
     }),
 

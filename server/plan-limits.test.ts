@@ -32,6 +32,7 @@ vi.mock("./db", async (importOriginal) => {
     addPoolMember: vi.fn().mockResolvedValue(undefined),
     upsertPoolScoringRules: vi.fn().mockResolvedValue(undefined),
     createNotification: vi.fn().mockResolvedValue(undefined),
+    createAdminLog: vi.fn().mockResolvedValue(undefined),
   };
 });
 

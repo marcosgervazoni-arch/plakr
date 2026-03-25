@@ -77,9 +77,13 @@ export const platformRouter = router({
     }),
 
   // Gerar novo par de VAPID keys (admin)
-  generateVapidKeys: adminProcedure.mutation(async () => {
+  generateVapidKeys: adminProcedure.mutation(async ({ ctx }) => {
     const { generateVapidKeys } = await import("../push");
     const keys = generateVapidKeys();
+    // [LOG S2] Geração de novas chaves VAPID — ação destrutiva (invalida todas as assinaturas push)
+    await createAdminLog(ctx.user.id, "vapid_keys_regenerated", "platform", 1, {
+      note: "Todas as assinaturas push existentes foram invalidadas após regeneração das chaves VAPID",
+    }, undefined, { level: "warn" });
     return keys;
   }),
 
@@ -127,6 +131,11 @@ export const platformRouter = router({
           updatedBy: ctx.user.id,
         })
         .where(eq(notificationTemplates.type, input.type));
+      // [LOG C1] Template de mensagem automática editado
+      await createAdminLog(ctx.user.id, "notification_template_updated", "notification_template", undefined, {
+        type: input.type,
+        titleTemplate: input.titleTemplate,
+      }, undefined, { level: "info" });
       return { success: true };
     }),
 
@@ -143,6 +152,11 @@ export const platformRouter = router({
       await db.update(notificationTemplates)
         .set({ enabled: input.enabled, updatedBy: ctx.user.id })
         .where(eq(notificationTemplates.type, input.type));
+      // [LOG C2] Template de mensagem automática ativado ou desativado
+      await createAdminLog(ctx.user.id, "notification_template_toggled", "notification_template", undefined, {
+        type: input.type,
+        enabled: input.enabled,
+      }, undefined, { level: "info" });
       return { success: true };
     }),
 });
