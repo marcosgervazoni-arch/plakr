@@ -620,45 +620,6 @@ export default function PoolPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Card fixo: posição do usuário logado */}
-                {(() => {
-                  const myIdx = ranking.findIndex((r) => r.user.id === user?.id);
-                  const myItem = myIdx >= 0 ? ranking[myIdx] : null;
-                  const leaderPtsTop = ranking[0]?.stats.totalPoints ?? 0;
-                  const myDelta = myItem && myIdx > 0 ? myItem.stats.totalPoints - leaderPtsTop : null;
-                  if (!myItem) return null;
-                  return (
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-primary/40 bg-primary/5 mb-1">
-                      <div className="flex flex-col items-center shrink-0">
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Posição</span>
-                        <span className="text-2xl font-black text-primary leading-none">
-                          {myIdx === 0 ? (
-                            <Crown className="w-6 h-6 text-yellow-400" />
-                          ) : myIdx === 1 ? (
-                            <Medal className="w-6 h-6 text-slate-300" />
-                          ) : myIdx === 2 ? (
-                            <Medal className="w-6 h-6 text-orange-400" />
-                          ) : (
-                            `${myIdx + 1}º`
-                          )}
-                        </span>
-                      </div>
-                      <div className="w-px h-10 bg-border/40 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-muted-foreground">Sua posição atual</p>
-                        <p className="text-sm font-semibold text-primary truncate">{myItem.user.name}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xl font-black font-mono text-primary leading-none">{myItem.stats.totalPoints}</p>
-                        <p className="text-[10px] text-muted-foreground">pts</p>
-                        {myDelta !== null && (
-                          <p className="text-[10px] text-muted-foreground/70 font-mono">{myDelta} do líder</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-
                 {/* Lista completa — formato único, sem pódio em cards */}
                 {(() => {
                   const allZero = ranking.every((r) => r.stats.totalPoints === 0);
@@ -674,7 +635,12 @@ export default function PoolPage() {
                         // Separador sutil após o 3º lugar
                         const showSeparator = idx === 2 && ranking.length > 3;
 
-                        // Badge de posição — Crown/Medal sempre visíveis nos top-3, independente de pontuação
+                        // Número de posição (sempre visível)
+                        const positionNumber = (
+                          <span className="w-6 text-center text-xs font-bold text-muted-foreground shrink-0">{idx + 1}</span>
+                        );
+
+                        // Badge de posição — Crown/Medal apenas para top-3
                         const positionBadge = idx === 0 ? (
                           <span className="w-7 h-7 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0">
                             <Crown className="w-4 h-4 text-yellow-400" />
@@ -687,9 +653,7 @@ export default function PoolPage() {
                           <span className="w-7 h-7 rounded-full bg-orange-500/15 flex items-center justify-center shrink-0">
                             <Medal className="w-4 h-4 text-orange-400" />
                           </span>
-                        ) : (
-                          <span className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">{idx + 1}</span>
-                        );
+                        ) : null;
 
                         return (
                           <>
@@ -703,7 +667,10 @@ export default function PoolPage() {
                                   : "border-border/20 bg-card/40 hover:border-border/40"
                               }`}
                             >
-                              {/* Badge de posição */}
+                              {/* Número de posição */}
+                              {positionNumber}
+
+                              {/* Badge de posição (apenas top-3) */}
                               {positionBadge}
 
                               {/* Avatar */}

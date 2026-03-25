@@ -1071,3 +1071,7 @@
 - [x] Remover badge "Sem palpites" junto ao nome do participante
 - [x] Substituir banner por rodapé discreto com data/hora da última atualização do ranking
 - [x] Adicionar card fixo "Sua posição" no topo da aba Ranking (posição, pts, delta do líder)
+
+## Sprint UX — Ranking: remover card redundante + reordenar lista (25/03/2026)
+- [x] Remover card fixo "Sua posição" (redundante com o item da lista)
+- [x] Reordenar itens da linha: número de posição → badge (top-3 apenas) → avatar → nome → pontos
