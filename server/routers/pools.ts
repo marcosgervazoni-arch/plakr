@@ -490,12 +490,16 @@ export const poolsRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const { poolId, ...data } = input;
+      const isAdmin = ctx.user.role === "admin";
       const member = await getPoolMember(poolId, ctx.user.id);
-      if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
+      // Admin pode editar sem ser membro; organizador precisa ser membro com role organizer
+      if (!isAdmin && (!member || member.role !== "organizer")) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
       const pool = await getPoolById(poolId);
-      if (pool?.plan !== "pro") {
+      if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+      // Admin tem bypass: pode editar regras de qualquer bolão independente do plano
+      if (pool.plan !== "pro" && !isAdmin) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Regras de pontuação customizadas são exclusivas do Plano Pro.",

@@ -1003,3 +1003,7 @@
 - [x] SUG-1: Coluna notified já existe no banco (tinyint NOT NULL DEFAULT 0) — confirmado via SQL
 - [x] SUG-2: Redis async consolidado — import() dinâmico, sem require() síncrono, getScoreQueue/getArchiveQueue/startScoringWorker todos async
 - [x] SUG-3: 11 testes de limite de plano gratuito (3º bolão, 51º participante, regras customizadas sem Pro, plano Pro ilimitado) — server/plan-limits.test.ts
+
+### Sprint Sugestões 2+3 (25/03/2026)
+- [x] SUG-2: 12 testes de prazo de palpite (deadline) com clock skew em server/bets-deadline.test.ts
+- [x] SUG-3-FIX: Bypass de admin em pools.updateScoringRules — admin pode editar regras de qualquer bolão independente do plano

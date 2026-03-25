@@ -268,27 +268,17 @@ describe("[SUG-3] Regras de pontuação customizadas — requer plano Pro", () =
     expect(result).toMatchObject({ success: true });
   });
 
-  it("admin pode usar updateScoringRules mesmo em bolão free", async () => {
+  it("admin pode usar updateScoringRules mesmo em bolão free — bypass implementado", async () => {
     vi.mocked(getPoolById).mockResolvedValue(poolFree as any);
-    vi.mocked(getPoolMember).mockResolvedValue({
-      userId: 99,
-      poolId: 20,
-      role: "organizer",
-      joinedAt: new Date(),
-      stats: null,
-    } as any);
+    // Admin não precisa ser membro do bolão (getPoolMember retorna null)
+    vi.mocked(getPoolMember).mockResolvedValue(null as any);
 
     const caller = appRouter.createCaller(makeCtx({ id: 99, role: "admin" }));
-    // Admin bypassa a verificação de plano
-    // O código atual só verifica pool.plan !== "pro" sem exceção para admin
-    // Este teste documenta o comportamento atual
-    await expect(
-      caller.pools.updateScoringRules({
-        poolId: 20,
-        exactScorePoints: 15,
-      })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    // Nota: admin não tem bypass em updateScoringRules — comportamento intencional
-    // pois o admin deve usar o painel de admin para alterar regras de bolões free
+    // [SUG-3] Admin tem bypass: pode editar regras de qualquer bolão independente do plano
+    const result = await caller.pools.updateScoringRules({
+      poolId: 20,
+      exactScorePoints: 15,
+    });
+    expect(result).toMatchObject({ success: true });
   });
 });
