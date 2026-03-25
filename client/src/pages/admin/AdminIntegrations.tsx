@@ -20,6 +20,7 @@ export default function AdminIntegrations() {
   const { data: settings, isLoading } = trpc.platform.getSettings.useQuery();
   const [gaMeasurementId, setGaMeasurementId] = useState("");
   const [fbPixelId, setFbPixelId] = useState("");
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -29,7 +30,10 @@ export default function AdminIntegrations() {
   }, [settings]);
 
   const updateMutation = trpc.platform.updateSettings.useMutation({
-    onSuccess: () => toast.success("Integrações salvas com sucesso."),
+    onSuccess: () => {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    },
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
@@ -39,7 +43,7 @@ export default function AdminIntegrations() {
   return (
     <AdminLayout activeSection="integrations">
       <div className="space-y-6">
-        {/* Header */}
+        {/* Header com botão único de salvar */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-brand/10 shrink-0">
@@ -51,13 +55,21 @@ export default function AdminIntegrations() {
             </div>
           </div>
           <Button
-            className="bg-brand hover:bg-brand/90 gap-2 shrink-0"
+            className={`gap-2 shrink-0 transition-all duration-300 ${
+              saved ? "bg-green-600 hover:bg-green-700" : "bg-brand hover:bg-brand/90"
+            }`}
             onClick={() => updateMutation.mutate({ gaMeasurementId, fbPixelId })}
             disabled={updateMutation.isPending || isLoading}
           >
-            {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            <span className="hidden sm:inline">Salvar Integrações</span>
-            <span className="sm:hidden">Salvar</span>
+            {updateMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : saved ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">{saved ? "Salvo!" : "Salvar Integrações"}</span>
+            <span className="sm:hidden">{saved ? "✓" : "Salvar"}</span>
           </Button>
         </div>
 
@@ -189,17 +201,6 @@ export default function AdminIntegrations() {
                 </div>
               </CardContent>
             </Card>
-          {/* Botão Salvar fixo no rodapé — sempre visível em mobile */}
-          <div className="pt-4 border-t border-border/50">
-            <Button
-              className="w-full bg-brand hover:bg-brand/90 gap-2 h-12 text-base"
-              onClick={() => updateMutation.mutate({ gaMeasurementId, fbPixelId })}
-              disabled={updateMutation.isPending || isLoading}
-            >
-              {updateMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-              Salvar Integrações
-            </Button>
-          </div>
           </div>
         )}
       </div>

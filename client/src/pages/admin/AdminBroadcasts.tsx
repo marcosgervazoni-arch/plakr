@@ -9,6 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RichTextEditor, type MediaAttachment } from "@/components/RichTextEditor";
 import { trpc } from "@/lib/trpc";
 import {
@@ -214,6 +218,7 @@ export default function AdminBroadcasts() {
   const [attachments, setAttachments] = useState<MediaAttachment[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [emailFilter, setEmailFilter] = useState<"all" | "pending" | "sent" | "failed">("all");
+  const [showBroadcastConfirm, setShowBroadcastConfirm] = useState(false);
 
   const { data: stats } = trpc.platform.getStats.useQuery();
   const { data: pushStats } = trpc.notifications.pushStats.useQuery();
@@ -239,6 +244,10 @@ export default function AdminBroadcasts() {
     if (!title.trim() || !content.trim()) return toast.error("Título e conteúdo são obrigatórios.");
     if (!channels.inApp && !channels.push && !channels.email)
       return toast.error("Selecione pelo menos um canal de envio.");
+    setShowBroadcastConfirm(true);
+  };
+  const handleConfirmSend = () => {
+    setShowBroadcastConfirm(false);
     broadcastMutation.mutate({
       title, content, emoji, category, priority,
       imageUrl: imageUrl || undefined,
@@ -713,6 +722,30 @@ export default function AdminBroadcasts() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* AlertDialog de confirmação antes de enviar broadcast */}
+      <AlertDialog open={showBroadcastConfirm} onOpenChange={setShowBroadcastConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar envio do broadcast?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a enviar <strong>&ldquo;{title}&rdquo;</strong> para aproximadamente{" "}
+              <strong>~{audienceCount.toLocaleString("pt-BR")} usuários</strong>.
+              Esta ação é irreversível e não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-brand hover:bg-brand/90"
+              onClick={handleConfirmSend}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Confirmar Envio
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

@@ -28,6 +28,7 @@ export default function AdminGameResults() {
   const [selectedTournament, setSelectedTournament] = useState<string>("all");
   const [results, setResults] = useState<Record<number, { home: string; away: string }>>({});
   const [saving, setSaving] = useState(false);
+  const [savedAll, setSavedAll] = useState(false);
 
   const { data: pending, isLoading, refetch } = trpc.adminDashboard.getPendingGames.useQuery();
   const utils = trpc.useUtils();
@@ -83,7 +84,8 @@ export default function AdminGameResults() {
     }
     setSaving(false);
     if (errors === 0) {
-      toast.success(`${success} resultado(s) registrado(s) com sucesso!`);
+      setSavedAll(true);
+      setTimeout(() => setSavedAll(false), 3000);
     } else {
       toast.error(`${success} salvo(s), ${errors} erro(s). Verifique e tente novamente.`);
     }
@@ -120,10 +122,18 @@ export default function AdminGameResults() {
               size="sm"
               onClick={handleSaveAll}
               disabled={saving || readyToSave.length === 0}
-              className="gap-1.5"
+              className={`gap-1.5 transition-all duration-300 ${
+                savedAll ? "bg-green-600 hover:bg-green-700 text-white" : ""
+              }`}
             >
-              <Save className="h-3.5 w-3.5" />
-              {saving ? "Salvando..." : `Salvar ${readyToSave.length > 0 ? `(${readyToSave.length})` : "Tudo"}`}
+              {saving ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              ) : savedAll ? (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              {saving ? "Salvando..." : savedAll ? "Salvo!" : `Salvar ${readyToSave.length > 0 ? `(${readyToSave.length})` : "Tudo"}`}
             </Button>
           </div>
         </div>
@@ -237,9 +247,22 @@ export default function AdminGameResults() {
 
         {readyToSave.length > 0 && (
           <div className="flex justify-end">
-            <Button onClick={handleSaveAll} disabled={saving} size="lg" className="gap-2">
-              <Save className="h-4 w-4" />
-              {saving ? "Salvando resultados..." : `Confirmar ${readyToSave.length} resultado(s)`}
+            <Button
+              onClick={handleSaveAll}
+              disabled={saving}
+              size="lg"
+              className={`gap-2 transition-all duration-300 ${
+                savedAll ? "bg-green-600 hover:bg-green-700" : ""
+              }`}
+            >
+              {saving ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : savedAll ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {saving ? "Salvando resultados..." : savedAll ? "Salvo!" : `Confirmar ${readyToSave.length} resultado(s)`}
             </Button>
           </div>
         )}

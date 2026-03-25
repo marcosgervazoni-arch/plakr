@@ -1018,3 +1018,10 @@
 - [x] BUG: Erro ao salvar push com vapidEmail vazio — Zod agora aceita string vazia (normalizada para undefined)
 
 - [x] UX: Unificar botões de salvar em AdminSettings em um único botão"Salvar" no topo que salva todas as seções (Stripe, Limites, Pontuação, Analytics e Push)
+
+## Sprint UX Admin — Unificação de Padrão de Botões (25/03/2026)
+- [x] AdminIntegrations: remover botão duplicado no rodapé + feedback visual "Salvo!" no header
+- [x] AdminPools: feedback visual "Salvo!" no painel lateral + substituir confirm() nativo por AlertDialog
+- [x] AdminBroadcasts: AlertDialog de confirmação antes de enviar broadcast + feedback visual padronizado
+- [x] AdminGameResults: feedback visual "Salvo!" padronizado + AlertDialog antes de salvar múltiplos resultados
+- [x] AdminSubscriptions: substituir confirm() nativo por AlertDialog para revogação de Pro

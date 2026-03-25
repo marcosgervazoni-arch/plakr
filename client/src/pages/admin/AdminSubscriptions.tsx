@@ -12,6 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import AdminLayout from "@/components/AdminLayout";
@@ -90,6 +94,7 @@ export default function AdminSubscriptions() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "expiring_soon" | "expired">("all");
   const [grantModal, setGrantModal] = useState<{ poolId: number; poolName: string } | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<{ poolId: number; poolName: string } | null>(null);
   const utils = trpc.useUtils();
 
   const { data, isLoading } = trpc.adminDashboard.getSubscriptionStats.useQuery();
@@ -224,9 +229,13 @@ export default function AdminSubscriptions() {
                         <Gift className="h-3.5 w-3.5 mr-1" />Estender
                       </Button>
                       {sub.status !== "expired" && (
-                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-red-400 hover:text-red-400"
-                          onClick={() => { if (confirm(`Revogar Pro do bolão "${sub.name}"?`)) revokeMutation.mutate({ poolId: sub.id }); }}
-                          disabled={revokeMutation.isPending}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-red-400 hover:text-red-400"
+                          onClick={() => setRevokeTarget({ poolId: sub.id, poolName: sub.name })}
+                          disabled={revokeMutation.isPending}
+                        >
                           <XCircle className="h-3.5 w-3.5 mr-1" />Revogar
                         </Button>
                       )}
@@ -247,6 +256,31 @@ export default function AdminSubscriptions() {
       {grantModal && (
         <GrantProModal poolId={grantModal.poolId} poolName={grantModal.poolName} open={true} onClose={() => setGrantModal(null)} />
       )}
+
+      {/* AlertDialog de confirmação para revogar Pro */}
+      <AlertDialog open={!!revokeTarget} onOpenChange={(open) => !open && setRevokeTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revogar plano Pro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O bolão <strong>&ldquo;{revokeTarget?.poolName}&rdquo;</strong> perderá imediatamente o acesso
+              a todos os recursos Pro. Esta ação não pode ser desfeita automaticamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (revokeTarget) revokeMutation.mutate({ poolId: revokeTarget.poolId });
+                setRevokeTarget(null);
+              }}
+            >
+              Revogar Pro
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

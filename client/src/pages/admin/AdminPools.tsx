@@ -28,6 +28,7 @@ import { trpc } from "@/lib/trpc";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+  CheckCircle2,
   Crown,
   ExternalLink,
   Globe,
@@ -159,7 +160,8 @@ export default function AdminPools() {
 
   const updatePool = trpc.pools.adminUpdatePool.useMutation({
     onSuccess: () => {
-      toast.success("Bolão atualizado com sucesso!");
+      setPoolSaved(true);
+      setTimeout(() => setPoolSaved(false), 3000);
       refetch();
       if (selectedPool && editForm) {
         setSelectedPool({ ...selectedPool, ...editForm });
@@ -168,6 +170,7 @@ export default function AdminPools() {
     onError: (err) => toast.error("Erro ao atualizar", { description: err.message }),
   });
 
+  const [poolSaved, setPoolSaved] = useState(false);
   const [grantProDays, setGrantProDays] = useState("30");
   const grantPro = trpc.adminDashboard.grantPoolPro.useMutation({
     onSuccess: () => {
@@ -503,15 +506,20 @@ export default function AdminPools() {
 
                 {/* Botão Salvar */}
                 <Button
-                  className="w-full bg-brand hover:bg-brand/90 gap-2"
+                  className={`w-full gap-2 transition-all duration-300 ${
+                    poolSaved ? "bg-green-600 hover:bg-green-700" : "bg-brand hover:bg-brand/90"
+                  }`}
                   onClick={handleSavePool}
                   disabled={updatePool.isPending}
                 >
-                  {updatePool.isPending
-                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : <Save className="h-4 w-4" />
-                  }
-                  Salvar Alterações
+                  {updatePool.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : poolSaved ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {poolSaved ? "Salvo!" : "Salvar Alterações"}
                 </Button>
 
                 <Separator />
