@@ -1041,3 +1041,8 @@
 - [x] C1: Log notification_template_updated (template de mensagem automática editado)
 - [x] C2: Log notification_template_toggled (template ativado/desativado)
 - [x] REGRA: Avaliar necessidade de log em toda nova feature antes de implementar
+
+## Sprint UX — Sair do Bolão (25/03/2026)
+- [x] PoolPage: botão "Sair do bolão" para participantes (não organizadores) com AlertDialog de confirmação
+- [x] Após sair: redirecionar para /dashboard com toast de confirmação
+- [x] Botão não deve aparecer para organizadores (apenas para participants)

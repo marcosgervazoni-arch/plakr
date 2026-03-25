@@ -19,6 +19,16 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Calendar,
   Check,
@@ -27,6 +37,7 @@ import {
   Crown,
   Loader2,
   Lock,
+  LogOut,
   Medal,
   MoreHorizontal,
   Settings,
@@ -34,7 +45,7 @@ import {
   Users,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
@@ -50,6 +61,8 @@ export default function PoolPage() {
   const analytics = useAnalytics();
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const [, navigate] = useLocation();
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   // Suporte a ?tab= na URL para abrir aba diretamente (ex: via menu de Ranking)
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== "undefined") {
@@ -195,6 +208,18 @@ export default function PoolPage() {
 
   const { pool, tournament, rules, memberCount, myRole } = data;
   const isOrganizer = myRole === "organizer" || user?.role === "admin";
+  const isParticipant = myRole === "participant";
+
+  const leaveMutation = trpc.pools.leave.useMutation({
+    onSuccess: () => {
+      toast.success("Você saiu do bolão.", { description: "Até a próxima!" });
+      navigate("/dashboard");
+    },
+    onError: (err) => {
+      toast.error("Erro ao sair do bolão", { description: err.message });
+    },
+  });
+
   const myBetsItems = Array.isArray(myBets) ? myBets : (myBets?.items ?? []);
   const betsByGame = new Map(myBetsItems.map((b) => [b.gameId, b]) ?? []);
   const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
@@ -293,6 +318,16 @@ export default function PoolPage() {
                       <Settings className="w-3.5 h-3.5" /> Gerenciar bolão
                     </Link>
                   </DropdownMenuItem>
+                )}
+                {isParticipant && (
+                  <>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10 flex items-center gap-2 cursor-pointer"
+                      onClick={() => setShowLeaveConfirm(true)}
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Sair do bolão
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -760,6 +795,32 @@ export default function PoolPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* AlertDialog: confirmar saída do bolão */}
+      <AlertDialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sair do bolão?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você irá sair de <strong>{pool.name}</strong>. Seus palpites serão mantidos, mas você precisará de um novo convite para voltar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={leaveMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => leaveMutation.mutate({ poolId: pool.id })}
+              disabled={leaveMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {leaveMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saindo...</>
+              ) : (
+                <><LogOut className="w-4 h-4 mr-2" /> Sair do bolão</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
