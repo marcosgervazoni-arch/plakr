@@ -998,3 +998,8 @@
 - [x] FIX-5: Migrar console.* em email.ts para Pino
 - [x] FIX-6: Testes de integração multi-tenant com banco real (8 testes, banco real)
 - [x] FIX-SECURITY: Bug corrigido em pools.transferOwnership — bloquear transferência para usuário banido
+
+### Sprint Sugestões Pós-Auditoria (25/03/2026)
+- [x] SUG-1: Coluna notified já existe no banco (tinyint NOT NULL DEFAULT 0) — confirmado via SQL
+- [x] SUG-2: Redis async consolidado — import() dinâmico, sem require() síncrono, getScoreQueue/getArchiveQueue/startScoringWorker todos async
+- [x] SUG-3: 11 testes de limite de plano gratuito (3º bolão, 51º participante, regras customizadas sem Pro, plano Pro ilimitado) — server/plan-limits.test.ts

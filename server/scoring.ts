@@ -19,32 +19,25 @@ import {
 import { resolveNotificationTemplate } from "./notificationTemplateHelper";
 import logger from "./logger";
 
-// ─── REDIS CONNECTION [T2: async import] ─────────────────────────────────────────────────────────────────────────
+// ─── REDIS CONNECTION [T2: async import - sem require() sincrono] ─────────────
+//
+// Para ativar o processamento assincrono em producao, configure:
+//   REDIS_URL=redis://:<senha>@<host>:<porta>/0
+// Sem REDIS_URL, o scoring roda de forma sincrona (fallback seguro).
 
 const REDIS_URL = process.env.REDIS_URL;
 
-async function createRedisConnection() {
+// Unica funcao de conexao Redis - usa import() dinamico para nao bloquear o startup
+async function getRedisConnection() {
   if (!REDIS_URL) return null;
   try {
     const { default: IORedis } = await import("ioredis");
     return new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
   } catch {
+    logger.warn("[Scoring] ioredis nao disponivel - Redis desabilitado");
     return null;
   }
 }
-
-function getRedisConnection() {
-  if (!REDIS_URL) return null;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { default: IORedis } = require("ioredis");
-    return new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
-  } catch {
-    return null;
-  }
-}
-
-// ─── JOB TYPES ────────────────────────────────────────────────────────────────
 
 export interface ScoreGameJobData {
   gameId: number;
@@ -56,28 +49,25 @@ export interface ArchivePoolJobData {
   poolId: number;
 }
 
-// ─── QUEUE ────────────────────────────────────────────────────────────────────
-
+// --- QUEUE ---
 let scoreQueue: Queue | null = null;
 let archiveQueue: Queue | null = null;
-
-export function getScoreQueue(): Queue | null {
+export async function getScoreQueue(): Promise<Queue | null> {
   if (scoreQueue) return scoreQueue;
-  const conn = getRedisConnection();
+  const conn = await getRedisConnection();
   if (!conn) return null;
-  scoreQueue = new Queue("score-game", { connection: conn });
+  scoreQueue = new Queue("score-game", { connection: conn as any });
   return scoreQueue;
 }
-
-export function getArchiveQueue(): Queue | null {
+export async function getArchiveQueue(): Promise<Queue | null> {
   if (archiveQueue) return archiveQueue;
-  const conn = getRedisConnection();
+  const conn = await getRedisConnection();
   if (!conn) return null;
-  archiveQueue = new Queue("archive-pool", { connection: conn });
+  archiveQueue = new Queue("archive-pool", { connection: conn as any });
   return archiveQueue;
 }
 
-// ─── TIPOS ────────────────────────────────────────────────────────────────────
+// --- TIPOS ---
 
 export type ResultType = "exact" | "correct_result" | "wrong";
 
@@ -441,8 +431,8 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
 
 let scoreWorker: Worker | null = null;
 
-export function startScoringWorker() {
-  const conn = getRedisConnection();
+export async function startScoringWorker() {
+  const conn = await getRedisConnection();
   if (!conn) {
     logger.warn("[Scoring] Redis not available — scoring will run synchronously");
     return;
@@ -454,7 +444,7 @@ export function startScoringWorker() {
       const { gameId, scoreA, scoreB } = job.data;
       await processGameScoring(gameId, scoreA, scoreB);
     },
-    { connection: conn, concurrency: 3 }
+    { connection: conn as any, concurrency: 3 }
   );
 
   scoreWorker.on("completed", (job) => {
@@ -469,7 +459,7 @@ export function startScoringWorker() {
 }
 
 export async function enqueueScoreGame(data: ScoreGameJobData) {
-  const queue = getScoreQueue();
+  const queue = await getScoreQueue();
   if (queue) {
     await queue.add("score-game", data, {
       attempts: 3,
