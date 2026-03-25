@@ -163,7 +163,7 @@ export default function OrganizerAccess() {
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Permissão de Convite</h3>
             <div className="grid grid-cols-1 gap-3">
               {[
-                { id: "organizer_only" as const, icon: Lock, label: "Apenas o organizador", desc: "Só você pode compartilhar o link ou código de convite" },
+                { id: "organizer_only" as const, icon: Lock, label: "Apenas o organizador", desc: "Só você pode compartilhar o link de convite" },
                 { id: "all_members" as const, icon: UserCheck, label: "Todos os participantes", desc: "Qualquer membro pode compartilhar o convite com outras pessoas" },
               ].map((opt) => {
                 const currentPerm = ((pool as any)?.invitePermission ?? "organizer_only") as "organizer_only" | "all_members";

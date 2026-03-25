@@ -1119,3 +1119,7 @@
 
 ## Bug — Bloco de inviteCode residual no PoolSettings (25/03/2026)
 - [x] Remover bloco "Código de convite" (inviteCode) da tela PoolSettings — código não é mais mecanismo de acesso
+
+## Copy — Remover referências a "código" na permissão de convite (25/03/2026)
+- [x] OrganizerAccess.tsx: atualizar descrições da permissão de convite removendo "código"
+- [x] CreatePool.tsx: atualizar descrições da permissão de convite removendo "código"

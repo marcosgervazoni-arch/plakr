@@ -227,7 +227,7 @@ export default function CreatePool() {
               <label className="text-sm font-medium">Quem pode convidar participantes?</label>
               <div className="grid grid-cols-1 gap-2">
                 {[
-                  { id: "organizer_only" as const, label: "Apenas o organizador", desc: "Só você pode compartilhar o link/código de convite" },
+                  { id: "organizer_only" as const, label: "Apenas o organizador", desc: "Só você pode compartilhar o link de convite" },
                   { id: "all_members" as const, label: "Todos os participantes", desc: "Qualquer membro pode compartilhar o convite com outras pessoas" },
                 ].map((opt) => (
                   <button
