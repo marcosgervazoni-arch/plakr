@@ -1014,3 +1014,5 @@
 ### UX Push Settings (25/03/2026)
 - [x] UX-1: Feedback visual no botão "Salvar Push" — botão fica verde com ✓ e texto "Configurações salvas" por 3s após save
 - [x] UX-2: Validação de e-mail VAPID inline — borda amarela e aviso quando vapidEmail está vazio (não bloqueia botão)
+
+- [x] BUG: Erro ao salvar push com vapidEmail vazio — Zod agora aceita string vazia (normalizada para undefined)

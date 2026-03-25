@@ -65,7 +65,9 @@ export const platformRouter = router({
       // VAPID / Push
       vapidPublicKey: z.string().optional(),
       vapidPrivateKey: z.string().optional(),
-      vapidEmail: z.string().email().optional(),
+      // Aceita string vazia (campo não preenchido) ou e-mail válido.
+      // String vazia é normalizada para undefined para não sobrescrever valor existente no banco.
+      vapidEmail: z.union([z.string().email(), z.literal("")]).optional().transform(v => v === "" ? undefined : v),
       pushEnabled: z.boolean().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
