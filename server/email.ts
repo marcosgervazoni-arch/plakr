@@ -6,6 +6,7 @@
  */
 import { ENV } from "./_core/env";
 import { getDb, createNotification } from "./db";
+import logger from "./logger";
 import { resolveNotificationTemplate } from "./notificationTemplateHelper";
 import { emailQueue, users, games, userPlans, pools, poolMembers } from "../drizzle/schema";
 import { eq, and, lte, gte, sql } from "drizzle-orm";
@@ -222,7 +223,7 @@ export async function sendEmail(opts: {
     const apiKey = ENV.forgeApiKey;
 
     if (!apiUrl || !apiKey) {
-      console.warn("[Email] Manus API not configured, skipping email send");
+      logger.warn("[Email] Manus API not configured, skipping email send");
       return false;
     }
 
@@ -241,14 +242,14 @@ export async function sendEmail(opts: {
 
     if (!res.ok) {
       const err = await res.text();
-      console.error(`[Email] Failed to send (${opts.type}):`, err);
+      logger.error({ type: opts.type, err }, "[Email] Failed to send");
       return false;
     }
 
-    console.log(`[Email] Sent (${opts.type}) to ${opts.to}`);
+    logger.info({ type: opts.type, to: opts.to }, "[Email] Sent");
     return true;
   } catch (err) {
-    console.error(`[Email] Error sending (${opts.type}):`, err);
+    logger.error({ type: opts.type, err }, "[Email] Error sending");
     return false;
   }
 }
@@ -279,7 +280,7 @@ export async function enqueueEmail(opts: {
       status: "pending",
     });
   } catch (err) {
-    console.error("[Email] Failed to enqueue:", err);
+    logger.error({ err }, "[Email] Failed to enqueue");
   }
 }
 
@@ -318,10 +319,10 @@ export async function processEmailQueue(): Promise<void> {
     }
 
     if (pending.length > 0) {
-      console.log(`[Email] Processed ${pending.length} emails from queue`);
+      logger.info({ count: pending.length }, "[Email] Processed emails from queue");
     }
   } catch (err) {
-    console.error("[Email] Queue processing error:", err);
+    logger.error({ err }, "[Email] Queue processing error");
   }
 }
 
@@ -357,7 +358,7 @@ export async function scheduleBetReminders(): Promise<void> {
       )
       .limit(20);
 
-    console.log(`[Email] Found ${upcomingGames.length} games needing bet reminders`);
+    logger.info({ count: upcomingGames.length }, "[Email] Found games needing bet reminders");
 
     for (const g of upcomingGames) {
       // Buscar bolões ativos que usam este torneio
@@ -410,7 +411,7 @@ export async function scheduleBetReminders(): Promise<void> {
       }
     }
   } catch (err) {
-    console.error("[Email] Bet reminder scheduling error:", err);
+    logger.error({ err }, "[Email] Bet reminder scheduling error");
   }
 }
 
@@ -474,9 +475,9 @@ export async function sendPlanExpiryWarnings(): Promise<void> {
         });
       }
 
-      console.log(`[Email] Queued ${expiringPlans.length} plan expiry warnings (${daysLeft}d)`);
+      logger.info({ count: expiringPlans.length, daysLeft }, "[Email] Queued plan expiry warnings");
     }
   } catch (err) {
-    console.error("[Email] Plan expiry warning error:", err);
+    logger.error({ err }, "[Email] Plan expiry warning error");
   }
 }

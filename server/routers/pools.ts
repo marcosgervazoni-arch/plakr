@@ -3,6 +3,7 @@
  * [T1] Modularizado a partir de server/routers.ts
  */
 import { TRPCError } from "@trpc/server";
+import { ENV } from "../_core/env";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
@@ -460,6 +461,10 @@ export const poolsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
       if (!member || member.role !== "organizer") throw new TRPCError({ code: "FORBIDDEN" });
+      // [S-TRANSFER] Impedir transferência para usuário bloqueado
+      const newOwner = await getUserById(input.newOwnerId);
+      if (!newOwner) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado." });
+      if (newOwner.isBlocked) throw new TRPCError({ code: "FORBIDDEN", message: "Não é possível transferir o bolão para um usuário banido." });
       await updatePoolMemberRole(input.poolId, ctx.user.id, "participant");
       await updatePoolMemberRole(input.poolId, input.newOwnerId, "organizer");
       await updatePool(input.poolId, { ownerId: input.newOwnerId });
@@ -590,7 +595,7 @@ export const poolsRouter = router({
       const pool = await getPoolById(input.poolId);
       if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
       const { templatePoolInvite } = await import("../email");
-      const inviteUrl = `https://apostai-bolao-djv8mgeh.manus.space/join/${pool.inviteToken}`;
+      const inviteUrl = `${ENV.appBaseUrl}/join/${pool.inviteToken}`;
       const { subject, html } = templatePoolInvite({
         inviteeName: input.inviteeName ?? "Amigo",
         organizerName: ctx.user.name ?? "Organizador",

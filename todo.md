@@ -989,3 +989,12 @@
 - [x] Q2: Testes de resiliência: Redis-down, deadline=0, bônus sobrepostos, 0x0 (135 testes total)
 - [x] A1: trackBadgeUnlocked disparado em Conquistas.tsx via badges.getNewlyUnlocked
 - [x] O1: console.log migrados para logger Pino em scoring.ts, stripe-webhook.ts, oauth.ts, db.ts, upload.ts, push.ts, badges.ts
+
+### Sprint Auditoria 100% — Ações Recomendadas (25/03/2026)
+- [x] FIX-1: Corrigir hardcode de URL em sendInviteEmail (pools.ts:593 → ENV.appBaseUrl)
+- [x] FIX-2: Aplicar esc() no template de broadcast (notifications.ts:231-235)
+- [x] FIX-3: Alterar default de signSession() para 30 dias (sdk.ts)
+- [x] FIX-4: Migrar console.* em sdk.ts para Pino
+- [x] FIX-5: Migrar console.* em email.ts para Pino
+- [x] FIX-6: Testes de integração multi-tenant com banco real (8 testes, banco real)
+- [x] FIX-SECURITY: Bug corrigido em pools.transferOwnership — bloquear transferência para usuário banido

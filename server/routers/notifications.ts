@@ -14,6 +14,16 @@ import {
 } from "../db";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
 
+// [S6] Escape HTML para prevenir XSS em dados interpolados em templates de e-mail
+function esc(str: string): string {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export const notificationsRouter = router({
   list: protectedProcedure
     .input(z.object({ limit: z.number().default(20) }))
@@ -228,12 +238,12 @@ export const notificationsRouter = router({
           const emailHtml = `
 <!DOCTYPE html><html><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#0f0f0f;color:#e5e5e5;">
   <div style="background:#1a1a1a;border-radius:12px;overflow:hidden;border:1px solid #2a2a2a;">
-    ${input.imageUrl ? `<img src="${input.imageUrl}" alt="" style="width:100%;max-height:200px;object-fit:cover;display:block;">` : ''}
+    ${input.imageUrl ? `<img src="${esc(input.imageUrl)}" alt="" style="width:100%;max-height:200px;object-fit:cover;display:block;">` : ''}
     <div style="padding:24px;">
-      ${input.emoji ? `<div style="font-size:32px;margin-bottom:12px;">${input.emoji}</div>` : ''}
-      <h2 style="margin:0 0 12px;color:#fff;font-size:20px;">${input.title}</h2>
-      <p style="margin:0 0 20px;color:#ccc;line-height:1.6;">${input.content}</p>
-      ${input.actionUrl ? `<a href="${input.actionUrl}" style="display:inline-block;background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">${input.actionLabel ?? 'Ver mais'}</a>` : ''}
+      ${input.emoji ? `<div style="font-size:32px;margin-bottom:12px;">${esc(input.emoji)}</div>` : ''}
+      <h2 style="margin:0 0 12px;color:#fff;font-size:20px;">${esc(input.title)}</h2>
+      <p style="margin:0 0 20px;color:#ccc;line-height:1.6;">${esc(input.content)}</p>
+      ${input.actionUrl ? `<a href="${esc(input.actionUrl)}" style="display:inline-block;background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">${esc(input.actionLabel ?? 'Ver mais')}</a>` : ''}
     </div>
   </div>
 </body></html>`;
