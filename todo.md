@@ -1016,3 +1016,5 @@
 - [x] UX-2: Validação de e-mail VAPID inline — borda amarela e aviso quando vapidEmail está vazio (não bloqueia botão)
 
 - [x] BUG: Erro ao salvar push com vapidEmail vazio — Zod agora aceita string vazia (normalizada para undefined)
+
+- [x] UX: Unificar botões de salvar em AdminSettings em um único botão"Salvar" no topo que salva todas as seções (Stripe, Limites, Pontuação, Analytics e Push)

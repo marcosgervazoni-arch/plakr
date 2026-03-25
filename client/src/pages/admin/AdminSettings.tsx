@@ -27,13 +27,14 @@ import { toast } from "sonner";
 
 export default function AdminSettings() {
   const { data: settings, isLoading } = trpc.platform.getSettings.useQuery();
+  const utils = trpc.useUtils();
 
   const [form, setForm] = useState({
     // Limites do plano gratuito
     freeMaxParticipants: 50,
     freeMaxPools: 2,
     poolArchiveDays: 10,
-    // Pontução padrão
+    // Pontuação padrão
     defaultScoringExact: 10,
     defaultScoringCorrect: 5,
     defaultScoringBonusGoals: 3,
@@ -48,7 +49,7 @@ export default function AdminSettings() {
     stripeMonthlyPrice: 2990,
   });
 
-  // Push / VAPID (estado separado para não misturar com o form principal)
+  // Push / VAPID
   const [pushForm, setPushForm] = useState({
     vapidPublicKey: "",
     vapidPrivateKey: "",
@@ -56,6 +57,9 @@ export default function AdminSettings() {
     pushEnabled: false,
   });
   const [showPrivateKey, setShowPrivateKey] = useState(false);
+
+  // Estado de feedback visual após salvar
+  const [allSaved, setAllSaved] = useState(false);
 
   useEffect(() => {
     if (settings) {
@@ -84,10 +88,21 @@ export default function AdminSettings() {
     }
   }, [settings]);
 
+  // Mutation única que salva tudo de uma vez
   const updateMutation = trpc.platform.updateSettings.useMutation({
-    onSuccess: () => toast.success("Configurações salvas com sucesso."),
+    onSuccess: () => {
+      utils.platform.getSettings.invalidate();
+      toast.success("Configurações salvas com sucesso.");
+      setAllSaved(true);
+      setTimeout(() => setAllSaved(false), 3000);
+    },
     onError: (e: { message: string }) => toast.error(e.message),
   });
+
+  // Salva form principal + pushForm juntos
+  const handleSaveAll = () => {
+    updateMutation.mutate({ ...form, ...pushForm });
+  };
 
   const numField = (key: keyof typeof form) => ({
     value: form[key],
@@ -107,37 +122,22 @@ export default function AdminSettings() {
   const stripeConfigured = form.stripePriceIdPro.startsWith("price_");
   // S10: vapidPrivateKey nunca é retornada pelo backend por segurança.
   // pushConfigured verifica apenas vapidPublicKey para detectar se keys já existem no banco.
-  // Quando o admin gera novas keys, vapidPrivateKey fica preenchida no form até o próximo save.
   const pushConfigured = pushForm.vapidPublicKey.length > 10;
 
   const generateVapidMutation = trpc.platform.generateVapidKeys.useMutation({
     onSuccess: (keys) => {
       setPushForm((p) => ({ ...p, vapidPublicKey: keys.publicKey, vapidPrivateKey: keys.privateKey }));
-      toast.success("Novas VAPID keys geradas! Clique em Salvar Push para aplicar.");
+      toast.success("Novas VAPID keys geradas! Clique em Salvar para aplicar.");
     },
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
-  // UX-1: estado de feedback visual após salvar push
-  const [pushSaved, setPushSaved] = useState(false);
-
-  const savePushMutation = trpc.platform.updateSettings.useMutation({
-    onSuccess: () => {
-      utils.platform.getSettings.invalidate();
-      toast.success("Configurações de push salvas!");
-      // UX-1: mostrar estado "salvo" por 3 segundos
-      setPushSaved(true);
-      setTimeout(() => setPushSaved(false), 3000);
-    },
-    onError: (e: { message: string }) => toast.error(e.message),
-  });
-
-  const utils = trpc.useUtils();
+  const isSaving = updateMutation.isPending;
 
   return (
     <AdminLayout activeSection="settings">
       <div className="space-y-6">
-        {/* Header */}
+        {/* Header com botão único de salvar */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-brand/10 shrink-0">
@@ -149,13 +149,21 @@ export default function AdminSettings() {
             </div>
           </div>
           <Button
-            className="bg-brand hover:bg-brand/90 gap-2 shrink-0"
-            onClick={() => updateMutation.mutate(form)}
-            disabled={updateMutation.isPending || isLoading}
+            className={`gap-2 shrink-0 transition-all duration-300 ${
+              allSaved ? "bg-green-600 hover:bg-green-700" : "bg-brand hover:bg-brand/90"
+            }`}
+            onClick={handleSaveAll}
+            disabled={isSaving || isLoading}
           >
-            {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            <span className="hidden sm:inline">Salvar Configurações</span>
-            <span className="sm:hidden">Salvar</span>
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : allSaved ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">{allSaved ? "Salvo!" : "Salvar"}</span>
+            <span className="sm:hidden">{allSaved ? "✓" : "Salvar"}</span>
           </Button>
         </div>
 
@@ -228,7 +236,7 @@ export default function AdminSettings() {
                     <li>Clique em <strong>Add product</strong> e crie o produto "ApostAI Pro"</li>
                     <li>Defina o preço recorrente mensal (ex: R$&nbsp;29,90)</li>
                     <li>Copie o <strong>Price ID</strong> (começa com <code className="bg-surface px-1 rounded text-xs">price_</code>)</li>
-                    <li>Cole no campo acima e clique em <strong>Salvar Configurações</strong></li>
+                    <li>Cole no campo acima e clique em <strong>Salvar</strong></li>
                   </ol>
                   <p className="text-xs text-muted-foreground pt-1">
                     💡 Para testes, use o{" "}
@@ -392,7 +400,6 @@ export default function AdminSettings() {
                     }
                     className={pushConfigured && !pushForm.vapidEmail ? "border-yellow-500/60 focus-visible:ring-yellow-500/40" : ""}
                   />
-                  {/* UX-2: aviso inline quando e-mail está vazio mas keys já existem */}
                   {pushConfigured && !pushForm.vapidEmail ? (
                     <p className="text-xs text-yellow-400 flex items-center gap-1">
                       <span>⚠️</span> Recomendado para conformidade com o protocolo VAPID. Preencha para evitar problemas de entrega.
@@ -465,7 +472,7 @@ export default function AdminSettings() {
                     <li>Clique em <strong>Gerar Keys</strong> para criar o par VAPID</li>
                     <li>Informe o e-mail de contato VAPID</li>
                     <li>Ative o toggle <strong>Ativar canal push</strong></li>
-                    <li>Clique em <strong>Salvar Push</strong></li>
+                    <li>Clique em <strong>Salvar</strong> (botão no topo da página)</li>
                     <li>Os usuários poderão ativar push em Preferências de Notificação</li>
                   </ol>
                   <p className="text-xs text-yellow-400 mt-2">
@@ -473,45 +480,9 @@ export default function AdminSettings() {
                     Os usuários precisarão reativar o push nas preferências.
                   </p>
                 </div>
-
-                <Button
-                  className={`gap-2 transition-all duration-300 ${
-                    pushSaved
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-brand hover:bg-brand/90"
-                  }`}
-                  onClick={() => savePushMutation.mutate(pushForm)}
-                  disabled={
-                    savePushMutation.isPending ||
-                    // Habilitar se: keys já configuradas no banco (vapidPublicKey preenchida)
-                    // OU se novas keys foram geradas (vapidPrivateKey preenchida no form)
-                    // O e-mail só é obrigatório quando nenhuma key existe ainda
-                    (!pushConfigured && !pushForm.vapidPrivateKey && !pushForm.vapidEmail)
-                  }
-                >
-                  {savePushMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : pushSaved ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  {pushSaved ? "Configurações salvas" : "Salvar Push"}
-                </Button>
               </CardContent>
             </Card>
 
-          {/* Botão Salvar fixo no rodapé — sempre visível em mobile */}
-          <div className="pt-4 border-t border-border/50">
-            <Button
-              className="w-full bg-brand hover:bg-brand/90 gap-2 h-12 text-base"
-              onClick={() => updateMutation.mutate(form)}
-              disabled={updateMutation.isPending || isLoading}
-            >
-              {updateMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-              Salvar Configurações
-            </Button>
-          </div>
           </div>
         )}
       </div>
