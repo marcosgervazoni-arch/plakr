@@ -585,6 +585,32 @@ export const referrals = mysqlTable("referrals", {
 export type Referral = typeof referrals.$inferSelect;
 export type InsertReferral = typeof referrals.$inferInsert;
 
+// ─── HISTÓRICO DE POSIÇÕES FINAIS ──────────────────────────────────────────
+// Registra a posição final de cada participante ao encerrar um bolão.
+// Dados são preservados mesmo após o bolão ser arquivado/excluído
+// (poolId vira null via SET NULL), garantindo histórico permanente do usuário.
+export const poolFinalPositions = mysqlTable(
+  "pool_final_positions",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // SET NULL ao arquivar/excluir bolão — histórico permanece via snapshot abaixo
+    poolId: int("poolId")
+      .references(() => pools.id, { onDelete: "set null" }),
+    poolName: varchar("poolName", { length: 255 }).notNull(),       // snapshot do nome
+    tournamentName: varchar("tournamentName", { length: 255 }),     // snapshot do torneio
+    position: int("position").notNull(),                            // 1, 2, 3, ...
+    totalPoints: int("totalPoints").default(0).notNull(),
+    totalParticipants: int("totalParticipants").default(1).notNull(),
+    finishedAt: timestamp("finishedAt").defaultNow().notNull(),
+  },
+  (t) => [unique("pool_final_positions_unique").on(t.poolId, t.userId)]
+);
+export type PoolFinalPosition = typeof poolFinalPositions.$inferSelect;
+export type InsertPoolFinalPosition = typeof poolFinalPositions.$inferInsert;
+
 // ─── EXPORTS DE TIPOS ADICIONAIS ────────────────────────────────────────────
 export type InsertUserPlan = typeof userPlans.$inferInsert;
 export type InsertPool = typeof pools.$inferInsert;

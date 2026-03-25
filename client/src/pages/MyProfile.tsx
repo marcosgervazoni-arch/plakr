@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Loader2, Camera, ExternalLink, Trophy, Target, Users,
-  Crown, Copy, Check, Gift, ChevronRight, Shield,
+  Crown, Medal, Copy, Check, Gift, ChevronRight, Shield,
   Bell, Zap, Award,
 } from "lucide-react";
 import { Link } from "wouter";
@@ -265,6 +265,44 @@ export default function MyProfile() {
                 </Link>
               )}
             </div>
+            {/* Histórico de posições finais */}
+            {profile?.finalPositions && profile.finalPositions.length > 0 && (
+              <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Histórico de Posições</h3>
+                <div className="space-y-2">
+                  {profile.finalPositions.map((fp: any) => {
+                    const pos = fp.position;
+                    const badge =
+                      pos === 1 ? <Crown className="w-4 h-4 text-yellow-400" /> :
+                      pos === 2 ? <Medal className="w-4 h-4 text-slate-300" /> :
+                      pos === 3 ? <Medal className="w-4 h-4 text-amber-600" /> : null;
+                    return (
+                      <div key={fp.id} className={`flex items-center gap-3 py-2 border-b border-border/50 last:border-0 ${
+                        pos <= 3 ? "opacity-100" : "opacity-80"
+                      }`}>
+                        {/* Posição */}
+                        <span className={`text-sm font-bold w-6 text-center shrink-0 ${
+                          pos === 1 ? "text-yellow-400" : pos === 2 ? "text-slate-300" : pos === 3 ? "text-amber-600" : "text-muted-foreground"
+                        }`}>{pos}º</span>
+                        {/* Badge top-3 */}
+                        <div className="w-5 shrink-0 flex items-center justify-center">
+                          {badge}
+                        </div>
+                        {/* Nome do bolão */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{fp.poolName}</p>
+                          {fp.tournamentName && (
+                            <p className="text-xs text-muted-foreground truncate">{fp.tournamentName}</p>
+                          )}
+                        </div>
+                        {/* Pontos */}
+                        <span className="text-sm font-semibold text-foreground shrink-0">{fp.totalPoints} pts</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Coluna direita: convites + notificações + conta ── */}

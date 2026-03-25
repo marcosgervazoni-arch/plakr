@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import BadgeGrid from "@/components/BadgeGrid";
 import {
-  Trophy, Crown, Loader2, AlertCircle, Calendar,
+  Trophy, Crown, Medal, Loader2, AlertCircle, Calendar,
   MessageCircle, Send, ExternalLink, Share2, Award,
 } from "lucide-react";
 import { useParams, Link } from "wouter";
@@ -93,7 +93,7 @@ export default function PublicProfile() {
     );
   }
 
-  const { user, plan, recentPools, badges } = data;
+  const { user, plan, recentPools, badges, finalPositions } = data;
   const isPro = plan?.plan === "pro" && plan?.isActive;
   const isOwnProfile = isAuthenticated && currentUser?.id === resolvedId;
   const initials = user.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
@@ -243,6 +243,40 @@ export default function PublicProfile() {
             </div>
           )}
         </div>
+
+        {/* ── Histórico de posições finais ── */}
+        {finalPositions && finalPositions.length > 0 && (
+          <div className="bg-card border border-border/30 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-primary" />
+              <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Histórico de Posições</h3>
+            </div>
+            <div className="space-y-1">
+              {(finalPositions as any[]).map((fp) => {
+                const pos = fp.position;
+                const posIcon =
+                  pos === 1 ? <Crown className="w-4 h-4 text-yellow-400" /> :
+                  pos === 2 ? <Medal className="w-4 h-4 text-slate-300" /> :
+                  pos === 3 ? <Medal className="w-4 h-4 text-amber-600" /> : null;
+                return (
+                  <div key={fp.id} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
+                    <span className={`text-sm font-bold w-6 text-center shrink-0 ${
+                      pos === 1 ? "text-yellow-400" : pos === 2 ? "text-slate-300" : pos === 3 ? "text-amber-600" : "text-muted-foreground"
+                    }`}>{pos}º</span>
+                    <div className="w-5 shrink-0 flex items-center justify-center">{posIcon}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{fp.poolName}</p>
+                      {fp.tournamentName && (
+                        <p className="text-xs text-muted-foreground truncate">{fp.tournamentName}</p>
+                      )}
+                    </div>
+                    <span className="text-sm font-semibold text-foreground shrink-0">{fp.totalPoints} pts</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── Nota informativa ── */}
         <div className="bg-muted/30 border border-border/20 rounded-xl p-4 text-center">

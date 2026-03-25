@@ -1078,3 +1078,10 @@
 
 ## Sprint UX — Link "Meu Perfil" no menu (25/03/2026)
 - [x] Adicionar item "Meu Perfil" no menu de navegação, abaixo do Dashboard, com link para /my-profile
+
+## Sprint — Histórico de Posições Finais no Perfil (25/03/2026)
+- [x] Schema: tabela pool_final_positions para registrar posição final ao encerrar bolão
+- [x] Backend: registrar posição final quando bolão é encerrado (status closed)
+- [x] Backend: finalPositions incluído no retorno de getPublicProfile
+- [x] Frontend: seção "Histórico de Posições" no perfil e perfil público com badges Crown/Medal
+- [x] Análise: pool_final_positions usa ON DELETE SET NULL — histórico preservado mesmo após exclusão do bolão (poolId fica null, poolName mantido como snapshot)

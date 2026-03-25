@@ -836,3 +836,50 @@ export async function recalculateMemberStats(poolId: number, userId: number): Pr
     totalBets: memberBets.length,
   });
 }
+
+// ─── HISTÓRICO DE POSIÇÕES FINAIS ──────────────────────────────────────────
+
+/**
+ * Registra as posições finais de todos os membros ao encerrar um bolão.
+ * Usa INSERT IGNORE para ser idempotente (não duplica se chamado duas vezes).
+ */
+export async function saveFinalPositions(
+  poolId: number,
+  poolName: string,
+  tournamentName: string | null,
+  ranking: Array<{ userId: number; position: number; totalPoints: number }>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const { poolFinalPositions } = await import("../drizzle/schema");
+  const totalParticipants = ranking.length;
+  for (const entry of ranking) {
+    await db
+      .insert(poolFinalPositions)
+      .ignore()
+      .values({
+        userId: entry.userId,
+        poolId,
+        poolName,
+        tournamentName: tournamentName ?? undefined,
+        position: entry.position,
+        totalPoints: entry.totalPoints,
+        totalParticipants,
+        finishedAt: new Date(),
+      });
+  }
+}
+
+/**
+ * Retorna o histórico de posições finais de um usuário, ordenado por data decrescente.
+ */
+export async function getUserFinalPositions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { poolFinalPositions } = await import("../drizzle/schema");
+  return db
+    .select()
+    .from(poolFinalPositions)
+    .where(eq(poolFinalPositions.userId, userId))
+    .orderBy(desc(poolFinalPositions.finishedAt));
+}

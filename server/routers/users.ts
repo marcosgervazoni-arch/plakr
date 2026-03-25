@@ -295,7 +295,7 @@ export const usersRouter = router({
       const db = await (await import("../db")).getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
       const { eq, sql, desc, and } = await import("drizzle-orm");
-      const { users: usersT, poolMembers, poolMemberStats, pools: poolsT, userPlans, badges: badgesT, userBadges } = await import("../../drizzle/schema");
+      const { users: usersT, poolMembers, poolMemberStats, pools: poolsT, userPlans, badges: badgesT, userBadges, poolFinalPositions } = await import("../../drizzle/schema");
       const userRows = await db.select({
         id: usersT.id,
         name: usersT.name,
@@ -360,6 +360,12 @@ export const usersRouter = router({
             earnedAt: earnedMap.get(b.id) ?? null,
           }));
         })(),
+        finalPositions: await db
+          .select()
+          .from(poolFinalPositions)
+          .where(eq(poolFinalPositions.userId, input.userId))
+          .orderBy(desc(poolFinalPositions.finishedAt))
+          .limit(20),
       };
     }),
 

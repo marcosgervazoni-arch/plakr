@@ -860,7 +860,20 @@ export const poolsRouter = router({
       if (pool.status === "finished") throw new TRPCError({ code: "BAD_REQUEST", message: "O bolão já está encerrado." });
       const ranking = await getPoolRanking(input.poolId);
       const top3 = ranking.slice(0, 3);
-      await updatePool(input.poolId, { status: "finished" });
+      await updatePool(input.poolId, { status: "finished", finishedAt: new Date() });
+      // [LOG] Registrar posições finais no histórico permanente
+      const tournament = await getTournamentById(pool.tournamentId);
+      const { saveFinalPositions } = await import("../db");
+      await saveFinalPositions(
+        input.poolId,
+        pool.name,
+        tournament?.name ?? null,
+        ranking.map((r, idx) => ({
+          userId: r.user.id,
+          position: idx + 1,
+          totalPoints: r.stats.totalPoints,
+        }))
+      );
       const db = await (await import("../db")).getDb();
       if (db) {
         const { poolMembers } = await import("../../drizzle/schema");
