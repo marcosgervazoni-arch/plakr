@@ -1065,3 +1065,9 @@
 
 ## Bug — Badges de posição não aparecem no ranking (25/03/2026)
 - [x] BUG: Crown/Medal não aparecem quando allZero=true — corrigido: badges sempre visíveis nos top-3 independente de pontuação
+
+## Sprint UX — Ranking: data de atualização + posição do usuário (25/03/2026)
+- [x] Remover banner "Aguardando os primeiros pontos"
+- [x] Remover badge "Sem palpites" junto ao nome do participante
+- [x] Substituir banner por rodapé discreto com data/hora da última atualização do ranking
+- [x] Adicionar card fixo "Sua posição" no topo da aba Ranking (posição, pts, delta do líder)

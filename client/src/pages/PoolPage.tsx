@@ -620,16 +620,44 @@ export default function PoolPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Banner informativo quando ninguém tem pontos ainda */}
-                {ranking.every((r) => (r as typeof r & { hasStats?: boolean }).hasStats === false || r.stats.totalPoints === 0) && (
-                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-muted/40 border border-border/30 mb-3">
-                    <Trophy className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-medium text-foreground">Aguardando os primeiros pontos</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Os pontos são calculados após os jogos serem encerrados. Todos os participantes já estão na fila!</p>
+                {/* Card fixo: posição do usuário logado */}
+                {(() => {
+                  const myIdx = ranking.findIndex((r) => r.user.id === user?.id);
+                  const myItem = myIdx >= 0 ? ranking[myIdx] : null;
+                  const leaderPtsTop = ranking[0]?.stats.totalPoints ?? 0;
+                  const myDelta = myItem && myIdx > 0 ? myItem.stats.totalPoints - leaderPtsTop : null;
+                  if (!myItem) return null;
+                  return (
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-primary/40 bg-primary/5 mb-1">
+                      <div className="flex flex-col items-center shrink-0">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Posição</span>
+                        <span className="text-2xl font-black text-primary leading-none">
+                          {myIdx === 0 ? (
+                            <Crown className="w-6 h-6 text-yellow-400" />
+                          ) : myIdx === 1 ? (
+                            <Medal className="w-6 h-6 text-slate-300" />
+                          ) : myIdx === 2 ? (
+                            <Medal className="w-6 h-6 text-orange-400" />
+                          ) : (
+                            `${myIdx + 1}º`
+                          )}
+                        </span>
+                      </div>
+                      <div className="w-px h-10 bg-border/40 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground">Sua posição atual</p>
+                        <p className="text-sm font-semibold text-primary truncate">{myItem.user.name}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xl font-black font-mono text-primary leading-none">{myItem.stats.totalPoints}</p>
+                        <p className="text-[10px] text-muted-foreground">pts</p>
+                        {myDelta !== null && (
+                          <p className="text-[10px] text-muted-foreground/70 font-mono">{myDelta} do líder</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Lista completa — formato único, sem pódio em cards */}
                 {(() => {
@@ -705,11 +733,7 @@ export default function PoolPage() {
                                       você
                                     </span>
                                   )}
-                                  {!hasStats && (
-                                    <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40">
-                                      Sem palpites
-                                    </span>
-                                  )}
+
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">
                                   {hasStats
@@ -750,6 +774,27 @@ export default function PoolPage() {
                         );
                       })}
                     </div>
+                  );
+                })()}
+
+                {/* Rodapé: data/hora da última atualização */}
+                {(() => {
+                  const lastUpdated = ranking
+                    .map((r) => r.stats.updatedAt)
+                    .filter(Boolean)
+                    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
+                  return lastUpdated ? (
+                    <p className="text-center text-[10px] text-muted-foreground/50 pt-1">
+                      Atualizado em {new Date(lastUpdated).toLocaleString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  ) : (
+                    <p className="text-center text-[10px] text-muted-foreground/50 pt-1">Pontos atualizados após o encerramento dos jogos</p>
                   );
                 })()}
               </div>
