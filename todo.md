@@ -1046,3 +1046,6 @@
 - [x] PoolPage: botão "Sair do bolão" para participantes (não organizadores) com AlertDialog de confirmação
 - [x] Após sair: redirecionar para /dashboard com toast de confirmação
 - [x] Botão não deve aparecer para organizadores (apenas para participants)
+
+## Bug — Erro na página do bolão (25/03/2026)
+- [x] BUG: Página /pool/:slug exibe "Algo deu errado" em produção — corrigido: leaveMutation estava declarado após returns condicionais (violação de regra dos React Hooks), movido para antes dos returns

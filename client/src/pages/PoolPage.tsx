@@ -112,6 +112,17 @@ export default function PoolPage() {
     },
   });
 
+  /* [HOOK] leave — deve ficar ANTES dos returns condicionais para não violar regra dos React Hooks */
+  const leaveMutation = trpc.pools.leave.useMutation({
+    onSuccess: () => {
+      toast.success("Você saiu do bolão.", { description: "Até a próxima!" });
+      navigate("/dashboard");
+    },
+    onError: (err) => {
+      toast.error("Erro ao sair do bolão", { description: err.message });
+    },
+  });
+
   /* ── Agrupamento de jogos por fase ── (hooks ANTES dos returns condicionais) */
   const games = data?.games ?? [];
   const phases = data?.phases ?? [];
@@ -209,16 +220,6 @@ export default function PoolPage() {
   const { pool, tournament, rules, memberCount, myRole } = data;
   const isOrganizer = myRole === "organizer" || user?.role === "admin";
   const isParticipant = myRole === "participant";
-
-  const leaveMutation = trpc.pools.leave.useMutation({
-    onSuccess: () => {
-      toast.success("Você saiu do bolão.", { description: "Até a próxima!" });
-      navigate("/dashboard");
-    },
-    onError: (err) => {
-      toast.error("Erro ao sair do bolão", { description: err.message });
-    },
-  });
 
   const myBetsItems = Array.isArray(myBets) ? myBets : (myBets?.items ?? []);
   const betsByGame = new Map(myBetsItems.map((b) => [b.gameId, b]) ?? []);
