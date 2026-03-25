@@ -244,13 +244,13 @@ export default function PublicProfile() {
           )}
         </div>
 
-        {/* ── Histórico de posições finais ── */}
-        {finalPositions && finalPositions.length > 0 && (
-          <div className="bg-card border border-border/30 rounded-2xl p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-primary" />
-              <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Histórico de Posições</h3>
-            </div>
+        {/* ── Histórico de posições finais ── sempre visível */}
+        <div className="bg-card border border-border/30 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-primary" />
+            <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Histórico de Posições</h3>
+          </div>
+          {finalPositions && finalPositions.length > 0 ? (
             <div className="space-y-1">
               {(finalPositions as any[]).map((fp) => {
                 const pos = fp.position;
@@ -275,8 +275,14 @@ export default function PublicProfile() {
                 );
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+              <Trophy className="w-8 h-8 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">Nenhum bolão encerrado ainda.</p>
+              <p className="text-xs text-muted-foreground/60">As posições finais aparecerão aqui quando os bolões forem encerrados.</p>
+            </div>
+          )}
+        </div>
 
         {/* ── Nota informativa ── */}
         <div className="bg-muted/30 border border-border/20 rounded-xl p-4 text-center">

@@ -1085,3 +1085,6 @@
 - [x] Backend: finalPositions incluído no retorno de getPublicProfile
 - [x] Frontend: seção "Histórico de Posições" no perfil e perfil público com badges Crown/Medal
 - [x] Análise: pool_final_positions usa ON DELETE SET NULL — histórico preservado mesmo após exclusão do bolão (poolId fica null, poolName mantido como snapshot)
+
+## Bug — Histórico de Posições só aparece com registros (25/03/2026)
+- [x] BUG: Seção "Histórico de Posições" oculta quando não há registros — deve aparecer sempre com estado vazio

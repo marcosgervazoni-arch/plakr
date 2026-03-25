@@ -265,10 +265,10 @@ export default function MyProfile() {
                 </Link>
               )}
             </div>
-            {/* Histórico de posições finais */}
-            {profile?.finalPositions && profile.finalPositions.length > 0 && (
-              <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Histórico de Posições</h3>
+            {/* Histórico de posições finais — sempre visível */}
+            <div className="bg-card border border-border rounded-xl p-5 space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Histórico de Posições</h3>
+              {profile?.finalPositions && profile.finalPositions.length > 0 ? (
                 <div className="space-y-2">
                   {profile.finalPositions.map((fp: any) => {
                     const pos = fp.position;
@@ -301,8 +301,14 @@ export default function MyProfile() {
                     );
                   })}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                  <Trophy className="w-8 h-8 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">Nenhum bolão encerrado ainda.</p>
+                  <p className="text-xs text-muted-foreground/60">Suas posições finais aparecerão aqui quando os bolões forem encerrados.</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ── Coluna direita: convites + notificações + conta ── */}
