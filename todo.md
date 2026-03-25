@@ -1054,3 +1054,11 @@
 - [x] Backend: getPoolRanking retorna todos os membros mesmo sem pontuação (LEFT JOIN com pool_members)
 - [x] Frontend: aba Ranking exibe todos os participantes com 0 pts quando não há pontuação
 - [x] Visual: estado "aguardando jogos" com posições empatadas em 0 pts, badge "Sem palpites" para quem não apostou
+
+## Sprint UX — Redesign Ranking em Lista (25/03/2026)
+- [x] Remover pódio em cards (visualização atual rejeitada pelo usuário)
+- [x] Ranking em lista única: 1º com ícone Crown dourado, 2º com Medal prateada, 3º com Medal bronze
+- [x] Linha do usuário logado destacada com cor primária e tag "(você)"
+- [x] Badge "Sem palpites" para quem ainda não apostou
+- [x] Linha separadora sutil entre top-3 e restante da lista
+- [x] Mostrar delta de pontos em relação ao líder (ex: "-12 pts") para posições 2+

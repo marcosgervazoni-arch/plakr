@@ -620,72 +620,6 @@ export default function PoolPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Pódio adaptável: 1, 2 ou 3 participantes */}
-                {ranking.length >= 1 && (
-                  <div className={`grid gap-2 mb-5 ${
-                    ranking.length === 1 ? "grid-cols-1 max-w-[140px] mx-auto" :
-                    ranking.length === 2 ? "grid-cols-2" :
-                    "grid-cols-3"
-                  }`}>
-                    {/* 2º lugar — só aparece se houver >= 2 participantes */}
-                    {ranking.length >= 2 && (
-                      <div className={`flex flex-col items-center gap-1.5 pt-6 pb-4 px-2 rounded-xl border ${
-                        ranking[1].user.id === user?.id
-                          ? "border-primary/40 bg-primary/5"
-                          : "border-border/30 bg-card/60"
-                      }`}>
-                        <div className="w-10 h-10 rounded-full bg-slate-400/20 border-2 border-slate-400/40 flex items-center justify-center text-sm font-bold text-slate-300">
-                          {ranking[1].user.name?.charAt(0)?.toUpperCase() ?? "?"}
-                        </div>
-                        <Medal className="w-4 h-4 text-slate-300" />
-                        <a href={`/pool/${slug}/player/${ranking[1].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
-                          {ranking[1].user.name?.split(" ")[0]}
-                        </a>
-                        <p className="text-lg font-black font-mono text-slate-300">{ranking[1].stats.totalPoints}</p>
-                        <p className="text-xs text-muted-foreground">pts</p>
-                      </div>
-                    )}
-
-                    {/* 1º lugar — sempre visível, centralizado quando sozinho */}
-                    <div className={`flex flex-col items-center gap-1.5 pb-4 px-2 rounded-xl border ${
-                      ranking.length >= 2 ? "-mt-3" : ""
-                    } ${
-                      ranking[0].user.id === user?.id
-                        ? "border-primary/60 bg-primary/10"
-                        : "border-yellow-500/30 bg-yellow-500/5"
-                    }`}>
-                      <Crown className="w-5 h-5 text-yellow-400 mt-3" />
-                      <div className="w-12 h-12 rounded-full bg-yellow-500/20 border-2 border-yellow-500/40 flex items-center justify-center text-base font-bold text-yellow-400">
-                        {ranking[0].user.name?.charAt(0)?.toUpperCase() ?? "?"}
-                      </div>
-                      <a href={`/pool/${slug}/player/${ranking[0].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
-                        {ranking[0].user.name?.split(" ")[0]}
-                      </a>
-                      <p className="text-xl font-black font-mono text-yellow-400">{ranking[0].stats.totalPoints}</p>
-                      <p className="text-xs text-muted-foreground">pts</p>
-                    </div>
-
-                    {/* 3º lugar — só aparece se houver >= 3 participantes */}
-                    {ranking.length >= 3 && (
-                      <div className={`flex flex-col items-center gap-1.5 pt-6 pb-4 px-2 rounded-xl border ${
-                        ranking[2].user.id === user?.id
-                          ? "border-primary/40 bg-primary/5"
-                          : "border-border/30 bg-card/60"
-                      }`}>
-                        <div className="w-10 h-10 rounded-full bg-orange-500/20 border-2 border-orange-500/40 flex items-center justify-center text-sm font-bold text-orange-400">
-                          {ranking[2].user.name?.charAt(0)?.toUpperCase() ?? "?"}
-                        </div>
-                        <Medal className="w-4 h-4 text-orange-400" />
-                        <a href={`/pool/${slug}/player/${ranking[2].user.id}`} className="text-xs font-semibold text-center truncate w-full text-center hover:text-primary transition-colors">
-                          {ranking[2].user.name?.split(" ")[0]}
-                        </a>
-                        <p className="text-lg font-black font-mono text-orange-400">{ranking[2].stats.totalPoints}</p>
-                        <p className="text-xs text-muted-foreground">pts</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Banner informativo quando ninguém tem pontos ainda */}
                 {ranking.every((r) => (r as typeof r & { hasStats?: boolean }).hasStats === false || r.stats.totalPoints === 0) && (
                   <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-muted/40 border border-border/30 mb-3">
@@ -697,85 +631,129 @@ export default function PoolPage() {
                   </div>
                 )}
 
-                {/* Lista completa */}
-                <div className="space-y-1.5">
-                  {ranking.map((rankItem, idx) => {
-                    const { stats, user: rankUser } = rankItem;
-                    const hasStats = (rankItem as typeof rankItem & { hasStats?: boolean }).hasStats !== false;
-                    const isMe = rankUser.id === user?.id;
-                    const allZero = ranking.every((r) => r.stats.totalPoints === 0);
-                    return (
-                      <div
-                        key={`${rankUser.id}-${idx}`}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
-                          isMe
-                            ? "border-primary/40 bg-primary/5"
-                            : "border-border/30 bg-card/60 hover:border-border/50"
-                        }`}
-                      >
-                        {/* Posição — mostra traço quando todos empatados em 0 */}
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                          allZero
-                            ? "bg-muted text-muted-foreground"
-                            : idx === 0
-                            ? "bg-yellow-500/20 text-yellow-400"
-                            : idx === 1
-                            ? "bg-gray-400/20 text-gray-400"
-                            : idx === 2
-                            ? "bg-orange-500/20 text-orange-400"
-                            : "bg-muted text-muted-foreground"
-                        }`}>
-                          {allZero ? "—" : idx + 1}
-                        </div>
+                {/* Lista completa — formato único, sem pódio em cards */}
+                {(() => {
+                  const allZero = ranking.every((r) => r.stats.totalPoints === 0);
+                  const leaderPts = ranking[0]?.stats.totalPoints ?? 0;
+                  return (
+                    <div className="space-y-1">
+                      {ranking.map((rankItem, idx) => {
+                        const { stats, user: rankUser } = rankItem;
+                        const hasStats = (rankItem as typeof rankItem & { hasStats?: boolean }).hasStats !== false;
+                        const isMe = rankUser.id === user?.id;
+                        const delta = !allZero && idx > 0 ? stats.totalPoints - leaderPts : null;
 
-                        {/* Avatar */}
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                          isMe ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                        }`}>
-                          {rankUser.name?.charAt(0)?.toUpperCase() ?? "?"}
-                        </div>
+                        // Separador sutil após o 3º lugar
+                        const showSeparator = idx === 2 && ranking.length > 3;
 
-                        {/* Nome + stats */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <a
-                              href={`/pool/${slug}/player/${rankUser.id}`}
-                              className={`text-sm font-semibold truncate hover:text-primary transition-colors ${isMe ? "text-primary" : ""}`}
+                        // Badge de posição
+                        const positionBadge = allZero ? (
+                          <span className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">—</span>
+                        ) : idx === 0 ? (
+                          <span className="w-7 h-7 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0">
+                            <Crown className="w-4 h-4 text-yellow-400" />
+                          </span>
+                        ) : idx === 1 ? (
+                          <span className="w-7 h-7 rounded-full bg-slate-400/15 flex items-center justify-center shrink-0">
+                            <Medal className="w-4 h-4 text-slate-300" />
+                          </span>
+                        ) : idx === 2 ? (
+                          <span className="w-7 h-7 rounded-full bg-orange-500/15 flex items-center justify-center shrink-0">
+                            <Medal className="w-4 h-4 text-orange-400" />
+                          </span>
+                        ) : (
+                          <span className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">{idx + 1}</span>
+                        );
+
+                        return (
+                          <>
+                            <div
+                              key={`${rankUser.id}-${idx}`}
+                              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl border transition-all ${
+                                isMe
+                                  ? "border-primary/40 bg-primary/5"
+                                  : idx < 3 && !allZero
+                                  ? "border-border/40 bg-card/80"
+                                  : "border-border/20 bg-card/40 hover:border-border/40"
+                              }`}
                             >
-                              {rankUser.name}
-                              {isMe && <span className="text-xs font-normal ml-1.5 opacity-70">(você)</span>}
-                            </a>
-                            {/* Badge "Sem palpites" para quem ainda não apostou */}
-                            {!hasStats && (
-                              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40">
-                                Sem palpites
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {hasStats
-                              ? `${stats.exactScoreCount} 🎯 · ${stats.correctResultCount} ✅ · ${stats.totalBets} palpites`
-                              : "Ainda não fez palpites neste bolão"}
-                          </p>
-                        </div>
+                              {/* Badge de posição */}
+                              {positionBadge}
 
-                        {/* Pontos */}
-                        <div className="text-right shrink-0">
-                          <p className={`text-lg font-black font-mono ${
-                            allZero
-                              ? "text-muted-foreground"
-                              : isMe
-                              ? "text-primary"
-                              : "text-foreground"
-                          }`}>
-                            {stats.totalPoints}
-                          </p>
-                          <p className="text-xs text-muted-foreground">pts</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                              {/* Avatar */}
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
+                                isMe
+                                  ? "bg-primary/20 text-primary"
+                                  : idx === 0 && !allZero
+                                  ? "bg-yellow-500/20 text-yellow-400"
+                                  : "bg-muted text-muted-foreground"
+                              }`}>
+                                {rankUser.name?.charAt(0)?.toUpperCase() ?? "?"}
+                              </div>
+
+                              {/* Nome + stats */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <a
+                                    href={`/pool/${slug}/player/${rankUser.id}`}
+                                    className={`text-sm font-semibold truncate hover:text-primary transition-colors ${
+                                      isMe ? "text-primary" : idx === 0 && !allZero ? "text-yellow-400" : ""
+                                    }`}
+                                  >
+                                    {rankUser.name}
+                                  </a>
+                                  {isMe && (
+                                    <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">
+                                      você
+                                    </span>
+                                  )}
+                                  {!hasStats && (
+                                    <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40">
+                                      Sem palpites
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {hasStats
+                                    ? `${stats.exactScoreCount} 🎯 · ${stats.correctResultCount} ✅ · ${stats.totalBets} palpites`
+                                    : "Ainda não fez palpites"}
+                                </p>
+                              </div>
+
+                              {/* Pontos + delta */}
+                              <div className="text-right shrink-0">
+                                <p className={`text-base font-black font-mono leading-tight ${
+                                  allZero
+                                    ? "text-muted-foreground"
+                                    : isMe
+                                    ? "text-primary"
+                                    : idx === 0
+                                    ? "text-yellow-400"
+                                    : "text-foreground"
+                                }`}>
+                                  {stats.totalPoints} <span className="text-xs font-normal text-muted-foreground">pts</span>
+                                </p>
+                                {delta !== null && (
+                                  <p className="text-[10px] text-muted-foreground/70 font-mono">
+                                    {delta} pts
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {/* Separador visual após top-3 */}
+                            {showSeparator && (
+                              <div className="flex items-center gap-2 py-1 px-1">
+                                <div className="flex-1 h-px bg-border/30" />
+                                <span className="text-[10px] text-muted-foreground/50 shrink-0">demais participantes</span>
+                                <div className="flex-1 h-px bg-border/30" />
+                              </div>
+                            )}
+                          </>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </TabsContent>
