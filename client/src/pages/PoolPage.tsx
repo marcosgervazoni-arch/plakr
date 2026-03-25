@@ -646,10 +646,8 @@ export default function PoolPage() {
                         // Separador sutil após o 3º lugar
                         const showSeparator = idx === 2 && ranking.length > 3;
 
-                        // Badge de posição
-                        const positionBadge = allZero ? (
-                          <span className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">—</span>
-                        ) : idx === 0 ? (
+                        // Badge de posição — Crown/Medal sempre visíveis nos top-3, independente de pontuação
+                        const positionBadge = idx === 0 ? (
                           <span className="w-7 h-7 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0">
                             <Crown className="w-4 h-4 text-yellow-400" />
                           </span>

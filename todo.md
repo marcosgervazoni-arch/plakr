@@ -1062,3 +1062,6 @@
 - [x] Badge "Sem palpites" para quem ainda não apostou
 - [x] Linha separadora sutil entre top-3 e restante da lista
 - [x] Mostrar delta de pontos em relação ao líder (ex: "-12 pts") para posições 2+
+
+## Bug — Badges de posição não aparecem no ranking (25/03/2026)
+- [x] BUG: Crown/Medal não aparecem quando allZero=true — corrigido: badges sempre visíveis nos top-3 independente de pontuação
