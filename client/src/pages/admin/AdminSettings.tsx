@@ -105,7 +105,10 @@ export default function AdminSettings() {
   });
 
   const stripeConfigured = form.stripePriceIdPro.startsWith("price_");
-  const pushConfigured = pushForm.vapidPublicKey.length > 10 && pushForm.vapidPrivateKey.length > 10;
+  // S10: vapidPrivateKey nunca é retornada pelo backend por segurança.
+  // pushConfigured verifica apenas vapidPublicKey para detectar se keys já existem no banco.
+  // Quando o admin gera novas keys, vapidPrivateKey fica preenchida no form até o próximo save.
+  const pushConfigured = pushForm.vapidPublicKey.length > 10;
 
   const generateVapidMutation = trpc.platform.generateVapidKeys.useMutation({
     onSuccess: (keys) => {
@@ -460,7 +463,13 @@ export default function AdminSettings() {
                 <Button
                   className="bg-brand hover:bg-brand/90 gap-2"
                   onClick={() => savePushMutation.mutate(pushForm)}
-                  disabled={savePushMutation.isPending || !pushForm.vapidEmail}
+                  disabled={
+                    savePushMutation.isPending ||
+                    // Habilitar se: keys já configuradas no banco (vapidPublicKey preenchida)
+                    // OU se novas keys foram geradas (vapidPrivateKey preenchida no form)
+                    // O e-mail só é obrigatório quando nenhuma key existe ainda
+                    (!pushConfigured && !pushForm.vapidPrivateKey && !pushForm.vapidEmail)
+                  }
                 >
                   {savePushMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

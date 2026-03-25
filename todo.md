@@ -1007,3 +1007,6 @@
 ### Sprint Sugestões 2+3 (25/03/2026)
 - [x] SUG-2: 12 testes de prazo de palpite (deadline) com clock skew em server/bets-deadline.test.ts
 - [x] SUG-3-FIX: Bypass de admin em pools.updateScoringRules — admin pode editar regras de qualquer bolão independente do plano
+
+### Bugs (25/03/2026)
+- [x] BUG: Botão "Salvar Push" fica desabilitado mesmo com VAPID keys configuradas — corrigido: pushConfigured agora verifica apenas vapidPublicKey (vapidPrivateKey omitida por S10)
