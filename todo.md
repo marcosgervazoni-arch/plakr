@@ -1075,3 +1075,6 @@
 ## Sprint UX — Ranking: remover card redundante + reordenar lista (25/03/2026)
 - [x] Remover card fixo "Sua posição" (redundante com o item da lista)
 - [x] Reordenar itens da linha: número de posição → badge (top-3 apenas) → avatar → nome → pontos
+
+## Sprint UX — Link "Meu Perfil" no menu (25/03/2026)
+- [x] Adicionar item "Meu Perfil" no menu de navegação, abaixo do Dashboard, com link para /my-profile

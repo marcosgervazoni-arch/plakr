@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Plus,
   Award,
+  UserCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
@@ -41,6 +42,13 @@ const navSections = [
     // Ativo também em rotas filhas de bolão
     matchFn: (loc: string) =>
       loc === "/dashboard" || loc.startsWith("/pool/"),
+  },
+  {
+    id: "profile",
+    label: "Meu Perfil",
+    icon: UserCircle,
+    href: "/my-profile",
+    matchFn: (loc: string) => loc === "/my-profile" || loc.startsWith("/profile/"),
   },
   {
     id: "public",
