@@ -61,6 +61,7 @@ export const platformSettings = mysqlTable("platform_settings", {
   vapidEmail: varchar("vapidEmail", { length: 320 }),
   pushEnabled: boolean("pushEnabled").default(false).notNull(),
   adsEnabled: boolean("adsEnabled").default(true).notNull(),
+  restrictedInviteMessage: text("restrictedInviteMessage"), // mensagem exibida ao participante quando convite é restrito ao organizador
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").references(() => users.id),
 });

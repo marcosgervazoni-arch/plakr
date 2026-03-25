@@ -29,6 +29,8 @@ export default function AdminSettings() {
   const { data: settings, isLoading } = trpc.platform.getSettings.useQuery();
   const utils = trpc.useUtils();
 
+  const [restrictedInviteMessage, setRestrictedInviteMessage] = useState("");
+
   const [form, setForm] = useState({
     // Limites do plano gratuito
     freeMaxParticipants: 50,
@@ -85,6 +87,7 @@ export default function AdminSettings() {
         vapidEmail: (settings as any).vapidEmail ?? "",
         pushEnabled: (settings as any).pushEnabled ?? false,
       });
+      setRestrictedInviteMessage((settings as any).restrictedInviteMessage ?? "");
     }
   }, [settings]);
 
@@ -99,9 +102,13 @@ export default function AdminSettings() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
-  // Salva form principal + pushForm juntos
+  // Salva form principal + pushForm + campos extras juntos
   const handleSaveAll = () => {
-    updateMutation.mutate({ ...form, ...pushForm });
+    updateMutation.mutate({
+      ...form,
+      ...pushForm,
+      restrictedInviteMessage: restrictedInviteMessage.trim() || null,
+    });
   };
 
   const numField = (key: keyof typeof form) => ({
@@ -482,6 +489,37 @@ export default function AdminSettings() {
                 </div>
               </CardContent>
             </Card>
+
+          {/* Card — Mensagens da Plataforma */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-brand/10">
+                  <BookOpen className="h-4 w-4 text-brand" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Mensagens da Plataforma</CardTitle>
+                  <CardDescription className="text-xs mt-0.5">Textos exibidos para os participantes em situações específicas</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Aviso de convite restrito</Label>
+                <p className="text-xs text-muted-foreground">
+                  Exibido para participantes quando o organizador configurou o bolão para que apenas ele possa convidar novos membros.
+                  Deixe vazio para usar o texto padrão: <em>"Convites gerenciados pelo organizador."</em>
+                </p>
+                <Input
+                  value={restrictedInviteMessage}
+                  onChange={(e) => setRestrictedInviteMessage(e.target.value)}
+                  placeholder="Convites gerenciados pelo organizador."
+                  maxLength={500}
+                />
+                <p className="text-xs text-muted-foreground text-right">{restrictedInviteMessage.length}/500</p>
+              </div>
+            </CardContent>
+          </Card>
 
           </div>
         )}

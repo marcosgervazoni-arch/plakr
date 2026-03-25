@@ -1132,3 +1132,11 @@
 - [x] Endpoint GET /og/join/:token no servidor retorna HTML com meta tags OG dinâmicas (título, descrição, imagem)
 - [x] Bots de redes sociais (WhatsApp, Telegram) recebem HTML com OG; usuários reais são redirecionados para /join/:token
 - [x] Meta tags: og:title, og:description, og:image (logo do bolão ou fallback), og:url, twitter:card
+
+## Feature — Aviso configurável para convite restrito (25/03/2026)
+- [x] Schema: novo campo `restrictedInviteMessage` (text, nullable) em platform_settings
+- [x] Migração SQL aplicada
+- [x] Backend: procedure platform.getSettings retorna restrictedInviteMessage
+- [x] Backend: procedure platform.updateSettings aceita restrictedInviteMessage
+- [x] Frontend PoolPage.tsx: exibir aviso quando invitePermission=organizer_only e usuário não é organizador
+- [x] Frontend AdminSettings.tsx: campo de texto editável para restrictedInviteMessage

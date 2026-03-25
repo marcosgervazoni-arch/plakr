@@ -100,6 +100,11 @@ export default function PoolPage() {
     { enabled: !!data?.pool.id && activeTab === "members" }
   );
 
+  const { data: publicSettings } = trpc.platform.getPublicSettings.useQuery(
+    undefined,
+    { staleTime: 5 * 60 * 1000 } // cache 5 min
+  );
+
   const placeBet = trpc.bets.placeBet.useMutation({
     onSuccess: (_, vars) => {
       analytics.trackBetSubmitted({ pool_slug: slug ?? undefined, game_id: vars.gameId });
@@ -443,7 +448,14 @@ export default function PoolPage() {
               ? <InviteBanner inviteToken={pool.inviteToken} onCopy={copyInviteLink} />
               : ((pool as any).invitePermission === "all_members"
                   ? <ParticipantShareButton inviteToken={pool.inviteToken} poolName={pool.name} />
-                  : null)
+                  : (
+                    <div className="mx-4 mt-3 px-4 py-2.5 rounded-xl bg-muted/40 border border-border/40 flex items-center gap-2.5">
+                      <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        {publicSettings?.restrictedInviteMessage ?? "Convites gerenciados pelo organizador."}
+                      </p>
+                    </div>
+                  ))
           )}
         </div>
       </div>

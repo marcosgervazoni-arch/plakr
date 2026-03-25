@@ -36,6 +36,15 @@ export const platformRouter = router({
     };
   }),
 
+  // Retorna apenas campos seguros e não sensíveis para usuários autenticados
+  getPublicSettings: protectedProcedure.query(async () => {
+    const settings = await getPlatformSettings();
+    if (!settings) return { restrictedInviteMessage: null };
+    return {
+      restrictedInviteMessage: settings.restrictedInviteMessage ?? null,
+    };
+  }),
+
   getSettings: adminProcedure.query(async () => {
     const settings = await getPlatformSettings();
     if (!settings) return null;
@@ -69,6 +78,8 @@ export const platformRouter = router({
       // String vazia é normalizada para undefined para não sobrescrever valor existente no banco.
       vapidEmail: z.union([z.string().email(), z.literal("")]).optional().transform(v => v === "" ? undefined : v),
       pushEnabled: z.boolean().optional(),
+      adsEnabled: z.boolean().optional(),
+      restrictedInviteMessage: z.string().max(500).optional().nullable(),
     }))
     .mutation(async ({ input, ctx }) => {
       await updatePlatformSettings(input, ctx.user.id);
