@@ -1088,3 +1088,10 @@
 
 ## Bug — Histórico de Posições só aparece com registros (25/03/2026)
 - [x] BUG: Seção "Histórico de Posições" oculta quando não há registros — deve aparecer sempre com estado vazio
+
+## Sprint Growth — CTA de Conversão no Perfil Público (25/03/2026)
+- [x] CTA de conversão no rodapé do PublicProfile (/profile/:userId) — visível apenas para visitantes não autenticados
+- [x] CTA primário: "Criar meu bolão" (link para login/landing)
+- [x] CTA secundário: "Entrar em um bolão" (link para login/landing)
+- [x] Headline persuasivo e copy alinhado ao tom da plataforma (informal-profissional, pt-BR)
+- [x] Seção oculta para usuários já autenticados (não poluir experiência de quem já está logado)

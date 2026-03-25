@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import BadgeGrid from "@/components/BadgeGrid";
 import {
   Trophy, Crown, Medal, Loader2, AlertCircle, Calendar,
-  MessageCircle, Send, ExternalLink, Share2, Award,
+  MessageCircle, Send, ExternalLink, Share2, Award, Sparkles, ChevronRight,
 } from "lucide-react";
 import { useParams, Link } from "wouter";
+import { getLoginUrl } from "@/const";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -287,11 +288,52 @@ export default function PublicProfile() {
         {/* ── Nota informativa ── */}
         <div className="bg-muted/30 border border-border/20 rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground">
-            Para ver o desempenho detalhado de{" "}
-            {isOwnProfile ? "você" : user.name?.split(" ")[0] ?? "este apostador"}{" "}
+            Para ver o desempenho detalhado de{" "}
+            {isOwnProfile ? "você" : user.name?.split(" ")[0] ?? "este apostador"}{" "}
             em um bolão específico, clique em "Ver desempenho" ao lado de cada bolão acima.
           </p>
         </div>
+
+        {/* ── CTA de conversão — apenas para visitantes não autenticados ── */}
+        {!isAuthenticated && (
+          <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center space-y-4">
+            {/* Detalhe decorativo */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
+            <div className="relative space-y-1">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="text-xs font-semibold text-primary uppercase tracking-widest">ApostAI</span>
+              </div>
+              <h2 className="text-xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>
+                Crie seu próprio bolão
+              </h2>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                Veja como {user.name?.split(" ")[0] ?? "este apostador"} joga e entre na disputa. Organize seu bolão, convide amigos e acompanhe o ranking em tempo real.
+              </p>
+            </div>
+
+            <div className="relative flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a href={getLoginUrl(window.location.pathname)}>
+                <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto">
+                  <Trophy className="w-4 h-4" />
+                  Criar meu bolão
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </a>
+              <a href={getLoginUrl(window.location.pathname)}>
+                <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto">
+                  Entrar em um bolão
+                </Button>
+              </a>
+            </div>
+
+            <p className="relative text-xs text-muted-foreground/60">
+              Gratuito para começar &middot; Sem cartão de crédito
+            </p>
+          </div>
+        )}
 
       </div>
     </AppShell>
