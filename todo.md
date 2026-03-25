@@ -1123,3 +1123,7 @@
 ## Copy — Remover referências a "código" na permissão de convite (25/03/2026)
 - [x] OrganizerAccess.tsx: atualizar descrições da permissão de convite removendo "código"
 - [x] CreatePool.tsx: atualizar descrições da permissão de convite removendo "código"
+
+## Feature — Compartilhamento Nativo (Web Share API) (25/03/2026)
+- [x] OrganizerAccess.tsx: botão "Compartilhar" com Web Share API + fallback cópia para desktop
+- [x] ParticipantShareButton (PoolPage.tsx): botão "Compartilhar" com Web Share API + fallback cópia (já estava implementado)

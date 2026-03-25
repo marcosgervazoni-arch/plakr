@@ -31,6 +31,7 @@ import {
   TrendingUp,
   UserCheck,
   Lock,
+  Share2,
 } from "lucide-react";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -207,7 +208,7 @@ export default function OrganizerAccess() {
                   {inviteLink || "Link não gerado"}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   className="flex-1"
                   variant="outline"
@@ -216,10 +217,31 @@ export default function OrganizerAccess() {
                   {copiedLink ? <Check className="w-4 h-4 mr-2 text-green-400" /> : <Copy className="w-4 h-4 mr-2" />}
                   {copiedLink ? "Copiado!" : "Copiar link"}
                 </Button>
+                {typeof navigator !== "undefined" && !!navigator.share && (
+                  <Button
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={async () => {
+                      if (!inviteLink) return;
+                      try {
+                        await navigator.share({
+                          title: pool?.name ?? "Bolão",
+                          text: `Entre no bolão "${pool?.name}" e faça seus palpites!`,
+                          url: inviteLink,
+                        });
+                      } catch {
+                        // usuário cancelou ou erro — silencioso
+                      }
+                    }}
+                  >
+                    <Share2 className="w-4 h-4" /> Compartilhar
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   className="border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"
-                                  onClick={() => setRegenConfirm(true)}>
+                  onClick={() => setRegenConfirm(true)}
+                >
                   <RefreshCw className="w-4 h-4 mr-2" /> Regenerar
                 </Button>
               </div>
