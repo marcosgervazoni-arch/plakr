@@ -1049,3 +1049,8 @@
 
 ## Bug — Erro na página do bolão (25/03/2026)
 - [x] BUG: Página /pool/:slug exibe "Algo deu errado" em produção — corrigido: leaveMutation estava declarado após returns condicionais (violação de regra dos React Hooks), movido para antes dos returns
+
+## Sprint UX — Ranking com Participantes Sem Pontos (25/03/2026)
+- [x] Backend: getPoolRanking retorna todos os membros mesmo sem pontuação (LEFT JOIN com pool_members)
+- [x] Frontend: aba Ranking exibe todos os participantes com 0 pts quando não há pontuação
+- [x] Visual: estado "aguardando jogos" com posições empatadas em 0 pts, badge "Sem palpites" para quem não apostou

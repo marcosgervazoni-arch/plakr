@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import logger from "./logger";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
@@ -416,22 +416,80 @@ export async function upsertPoolScoringRules(
 export async function getPoolRanking(poolId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db
-    .select({ stats: poolMemberStats, user: users })
-    .from(poolMemberStats)
-    .innerJoin(users, eq(poolMemberStats.userId, users.id))
-    .where(eq(poolMemberStats.poolId, poolId))
+
+  // LEFT JOIN: retorna TODOS os membros ativos, mesmo sem entrada em pool_member_stats
+  // Membros sem pontuação aparecem com stats zeradas (0 pts)
+  const rows = await db
+    .select({
+      // Campos do usuário
+      userId: users.id,
+      userName: users.name,
+      userEmail: users.email,
+      userAvatarUrl: users.avatarUrl,
+      userCreatedAt: users.createdAt,
+      // Stats (null quando não há entrada em pool_member_stats)
+      statsId: poolMemberStats.id,
+      totalPoints: poolMemberStats.totalPoints,
+      exactScoreCount: poolMemberStats.exactScoreCount,
+      correctResultCount: poolMemberStats.correctResultCount,
+      goalDiffCount: poolMemberStats.goalDiffCount,
+      oneTeamGoalsCount: poolMemberStats.oneTeamGoalsCount,
+      totalGoalsCount: poolMemberStats.totalGoalsCount,
+      landslideCount: poolMemberStats.landslideCount,
+      zebraCount: poolMemberStats.zebraCount,
+      totalBets: poolMemberStats.totalBets,
+      rankPosition: poolMemberStats.rankPosition,
+      statsUpdatedAt: poolMemberStats.updatedAt,
+    })
+    .from(poolMembers)
+    .innerJoin(users, eq(poolMembers.userId, users.id))
+    .leftJoin(
+      poolMemberStats,
+      and(
+        eq(poolMemberStats.poolId, poolMembers.poolId),
+        eq(poolMemberStats.userId, poolMembers.userId)
+      )
+    )
+    .where(and(eq(poolMembers.poolId, poolId), eq(poolMembers.isBlocked, false)))
     // Desempate conforme SISTEMA-PONTUACAO-APOSTAI.md §8:
-    // 1. Total de pontos (maior primeiro)
+    // 1. Total de pontos (maior primeiro; NULL = 0 — vai para o fim)
     // 2. Placares exatos (maior primeiro)
     // 3. Resultados corretos (maior primeiro)
     // 4. Data de cadastro (mais antigo primeiro)
     .orderBy(
-      desc(poolMemberStats.totalPoints),
-      desc(poolMemberStats.exactScoreCount),
-      desc(poolMemberStats.correctResultCount),
+      desc(sql`COALESCE(${poolMemberStats.totalPoints}, 0)`),
+      desc(sql`COALESCE(${poolMemberStats.exactScoreCount}, 0)`),
+      desc(sql`COALESCE(${poolMemberStats.correctResultCount}, 0)`),
       asc(users.createdAt)
     );
+
+  // Normalizar para o formato { stats, user } esperado pelo frontend
+  return rows.map((r) => ({
+    stats: {
+      id: r.statsId ?? 0,
+      poolId,
+      userId: r.userId,
+      totalPoints: r.totalPoints ?? 0,
+      exactScoreCount: r.exactScoreCount ?? 0,
+      correctResultCount: r.correctResultCount ?? 0,
+      goalDiffCount: r.goalDiffCount ?? 0,
+      oneTeamGoalsCount: r.oneTeamGoalsCount ?? 0,
+      totalGoalsCount: r.totalGoalsCount ?? 0,
+      landslideCount: r.landslideCount ?? 0,
+      zebraCount: r.zebraCount ?? 0,
+      totalBets: r.totalBets ?? 0,
+      rankPosition: r.rankPosition ?? null,
+      updatedAt: r.statsUpdatedAt ?? new Date(),
+    },
+    user: {
+      id: r.userId,
+      name: r.userName,
+      email: r.userEmail,
+      avatarUrl: r.userAvatarUrl,
+      createdAt: r.userCreatedAt,
+    },
+    hasStats: r.statsId !== null, // indica se já tem pontuação real
+  }));
 }
 
 export async function upsertPoolMemberStats(

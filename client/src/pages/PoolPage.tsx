@@ -615,8 +615,8 @@ export default function PoolPage() {
             ) : !ranking || ranking.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
                 <Trophy className="w-10 h-10 mx-auto mb-3 opacity-20" />
-                <p className="text-sm">Nenhuma pontuação registrada ainda.</p>
-                <p className="text-xs mt-1">Os pontos aparecem após os jogos serem encerrados.</p>
+                <p className="text-sm">Nenhum participante no bolão ainda.</p>
+                <p className="text-xs mt-1">Convide amigos para começar!</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -686,22 +686,38 @@ export default function PoolPage() {
                   </div>
                 )}
 
+                {/* Banner informativo quando ninguém tem pontos ainda */}
+                {ranking.every((r) => (r as typeof r & { hasStats?: boolean }).hasStats === false || r.stats.totalPoints === 0) && (
+                  <div className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-lg bg-muted/40 border border-border/30 mb-3">
+                    <Trophy className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-medium text-foreground">Aguardando os primeiros pontos</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Os pontos são calculados após os jogos serem encerrados. Todos os participantes já estão na fila!</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Lista completa */}
                 <div className="space-y-1.5">
-                  {ranking.map(({ stats, user: rankUser }, idx) => {
+                  {ranking.map((rankItem, idx) => {
+                    const { stats, user: rankUser } = rankItem;
+                    const hasStats = (rankItem as typeof rankItem & { hasStats?: boolean }).hasStats !== false;
                     const isMe = rankUser.id === user?.id;
+                    const allZero = ranking.every((r) => r.stats.totalPoints === 0);
                     return (
                       <div
-                        key={stats.id}
+                        key={`${rankUser.id}-${idx}`}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
                           isMe
                             ? "border-primary/40 bg-primary/5"
                             : "border-border/30 bg-card/60 hover:border-border/50"
                         }`}
                       >
-                        {/* Posição */}
+                        {/* Posição — mostra traço quando todos empatados em 0 */}
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                          idx === 0
+                          allZero
+                            ? "bg-muted text-muted-foreground"
+                            : idx === 0
                             ? "bg-yellow-500/20 text-yellow-400"
                             : idx === 1
                             ? "bg-gray-400/20 text-gray-400"
@@ -709,7 +725,7 @@ export default function PoolPage() {
                             ? "bg-orange-500/20 text-orange-400"
                             : "bg-muted text-muted-foreground"
                         }`}>
-                          {idx + 1}
+                          {allZero ? "—" : idx + 1}
                         </div>
 
                         {/* Avatar */}
@@ -721,21 +737,37 @@ export default function PoolPage() {
 
                         {/* Nome + stats */}
                         <div className="flex-1 min-w-0">
-                          <a
-                            href={`/pool/${slug}/player/${rankUser.id}`}
-                            className={`text-sm font-semibold truncate block hover:text-primary transition-colors ${isMe ? "text-primary" : ""}`}
-                          >
-                            {rankUser.name}
-                            {isMe && <span className="text-xs font-normal ml-1.5 opacity-70">(você)</span>}
-                          </a>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <a
+                              href={`/pool/${slug}/player/${rankUser.id}`}
+                              className={`text-sm font-semibold truncate hover:text-primary transition-colors ${isMe ? "text-primary" : ""}`}
+                            >
+                              {rankUser.name}
+                              {isMe && <span className="text-xs font-normal ml-1.5 opacity-70">(você)</span>}
+                            </a>
+                            {/* Badge "Sem palpites" para quem ainda não apostou */}
+                            {!hasStats && (
+                              <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/40">
+                                Sem palpites
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
-                            {stats.exactScoreCount} 🎯 · {stats.correctResultCount} ✅ · {stats.totalBets} palpites
+                            {hasStats
+                              ? `${stats.exactScoreCount} 🎯 · ${stats.correctResultCount} ✅ · ${stats.totalBets} palpites`
+                              : "Ainda não fez palpites neste bolão"}
                           </p>
                         </div>
 
                         {/* Pontos */}
                         <div className="text-right shrink-0">
-                          <p className={`text-lg font-black font-mono ${isMe ? "text-primary" : "text-foreground"}`}>
+                          <p className={`text-lg font-black font-mono ${
+                            allZero
+                              ? "text-muted-foreground"
+                              : isMe
+                              ? "text-primary"
+                              : "text-foreground"
+                          }`}>
                             {stats.totalPoints}
                           </p>
                           <p className="text-xs text-muted-foreground">pts</p>
