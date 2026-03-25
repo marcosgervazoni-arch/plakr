@@ -1,0 +1,1 @@
+ALTER TABLE `pools` MODIFY COLUMN `accessType` enum('public','private_link') NOT NULL DEFAULT 'private_link';

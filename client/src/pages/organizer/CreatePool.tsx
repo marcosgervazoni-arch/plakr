@@ -26,7 +26,7 @@ import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-type AccessType = "public" | "private_code" | "private_link";
+type AccessType = "public" | "private_link";
 
 function SectionHeader({ number, title }: { number: number; title: string }) {
   return (
@@ -50,7 +50,6 @@ export default function CreatePool() {
   const [description, setDescription] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [accessType, setAccessType] = useState<AccessType>("private_link");
-  const [customCode, setCustomCode] = useState("");
   const [invitePermission, setInvitePermission] = useState<"organizer_only" | "all_members">("organizer_only");
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -93,7 +92,6 @@ export default function CreatePool() {
 
   const accessOptions = [
     { id: "public" as AccessType, icon: Globe, label: "Público", desc: "Qualquer pessoa autenticada pode entrar" },
-    { id: "private_code" as AccessType, icon: Key, label: "Privado por código", desc: "Participantes precisam de um código" },
     { id: "private_link" as AccessType, icon: Link2, label: "Privado por link", desc: "Apenas quem tiver o link pode entrar" },
   ];
 
@@ -223,20 +221,8 @@ export default function CreatePool() {
               </button>
             ))}
           </div>
-          {accessType === "private_code" && (
-            <div className="mt-3 space-y-1.5">
-              <label className="text-sm font-medium">Código personalizado (opcional)</label>
-              <Input
-                value={customCode}
-                onChange={(e) => setCustomCode(e.target.value.toUpperCase().slice(0, 8))}
-                placeholder="Deixe em branco para gerar automaticamente"
-                className="bg-card border-border/50 font-mono uppercase tracking-widest"
-              />
-            </div>
-          )}
-
           {/* Permissão de convite — apenas para bolões privados */}
-          {(accessType === "private_code" || accessType === "private_link") && (
+          {accessType === "private_link" && (
             <div className="mt-4 space-y-2">
               <label className="text-sm font-medium">Quem pode convidar participantes?</label>
               <div className="grid grid-cols-1 gap-2">

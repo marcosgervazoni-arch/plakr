@@ -94,7 +94,7 @@ beforeAll(async () => {
     inviteCode: `${TEST_PREFIX}cA`, // max 16 chars
     ownerId: userA.id,
     tournamentId,
-    accessType: "private_link", // enum válido: public | private_code | private_link
+    accessType: "private_link", // enum válido: public | private_link
     status: "active",
     plan: "free",
   });
@@ -186,7 +186,7 @@ describe("[FIX-6] Transferência de propriedade para usuário bloqueado deve ser
 });
 
 describe("[FIX-6] Token de convite antigo é invalidado após regeneração", () => {
-  it("regenerateAccessCode (type=link) cria um token diferente do anterior", async () => {
+  it("regenerateAccessCode cria um token diferente do anterior", async () => {
     if (!db) return;
 
     const poolBefore = await getPoolById(poolAId);
@@ -195,8 +195,8 @@ describe("[FIX-6] Token de convite antigo é invalidado após regeneração", ()
     const ctxA = makeCtxFromUser(userA);
     const caller = appRouter.createCaller(ctxA);
 
-    // Regenerar o token de convite (type=link)
-    const result = await caller.pools.regenerateAccessCode({ poolId: poolAId, type: "link" });
+    // Regenerar o token de convite
+    const result = await caller.pools.regenerateAccessCode({ poolId: poolAId });
 
     const poolAfter = await getPoolById(poolAId);
     const newToken = poolAfter?.inviteToken;
@@ -219,7 +219,7 @@ describe("[FIX-6] Token de convite antigo é invalidado após regeneração", ()
     const caller = appRouter.createCaller(ctxA);
 
     // Regenerar novamente
-    await caller.pools.regenerateAccessCode({ poolId: poolAId, type: "link" });
+    await caller.pools.regenerateAccessCode({ poolId: poolAId });
 
     // Tentar entrar com o token antigo deve falhar (token não existe mais no banco)
     await expect(

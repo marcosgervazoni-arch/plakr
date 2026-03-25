@@ -104,7 +104,7 @@ export const poolsRouter = router({
     .input(z.object({
       poolId: z.number(),
       status: z.enum(["active", "finished", "deleted"]).optional(),
-      accessType: z.enum(["public", "private_code", "private_link"]).optional(),
+      accessType: z.enum(["public", "private_link"]).optional(),
       name: z.string().min(3).max(100).optional(),
       description: z.string().optional(),
     }))
@@ -127,7 +127,7 @@ export const poolsRouter = router({
     .input(z.object({
       name: z.string().min(3).max(100),
       tournamentId: z.number(),
-      accessType: z.enum(["public", "private_code", "private_link"]).default("private_link"),
+      accessType: z.enum(["public", "private_link"]).default("private_link"),
       invitePermission: z.enum(["organizer_only", "all_members"]).default("organizer_only"),
       description: z.string().optional(),
     }))
@@ -257,56 +257,6 @@ export const poolsRouter = router({
       };
     }),
 
-  searchByCode: protectedProcedure
-    .input(z.object({ code: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      const pool = await getPoolByInviteCode(input.code);
-      if (!pool || pool.status !== "active") return null;
-      const tournament = await getTournamentById(pool.tournamentId);
-      const owner = await getUserById(pool.ownerId);
-      const memberCount = await countPoolMembers(pool.id);
-      const existing = await getPoolMember(pool.id, ctx.user.id);
-      return {
-        slug: pool.slug,
-        name: pool.name,
-        logoUrl: pool.logoUrl,
-        tournament: tournament ? { name: tournament.name } : null,
-        memberCount,
-        ownerName: owner?.name ?? null,
-        plan: pool.plan,
-        alreadyMember: !!existing,
-      };
-    }),
-
-  joinByCode: protectedProcedure
-    .input(z.object({ code: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      const pool = await getPoolByInviteCode(input.code);
-      if (!pool) throw new TRPCError({ code: "NOT_FOUND", message: "Código de convite inválido." });
-      if (pool.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Este bolão não está mais ativo." });
-      const existing = await getPoolMember(pool.id, ctx.user.id);
-      if (existing) return { poolId: pool.id, slug: pool.slug, alreadyMember: true };
-      const settings = await getPlatformSettings();
-      const freeMax = settings?.freeMaxParticipants ?? 50;
-      const memberCount = await countPoolMembers(pool.id);
-      if (pool.plan === "free" && memberCount >= freeMax) {
-        throw new TRPCError({ code: "FORBIDDEN", message: `Este bolão atingiu o limite de ${freeMax} participantes.` });
-      }
-      await addPoolMember(pool.id, ctx.user.id, "participant");
-      await createNotification({
-        userId: pool.ownerId,
-        poolId: pool.id,
-        type: "system",
-        title: "Novo participante",
-        message: `${ctx.user.name ?? "Um usuário"} entrou no bolão "${pool.name}".`,
-      });
-      // [LOG E3] Usuário entrou no bolão via código
-      await createAdminLog(ctx.user.id, "pool_joined", "pool", pool.id, {
-        poolName: pool.name, channel: "code",
-      }, pool.id, { level: "info" });
-      return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
-    }),
-
   joinByToken: protectedProcedure
     .input(z.object({ token: z.string() }))
     .mutation(async ({ input, ctx }) => {
@@ -372,7 +322,7 @@ export const poolsRouter = router({
       name: z.string().optional(),
       description: z.string().optional(),
       logoUrl: z.string().optional(),
-      accessType: z.enum(["public", "private_code", "private_link"]).optional(),
+      accessType: z.enum(["public", "private_link"]).optional(),
       invitePermission: z.enum(["organizer_only", "all_members"]).optional(),
       tournamentId: z.number().optional(),
     }))
@@ -833,21 +783,15 @@ export const poolsRouter = router({
     }),
 
   regenerateAccessCode: protectedProcedure
-    .input(z.object({ poolId: z.number(), type: z.enum(["code", "link"]) }))
+    .input(z.object({ poolId: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
       if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
-      if (input.type === "code") {
-        const newCode = nanoid(8).toUpperCase();
-        await updatePool(input.poolId, { inviteCode: newCode });
-        return { inviteCode: newCode, inviteToken: null };
-      } else {
-        const newToken = nanoid(32);
-        await updatePool(input.poolId, { inviteToken: newToken });
-        return { inviteCode: null, inviteToken: newToken };
-      }
+      const newToken = nanoid(32);
+      await updatePool(input.poolId, { inviteToken: newToken });
+      return { inviteToken: newToken };
     }),
 
   closePool: protectedProcedure
@@ -943,7 +887,7 @@ export const poolsRouter = router({
     .input(z.object({
       name: z.string().min(3).max(100),
       tournamentId: z.number(),
-      accessType: z.enum(["public", "private_code", "private_link"]).default("public"),
+      accessType: z.enum(["public", "private_link"]).default("public"),
       invitePermission: z.enum(["organizer_only", "all_members"]).default("organizer_only"),
       description: z.string().optional(),
     }))

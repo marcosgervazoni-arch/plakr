@@ -339,7 +339,7 @@ describe("[INVITE-PERM] Permissão de convite em bolões privados", () => {
     const result = await caller.pools.create({
       name: "Bolão Default",
       tournamentId: 1,
-      accessType: "private_code",
+      accessType: "private_link",
     });
     expect(result).toHaveProperty("poolId");
   });

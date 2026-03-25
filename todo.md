@@ -1105,3 +1105,14 @@
 - [x] Frontend OrganizerAccess.tsx (O4): toggle de permissão de convite + save
 - [x] Frontend PoolPage.tsx: ParticipantShareButton condicional ao invitePermission === "all_members"
 - [x] Testes Vitest: cenários organizer_only e all_members no joinByToken/joinByCode
+
+## Feature — Remoção de Convite por Código (private_code) (25/03/2026)
+- [x] DB: migrar bolões com accessType=private_code para private_link
+- [x] Schema: remover private_code do enum accessType
+- [x] Backend pools.ts: remover joinByCode, remover branch private_code em regenerateAccessCode, atualizar enums em create/update/adminCreate/adminUpdatePool
+- [x] Frontend CreatePool.tsx: remover opção "Privado por código" e campo de código personalizado
+- [x] Frontend CreatePoolModal.tsx: remover opção private_code
+- [x] Frontend OrganizerAccess.tsx: remover opção private_code e seção de exibição do código
+- [x] Frontend PublicPools.tsx: remover branch private_code (modal de entrada por código)
+- [x] Frontend AdminPools.tsx: remover opção private_code nos selects e labels
+- [x] Testes Vitest: atualizar fixtures e remover testes de joinByCode

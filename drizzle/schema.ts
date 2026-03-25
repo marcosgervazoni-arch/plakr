@@ -205,7 +205,7 @@ export const pools = mysqlTable("pools", {
   name: varchar("name", { length: 255 }).notNull(),
   logoUrl: text("logoUrl"),
   description: text("description"),
-  accessType: mysqlEnum("accessType", ["public", "private_code", "private_link"])
+  accessType: mysqlEnum("accessType", ["public", "private_link"])
     .default("private_link")
     .notNull(),
   inviteCode: varchar("inviteCode", { length: 16 }),

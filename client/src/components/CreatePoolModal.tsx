@@ -20,7 +20,7 @@ export default function CreatePoolModal({ onClose, onCreated }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tournamentId, setTournamentId] = useState<string>("");
-  const [accessType, setAccessType] = useState<"public" | "private_code" | "private_link">("private_link");
+  const [accessType, setAccessType] = useState<"public" | "private_link">("private_link");
   const [invitePermission, setInvitePermission] = useState<"organizer_only" | "all_members">("organizer_only");
 
   const { data: tournaments, isLoading: tournamentsLoading } = trpc.tournaments.listGlobal.useQuery();
@@ -108,13 +108,12 @@ export default function CreatePoolModal({ onClose, onCreated }: Props) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="private_link">Privado (link de convite)</SelectItem>
-                <SelectItem value="private_code">Privado (código)</SelectItem>
                 <SelectItem value="public">Público</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {(accessType === "private_code" || accessType === "private_link") && (
+          {accessType === "private_link" && (
             <div className="space-y-2">
               <Label>Quem pode convidar?</Label>
               <div className="grid grid-cols-2 gap-2">

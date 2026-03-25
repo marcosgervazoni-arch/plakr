@@ -36,13 +36,13 @@ import { useParams } from "wouter";
 import { useState } from "react";
 import { toast } from "sonner";
 
-type AccessType = "public" | "private_code" | "private_link";
+type AccessType = "public" | "private_link";
 
 export default function OrganizerAccess() {
   const { slug } = useParams<{ slug: string }>();
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [regenConfirm, setRegenConfirm] = useState<"code" | "link" | null>(null);
+  const [regenConfirm, setRegenConfirm] = useState<boolean>(false);
   const utils = trpc.useUtils();
 
   const { data: poolData, refetch } = trpc.pools.getBySlug.useQuery(
@@ -79,15 +79,15 @@ export default function OrganizerAccess() {
   const regenMutation = trpc.pools.regenerateAccessCode.useMutation({
     onSuccess: () => {
       utils.pools.getBySlug.invalidate({ slug });
-      toast.success("Regenerado com sucesso! O código/link anterior não funciona mais.");
-      setRegenConfirm(null);
+      toast.success("Regenerado com sucesso! O link anterior não funciona mais.");
+      setRegenConfirm(false);
     },
     onError: (err) => toast.error(err.message || "Erro ao regenerar."),
   });
 
-  const handleRegen = (type: "code" | "link") => {
+  const handleRegen = () => {
     if (!pool?.id) return;
-    regenMutation.mutate({ poolId: pool.id, type });
+    regenMutation.mutate({ poolId: pool.id });
   };
 
   const handleAccessTypeChange = (accessType: AccessType) => {
@@ -104,7 +104,6 @@ export default function OrganizerAccess() {
 
   const accessOptions: { id: AccessType; icon: React.ElementType; label: string; desc: string }[] = [
     { id: "public", icon: Globe, label: "Público", desc: "Qualquer pessoa autenticada pode entrar" },
-    { id: "private_code", icon: Key, label: "Privado por código", desc: "Participantes precisam de um código" },
     { id: "private_link", icon: Link2, label: "Privado por link", desc: "Apenas quem tiver o link pode entrar" },
   ];
 
@@ -159,7 +158,7 @@ export default function OrganizerAccess() {
         </div>
 
         {/* Invite permission — apenas para bolões privados */}
-        {(accessType === "private_code" || accessType === "private_link") && (
+        {accessType === "private_link" && (
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Permissão de Convite</h3>
             <div className="grid grid-cols-1 gap-3">
@@ -195,41 +194,6 @@ export default function OrganizerAccess() {
           </div>
         )}
 
-        {/* Code display */}
-        {accessType === "private_code" && (
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Código de Convite</h3>
-            <div className="bg-[#22263A] border border-border/30 rounded-xl p-5 space-y-4">
-              <div className="text-center">
-                <p
-                  className="font-bold text-4xl tracking-[0.3em] text-primary select-all"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                >
-                  {pool?.inviteCode ?? "------"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">Compartilhe este código com os participantes</p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  variant="outline"
-                  onClick={() => pool?.inviteCode && handleCopy(pool.inviteCode, "code")}
-                >
-                  {copiedCode ? <Check className="w-4 h-4 mr-2 text-green-400" /> : <Copy className="w-4 h-4 mr-2" />}
-                  {copiedCode ? "Copiado!" : "Copiar código"}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"
-                  onClick={() => setRegenConfirm("code")}
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" /> Regenerar
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Link display */}
         {accessType === "private_link" && (
           <div className="space-y-3">
@@ -255,8 +219,7 @@ export default function OrganizerAccess() {
                 <Button
                   variant="outline"
                   className="border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"
-                  onClick={() => setRegenConfirm("link")}
-                >
+                                  onClick={() => setRegenConfirm(true)}>
                   <RefreshCw className="w-4 h-4 mr-2" /> Regenerar
                 </Button>
               </div>
@@ -282,8 +245,7 @@ export default function OrganizerAccess() {
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Estatísticas de Ingresso</h3>
           <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: "Via código", value: accessStats?.bySource.code ?? "—", icon: Key },
+          {[
               { label: "Via link", value: accessStats?.bySource.link ?? "—", icon: Link2 },
               { label: "Busca pública", value: accessStats?.bySource.public ?? "—", icon: Globe },
             ].map((stat) => (
@@ -338,16 +300,16 @@ export default function OrganizerAccess() {
       </div>
 
       {/* Regen AlertDialog */}
-      <AlertDialog open={!!regenConfirm} onOpenChange={(o) => !o && setRegenConfirm(null)}>
+      <AlertDialog open={regenConfirm} onOpenChange={(o) => !o && setRegenConfirm(false)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-yellow-400" />
-              Regenerar {regenConfirm === "code" ? "código" : "link"}?
+              Regenerar link de convite?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              O {regenConfirm === "code" ? "código" : "link"} atual deixará de funcionar imediatamente.
-              Participantes que ainda não ingressaram precisarão do novo {regenConfirm === "code" ? "código" : "link"}.
+              O link atual deixará de funcionar imediatamente.
+              Participantes que ainda não ingressaram precisarão do novo link.
               Esta ação não afeta quem já está no bolão.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -355,9 +317,9 @@ export default function OrganizerAccess() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
-              onClick={() => regenConfirm && handleRegen(regenConfirm)}
+              onClick={() => handleRegen()}
             >
-              {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Regenerar"}
+              {regenMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Regenerar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

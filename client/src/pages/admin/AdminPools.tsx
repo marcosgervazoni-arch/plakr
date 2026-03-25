@@ -56,7 +56,7 @@ type Pool = {
   name: string;
   slug: string;
   status: "active" | "finished" | "archived" | "deleted";
-  accessType: "public" | "private_code" | "private_link";
+  accessType: "public" | "private_link";
   plan: "free" | "pro";
   logoUrl: string | null;
   createdAt: Date | string;
@@ -131,14 +131,14 @@ export default function AdminPools() {
   const [editForm, setEditForm] = useState<{
     name: string;
     status: "active" | "finished" | "deleted";
-    accessType: "public" | "private_code" | "private_link";
+    accessType: "public" | "private_link";
     description: string;
   } | null>(null);
 
   const [form, setForm] = useState({
     name: "",
     tournamentId: "",
-    accessType: "public" as "public" | "private_code" | "private_link",
+    accessType: "public" as "public" | "private_link",
     description: "",
   });
 
@@ -343,7 +343,7 @@ export default function AdminPools() {
                         p.accessType === "public" ? "border-blue-400/30 text-blue-400" : "border-muted text-muted-foreground"
                       }`}>
                         {p.accessType === "public" ? <Globe className="h-2.5 w-2.5 mr-1 inline" /> : <Lock className="h-2.5 w-2.5 mr-1 inline" />}
-                        {p.accessType === "public" ? "Público" : p.accessType === "private_code" ? "Código" : "Link"}
+                        {p.accessType === "public" ? "Público" : "Link"}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
@@ -481,7 +481,6 @@ export default function AdminPools() {
                     <SelectContent>
                       <SelectItem value="public">Público</SelectItem>
                       <SelectItem value="private_link">Por Link</SelectItem>
-                      <SelectItem value="private_code">Por Código</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -647,7 +646,6 @@ export default function AdminPools() {
                 {[
                   { value: "public", label: "Público", icon: <Globe className="h-3.5 w-3.5 mr-1" /> },
                   { value: "private_link", label: "Por Link", icon: <Lock className="h-3.5 w-3.5 mr-1" /> },
-                  { value: "private_code", label: "Por Código", icon: <Lock className="h-3.5 w-3.5 mr-1" /> },
                 ].map((opt) => (
                   <Button
                     key={opt.value}

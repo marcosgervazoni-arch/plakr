@@ -3,7 +3,6 @@
  * Lista todos os bolões ativos (públicos e privados).
  * Busca por nome/campeonato. Badge de tipo de acesso.
  * - Público: botão "Entrar" → confirmação → joinPublic
- * - Privado (código): botão "Acessar" → modal de código → joinByCode
  * - Privado (link): card informativo, sem ação
  * Design mobile-first.
  */
@@ -36,7 +35,6 @@ import {
   Lock,
   LockOpen,
   Link2,
-  KeyRound,
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
@@ -50,7 +48,7 @@ type Pool = {
   name: string;
   logoUrl?: string | null;
   plan: string;
-  accessType: "public" | "private_code" | "private_link";
+  accessType: "public" | "private_link";
   description?: string | null;
   tournamentName?: string | null;
   ownerName?: string | null;
@@ -88,13 +86,6 @@ function AccessBadge({ accessType }: { accessType: Pool["accessType"] }) {
       </span>
     );
   }
-  if (accessType === "private_code") {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-        <KeyRound className="w-2.5 h-2.5" /> Código
-      </span>
-    );
-  }
   return (
     <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted/60 text-muted-foreground border border-border/30">
       <Link2 className="w-2.5 h-2.5" /> Convite
@@ -114,11 +105,6 @@ export default function PublicPools() {
   const analytics = useAnalytics();
   const [confirmPool, setConfirmPool] = useState<Pool | null>(null);
   const [joiningSlug, setJoiningSlug] = useState<string | null>(null);
-
-  // Modal código — bolão privado
-  const [codePool, setCodePool] = useState<Pool | null>(null);
-  const [codeInput, setCodeInput] = useState("");
-  const [codeError, setCodeError] = useState("");
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
@@ -146,31 +132,10 @@ export default function PublicPools() {
     },
   });
 
-  const joinByCodeMutation = trpc.pools.joinByCode.useMutation({
-    onSuccess: (result: { poolId: number; slug: string; alreadyMember: boolean }) => {
-      if (!result.alreadyMember) analytics.trackPoolJoined({ pool_name: codePool?.name, join_method: "code" });
-      setCodePool(null);
-      setCodeInput("");
-      setCodeError("");
-      toast.success(result.alreadyMember ? "Você já faz parte deste bolão." : "Código aceito! Bem-vindo ao bolão! 🎉");
-      navigate(`/pool/${result.slug}`);
-    },
-    onError: (err: { message?: string }) => {
-      setCodeError(err.message || "Código inválido. Verifique e tente novamente.");
-    },
-  });
-
   const handleConfirmJoin = () => {
     if (!confirmPool) return;
     setJoiningSlug(confirmPool.slug);
     joinMutation.mutate({ slug: confirmPool.slug });
-  };
-
-  const handleCodeSubmit = () => {
-    const trimmed = codeInput.trim().toUpperCase();
-    if (!trimmed) { setCodeError("Digite o código de convite."); return; }
-    setCodeError("");
-    joinByCodeMutation.mutate({ code: trimmed });
   };
 
   const pools = data?.pools ?? [];
@@ -380,15 +345,6 @@ export default function PublicPools() {
                       <Button className="w-full" size="sm" onClick={() => setConfirmPool(pool)}>
                         Entrar no bolão
                       </Button>
-                    ) : pool.accessType === "private_code" ? (
-                      <Button
-                        variant="outline"
-                        className="w-full gap-2"
-                        size="sm"
-                        onClick={() => { setCodePool(pool); setCodeInput(""); setCodeError(""); }}
-                      >
-                        <KeyRound className="w-3.5 h-3.5" /> Tenho um código
-                      </Button>
                     ) : (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
                         <Lock className="w-3.5 h-3.5 shrink-0" />
@@ -466,74 +422,6 @@ export default function PublicPools() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal código — bolão privado */}
-      <Dialog open={!!codePool} onOpenChange={(open) => { if (!open && !joinByCodeMutation.isPending) { setCodePool(null); setCodeInput(""); setCodeError(""); } }}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm rounded-2xl">
-          {codePool && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0 overflow-hidden border border-amber-500/20">
-                    {codePool.logoUrl ? (
-                      <img src={codePool.logoUrl} alt={codePool.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <KeyRound className="w-6 h-6 text-amber-500" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <DialogTitle className="text-base leading-tight" style={{ fontFamily: "'Syne', sans-serif" }}>
-                      {codePool.name}
-                    </DialogTitle>
-                    {codePool.tournamentName && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{codePool.tournamentName}</p>
-                    )}
-                  </div>
-                </div>
-                <DialogDescription className="text-sm text-left">
-                  Este bolão é privado. Digite o código de convite que você recebeu do organizador para solicitar acesso.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-2">
-                <Input
-                  value={codeInput}
-                  onChange={(e) => { setCodeInput(e.target.value.toUpperCase()); setCodeError(""); }}
-                  onKeyDown={(e) => e.key === "Enter" && handleCodeSubmit()}
-                  placeholder="Ex: AB3X9KQW"
-                  className="font-mono text-center text-lg tracking-widest h-12 uppercase"
-                  maxLength={12}
-                  autoFocus
-                />
-                {codeError && (
-                  <p className="text-xs text-destructive text-center">{codeError}</p>
-                )}
-              </div>
-
-              <DialogFooter className="gap-2 flex-col sm:flex-row">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => { setCodePool(null); setCodeInput(""); setCodeError(""); }}
-                  disabled={joinByCodeMutation.isPending}
-                  className="w-full sm:w-auto"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleCodeSubmit}
-                  disabled={joinByCodeMutation.isPending || !codeInput.trim()}
-                  className="gap-1.5 w-full sm:w-auto"
-                >
-                  {joinByCodeMutation.isPending
-                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Validando...</>
-                    : <>Validar código <ArrowRight className="w-3.5 h-3.5" /></>}
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </AppShell>
   );
 }
