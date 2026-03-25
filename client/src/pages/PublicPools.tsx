@@ -20,6 +20,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import AppShell from "@/components/AppShell";
 import {
   Trophy,
@@ -110,6 +111,7 @@ export default function PublicPools() {
   const [selectedTournament, setSelectedTournament] = useState<number | undefined>();
 
   // Modal confirmação — bolão público
+  const analytics = useAnalytics();
   const [confirmPool, setConfirmPool] = useState<Pool | null>(null);
   const [joiningSlug, setJoiningSlug] = useState<string | null>(null);
 
@@ -132,6 +134,7 @@ export default function PublicPools() {
 
   const joinMutation = trpc.pools.joinPublic.useMutation({
     onSuccess: (result: { poolId: number; slug: string; alreadyMember: boolean }) => {
+      if (!result.alreadyMember) analytics.trackPoolJoined({ pool_name: confirmPool?.name, join_method: "public" });
       setJoiningSlug(null);
       setConfirmPool(null);
       toast.success(result.alreadyMember ? "Você já faz parte deste bolão." : "Você entrou no bolão! Bons palpites! 🎉");
@@ -145,6 +148,7 @@ export default function PublicPools() {
 
   const joinByCodeMutation = trpc.pools.joinByCode.useMutation({
     onSuccess: (result: { poolId: number; slug: string; alreadyMember: boolean }) => {
+      if (!result.alreadyMember) analytics.trackPoolJoined({ pool_name: codePool?.name, join_method: "code" });
       setCodePool(null);
       setCodeInput("");
       setCodeError("");

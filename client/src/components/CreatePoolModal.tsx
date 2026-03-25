@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { Loader2, Trophy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function CreatePoolModal({ onClose, onCreated }: Props) {
+  const analytics = useAnalytics();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tournamentId, setTournamentId] = useState<string>("");
@@ -23,7 +25,8 @@ export default function CreatePoolModal({ onClose, onCreated }: Props) {
   const { data: tournaments, isLoading: tournamentsLoading } = trpc.tournaments.listGlobal.useQuery();
 
   const createPool = trpc.pools.create.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
+      analytics.trackPoolCreated({ pool_name: name.trim(), access_type: accessType });
       toast.success("Bolão criado com sucesso!", {
         description: `Compartilhe o link de convite com seus amigos.`,
       });

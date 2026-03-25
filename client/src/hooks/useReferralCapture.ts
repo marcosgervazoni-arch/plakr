@@ -11,6 +11,7 @@
  */
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 const STORAGE_KEY = "apostai_ref_code";
 const STORAGE_EXPIRY_KEY = "apostai_ref_expiry";
@@ -49,6 +50,7 @@ function clearRefCode() {
 }
 
 export function useReferralCapture() {
+  const analytics = useAnalytics();
   const { data: me } = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
@@ -96,6 +98,8 @@ export function useReferralCapture() {
       return;
     }
 
+    // Disparar evento de cadastro no GA4 e Facebook Pixel
+    analytics.trackSignUp({ method: "oauth" });
     // Aplicar o código de convite
     useInviteCode.mutate({ inviteCode: refCode, newUserId: me.id });
     // eslint-disable-next-line react-hooks/exhaustive-deps

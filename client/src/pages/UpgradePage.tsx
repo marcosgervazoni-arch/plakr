@@ -7,6 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { getLoginUrl } from "@/const";
 import AppShell from "@/components/AppShell";
 import {
@@ -69,6 +70,7 @@ const FAQ = [
 ];
 
 export default function UpgradePage() {
+  const analytics = useAnalytics();
   const { isAuthenticated, user } = useAuth();
   const [, navigate] = useLocation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -95,7 +97,8 @@ export default function UpgradePage() {
     (item: any) => (item.member?.role ?? item.role) === "organizer" && (item.pool?.plan ?? item.plan) !== "pro"
   );
 
-  const handleCheckout = (poolId: number) => {
+  const handleCheckout = (poolId: number, poolName?: string) => {
+    analytics.trackUpgradeClicked({ source: "upgrade_page", pool_slug: poolName });
     checkoutMutation.mutate({ poolId, origin: window.location.origin });
   };
 
@@ -205,7 +208,7 @@ export default function UpgradePage() {
                     <Button
                       key={pool.id}
                       className="w-full gap-2 justify-start"
-                      onClick={() => handleCheckout(pool.id)}
+                      onClick={() => handleCheckout(pool.id, pool.name)}
                       disabled={checkoutMutation.isPending}
                     >
                       {checkoutMutation.isPending ? (

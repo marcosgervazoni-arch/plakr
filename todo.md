@@ -940,3 +940,15 @@
 - [x] Frontend: bolão privado (link) → mensagem informativa sem botão de ação
 - [x] AppShell: renomear "Bolões Públicos" para "Explorar Bolões" no menu lateral
 - [x] Layout mobile first: cards em coluna única, modal full-width no mobile
+
+## Sprint Analytics — Eventos GA4 + Facebook Pixel (25/03/2026)
+
+- [ ] useAnalytics: funções tipadas por evento (sign_up, pool_created, pool_joined, bet_submitted, upgrade_clicked, purchase, badge_unlocked, invite_sent) com mapeamento para eventos padrão do Facebook Pixel
+- [ ] Evento sign_up: disparar após primeiro login OAuth (useReferralCapture)
+- [ ] Evento pool_created: disparar ao criar bolão com sucesso (CreatePoolModal)
+- [ ] Evento pool_joined: disparar ao entrar em bolão público (PublicPools) e privado por código (EnterPool)
+- [ ] Evento bet_submitted: disparar ao salvar palpites (PoolPage)
+- [ ] Evento upgrade_clicked: disparar ao clicar em "Upgrade para Pro" (SubscriptionPage, WelcomeCard, OrganizerDashboard)
+- [ ] Evento purchase: disparar após pagamento Stripe confirmado (SubscriptionPage success_url)
+- [ ] Evento badge_unlocked: disparar ao desbloquear badge (motor de notificações)
+- [ ] Evento invite_sent: disparar ao copiar/compartilhar link de convite (MyProfile)

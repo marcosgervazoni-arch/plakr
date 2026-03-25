@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import {
   CheckCircle2,
   Crown,
@@ -67,6 +68,7 @@ const PRO_FEATURES = [
 ];
 
 export default function SubscriptionPage() {
+  const analytics = useAnalytics();
   const { slug } = useParams<{ slug: string }>();
   const search = useSearch();
   const { isAuthenticated } = useAuth();
@@ -105,6 +107,7 @@ export default function SubscriptionPage() {
   useEffect(() => {
     const params = new URLSearchParams(search);
     if (params.get("checkout") === "success") {
+      analytics.trackPurchase({ currency: "BRL" });
       toast.success("Plano Pro ativado com sucesso! Bem-vindo ao Pro.");
     } else if (params.get("checkout") === "cancelled") {
       toast.info("Checkout cancelado. Você pode assinar a qualquer momento.");
@@ -113,6 +116,7 @@ export default function SubscriptionPage() {
 
   const handleUpgrade = () => {
     if (!poolIdNum) return;
+    analytics.trackUpgradeClicked({ source: "organizer_subscription", pool_slug: slug ?? undefined });
     checkoutMutation.mutate({
       poolId: poolIdNum,
       origin: window.location.origin,

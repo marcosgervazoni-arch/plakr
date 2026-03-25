@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -46,6 +47,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function PoolPage() {
+  const analytics = useAnalytics();
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   // Suporte a ?tab= na URL para abrir aba diretamente (ex: via menu de Ranking)
@@ -122,7 +124,8 @@ export default function PoolPage() {
       });
       return { prev };
     },
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
+      analytics.trackBetSubmitted({ pool_slug: slug ?? undefined, game_id: vars.gameId });
       toast.success("Palpite salvo!");
       refetchBets();
       utils.rankings.myPoolPosition.invalidate({ poolId: data?.pool.id });
@@ -250,6 +253,7 @@ export default function PoolPage() {
   const copyInviteLink = () => {
     const link = `${window.location.origin}/join/${pool.inviteToken}`;
     navigator.clipboard.writeText(link);
+    analytics.trackInviteSent({ pool_slug: slug ?? undefined, method: "copy" });
     toast.success("Link copiado!");
   };
 
@@ -1037,6 +1041,7 @@ function InviteBanner({ inviteToken, onCopy }: { inviteToken: string; onCopy: ()
  * ─────────────────────────────────────────────────────────────────────────────── */
 function ParticipantShareButton({ inviteToken, poolName }: { inviteToken: string; poolName: string }) {
   const inviteUrl = `${window.location.origin}/join/${inviteToken}`;
+  const analytics = useAnalytics();
 
   const handleShare = async () => {
     const shareText = `🏆 Participe do bolão "${poolName}" no ApostAI! Faça seus palpites e dispute o ranking.`;
@@ -1044,11 +1049,13 @@ function ParticipantShareButton({ inviteToken, poolName }: { inviteToken: string
     if (navigator.share) {
       try {
         await navigator.share({ title: poolName, text: shareText, url: inviteUrl });
+        analytics.trackInviteSent({ pool_slug: poolName, method: "share" });
       } catch {
         // Usuário cancelou o compartilhamento — sem ação necessária
       }
     } else {
       navigator.clipboard.writeText(inviteUrl);
+      analytics.trackInviteSent({ pool_slug: poolName, method: "copy" });
       toast.success("Link copiado!", { description: "Compartilhe com seus amigos." });
     }
   };
