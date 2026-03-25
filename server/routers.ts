@@ -15,7 +15,6 @@ import {
   createTournament,
   enqueueEmail,
   getAllUsers,
-  getActiveAds,
   getBetByPoolUserGame,
   getBetsByPool,
   getGameById,
@@ -63,6 +62,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { badgesRouter } from "./routers/badges";
 import { adminDashboardRouter } from "./routers/adminDashboard";
+import { adsRouter } from "./routers/ads"; // [T1] modularizado
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { calculateBetScore, calculateZebraContext, type ScoringRules } from "./scoring";
 
@@ -77,7 +77,10 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 
 const organizerProcedure = protectedProcedure.use(async ({ ctx, input, next }) => {
   const inp = input as { poolId?: number };
-  if (!inp?.poolId) return next({ ctx });
+  // [S8] Nunca bypassar silenciosamente: poolId é obrigatório
+  if (!inp?.poolId) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "poolId é obrigatório para esta operação." });
+  }
   const member = await getPoolMember(inp.poolId, ctx.user.id);
   if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador pode realizar esta ação." });
@@ -359,9 +362,16 @@ export const appRouter = router({
 
     // Admin: listar todos os usuários
     list: adminProcedure
-      .input(z.object({ limit: z.number().default(50), offset: z.number().default(0) }))
+      .input(z.object({
+        limit: z.number().min(1).max(100).default(50),
+        cursor: z.number().optional(), // [T3] cursor-based pagination: ID do último item
+      }))
       .query(async ({ input }) => {
-        return getAllUsers(input.limit, input.offset);
+        const rows = await getAllUsers(input.limit + 1, input.cursor);
+        const hasMore = rows.length > input.limit;
+        const items = hasMore ? rows.slice(0, input.limit) : rows;
+        const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
+        return { items, nextCursor, hasMore };
       }),
 
     blockUser: adminProcedure
@@ -2219,6 +2229,11 @@ export const appRouter = router({
 
         const game = await getGameById(input.gameId);
         if (!game) throw new TRPCError({ code: "NOT_FOUND" });
+        // [S9] Validar que o jogo pertence ao torneio do bolão
+        const pool = await getPoolById(input.poolId);
+        if (!pool || game.tournamentId !== pool.tournamentId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Este jogo não pertence ao torneio deste bolão." });
+        }
         if (game.status === "finished" || game.status === "live") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Jogo já iniciado ou encerrado." });
         }
@@ -2742,125 +2757,7 @@ export const appRouter = router({
       }),
   }),
   // ─── ADS ──────────────────────────────────────────────────────────────────
-  ads: router({
-    getActive: publicProcedure
-      .input(z.object({ position: z.string().optional() }))
-      .query(async ({ input }) => {
-        return getActiveAds(input.position);
-      }),
-    list: adminProcedure.query(async () => {
-      const db = await (await import("./db")).getDb();
-      if (!db) return [];
-      const { ads: adsT, adClicks } = await import("../drizzle/schema");
-      const { desc, count, eq } = await import("drizzle-orm");
-      const rows = await db.select().from(adsT).orderBy(desc(adsT.createdAt));
-      const clickCounts = await db.select({ adId: adClicks.adId, clicks: count() }).from(adClicks).groupBy(adClicks.adId);
-      const clickMap = new Map(clickCounts.map((c) => [c.adId, Number(c.clicks)]));
-      return rows.map((a) => ({ ...a, clicks: clickMap.get(a.id) ?? 0 }));
-    }),
-    create: adminProcedure
-      .input(z.object({
-        title: z.string().min(1).max(255),
-        assetUrl: z.string().optional(),
-        linkUrl: z.string().optional(),
-        type: z.enum(["banner", "video", "script"]).default("banner"),
-        position: z.enum(["sidebar", "top", "between_sections", "bottom", "popup"]).default("sidebar"),
-        isActive: z.boolean().default(true),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const db = await (await import("./db")).getDb();
-        if (!db) throw new Error("DB not available");
-        const { ads: adsT } = await import("../drizzle/schema");
-        await db.insert(adsT).values({ title: input.title, assetUrl: input.assetUrl, linkUrl: input.linkUrl, type: input.type, position: input.position, isActive: input.isActive, createdBy: ctx.user.id });
-        return { success: true };
-      }),
-    toggle: adminProcedure
-      .input(z.object({ id: z.number(), isActive: z.boolean() }))
-      .mutation(async ({ input }) => {
-        const db = await (await import("./db")).getDb();
-        if (!db) throw new Error("DB not available");
-        const { ads: adsT } = await import("../drizzle/schema");
-        const { eq } = await import("drizzle-orm");
-        await db.update(adsT).set({ isActive: input.isActive }).where(eq(adsT.id, input.id));
-        return { success: true };
-      }),
-    delete: adminProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        const db = await (await import("./db")).getDb();
-        if (!db) throw new Error("DB not available");
-        const { ads: adsT } = await import("../drizzle/schema");
-        const { eq } = await import("drizzle-orm");
-        await db.delete(adsT).where(eq(adsT.id, input.id));
-        return { success: true };
-      }),
-    clicksByDay: adminProcedure
-      .input(z.object({ adId: z.number().optional() }))
-      .query(async ({ input }) => {
-        const db = await (await import("./db")).getDb();
-        if (!db) return [];
-        const { adClicks, ads: adsT } = await import("../drizzle/schema");
-        const { eq, and, sql, desc } = await import("drizzle-orm");
-        const conditions = input.adId ? [eq(adClicks.adId, input.adId)] : [];
-        const rows = await db
-          .select({
-            adId: adClicks.adId,
-            adTitle: adsT.title,
-            day: sql<string>`DATE(${adClicks.createdAt})`,
-            clicks: sql<number>`COUNT(*)`,
-          })
-          .from(adClicks)
-          .innerJoin(adsT, eq(adClicks.adId, adsT.id))
-          .where(conditions.length > 0 ? and(...conditions) : undefined)
-          .groupBy(adClicks.adId, adsT.title, sql`DATE(${adClicks.createdAt})`)
-          .orderBy(desc(sql`DATE(${adClicks.createdAt})`));
-        return rows.map((r) => ({ ...r, clicks: Number(r.clicks) }));
-      }),
-    recordClick: publicProcedure
-      .input(z.object({ adId: z.number() }))
-      .mutation(async ({ input, ctx }) => {
-        const db = await (await import("./db")).getDb();
-        if (!db) return { success: false };
-        const { adClicks } = await import("../drizzle/schema");
-        await db.insert(adClicks).values({ adId: input.adId, userId: ctx.user?.id ?? null });
-        return { success: true };
-      }),
-    update: adminProcedure
-      .input(z.object({
-        id: z.number(),
-        title: z.string().min(1).max(255).optional(),
-        assetUrl: z.string().optional().nullable(),
-        linkUrl: z.string().optional().nullable(),
-        type: z.enum(["banner", "video", "script"]).optional(),
-        position: z.enum(["sidebar", "top", "between_sections", "bottom", "popup"]).optional(),
-        isActive: z.boolean().optional(),
-        device: z.string().optional(),
-        startAt: z.date().optional().nullable(),
-        endAt: z.date().optional().nullable(),
-        sortOrder: z.number().optional(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const db = await (await import("./db")).getDb();
-        if (!db) throw new Error("DB not available");
-        const { ads: adsT } = await import("../drizzle/schema");
-        const { eq } = await import("drizzle-orm");
-        const { id, ...updates } = input;
-        await db.update(adsT).set(updates as Record<string, unknown>).where(eq(adsT.id, id));
-        await createAdminLog(ctx.user.id, "ads.update", "ad", id, { updates });
-        return { success: true };
-      }),
-    globalToggle: adminProcedure
-      .input(z.object({ enabled: z.boolean() }))
-      .mutation(async ({ input, ctx }) => {
-        const db = await (await import("./db")).getDb();
-        if (!db) throw new Error("DB not available");
-        const { platformSettings } = await import("../drizzle/schema");
-        const { eq } = await import("drizzle-orm");
-        await db.update(platformSettings).set({ adsEnabled: input.enabled }).where(eq(platformSettings.id, 1));
-        await createAdminLog(ctx.user.id, "ads.globalToggle", "platform", 1, { adsEnabled: input.enabled });
-        return { success: true };
-      }),
-  }),
+  ads: adsRouter, // [T1] modularizado → server/routers/ads.ts
 });
 
 export type AppRouter = typeof appRouter;

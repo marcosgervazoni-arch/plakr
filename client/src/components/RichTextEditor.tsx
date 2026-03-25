@@ -3,6 +3,7 @@
  * Usa TipTap com toolbar adaptativa, upload de mídia/documentos e preview renderizado.
  */
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
+import DOMPurify from "dompurify";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
@@ -437,7 +438,7 @@ export function RichTextEditor({
       ) : (
         <div
           className="prose prose-invert prose-sm max-w-none p-4 min-h-[120px] text-sm leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: value || "<p class='text-muted-foreground italic'>Nenhum conteúdo ainda...</p>" }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value || "<p class='text-muted-foreground italic'>Nenhum conteúdo ainda...</p>") }}
         />
       )}
 

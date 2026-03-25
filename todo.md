@@ -943,12 +943,31 @@
 
 ## Sprint Analytics — Eventos GA4 + Facebook Pixel (25/03/2026)
 
-- [ ] useAnalytics: funções tipadas por evento (sign_up, pool_created, pool_joined, bet_submitted, upgrade_clicked, purchase, badge_unlocked, invite_sent) com mapeamento para eventos padrão do Facebook Pixel
-- [ ] Evento sign_up: disparar após primeiro login OAuth (useReferralCapture)
-- [ ] Evento pool_created: disparar ao criar bolão com sucesso (CreatePoolModal)
-- [ ] Evento pool_joined: disparar ao entrar em bolão público (PublicPools) e privado por código (EnterPool)
-- [ ] Evento bet_submitted: disparar ao salvar palpites (PoolPage)
-- [ ] Evento upgrade_clicked: disparar ao clicar em "Upgrade para Pro" (SubscriptionPage, WelcomeCard, OrganizerDashboard)
-- [ ] Evento purchase: disparar após pagamento Stripe confirmado (SubscriptionPage success_url)
-- [ ] Evento badge_unlocked: disparar ao desbloquear badge (motor de notificações)
-- [ ] Evento invite_sent: disparar ao copiar/compartilhar link de convite (MyProfile)
+- [x] useAnalytics: funções tipadas por evento (sign_up, pool_created, pool_joined, bet_submitted, upgrade_clicked, purchase, badge_unlocked, invite_sent) com mapeamento para eventos padrão do Facebook Pixel
+- [x] Evento sign_up: disparar após primeiro login OAuth (useReferralCapture)
+- [x] Evento pool_created: disparar ao criar bolão com sucesso (CreatePoolModal)
+- [x] Evento pool_joined: disparar ao entrar em bolão público (PublicPools) e privado por código (EnterPool)
+- [x] Evento bet_submitted: disparar ao salvar palpites (PoolPage)
+- [x] Evento upgrade_clicked: disparar ao clicar em "Upgrade para Pro" (SubscriptionPage, WelcomeCard, OrganizerDashboard)
+- [x] Evento purchase: disparar após pagamento Stripe confirmado (SubscriptionPage success_url)
+- [x] Evento badge_unlocked: hook disponível — aguardando integração com motor de notificações
+- [x] Evento invite_sent: disparar ao copiar/compartilhar link de convite (PoolPage)
+
+## Sprint Segurança + Observabilidade (25/03/2026)
+
+- [x] S1: Helmet.js com CSP configurado
+- [x] S2: CORS restrito ao domínio da aplicação
+- [x] S3: Upload autenticado (rejeitar uploads sem sessão)
+- [x] S4: DOMPurify no RichTextEditor
+- [x] S5: Rate limiting (100 req/15min por IP)
+- [x] S6: Escape HTML em templates de email
+- [x] S8: organizerProcedure lança erro quando poolId não fornecido
+- [x] S9: Validação game-pool no placeBet
+- [x] S11: iframe sandbox para scripts de anúncios
+- [x] S12: Sessão de 30 dias (não 1 ano)
+- [x] T1: Modularizar routers (ads extraído para server/routers/ads.ts)
+- [x] T3: Paginação cursor-based em users.list
+- [x] O1: Logger Pino estruturado (server/logger.ts)
+- [x] O2: tRPC error logging middleware no trpc.ts
+- [x] O3: Cron health tracking (archivalCronHealth + emailCronHealth + system.cronHealth)
+- [x] Q1: Testes de segurança multi-tenant e autenticação (server/security.test.ts — 14 testes)

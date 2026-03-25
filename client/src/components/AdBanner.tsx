@@ -159,10 +159,26 @@ function AdContent({ ad, onClick }: { ad: Ad; onClick: () => void }) {
   }, [ad.id, ad.type]);
 
   if (ad.type === "script" && ad.scriptCode) {
+    // [S11] Isolar scripts de anúncios em iframe sandboxed para prevenir XSS
+    const blob = new Blob(
+      [`<!DOCTYPE html><html><head><meta charset="utf-8"/></head><body style="margin:0;padding:0;background:transparent">${ad.scriptCode}</body></html>`],
+      { type: "text/html" }
+    );
+    const blobUrl = URL.createObjectURL(blob);
     return (
-      <div
-        className="w-full"
-        dangerouslySetInnerHTML={{ __html: ad.scriptCode }}
+      <iframe
+        src={blobUrl}
+        sandbox="allow-scripts allow-same-origin"
+        className="w-full border-0"
+        style={{ minHeight: 90 }}
+        title="Ad"
+        onLoad={(e) => {
+          const iframe = e.currentTarget;
+          try {
+            const h = iframe.contentDocument?.body?.scrollHeight;
+            if (h) iframe.style.height = h + "px";
+          } catch {}
+        }}
       />
     );
   }

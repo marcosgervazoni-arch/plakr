@@ -12,6 +12,9 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import helmet from "helmet";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,12 +39,25 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Trust proxy (Manus/Cloudflare proxy layer)
+  app.set("trust proxy", 1);
+
+  // [S1] Security headers
+  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(cors({ origin: process.env.APP_BASE_URL ?? true, credentials: true }));
+
+  // [S2] Rate limiting
+  app.use("/api/oauth", rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false }));
+  app.use("/api/upload", rateLimit({ windowMs: 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false }));
+  app.use("/api/trpc", rateLimit({ windowMs: 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
+
   // ⚠️ Stripe webhook MUST be registered BEFORE express.json() for signature verification
   registerStripeWebhook(app);
 
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // [S5] Reduced body parser limits (upload route gets its own 12mb)
+  app.use("/api/upload", express.json({ limit: "12mb" }));
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
 
   // File upload route (pool logos, team photos, ad banners)
   registerUploadRoute(app);

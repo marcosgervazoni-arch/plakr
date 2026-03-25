@@ -2,6 +2,8 @@ import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, router } from "./trpc";
 import { getPlatformSettings } from "../db";
+import { archivalCronHealth } from "../archival";
+import { emailCronHealth } from "../emailCron";
 
 export const systemRouter = router({
   health: publicProcedure
@@ -27,6 +29,12 @@ export const systemRouter = router({
         success: delivered,
       } as const;
     }),
+
+  // [O3] Health check dos cron jobs — apenas admin
+  cronHealth: adminProcedure.query(() => ({
+    archival: archivalCronHealth,
+    email: emailCronHealth,
+  })),
 
   // Público: retorna apenas os IDs de analytics (sem dados sensíveis)
   getAnalyticsConfig: publicProcedure.query(async () => {

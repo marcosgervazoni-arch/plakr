@@ -6,6 +6,7 @@
 import { Request, Response, Express } from "express";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
+import { sdk } from "./_core/sdk";
 
 const ALLOWED_TYPES: Record<string, { ext: string; category: string }> = {
   // Images
@@ -51,6 +52,12 @@ const SIZE_LIMITS: Record<string, number> = {
 export function registerUploadRoute(app: Express) {
   app.post("/api/upload", async (req: Request, res: Response) => {
     try {
+      // [S3] Require authentication for all uploads
+      const user = await sdk.authenticateRequest(req);
+      if (!user) {
+        return res.status(401).json({ error: "Autenticação necessária para fazer upload." });
+      }
+
       const { data, contentType, folder = "uploads", fileName } = req.body as {
         data: string;
         contentType: string;

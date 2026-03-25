@@ -246,7 +246,7 @@ export default function AdminAds() {
                       </TableRow>
                     ) : (
                       (ads ?? []).map((ad) => {
-                        const adClicks = clicksData?.filter(c => c.adId === ad.id).reduce((acc, r) => acc + Number(r.clicks), 0) ?? ad.clicks ?? 0;
+                        const adClicks = clicksData?.filter(c => c.adId === ad.id).reduce((acc, r) => acc + Number(r.clicks), 0) ?? 0;
                         const isScheduled = ad.startAt && new Date(ad.startAt) > new Date();
                         const isExpired = ad.endAt && new Date(ad.endAt) < new Date();
                         return (

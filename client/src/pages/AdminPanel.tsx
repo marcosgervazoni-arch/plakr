@@ -284,7 +284,8 @@ function AddGameDialog({ tournamentId, onClose }: { tournamentId: number; onClos
 // ─── USERS TAB ────────────────────────────────────────────────────────────────
 
 function UsersTab() {
-  const { data: users, isLoading } = trpc.users.list.useQuery({ limit: 50, offset: 0 });
+  const { data: usersData, isLoading } = trpc.users.list.useQuery({ limit: 50 });
+  const users = usersData?.items;
   const utils = trpc.useUtils();
 
   const blockUser = trpc.users.blockUser.useMutation({

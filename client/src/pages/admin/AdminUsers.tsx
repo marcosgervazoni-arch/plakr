@@ -69,7 +69,8 @@ export default function AdminUsers() {
   const [notifMessage, setNotifMessage] = useState("");
   const [activeTab, setActiveTab] = useState("actions");
 
-  const { data: users, isLoading, refetch } = trpc.users.list.useQuery({ limit: 100 });
+  const { data: usersData, isLoading, refetch } = trpc.users.list.useQuery({ limit: 100 });
+  const users = usersData?.items;
 
   const { data: userActivity, isLoading: activityLoading } = trpc.users.getUserActivity.useQuery(
     { userId: selectedUser?.id ?? 0 },
@@ -126,7 +127,7 @@ export default function AdminUsers() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
-  const filtered = (users ?? []).filter((u) => {
+  const filtered = (users ?? [] as NonNullable<typeof users>).filter((u) => {
     const matchSearch =
       !search ||
       u.name?.toLowerCase().includes(search.toLowerCase()) ||

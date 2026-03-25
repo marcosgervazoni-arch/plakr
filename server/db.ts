@@ -95,10 +95,16 @@ export async function getUserById(id: number): Promise<User | undefined> {
   return result[0];
 }
 
-export async function getAllUsers(limit = 50, offset = 0) {
+// [T3] cursor-based pagination: cursor é o ID do último item retornado
+export async function getAllUsers(limit = 50, cursor?: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(users).orderBy(desc(users.createdAt)).limit(limit).offset(offset);
+  return db
+    .select()
+    .from(users)
+    .where(cursor ? lt(users.id, cursor) : undefined)
+    .orderBy(desc(users.id))
+    .limit(limit);
 }
 
 export async function updateUserBlocked(userId: number, isBlocked: boolean) {

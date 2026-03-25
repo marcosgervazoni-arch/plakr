@@ -5,14 +5,23 @@
  */
 
 import { getDb } from "./db";
-import { pools, poolMembers, bets, poolMemberStats, notifications, poolScoringRules } from "../drizzle/schema";
-import { eq, and, lt, inArray } from "drizzle-orm";
+import { pools } from "../drizzle/schema";
+import { eq, and, lt } from "drizzle-orm";
 import { createNotification, getPoolMembers, getPlatformSettings } from "./db";
+import { logger } from "./logger";
+
+// [O3] Health tracking do cron de arquivamento
+export const archivalCronHealth = {
+  lastRunAt: null as Date | null,
+  lastRunSuccess: null as boolean | null,
+  lastError: null as string | null,
+  runCount: 0,
+};
 
 export async function runArchivalJob() {
   const db = await getDb();
   if (!db) {
-    console.warn("[Archival] Database not available");
+    logger.warn("[Archival] Database not available");
     return;
   }
 
@@ -34,11 +43,11 @@ export async function runArchivalJob() {
     );
 
   if (duePools.length === 0) {
-    console.log("[Archival] No pools due for deletion");
+    logger.debug("[Archival] No pools due for deletion");
     return;
   }
 
-  console.log(`[Archival] Found ${duePools.length} pools to archive`);
+  logger.info({ count: duePools.length }, `[Archival] Found ${duePools.length} pools to archive`);
 
   for (const pool of duePools) {
     try {
@@ -57,9 +66,9 @@ export async function runArchivalJob() {
       // Anonimizar e arquivar (soft delete — muda status para "archived")
       await db.update(pools).set({ status: "archived" }).where(eq(pools.id, pool.id));
 
-      console.log(`[Archival] Archived pool ${pool.id}: "${pool.name}"`);
+      logger.info({ poolId: pool.id, poolName: pool.name }, `[Archival] Archived pool ${pool.id}`);
     } catch (err) {
-      console.error(`[Archival] Failed to archive pool ${pool.id}:`, err);
+      logger.error({ poolId: pool.id, err }, `[Archival] Failed to archive pool ${pool.id}`);
     }
   }
 }
@@ -71,17 +80,23 @@ export function startArchivalCron() {
   const INTERVAL_MS = 60 * 60 * 1000; // 1 hora
 
   archivalInterval = setInterval(async () => {
+    archivalCronHealth.runCount++;
+    archivalCronHealth.lastRunAt = new Date();
     try {
       await runArchivalJob();
+      archivalCronHealth.lastRunSuccess = true;
+      archivalCronHealth.lastError = null;
     } catch (err) {
-      console.error("[Archival] Cron error:", err);
+      archivalCronHealth.lastRunSuccess = false;
+      archivalCronHealth.lastError = err instanceof Error ? err.message : String(err);
+      logger.error({ err }, "[Archival] Cron error");
     }
   }, INTERVAL_MS);
 
-  console.log("[Archival] Cron started (interval: 1h)");
+  logger.info("[Archival] Cron started (interval: 1h)");
 
   // Rodar imediatamente ao iniciar
-  runArchivalJob().catch(console.error);
+  runArchivalJob().catch((err) => logger.error({ err }, "[Archival] Initial run error"));
 }
 
 export function stopArchivalCron() {

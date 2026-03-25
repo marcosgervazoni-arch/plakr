@@ -10,6 +10,16 @@ import { resolveNotificationTemplate } from "./notificationTemplateHelper";
 import { emailQueue, users, games, userPlans, pools, poolMembers } from "../drizzle/schema";
 import { eq, and, lte, gte, sql } from "drizzle-orm";
 
+// ─── HTML escape (S6: previne XSS em dados de usuário interpolados nos templates) ─
+function esc(str: string): string {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 // ─── Brand colors ────────────────────────────────────────────────────────────
 const BRAND = "#22c55e";
 const BRAND_DARK = "#16a34a";
@@ -82,7 +92,7 @@ export function templateWelcome(name: string): { subject: string; html: string }
   return {
     subject: "Bem-vindo ao ApostAI! 🏆",
     html: baseTemplate("Bem-vindo ao ApostAI", `
-      <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${TEXT};">Olá, ${name}! 👋</h2>
+      <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${TEXT};">Olá, ${esc(name)}! 👋</h2>
       <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Sua conta no ApostAI foi criada com sucesso. Agora você pode participar de bolões esportivos, fazer seus palpites e disputar o ranking com amigos.</p>
       <div style="background:#0d0d0d;border-radius:12px;padding:20px;margin-bottom:24px;">
         <p style="margin:0 0 12px;font-weight:600;color:${TEXT};">O que você pode fazer:</p>
@@ -111,10 +121,10 @@ export function templateBetReminder(opts: {
     subject: `${urgency}: Faça seu palpite em ${opts.homeTeam} x ${opts.awayTeam}`,
     html: baseTemplate("Lembrete de Palpite", `
       <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">${urgency}: Palpite pendente!</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${opts.name}! O prazo para palpitar no jogo abaixo está se encerrando.</p>
+      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.name)}! O prazo para palpitar no jogo abaixo está se encerrando.</p>
       <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;">
-        <p style="margin:0 0 4px;font-size:12px;color:${MUTED};text-transform:uppercase;letter-spacing:1px;">Bolão: ${opts.poolName}</p>
-        <p style="margin:0 0 16px;font-size:22px;font-weight:800;color:${TEXT};">${opts.homeTeam} <span style="color:${BRAND};">×</span> ${opts.awayTeam}</p>
+        <p style="margin:0 0 4px;font-size:12px;color:${MUTED};text-transform:uppercase;letter-spacing:1px;">Bolão: ${esc(opts.poolName)}</p>
+        <p style="margin:0 0 16px;font-size:22px;font-weight:800;color:${TEXT};">${esc(opts.homeTeam)} <span style="color:${BRAND};">×</span> ${esc(opts.awayTeam)}</p>
         <p style="margin:0 0 4px;font-size:13px;color:${MUTED};">Início: ${opts.matchTime}</p>
         <p style="margin:0;font-size:13px;color:${opts.minutesLeft <= 30 ? "#ef4444" : "#f59e0b"};font-weight:600;">⏱ ${opts.minutesLeft} minutos restantes para palpitar</p>
       </div>
@@ -140,9 +150,9 @@ export function templateResultAvailable(opts: {
     subject: `${emoji} Resultado: ${opts.homeTeam} ${opts.homeScore}×${opts.awayScore} ${opts.awayTeam} — ${opts.pointsEarned}pts`,
     html: baseTemplate("Resultado do Jogo", `
       <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">Resultado apurado! ${emoji}</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${opts.name}! O resultado do jogo foi registrado no bolão <strong style="color:${TEXT};">${opts.poolName}</strong>.</p>
+      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.name)}! O resultado do jogo foi registrado no bolão <strong style="color:${TEXT};">${esc(opts.poolName)}</strong>.</p>
       <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;">
-        <p style="margin:0 0 12px;font-size:26px;font-weight:800;color:${TEXT};">${opts.homeTeam} <span style="color:${BRAND};">${opts.homeScore}×${opts.awayScore}</span> ${opts.awayTeam}</p>
+        <p style="margin:0 0 12px;font-size:26px;font-weight:800;color:${TEXT};">${esc(opts.homeTeam)} <span style="color:${BRAND};">${opts.homeScore}×${opts.awayScore}</span> ${esc(opts.awayTeam)}</p>
         <p style="margin:0 0 4px;font-size:13px;color:${MUTED};">Seu palpite: <strong style="color:${TEXT};">${opts.betDescription}</strong></p>
         <p style="margin:0;font-size:20px;font-weight:800;color:${opts.pointsEarned >= 10 ? BRAND : opts.pointsEarned >= 5 ? "#f59e0b" : "#ef4444"};">+${opts.pointsEarned} pontos</p>
       </div>
@@ -162,7 +172,7 @@ export function templatePlanExpiring(opts: {
     subject: `${urgency} — Seu Plano Pro expira em breve`,
     html: baseTemplate("Plano Pro Expirando", `
       <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">${urgency} do Plano Pro</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${opts.name}! Seu Plano Pro expira em <strong style="color:#f59e0b;">${opts.expiresAt}</strong>. Renove agora para não perder o acesso às funcionalidades exclusivas.</p>
+      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.name)}! Seu Plano Pro expira em <strong style="color:#f59e0b;">${opts.expiresAt}</strong>. Renove agora para não perder o acesso às funcionalidades exclusivas.</p>
       <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:20px;margin-bottom:24px;">
         <p style="margin:0 0 12px;font-weight:600;color:${TEXT};">O que você perde sem o Pro:</p>
         <p style="margin:0 0 8px;color:#ef4444;">❌ Bolões ilimitados (volta ao limite de 2)</p>
@@ -188,10 +198,10 @@ export function templatePoolInvite(opts: {
     subject: `🏆 ${opts.organizerName} te convidou para o bolão "${opts.poolName}"`,
     html: baseTemplate("Convite de Bolão", `
       <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">Você foi convidado! 🏆</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${opts.inviteeName}! <strong style="color:${TEXT};">${opts.organizerName}</strong> te convidou para participar do bolão abaixo.</p>
+      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.inviteeName)}! <strong style="color:${TEXT};">${esc(opts.organizerName)}</strong> te convidou para participar do bolão abaixo.</p>
       <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;">
-        <p style="margin:0 0 4px;font-size:20px;font-weight:800;color:${TEXT};">${opts.poolName}</p>
-        <p style="margin:0 0 12px;font-size:13px;color:${MUTED};">${opts.tournamentName}</p>
+        <p style="margin:0 0 4px;font-size:20px;font-weight:800;color:${TEXT};">${esc(opts.poolName)}</p>
+        <p style="margin:0 0 12px;font-size:13px;color:${MUTED};">${esc(opts.tournamentName)}</p>
         <p style="margin:0;font-size:13px;color:${MUTED};">👥 ${opts.memberCount} participante${opts.memberCount !== 1 ? "s" : ""} já entraram</p>
       </div>
       ${ctaButton("Entrar no bolão", opts.inviteUrl)}
