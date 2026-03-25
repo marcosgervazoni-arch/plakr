@@ -21,6 +21,7 @@ export default function CreatePoolModal({ onClose, onCreated }: Props) {
   const [description, setDescription] = useState("");
   const [tournamentId, setTournamentId] = useState<string>("");
   const [accessType, setAccessType] = useState<"public" | "private_code" | "private_link">("private_link");
+  const [invitePermission, setInvitePermission] = useState<"organizer_only" | "all_members">("organizer_only");
 
   const { data: tournaments, isLoading: tournamentsLoading } = trpc.tournaments.listGlobal.useQuery();
 
@@ -46,6 +47,7 @@ export default function CreatePoolModal({ onClose, onCreated }: Props) {
       description: description.trim() || undefined,
       tournamentId: Number(tournamentId),
       accessType,
+      invitePermission: accessType === "public" ? "all_members" : invitePermission,
     });
   };
 
@@ -111,6 +113,31 @@ export default function CreatePoolModal({ onClose, onCreated }: Props) {
               </SelectContent>
             </Select>
           </div>
+
+          {(accessType === "private_code" || accessType === "private_link") && (
+            <div className="space-y-2">
+              <Label>Quem pode convidar?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: "organizer_only" as const, label: "Só o organizador" },
+                  { id: "all_members" as const, label: "Todos os membros" },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setInvitePermission(opt.id)}
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-sm transition-all ${
+                      invitePermission === opt.id
+                        ? "border-primary bg-primary/5 text-primary font-medium"
+                        : "border-border/30 bg-card text-muted-foreground hover:border-primary/30"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="description">Descrição (opcional)</Label>

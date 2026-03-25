@@ -128,6 +128,7 @@ export const poolsRouter = router({
       name: z.string().min(3).max(100),
       tournamentId: z.number(),
       accessType: z.enum(["public", "private_code", "private_link"]).default("private_link"),
+      invitePermission: z.enum(["organizer_only", "all_members"]).default("organizer_only"),
       description: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -372,6 +373,7 @@ export const poolsRouter = router({
       description: z.string().optional(),
       logoUrl: z.string().optional(),
       accessType: z.enum(["public", "private_code", "private_link"]).optional(),
+      invitePermission: z.enum(["organizer_only", "all_members"]).optional(),
       tournamentId: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -942,6 +944,7 @@ export const poolsRouter = router({
       name: z.string().min(3).max(100),
       tournamentId: z.number(),
       accessType: z.enum(["public", "private_code", "private_link"]).default("public"),
+      invitePermission: z.enum(["organizer_only", "all_members"]).default("organizer_only"),
       description: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {

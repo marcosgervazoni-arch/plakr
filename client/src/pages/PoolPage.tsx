@@ -437,11 +437,13 @@ export default function PoolPage() {
             </div>
           </div>
 
-          {/* Invite banner — organizador vê o banner completo; participante vê botão discreto de compartilhar */}
+          {/* Invite banner — organizador vê o banner completo; participante vê botão discreto de compartilhar (apenas se invitePermission === all_members) */}
           {pool.inviteToken && (
             isOrganizer
               ? <InviteBanner inviteToken={pool.inviteToken} onCopy={copyInviteLink} />
-              : <ParticipantShareButton inviteToken={pool.inviteToken} poolName={pool.name} />
+              : ((pool as any).invitePermission === "all_members"
+                  ? <ParticipantShareButton inviteToken={pool.inviteToken} poolName={pool.name} />
+                  : null)
           )}
         </div>
       </div>

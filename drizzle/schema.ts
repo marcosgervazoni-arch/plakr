@@ -210,6 +210,9 @@ export const pools = mysqlTable("pools", {
     .notNull(),
   inviteCode: varchar("inviteCode", { length: 16 }),
   inviteToken: varchar("inviteToken", { length: 64 }),
+  invitePermission: mysqlEnum("invitePermission", ["organizer_only", "all_members"])
+    .default("organizer_only")
+    .notNull(),
   status: mysqlEnum("status", ["active", "finished", "archived", "deleted"])
     .default("active")
     .notNull(),

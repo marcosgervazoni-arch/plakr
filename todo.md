@@ -1095,3 +1095,13 @@
 - [x] CTA secundário: "Entrar em um bolão" (link para login/landing)
 - [x] Headline persuasivo e copy alinhado ao tom da plataforma (informal-profissional, pt-BR)
 - [x] Seção oculta para usuários já autenticados (não poluir experiência de quem já está logado)
+
+## Feature — Permissão de Convite em Bolões Privados (25/03/2026)
+- [x] Schema: novo campo `invitePermission` enum("organizer_only","all_members") default "organizer_only" na tabela pools
+- [x] Migração SQL aplicada via webdev_execute_sql
+- [x] Backend: procedures create + update + adminCreatePool aceitam invitePermission
+- [x] Frontend CreatePool.tsx (O1): controle de permissão de convite visível apenas para private_code e private_link
+- [x] Frontend CreatePoolModal.tsx: campo invitePermission no modal simplificado
+- [x] Frontend OrganizerAccess.tsx (O4): toggle de permissão de convite + save
+- [x] Frontend PoolPage.tsx: ParticipantShareButton condicional ao invitePermission === "all_members"
+- [x] Testes Vitest: cenários organizer_only e all_members no joinByToken/joinByCode

@@ -51,6 +51,7 @@ export default function CreatePool() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [accessType, setAccessType] = useState<AccessType>("private_link");
   const [customCode, setCustomCode] = useState("");
+  const [invitePermission, setInvitePermission] = useState<"organizer_only" | "all_members">("organizer_only");
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -84,6 +85,7 @@ export default function CreatePool() {
       description: description.trim() || undefined,
       tournamentId: selectedTournamentId,
       accessType,
+      invitePermission: accessType === "public" ? "all_members" : invitePermission,
     });
   };
 
@@ -230,6 +232,39 @@ export default function CreatePool() {
                 placeholder="Deixe em branco para gerar automaticamente"
                 className="bg-card border-border/50 font-mono uppercase tracking-widest"
               />
+            </div>
+          )}
+
+          {/* Permissão de convite — apenas para bolões privados */}
+          {(accessType === "private_code" || accessType === "private_link") && (
+            <div className="mt-4 space-y-2">
+              <label className="text-sm font-medium">Quem pode convidar participantes?</label>
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { id: "organizer_only" as const, label: "Apenas o organizador", desc: "Só você pode compartilhar o link/código de convite" },
+                  { id: "all_members" as const, label: "Todos os participantes", desc: "Qualquer membro pode compartilhar o convite com outras pessoas" },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setInvitePermission(opt.id)}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-xl border text-left transition-all",
+                      invitePermission === opt.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border/30 bg-card hover:border-primary/30"
+                    )}
+                  >
+                    <div className={cn("w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center", invitePermission === opt.id ? "border-primary" : "border-muted-foreground/40")}>
+                      {invitePermission === opt.id && <div className="w-2 h-2 rounded-full bg-primary" />}
+                    </div>
+                    <div>
+                      <p className={cn("text-sm font-medium", invitePermission === opt.id && "text-primary")}>{opt.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </section>

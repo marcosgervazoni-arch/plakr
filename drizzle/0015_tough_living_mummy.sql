@@ -1,0 +1,1 @@
+ALTER TABLE `pools` ADD `invitePermission` enum('organizer_only','all_members') DEFAULT 'organizer_only' NOT NULL;

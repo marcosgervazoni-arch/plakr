@@ -283,3 +283,78 @@ describe("[SUG-3] Regras de pontuação customizadas — requer plano Pro", () =
     expect(result).toMatchObject({ success: true });
   });
 });
+
+// ─── TESTES: PERMISSÃO DE CONVITE ─────────────────────────────────────────────
+describe("[INVITE-PERM] Permissão de convite em bolões privados", () => {
+  const basePool = {
+    id: 30,
+    plan: "free",
+    name: "Bolão Privado",
+    ownerId: 2,
+    tournamentId: 1,
+    slug: "bolao-privado",
+    accessType: "private_link" as const,
+    inviteToken: "tok-private",
+    inviteCode: "PRIV1234",
+    isArchived: false,
+    description: null,
+    logoUrl: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  it("pools.create aceita invitePermission=organizer_only e retorna poolId", async () => {
+    vi.mocked(countActivePoolsByOwner).mockResolvedValue(0);
+    vi.mocked(getUserPlan).mockResolvedValue(null);
+
+    const caller = appRouter.createCaller(makeCtx());
+    const result = await caller.pools.create({
+      name: "Bolão Só Org",
+      tournamentId: 1,
+      accessType: "private_link",
+      invitePermission: "organizer_only",
+    });
+    expect(result).toHaveProperty("poolId");
+  });
+
+  it("pools.create aceita invitePermission=all_members e retorna poolId", async () => {
+    vi.mocked(countActivePoolsByOwner).mockResolvedValue(0);
+    vi.mocked(getUserPlan).mockResolvedValue(null);
+
+    const caller = appRouter.createCaller(makeCtx());
+    const result = await caller.pools.create({
+      name: "Bolão Todos Convidam",
+      tournamentId: 1,
+      accessType: "private_link",
+      invitePermission: "all_members",
+    });
+    expect(result).toHaveProperty("poolId");
+  });
+
+  it("pools.create sem invitePermission usa default organizer_only (backward compat)", async () => {
+    vi.mocked(countActivePoolsByOwner).mockResolvedValue(0);
+    vi.mocked(getUserPlan).mockResolvedValue(null);
+
+    const caller = appRouter.createCaller(makeCtx());
+    const result = await caller.pools.create({
+      name: "Bolão Default",
+      tournamentId: 1,
+      accessType: "private_code",
+    });
+    expect(result).toHaveProperty("poolId");
+  });
+
+  it("joinByToken funciona independente de invitePermission (a restrição é de visibilidade, não de entrada)", async () => {
+    vi.mocked(getPoolByInviteToken).mockResolvedValue({
+      ...basePool,
+      status: "active",
+      invitePermission: "organizer_only",
+    } as any);
+    vi.mocked(countPoolMembers).mockResolvedValue(5);
+    vi.mocked(getPoolMember).mockResolvedValue(null);
+
+    const caller = appRouter.createCaller(makeCtx({ id: 99 }));
+    const result = await caller.pools.joinByToken({ token: "tok-private" });
+    expect(result).toMatchObject({ poolId: 30, alreadyMember: false });
+  });
+});

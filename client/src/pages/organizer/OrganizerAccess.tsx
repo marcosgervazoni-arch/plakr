@@ -29,6 +29,8 @@ import {
   QrCode,
   Crown,
   TrendingUp,
+  UserCheck,
+  Lock,
 } from "lucide-react";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -155,6 +157,43 @@ export default function OrganizerAccess() {
             ))}
           </div>
         </div>
+
+        {/* Invite permission — apenas para bolões privados */}
+        {(accessType === "private_code" || accessType === "private_link") && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Permissão de Convite</h3>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                { id: "organizer_only" as const, icon: Lock, label: "Apenas o organizador", desc: "Só você pode compartilhar o link ou código de convite" },
+                { id: "all_members" as const, icon: UserCheck, label: "Todos os participantes", desc: "Qualquer membro pode compartilhar o convite com outras pessoas" },
+              ].map((opt) => {
+                const currentPerm = ((pool as any)?.invitePermission ?? "organizer_only") as "organizer_only" | "all_members";
+                const isActive = currentPerm === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => pool?.id && updateMutation.mutate({ poolId: pool.id, invitePermission: opt.id })}
+                    disabled={updateMutation.isPending}
+                    className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-all ${
+                      isActive ? "border-primary bg-primary/5" : "border-border/30 bg-card hover:border-primary/30"
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                      isActive ? "bg-primary/10" : "bg-muted/50"
+                    }`}>
+                      <opt.icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                    </div>
+                    <div>
+                      <p className={`font-semibold text-sm ${isActive ? "text-primary" : ""}`}>{opt.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{opt.desc}</p>
+                    </div>
+                    {isActive && <Check className="w-4 h-4 text-primary ml-auto shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Code display */}
         {accessType === "private_code" && (
