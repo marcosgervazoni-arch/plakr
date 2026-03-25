@@ -332,25 +332,7 @@ export default function PoolSettings() {
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="pt-2">
-                  <p className="text-sm font-medium mb-1">Código de convite</p>
-                  <div className="inline-flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 rounded-lg px-4 py-2">
-                    <span className="font-mono text-lg font-bold text-brand-400 tracking-widest">
-                      {pool.inviteCode}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-7 h-7"
-                      onClick={() => {
-                        navigator.clipboard.writeText(pool.inviteCode ?? "");
-                        toast.success("Código copiado!");
-                      }}
-                    >
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
+
               </CardContent>
             </Card>
           </TabsContent>

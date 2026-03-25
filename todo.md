@@ -1116,3 +1116,6 @@
 - [x] Frontend PublicPools.tsx: remover branch private_code (modal de entrada por código)
 - [x] Frontend AdminPools.tsx: remover opção private_code nos selects e labels
 - [x] Testes Vitest: atualizar fixtures e remover testes de joinByCode
+
+## Bug — Bloco de inviteCode residual no PoolSettings (25/03/2026)
+- [x] Remover bloco "Código de convite" (inviteCode) da tela PoolSettings — código não é mais mecanismo de acesso
