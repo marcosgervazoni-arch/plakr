@@ -1,0 +1,135 @@
+/**
+ * Open Graph SSR — /join/:token
+ *
+ * Bots de redes sociais (WhatsApp, Telegram, Facebook, Twitter/X, Slack, Discord)
+ * identificam-se por User-Agent. Quando detectados, retornamos um HTML mínimo
+ * com meta tags OG dinâmicas baseadas nos dados do bolão.
+ * Usuários reais passam adiante para o React SPA.
+ */
+import type { Express } from "express";
+import { getPoolByInviteToken } from "./db";
+import { getTournamentById } from "./db";
+
+/** User-Agents conhecidos de crawlers/bots de preview */
+const BOT_UA_PATTERN =
+  /whatsapp|telegram|facebookexternalhit|twitterbot|slackbot|discordbot|linkedinbot|googlebot|bingbot|applebot|curl|python-requests|go-http-client/i;
+
+function isBot(userAgent: string): boolean {
+  return BOT_UA_PATTERN.test(userAgent);
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function buildOgHtml({
+  title,
+  description,
+  imageUrl,
+  pageUrl,
+}: {
+  title: string;
+  description: string;
+  imageUrl: string;
+  pageUrl: string;
+}): string {
+  const t = escapeHtml(title);
+  const d = escapeHtml(description);
+  const i = escapeHtml(imageUrl);
+  const u = escapeHtml(pageUrl);
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>${t}</title>
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="${t}" />
+  <meta property="og:description" content="${d}" />
+  <meta property="og:image" content="${i}" />
+  <meta property="og:url" content="${u}" />
+  <meta property="og:site_name" content="ApostAI" />
+  <meta property="og:locale" content="pt_BR" />
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${t}" />
+  <meta name="twitter:description" content="${d}" />
+  <meta name="twitter:image" content="${i}" />
+
+  <!-- Redirect real users to the SPA -->
+  <meta http-equiv="refresh" content="0;url=${u}" />
+</head>
+<body>
+  <p>Redirecionando para o bolão… <a href="${u}">Clique aqui</a></p>
+</body>
+</html>`;
+}
+
+export function registerOgRoutes(app: Express): void {
+  app.get("/join/:token", async (req, res, next) => {
+    const ua = req.headers["user-agent"] ?? "";
+
+    // Usuários reais: deixa o Vite/static servir o SPA normalmente
+    if (!isBot(ua)) {
+      return next();
+    }
+
+    const { token } = req.params;
+    const origin = `${req.protocol}://${req.headers.host}`;
+    const pageUrl = `${origin}/join/${token}`;
+
+    // Fallback genérico caso o token não seja encontrado
+    const fallbackImage = `${origin}/og-default.png`;
+
+    try {
+      const pool = await getPoolByInviteToken(token);
+
+      if (!pool || pool.status !== "active") {
+        const html = buildOgHtml({
+          title: "Convite para Bolão — ApostAI",
+          description: "Você foi convidado para participar de um bolão de apostas esportivas!",
+          imageUrl: fallbackImage,
+          pageUrl,
+        });
+        return res.status(200).set("Content-Type", "text/html").end(html);
+      }
+
+      // Buscar nome do campeonato para enriquecer a descrição
+      let tournamentName = "";
+      try {
+        const tournament = await getTournamentById(pool.tournamentId);
+        tournamentName = tournament?.name ?? "";
+      } catch {
+        // não crítico
+      }
+
+      const title = `${pool.name} — ApostAI`;
+      const description = pool.description
+        ? pool.description
+        : tournamentName
+        ? `Bolão de ${tournamentName}. Entre agora e faça seus palpites!`
+        : "Você foi convidado para um bolão de apostas esportivas. Entre agora e faça seus palpites!";
+
+      const imageUrl = pool.logoUrl ?? fallbackImage;
+
+      const html = buildOgHtml({ title, description, imageUrl, pageUrl });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    } catch {
+      // Em caso de erro de banco, retorna fallback genérico
+      const html = buildOgHtml({
+        title: "Convite para Bolão — ApostAI",
+        description: "Você foi convidado para participar de um bolão de apostas esportivas!",
+        imageUrl: fallbackImage,
+        pageUrl,
+      });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    }
+  });
+}

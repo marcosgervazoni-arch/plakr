@@ -1127,3 +1127,8 @@
 ## Feature — Compartilhamento Nativo (Web Share API) (25/03/2026)
 - [x] OrganizerAccess.tsx: botão "Compartilhar" com Web Share API + fallback cópia para desktop
 - [x] ParticipantShareButton (PoolPage.tsx): botão "Compartilhar" com Web Share API + fallback cópia (já estava implementado)
+
+## Feature — Open Graph dinâmico na página de convite (25/03/2026)
+- [x] Endpoint GET /og/join/:token no servidor retorna HTML com meta tags OG dinâmicas (título, descrição, imagem)
+- [x] Bots de redes sociais (WhatsApp, Telegram) recebem HTML com OG; usuários reais são redirecionados para /join/:token
+- [x] Meta tags: og:title, og:description, og:image (logo do bolão ou fallback), og:url, twitter:card
