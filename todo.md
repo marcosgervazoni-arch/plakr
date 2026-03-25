@@ -1010,3 +1010,7 @@
 
 ### Bugs (25/03/2026)
 - [x] BUG: Botão "Salvar Push" fica desabilitado mesmo com VAPID keys configuradas — corrigido: pushConfigured agora verifica apenas vapidPublicKey (vapidPrivateKey omitida por S10)
+
+### UX Push Settings (25/03/2026)
+- [x] UX-1: Feedback visual no botão "Salvar Push" — botão fica verde com ✓ e texto "Configurações salvas" por 3s após save
+- [x] UX-2: Validação de e-mail VAPID inline — borda amarela e aviso quando vapidEmail está vazio (não bloqueia botão)

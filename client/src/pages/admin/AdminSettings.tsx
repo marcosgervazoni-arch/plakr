@@ -118,10 +118,16 @@ export default function AdminSettings() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
+  // UX-1: estado de feedback visual após salvar push
+  const [pushSaved, setPushSaved] = useState(false);
+
   const savePushMutation = trpc.platform.updateSettings.useMutation({
     onSuccess: () => {
       utils.platform.getSettings.invalidate();
       toast.success("Configurações de push salvas!");
+      // UX-1: mostrar estado "salvo" por 3 segundos
+      setPushSaved(true);
+      setTimeout(() => setPushSaved(false), 3000);
     },
     onError: (e: { message: string }) => toast.error(e.message),
   });
@@ -384,10 +390,18 @@ export default function AdminSettings() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setPushForm((p) => ({ ...p, vapidEmail: e.target.value }))
                     }
+                    className={pushConfigured && !pushForm.vapidEmail ? "border-yellow-500/60 focus-visible:ring-yellow-500/40" : ""}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Usado pelo protocolo VAPID para contato em caso de problemas. Não é exibido aos usuários.
-                  </p>
+                  {/* UX-2: aviso inline quando e-mail está vazio mas keys já existem */}
+                  {pushConfigured && !pushForm.vapidEmail ? (
+                    <p className="text-xs text-yellow-400 flex items-center gap-1">
+                      <span>⚠️</span> Recomendado para conformidade com o protocolo VAPID. Preencha para evitar problemas de entrega.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Usado pelo protocolo VAPID para contato em caso de problemas. Não é exibido aos usuários.
+                    </p>
+                  )}
                 </div>
 
                 {/* VAPID Keys */}
@@ -461,7 +475,11 @@ export default function AdminSettings() {
                 </div>
 
                 <Button
-                  className="bg-brand hover:bg-brand/90 gap-2"
+                  className={`gap-2 transition-all duration-300 ${
+                    pushSaved
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-brand hover:bg-brand/90"
+                  }`}
                   onClick={() => savePushMutation.mutate(pushForm)}
                   disabled={
                     savePushMutation.isPending ||
@@ -473,10 +491,12 @@ export default function AdminSettings() {
                 >
                   {savePushMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : pushSaved ? (
+                    <CheckCircle2 className="h-4 w-4" />
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  Salvar Push
+                  {pushSaved ? "Configurações salvas" : "Salvar Push"}
                 </Button>
               </CardContent>
             </Card>
