@@ -7,6 +7,7 @@ import { Express, Request, Response } from "express";
 import express from "express";
 import Stripe from "stripe";
 import { createAdminLog, createNotification, getPoolById, updatePool, upsertUserPlan, getUserPlan } from "./db";
+import logger from "./logger";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
   apiVersion: "2026-02-25.clover",
@@ -26,17 +27,17 @@ export function registerStripeWebhook(app: Express) {
         event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Unknown error";
-        console.error("[Webhook] Signature verification failed:", message);
+        logger.error({ message }, "[Webhook] Signature verification failed");
         return res.status(400).send(`Webhook Error: ${message}`);
       }
 
       // Detectar eventos de teste — retornar verificação imediatamente
       if (event.id.startsWith("evt_test_")) {
-        console.log("[Webhook] Test event detected, returning verification response");
+        logger.info("[Webhook] Test event detected, returning verification response");
         return res.json({ verified: true });
       }
 
-      console.log(`[Webhook] Event received: ${event.type} | ${event.id}`);
+      logger.info({ eventType: event.type, eventId: event.id }, "[Webhook] Event received");
 
       try {
         switch (event.type) {
@@ -77,7 +78,7 @@ export function registerStripeWebhook(app: Express) {
                 subscriptionId: session.subscription,
               });
 
-              console.log(`[Webhook] Pro plan activated for pool ${poolId}, user ${userId}`);
+              logger.info({ poolId, userId }, "[Webhook] Pro plan activated");
             }
             break;
           }
@@ -108,7 +109,7 @@ export function registerStripeWebhook(app: Express) {
                 });
               }
 
-              console.log(`[Webhook] Pro plan cancelled for pool ${poolId}`);
+              logger.info({ poolId }, "[Webhook] Pro plan cancelled");
             }
             break;
           }
@@ -140,7 +141,7 @@ export function registerStripeWebhook(app: Express) {
                     "Após 3 tentativas sem sucesso, seu Plano Pro foi cancelado. O bolão continua ativo no plano gratuito. Atualize seu método de pagamento no painel do Stripe para reativar.",
                   priority: "high",
                 });
-                console.log(`[Webhook] Payment failed 3x, pool ${poolId} downgraded to free`);
+                logger.warn({ poolId }, "[Webhook] Payment failed 3x, pool downgraded to free");
               } else {
                 // Tentativas 1 e 2: apenas avisar, manter Pro
                 await createNotification({
@@ -151,7 +152,7 @@ export function registerStripeWebhook(app: Express) {
                     `Não foi possível processar o pagamento do Plano Pro (tentativa ${attemptCount} de 3). Atualize seu método de pagamento para evitar o cancelamento.`,
                   priority: "high",
                 });
-                console.log(`[Webhook] Payment failed attempt ${attemptCount}/3 for pool ${poolId}`);
+                logger.warn({ poolId, attemptCount }, "[Webhook] Payment failed attempt");
               }
             }
             break;
@@ -193,17 +194,17 @@ export function registerStripeWebhook(app: Express) {
                   priority: "normal",
                 });
 
-                console.log(`[Webhook] Subscription renewed for pool ${poolId} until ${newExpiry}`);
+                logger.info({ poolId, newExpiry }, "[Webhook] Subscription renewed");
               }
             }
             break;
           }
 
           default:
-            console.log(`[Webhook] Unhandled event type: ${event.type}`);
+            logger.info({ eventType: event.type }, "[Webhook] Unhandled event type");
         }
       } catch (err) {
-        console.error("[Webhook] Error processing event:", err);
+        logger.error({ err }, "[Webhook] Error processing event");
         return res.status(500).json({ error: "Internal server error" });
       }
 

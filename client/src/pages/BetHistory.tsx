@@ -30,10 +30,11 @@ export default function BetHistory() {
 
   const poolId = poolData?.pool?.id;
 
-  const { data: bets, isLoading } = trpc.bets.myBets.useQuery(
+  const { data: betsRaw, isLoading } = trpc.bets.myBets.useQuery(
     { poolId: poolId! },
     { enabled: !!poolId }
   );
+  const bets = Array.isArray(betsRaw) ? betsRaw : (betsRaw?.items ?? []);
 
   const { data: games } = trpc.pools.getGames.useQuery(
     { poolId: poolId! },
@@ -42,7 +43,7 @@ export default function BetHistory() {
 
   // Merge bets with game info
   const betsWithGames = useMemo(() => {
-    if (!bets || !games) return [];
+    if (!bets.length || !games) return [];
     const gameMap = new Map(games.map((g) => [g.id, g]));
     return bets
       .map((b) => ({ ...b, game: gameMap.get(b.gameId) }))

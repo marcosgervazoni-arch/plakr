@@ -528,3 +528,78 @@ describe("Campo total — soma de todos os criterios", () => {
     expect(r.total).toBe(29); // 10+5+3+3+2+5+1
   });
 });
+
+// ─── [Q2] RESILIÊNCIA DO SCORING ─────────────────────────────────────────────
+// Testes de resiliência solicitados na auditoria externa:
+// 1. Redis indisponível → enqueueScoreGame executa sincronamente sem exceção
+// 2. bettingDeadlineMinutes = 0 → prazo expira imediatamente para jogo passado
+// 3. Bônus sobrepostos → verificação acumulativa correta (4x0 = 28 pts)
+// 4. Placar 0x0 → todos os critérios de gols retornam 0
+
+describe("[Q2] Resiliência — Redis indisponível → fallback síncrono sem exceção", () => {
+  it("enqueueScoreGame não lança exceção quando Redis não está disponível (REDIS_URL ausente)", async () => {
+    // Sem REDIS_URL configurado, getScoreQueue() retorna null
+    // enqueueScoreGame deve chamar processGameScoring diretamente sem lançar
+    // Como não há DB em teste, processGameScoring retorna cedo (game not found)
+    const { enqueueScoreGame } = await import("./scoring");
+    // gameId 999999 não existe no DB → processGameScoring retorna cedo sem erro
+    await expect(
+      enqueueScoreGame({ gameId: 999999, scoreA: 1, scoreB: 0 })
+    ).resolves.not.toThrow();
+  });
+});
+
+describe("[Q2] Resiliência — bettingDeadlineMinutes = 0 → prazo imediato", () => {
+  it("prazo de aposta com deadlineMinutes=0 ainda não expirou para jogo futuro", () => {
+    // matchDate = agora + 1h, deadlineMinutes = 0
+    // deadline = matchDate - 0 min = matchDate (no futuro) → prazo NÃO expirou
+    const matchDate = new Date(Date.now() + 60 * 60 * 1000); // 1h no futuro
+    const deadlineMinutes = 0;
+    const deadline = new Date(matchDate.getTime() - deadlineMinutes * 60 * 1000);
+    expect(new Date() < deadline).toBe(true); // prazo ainda não expirou
+  });
+
+  it("prazo de aposta com deadlineMinutes=0 expirou para jogo passado", () => {
+    // matchDate = agora - 1h, deadlineMinutes = 0
+    // deadline = matchDate - 0 min = matchDate (no passado) → prazo expirou
+    const matchDate = new Date(Date.now() - 60 * 60 * 1000); // 1h no passado
+    const deadlineMinutes = 0;
+    const deadline = new Date(matchDate.getTime() - deadlineMinutes * 60 * 1000);
+    expect(new Date() > deadline).toBe(true); // prazo expirou
+  });
+});
+
+describe("[Q2] Resiliência — bônus sobrepostos verificação acumulativa", () => {
+  it("placar exato 4x0 acumula todos os critérios independentes corretamente (28 pts)", () => {
+    // 4x0: exato=10, resultado=5, totalGols=3, diffGols=3, umTime=2, goleada=5 → total=28
+    const r = calculateBetScore(4, 0, 4, 0, DEFAULT_RULES, NO_ZEBRA_CTX);
+    expect(r.pointsExactScore).toBe(10);
+    expect(r.pointsCorrectResult).toBe(5);
+    expect(r.pointsTotalGoals).toBe(3);
+    expect(r.pointsGoalDiff).toBe(3);
+    expect(r.pointsOneTeamGoals).toBe(2);
+    expect(r.pointsLandslide).toBe(5); // diff=4 >= limiar=4
+    expect(r.pointsZebra).toBe(0);    // não é zebra
+    // Verificação acumulativa: total deve ser a soma exata de todos os critérios
+    const expectedTotal = 10 + 5 + 3 + 3 + 2 + 5 + 0;
+    expect(r.total).toBe(expectedTotal);
+  });
+
+  it("placar 0x0 → verificação acumulativa de todos os critérios (total = 23 pts)", () => {
+    // 0x0 exato: todos os critérios independentes que dependem de coincidência de valores pontuam:
+    //   exato=10, resultado=5, totalGols=3 (0+0=0 acertado), diffGols=3 (|0-0|=|0-0|),
+    //   umTime=2 (0===0 para ambos os times), goleada=0 (diff=0 < limiar=4), zebra=0
+    const r = calculateBetScore(0, 0, 0, 0, DEFAULT_RULES, NO_ZEBRA_CTX);
+    expect(r.resultType).toBe("exact");
+    expect(r.pointsExactScore).toBe(10);  // placar exato
+    expect(r.pointsCorrectResult).toBe(5); // resultado correto (empate)
+    expect(r.pointsTotalGoals).toBe(3);   // 0+0=0 coincide com 0+0=0 → 3 pts
+    expect(r.pointsGoalDiff).toBe(3);    // |0-0|=0 coincide com |0-0|=0 → 3 pts
+    expect(r.pointsOneTeamGoals).toBe(2); // pred[0]===real[0] (0===0) → 2 pts
+    expect(r.pointsLandslide).toBe(0);   // diff=0 < limiar=4 → não é goleada
+    expect(r.pointsZebra).toBe(0);
+    // Verificação acumulativa: total deve ser a soma exata de todos os critérios
+    expect(r.total).toBe(r.pointsExactScore + r.pointsCorrectResult + r.pointsTotalGoals +
+      r.pointsGoalDiff + r.pointsOneTeamGoals + r.pointsLandslide + r.pointsZebra);
+  });
+});

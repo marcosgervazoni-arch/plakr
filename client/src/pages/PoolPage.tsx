@@ -88,51 +88,13 @@ export default function PoolPage() {
   );
 
   const placeBet = trpc.bets.placeBet.useMutation({
-    onMutate: async (vars) => {
-      // Atualização otimista: atualiza o cache local imediatamente
-      await utils.bets.myBets.cancel();
-      const prev = utils.bets.myBets.getData({ poolId: vars.poolId });
-      utils.bets.myBets.setData({ poolId: vars.poolId }, (old) => {
-        if (!old) return old;
-        const existing = old.findIndex((b) => b.gameId === vars.gameId);
-        const newBet = {
-          id: -1,
-          gameId: vars.gameId,
-          poolId: vars.poolId,
-          userId: user?.id ?? 0,
-          predictedScoreA: vars.predictedScoreA,
-          predictedScoreB: vars.predictedScoreB,
-          pointsEarned: 0,
-          pointsExactScore: 0,
-          pointsCorrectResult: 0,
-          pointsTotalGoals: 0,
-          pointsGoalDiff: 0,
-          pointsOneTeamGoals: 0,
-          pointsLandslide: 0,
-          pointsZebra: 0,
-          isZebra: false,
-          resultType: "pending" as const,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        if (existing >= 0) {
-          const updated = [...old];
-          updated[existing] = { ...updated[existing], ...newBet };
-          return updated;
-        }
-        return [...old, newBet];
-      });
-      return { prev };
-    },
     onSuccess: (_, vars) => {
       analytics.trackBetSubmitted({ pool_slug: slug ?? undefined, game_id: vars.gameId });
       toast.success("Palpite salvo!");
       refetchBets();
       utils.rankings.myPoolPosition.invalidate({ poolId: data?.pool.id });
     },
-    onError: (err, vars, ctx) => {
-      // Rollback otimista em caso de erro
-      if (ctx?.prev) utils.bets.myBets.setData({ poolId: vars.poolId }, ctx.prev);
+    onError: (err) => {
       toast.error("Erro ao salvar palpite", { description: err.message });
     },
   });
@@ -233,7 +195,8 @@ export default function PoolPage() {
 
   const { pool, tournament, rules, memberCount, myRole } = data;
   const isOrganizer = myRole === "organizer" || user?.role === "admin";
-  const betsByGame = new Map(myBets?.map((b) => [b.gameId, b]) ?? []);
+  const myBetsItems = Array.isArray(myBets) ? myBets : (myBets?.items ?? []);
+  const betsByGame = new Map(myBetsItems.map((b) => [b.gameId, b]) ?? []);
   const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
 
   const isGameOpen = (matchDate: Date) => {
@@ -757,7 +720,7 @@ export default function PoolPage() {
               </div>
             ) : (
               <div className="space-y-1.5">
-                {members.map(({ member, user: memberUser }) => (
+                {(Array.isArray(members) ? members : (members?.items ?? [])).map(({ member, user: memberUser }) => (
                   <div
                     key={member.id}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/30 bg-card/60 hover:border-border/50 transition-all"

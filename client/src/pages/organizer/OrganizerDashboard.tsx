@@ -137,7 +137,7 @@ export default function OrganizerDashboard() {
 
   const pool = data?.pool;
   const games = data?.games ?? [];
-  const members = membersData ?? [];
+  const members = Array.isArray(membersData) ? membersData : (membersData?.items ?? []);
   const ranking = rankingData ?? [];
 
   const isPro = pool?.plan === "pro";

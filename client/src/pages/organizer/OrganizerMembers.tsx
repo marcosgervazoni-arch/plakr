@@ -66,10 +66,11 @@ export default function OrganizerMembers() {
   );
   const pool = poolData?.pool;
 
-  const { data: members = [], refetch } = trpc.pools.getMembers.useQuery(
+  const { data: membersRaw, refetch } = trpc.pools.getMembers.useQuery(
     { poolId: pool?.id ?? 0 },
     { enabled: !!pool?.id }
   );
+  const members = Array.isArray(membersRaw) ? membersRaw : (membersRaw?.items ?? []);
 
   const removeMutation = trpc.pools.removeMember.useMutation({
     onSuccess: () => {

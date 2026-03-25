@@ -68,14 +68,15 @@ type Pool = {
 };
 
 function PoolMembersList({ poolId }: { poolId: number }) {
-  const { data: members, isLoading } = trpc.pools.getMembers.useQuery({ poolId });
+  const { data: membersRaw, isLoading } = trpc.pools.getMembers.useQuery({ poolId });
+  const members = Array.isArray(membersRaw) ? membersRaw : (membersRaw?.items ?? []);
 
   return (
     <div className="mb-4">
       <h3 className="text-sm font-semibold flex items-center gap-2 mb-2">
         <Users className="h-4 w-4 text-muted-foreground" />
         Participantes
-        {members && (
+        {membersRaw && (
           <Badge variant="outline" className="text-xs h-4 px-1 ml-1">{members.length}</Badge>
         )}
       </h3>

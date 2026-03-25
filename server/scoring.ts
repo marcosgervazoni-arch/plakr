@@ -17,14 +17,26 @@ import {
   updateBetScore,
 } from "./db";
 import { resolveNotificationTemplate } from "./notificationTemplateHelper";
+import logger from "./logger";
 
-// ─── REDIS CONNECTION ─────────────────────────────────────────────────────────
+// ─── REDIS CONNECTION [T2: async import] ─────────────────────────────────────────────────────────────────────────
 
 const REDIS_URL = process.env.REDIS_URL;
+
+async function createRedisConnection() {
+  if (!REDIS_URL) return null;
+  try {
+    const { default: IORedis } = await import("ioredis");
+    return new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
+  } catch {
+    return null;
+  }
+}
 
 function getRedisConnection() {
   if (!REDIS_URL) return null;
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { default: IORedis } = require("ioredis");
     return new IORedis(REDIS_URL, { maxRetriesPerRequest: null });
   } catch {
@@ -273,7 +285,7 @@ export function calculateZebraContext(
 export async function processGameScoring(gameId: number, scoreA: number, scoreB: number) {
   const game = await getGameById(gameId);
   if (!game) {
-    console.warn(`[Scoring] Game ${gameId} not found`);
+    logger.warn({ gameId }, "[Scoring] Game not found");
     return;
   }
 
@@ -422,7 +434,7 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
     }
   }
 
-  console.log(`[Scoring] Processed game ${gameId}: ${scoreA}×${scoreB}, ${pools.length} pools updated`);
+  logger.info({ gameId, scoreA, scoreB, poolsUpdated: pools.length }, "[Scoring] Game processed");
 }
 
 // ─── WORKER ───────────────────────────────────────────────────────────────────
@@ -432,7 +444,7 @@ let scoreWorker: Worker | null = null;
 export function startScoringWorker() {
   const conn = getRedisConnection();
   if (!conn) {
-    console.log("[Scoring] Redis not available — scoring will run synchronously");
+    logger.warn("[Scoring] Redis not available — scoring will run synchronously");
     return;
   }
 
@@ -446,14 +458,14 @@ export function startScoringWorker() {
   );
 
   scoreWorker.on("completed", (job) => {
-    console.log(`[Scoring] Job ${job.id} completed for game ${job.data.gameId}`);
+    logger.info({ jobId: job.id, gameId: job.data.gameId }, "[Scoring] Job completed");
   });
 
   scoreWorker.on("failed", (job, err) => {
-    console.error(`[Scoring] Job ${job?.id} failed:`, err.message);
+    logger.error({ jobId: job?.id, err: err.message }, "[Scoring] Job failed");
   });
 
-  console.log("[Scoring] Worker started");
+  logger.info("[Scoring] Worker started");
 }
 
 export async function enqueueScoreGame(data: ScoreGameJobData) {
@@ -463,10 +475,10 @@ export async function enqueueScoreGame(data: ScoreGameJobData) {
       attempts: 3,
       backoff: { type: "exponential", delay: 2000 },
     });
-    console.log(`[Scoring] Enqueued scoring for game ${data.gameId}`);
+    logger.info({ gameId: data.gameId }, "[Scoring] Enqueued scoring");
   } else {
     // Fallback síncrono se Redis não disponível
-    console.log(`[Scoring] Running synchronously for game ${data.gameId}`);
+    logger.warn({ gameId: data.gameId }, "[Scoring] Running synchronously (no Redis)");
     await processGameScoring(data.gameId, data.scoreA, data.scoreB);
   }
 }

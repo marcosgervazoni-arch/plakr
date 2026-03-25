@@ -7,6 +7,8 @@
 import AppShell from "@/components/AppShell";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { useEffect } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -172,9 +174,22 @@ function BadgeSkeleton() {
 
 export default function Conquistas() {
   const { user } = useAuth();
+  const { trackBadgeUnlocked } = useAnalytics();
   const { data, isLoading } = trpc.badges.myProgress.useQuery(undefined, {
     enabled: !!user,
   });
+
+  // [A1] Disparar trackBadgeUnlocked para badges recém-desbloqueados não notificados
+  const getNewlyUnlocked = trpc.badges.getNewlyUnlocked.useMutation();
+  useEffect(() => {
+    if (!user) return;
+    getNewlyUnlocked.mutateAsync().then((newBadges) => {
+      for (const badge of newBadges) {
+        trackBadgeUnlocked({ badge_name: badge.name, badge_id: badge.badgeId });
+      }
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const earnedBadges = data?.badges.filter((b) => b.earned) ?? [];
   const unearnedBadges = data?.badges.filter((b) => !b.earned) ?? [];

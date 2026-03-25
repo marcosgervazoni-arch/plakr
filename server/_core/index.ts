@@ -43,8 +43,24 @@ async function startServer() {
   app.set("trust proxy", 1);
 
   // [S1] Security headers
-  app.use(helmet({ contentSecurityPolicy: false }));
-  app.use(cors({ origin: process.env.APP_BASE_URL ?? true, credentials: true }));
+  // CSP permissivo para dev/prod — permite scripts inline do Vite HMR e iframes de anúncios
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https:"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        connectSrc: ["'self'", "https:", "wss:"],
+        frameSrc: ["'self'", "blob:"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : null,
+      },
+    },
+  }));
+  // CORS: fallback false (não aceitar qualquer origem se APP_BASE_URL não estiver definida)
+  app.use(cors({ origin: process.env.APP_BASE_URL ?? false, credentials: true }));
 
   // [S2] Rate limiting
   app.use("/api/oauth", rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false }));

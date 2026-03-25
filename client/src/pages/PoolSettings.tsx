@@ -89,10 +89,11 @@ export default function PoolSettings() {
     onError: (err) => toast.error("Erro", { description: err.message }),
   });
 
-  const { data: members } = trpc.pools.getMembers.useQuery(
+  const { data: membersRaw } = trpc.pools.getMembers.useQuery(
     { poolId: data?.pool.id ?? 0 },
     { enabled: !!data?.pool.id }
   );
+  const members = Array.isArray(membersRaw) ? membersRaw : (membersRaw?.items ?? []);
 
   const removeMember = trpc.pools.removeMember.useMutation({
     onSuccess: () => {

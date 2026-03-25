@@ -20,6 +20,7 @@ import {
   users,
 } from "../drizzle/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import logger from "./logger";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -205,7 +206,7 @@ export async function sendPushToUser(
         expiredIds.push(sub.id);
       }
       failed++;
-      console.warn(`[Push] Failed to send to sub ${sub.id}:`, status);
+      logger.warn({ subId: sub.id, status }, "[Push] Failed to send to subscription");
     }
   }
 
@@ -214,7 +215,7 @@ export async function sendPushToUser(
     await db
       .delete(pushSubscriptions)
       .where(inArray(pushSubscriptions.id, expiredIds));
-    console.log(`[Push] Removed ${expiredIds.length} expired subscriptions`);
+    logger.info({ count: expiredIds.length }, "[Push] Removed expired subscriptions");
   }
 
   return { sent, failed };

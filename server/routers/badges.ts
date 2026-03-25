@@ -1,6 +1,7 @@
 import { router, protectedProcedure, adminProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { createAdminLog } from "../db";
+import logger from "../logger";
 
 export const badgesRouter = router({
   // ─── ADMIN: listar todos os badges ───────────────────────────────────────
@@ -55,7 +56,7 @@ export const badgesRouter = router({
       if (input.isRetroactive) {
         const { assignBadgeRetroactively } = await import("../badges");
         assignBadgeRetroactively(badgeId).catch((e: unknown) =>
-          console.error("[Badges] Erro na atribuição retroativa:", e)
+          logger.error({ err: e }, "[Badges] Erro na atribuição retroativa")
         );
       }
 
@@ -362,5 +363,38 @@ export const badgesRouter = router({
         earned: earnedSet.has(badge.id),
         earnedAt: earnedMap.get(badge.id) ?? null,
       }));
+    }),
+
+  // ─── [A1] Badges recém-desbloqueados não notificados (para trackBadgeUnlocked) ─
+  // Retorna badges conquistados com notified=false e os marca como notificados.
+  // O frontend chama isso ao entrar no perfil e dispara o evento de analytics.
+  getNewlyUnlocked: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const db = await (await import("../../server/db")).getDb();
+      if (!db) return [];
+      const { badges, userBadges } = await import("../../drizzle/schema");
+      const { eq, and } = await import("drizzle-orm");
+
+      // Buscar badges não notificados do usuário
+      const unnotified = await db
+        .select({
+          badgeId: userBadges.badgeId,
+          earnedAt: userBadges.earnedAt,
+          name: badges.name,
+        })
+        .from(userBadges)
+        .innerJoin(badges, eq(userBadges.badgeId, badges.id))
+        .where(and(eq(userBadges.userId, ctx.user.id), eq(userBadges.notified, false)));
+
+      if (unnotified.length === 0) return [];
+
+      // Marcar como notificados
+      await db
+        .update(userBadges)
+        .set({ notified: true })
+        .where(and(eq(userBadges.userId, ctx.user.id), eq(userBadges.notified, false)));
+
+      logger.info({ userId: ctx.user.id, count: unnotified.length }, "[Badges] Marked as notified");
+      return unnotified.map((b) => ({ badgeId: b.badgeId, name: b.name, earnedAt: b.earnedAt }));
     }),
 });

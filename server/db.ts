@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
+import logger from "./logger";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   Bet,
@@ -41,7 +42,7 @@ export async function getDb() {
     try {
       _db = drizzle(process.env.DATABASE_URL);
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      logger.warn({ err: error }, "[Database] Failed to connect");
       _db = null;
     }
   }

@@ -7,6 +7,7 @@ import { Request, Response, Express } from "express";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import { sdk } from "./_core/sdk";
+import logger from "./logger";
 
 const ALLOWED_TYPES: Record<string, { ext: string; category: string }> = {
   // Images
@@ -15,7 +16,7 @@ const ALLOWED_TYPES: Record<string, { ext: string; category: string }> = {
   "image/png":    { ext: "png",  category: "images" },
   "image/webp":   { ext: "webp", category: "images" },
   "image/gif":    { ext: "gif",  category: "images" },
-  "image/svg+xml":{ ext: "svg",  category: "images" },
+  // "image/svg+xml" removido — SVG pode conter <script> embutido (XSS stored)
   // Videos
   "video/mp4":    { ext: "mp4",  category: "videos" },
   "video/webm":   { ext: "webm", category: "videos" },
@@ -92,7 +93,7 @@ export function registerUploadRoute(app: Express) {
       const { url } = await storagePut(key, buffer, contentType);
       return res.json({ url, key, category: typeInfo.category });
     } catch (err) {
-      console.error("[Upload] Error:", err);
+      logger.error({ err }, "[Upload] Error");
       return res.status(500).json({ error: "Upload failed" });
     }
   });

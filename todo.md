@@ -971,3 +971,21 @@
 - [x] O2: tRPC error logging middleware no trpc.ts
 - [x] O3: Cron health tracking (archivalCronHealth + emailCronHealth + system.cronHealth)
 - [x] Q1: Testes de segurança multi-tenant e autenticação (server/security.test.ts — 14 testes)
+
+## Sprint Correção Auditoria (25/03/2026)
+
+### P0 — Segurança crítica (antes do lançamento)
+- [x] S4: Remover "image/svg+xml" de ALLOWED_TYPES em server/upload.ts
+- [x] S1-CSP: Configurar Content-Security-Policy com policy permissiva em vez de desativar
+- [x] S1-CORS: Substituir fallback `?? true` por `?? false` no CORS
+- [x] S11: Adicionar envSchema Zod com process.exit(1) em server/_core/env.ts
+- [x] S10: vapidPrivateKey omitida do getSettings (nunca exposta ao frontend)
+
+### P1 — Qualidade e cobertura
+- [x] T1: Modularização completa: 11 módulos em server/routers/ (auth, users, tournaments, pools, bets, rankings, notifications, platform, stripe, badges, notificationTemplates)
+- [x] T2: Redis async com import() dinâmico no scoring.ts (fallback síncrono sem exceção)
+- [x] T3: Paginação cursor-based em pools.getMembers e bets.myBets
+- [x] Q1: 6 cenários de segurança adicionados em security.test.ts (20 testes total)
+- [x] Q2: Testes de resiliência: Redis-down, deadline=0, bônus sobrepostos, 0x0 (135 testes total)
+- [x] A1: trackBadgeUnlocked disparado em Conquistas.tsx via badges.getNewlyUnlocked
+- [x] O1: console.log migrados para logger Pino em scoring.ts, stripe-webhook.ts, oauth.ts, db.ts, upload.ts, push.ts, badges.ts
