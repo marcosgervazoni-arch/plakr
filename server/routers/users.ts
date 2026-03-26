@@ -586,4 +586,18 @@ export const usersRouter = router({
       }
       return { success: true };
     }),
+
+  // ─── Tour guiado: marca como visto para não exibir novamente ───────────────
+  completeTour: protectedProcedure.mutation(async ({ ctx }) => {
+    const db = await (await import("../db")).getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const { eq } = await import("drizzle-orm");
+    const { users } = await import("../../drizzle/schema");
+    await db
+      .update(users)
+      .set({ hasSeenTour: true })
+      .where(eq(users.id, ctx.user.id));
+    console.info(`[Tour] User ${ctx.user.id} marked tour as seen`);
+    return { success: true };
+  }),
 });

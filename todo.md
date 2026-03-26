@@ -1262,3 +1262,15 @@
 - [x] Frontend: link "Ver todas" apontando para /conquistas
 - [x] Testes Vitest: 192/192 passando
 - [x] Checkpoint final
+
+## Feature — Tour Guiado de Primeiro Acesso (26/03/2026)
+- [x] Schema: campo `hasSeenTour` (boolean, default false) na tabela `users`
+- [x] Migração SQL: aplicar campo no banco
+- [x] Backend: procedure `users.completeTour` — marca hasSeenTour=true para o usuário autenticado
+- [x] Frontend: instalar driver.js (tour com tooltips posicionados nos elementos reais)
+- [x] Frontend: hook `useTour` — verifica hasSeenTour, inicia tour automaticamente no primeiro acesso
+- [x] Frontend: 9 passos do tour no Dashboard (criar bolão, entrar por código, notificações, meus bolões, conquistas, próximas conquistas, perfil)
+- [x] Frontend: botão "Pular tour" (✕) disponível em todos os passos
+- [x] Frontend: ao concluir ou pular, chamar users.completeTour para persistir no banco
+- [x] Testes Vitest: 192/192 passando
+- [x] Checkpoint final

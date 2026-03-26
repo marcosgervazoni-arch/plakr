@@ -33,6 +33,7 @@ import { ErrorCard } from "@/components/ErrorCard";
 import { AdBanner } from "@/components/AdBanner";
 import DashboardBadgeCarousel from "@/components/DashboardBadgeCarousel";
 import NearestBadges from "@/components/NearestBadges";
+import OnboardingTour from "@/components/OnboardingTour";
 import {
   AreaChart,
   Area,
@@ -220,7 +221,7 @@ export default function Dashboard() {
           <div className="space-y-6 order-2 lg:order-none">
 
             {/* My pools */}
-            <section>
+            <section data-tour="my-pools">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Meus Bolões</h3>
                 <Link href="/pools/public" className="text-xs text-primary hover:underline">
@@ -450,7 +451,9 @@ export default function Dashboard() {
             </section>
 
             {/* Próximas Conquistas */}
-            <NearestBadges />
+            <div data-tour="nearest-badges">
+              <NearestBadges />
+            </div>
 
             {/* Ad between sections */}
             <AdBanner position="between_sections" className="w-full" />
@@ -514,6 +517,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      {/* Tour guiado de primeiro acesso */}
+      <OnboardingTour />
+
       {showCreateModal && (
         <CreatePoolModal
           onClose={() => setShowCreateModal(false)}
