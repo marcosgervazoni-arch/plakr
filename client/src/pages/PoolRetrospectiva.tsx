@@ -1,22 +1,26 @@
 /**
  * PoolRetrospectiva — Retrospectiva do Bolão estilo Spotify Wrapped
  *
- * 5 slides em sequência:
+ * 5 slides em sequência com fundo de template configurável:
  *   1. Capa — nome do bolão, campeonato, período, participantes
  *   2. Seus números — palpites, % acerto, placares exatos, zebras
  *   3. Seu melhor momento — badge, movimentação no ranking, zebra especial
  *   4. Sua posição final — ranking, pontuação, badge conquistado
  *   5. Encerramento — frase gerada por IA + CTA para cadastro
+ *
+ * Funcionalidades:
+ * - Fundo de template por slide (configurado no Admin → Retrospectivas)
+ * - Swipe touch (mobile) e navegação por teclado (desktop)
+ * - Compartilhamento por Web Share API + fallback copiar link
+ * - Download do card PNG do participante
  */
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  ArrowRight,
   Download,
   Loader2,
   Share2,
@@ -27,9 +31,23 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
+  TrendingUp,
 } from "lucide-react";
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────────
+
+interface Templates {
+  slide1Url: string | null;
+  slide2Url: string | null;
+  slide3Url: string | null;
+  slide4Url: string | null;
+  slide5Url: string | null;
+  cardPodiumUrl: string | null;
+  cardParticipantUrl: string | null;
+  closingCtaText: string | null;
+  closingCtaUrl: string | null;
+}
 
 interface Retrospective {
   id: number;
@@ -56,23 +74,320 @@ interface Retrospective {
     position: number;
     imageUrl: string;
   } | null;
+  templates: Templates;
+}
+
+// ─── FUNDO DE SLIDE ───────────────────────────────────────────────────────────
+
+function SlideBackground({ url, gradient }: { url: string | null; gradient: string }) {
+  return (
+    <>
+      {url ? (
+        <img
+          src={url}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          aria-hidden="true"
+        />
+      ) : (
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
+      )}
+      {/* Overlay escuro para garantir legibilidade */}
+      <div className="absolute inset-0 bg-black/45" />
+    </>
+  );
+}
+
+// ─── SLIDE 1: CAPA ────────────────────────────────────────────────────────────
+
+function Slide1({ retro }: { retro: Retrospective }) {
+  const startYear = retro.poolStartDate
+    ? new Date(retro.poolStartDate).getFullYear()
+    : null;
+  const endYear = retro.poolEndDate
+    ? new Date(retro.poolEndDate).getFullYear()
+    : null;
+  const period =
+    startYear && endYear
+      ? startYear === endYear
+        ? String(startYear)
+        : `${startYear}–${endYear}`
+      : null;
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden min-h-[480px] flex flex-col items-center justify-center text-center p-8 space-y-5">
+      <SlideBackground url={retro.templates.slide1Url} gradient="from-brand/50 via-brand/25 to-zinc-900" />
+      <div className="relative z-10 space-y-5 flex flex-col items-center">
+        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+          <Trophy className="w-7 h-7 text-white" />
+        </div>
+        <div>
+          <p className="text-xs text-white/60 uppercase tracking-widest mb-1">Retrospectiva</p>
+          <h1 className="text-2xl font-black text-white leading-tight">{retro.poolName}</h1>
+          {retro.tournamentName && (
+            <p className="text-sm text-white/70 mt-1">{retro.tournamentName}</p>
+          )}
+        </div>
+        <div className="flex gap-3 flex-wrap justify-center">
+          {period && (
+            <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-xs text-white/80">
+              {period}
+            </span>
+          )}
+          <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-xs text-white/80">
+            {retro.totalParticipants} participantes
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SLIDE 2: NÚMEROS ─────────────────────────────────────────────────────────
+
+function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string | number; label: string }) {
+  return (
+    <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-3 flex flex-col gap-1">
+      <div className="text-white/60">{icon}</div>
+      <p className="text-xl font-black text-white leading-none">{value}</p>
+      <p className="text-xs text-white/60 leading-tight">{label}</p>
+    </div>
+  );
+}
+
+function Slide2({ retro }: { retro: Retrospective }) {
+  const accuracy = retro.accuracyPct ?? 0;
+  return (
+    <div className="relative rounded-2xl overflow-hidden min-h-[480px] flex flex-col justify-center p-7 space-y-6">
+      <SlideBackground url={retro.templates.slide2Url} gradient="from-violet-600/50 via-violet-500/25 to-zinc-900" />
+      <div className="relative z-10 space-y-6">
+        <div>
+          <p className="text-xs text-white/60 uppercase tracking-widest mb-1">Seus Números</p>
+          <h2 className="text-xl font-black text-white">Como você foi?</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard icon={<Target className="w-4 h-4" />} value={retro.totalBets} label="palpites" />
+          <StatCard icon={<CheckCircle2 className="w-4 h-4" />} value={`${accuracy}%`} label="acerto" />
+          <StatCard icon={<Star className="w-4 h-4" />} value={retro.exactScoreCount} label="placares exatos" />
+          <StatCard icon={<Zap className="w-4 h-4" />} value={retro.zebraCount} label="zebras acertadas" />
+        </div>
+        <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-4 text-center">
+          <p className="text-3xl font-black text-white">{retro.totalPoints}</p>
+          <p className="text-xs text-white/70 mt-0.5">pontos totais</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SLIDE 3: MELHOR MOMENTO ──────────────────────────────────────────────────
+
+function Slide3({ retro }: { retro: Retrospective }) {
+  const type = retro.bestMomentType ?? "exact_score";
+  const data = retro.bestMomentData ?? {};
+
+  const content = (() => {
+    switch (type) {
+      case "rank_jump":
+        return {
+          icon: <TrendingUp className="w-8 h-8 text-emerald-300" />,
+          title: "Subida no Ranking",
+          subtitle: data.description
+            ? String(data.description)
+            : `Subiu ${data.positions ?? "várias"} posições em uma rodada`,
+          gradient: "from-emerald-600/50 via-emerald-500/25 to-zinc-900",
+        };
+      case "zebra":
+      case "zebra_exact":
+        return {
+          icon: <Zap className="w-8 h-8 text-yellow-300" />,
+          title: "Zebra Acertada!",
+          subtitle: data.description
+            ? String(data.description)
+            : "Você acertou um resultado improvável",
+          gradient: "from-yellow-600/50 via-yellow-500/25 to-zinc-900",
+        };
+      case "badge":
+        return {
+          icon: <Trophy className="w-8 h-8 text-amber-300" />,
+          title: "Badge Conquistado",
+          subtitle: data.badgeName ? String(data.badgeName) : "Você ganhou um badge especial!",
+          gradient: "from-amber-600/50 via-amber-500/25 to-zinc-900",
+        };
+      default: // exact_score
+        return {
+          icon: <Star className="w-8 h-8 text-sky-300" />,
+          title: "Placar Exato!",
+          subtitle: data.description
+            ? String(data.description)
+            : "Você acertou o placar de um jogo",
+          gradient: "from-sky-600/50 via-sky-500/25 to-zinc-900",
+        };
+    }
+  })();
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden min-h-[480px] flex flex-col items-center justify-center text-center p-8 space-y-6">
+      <SlideBackground url={retro.templates.slide3Url} gradient={content.gradient} />
+      <div className="relative z-10 space-y-6 flex flex-col items-center">
+        <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+          {content.icon}
+        </div>
+        <div>
+          <p className="text-xs text-white/60 uppercase tracking-widest mb-1">Seu Melhor Momento</p>
+          <h2 className="text-xl font-black text-white">{content.title}</h2>
+          <p className="text-sm text-white/80 mt-2 leading-relaxed max-w-xs">{content.subtitle}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SLIDE 4: POSIÇÃO FINAL ───────────────────────────────────────────────────
+
+function Slide4({ retro }: { retro: Retrospective }) {
+  const pos = retro.finalPosition;
+  const isPodium = pos <= 3;
+  const posEmoji = pos === 1 ? "🥇" : pos === 2 ? "🥈" : pos === 3 ? "🥉" : "🏅";
+  const gradient = isPodium
+    ? "from-amber-600/50 via-amber-500/25 to-zinc-900"
+    : "from-zinc-700/60 via-zinc-600/30 to-zinc-900";
+
+  const handleDownloadCard = async () => {
+    if (!retro.shareCard?.imageUrl) return;
+    try {
+      const response = await fetch(retro.shareCard.imageUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `apostai-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Card salvo!");
+    } catch {
+      toast.error("Não foi possível baixar o card.");
+    }
+  };
+
+  const handleShareCard = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Minha retrospectiva — ${retro.poolName}`,
+          text: `Terminei em ${pos}º lugar com ${retro.totalPoints} pontos!`,
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copiado!");
+      }
+    } catch {
+      // usuário cancelou
+    }
+  };
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden min-h-[480px] flex flex-col items-center justify-center text-center p-8 space-y-5">
+      <SlideBackground url={retro.templates.slide4Url} gradient={gradient} />
+      <div className="relative z-10 space-y-5 flex flex-col items-center">
+        <p className="text-6xl">{posEmoji}</p>
+        <div>
+          <p className="text-xs text-white/60 uppercase tracking-widest mb-1">Posição Final</p>
+          <p className="text-7xl font-black text-white leading-none">#{pos}</p>
+          <p className="text-sm text-white/70 mt-1">de {retro.totalParticipants} participantes</p>
+        </div>
+        <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-6 py-3">
+          <p className="text-2xl font-bold text-white">{retro.totalPoints} pts</p>
+          <p className="text-xs text-white/60 mt-0.5">pontuação final</p>
+        </div>
+        {isPodium && (
+          <div className="rounded-xl bg-amber-500/20 border border-amber-400/30 px-4 py-2">
+            <p className="text-xs text-amber-300 font-semibold">🏆 Você ficou no pódio!</p>
+          </div>
+        )}
+        {/* Card de compartilhamento */}
+        {retro.shareCard?.imageUrl && (
+          <div className="w-full space-y-2 mt-1">
+            <p className="text-xs text-white/50">Seu card para compartilhar</p>
+            <div className="relative mx-auto w-fit">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-white/20 via-transparent to-transparent blur-sm opacity-60 pointer-events-none" />
+              <div className="relative rounded-xl overflow-hidden border-2 border-white/30 shadow-xl max-w-[140px] mx-auto">
+                <img src={retro.shareCard.imageUrl} alt="Card" className="w-full object-cover block" loading="lazy" />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={handleDownloadCard}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-xs text-white/80 hover:bg-white/20 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Salvar
+              </button>
+              <button
+                onClick={handleShareCard}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 border border-white/30 text-xs text-white font-medium hover:bg-white/30 transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                Compartilhar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── SLIDE 5: ENCERRAMENTO ────────────────────────────────────────────────────
+
+function Slide5({ retro }: { retro: Retrospective }) {
+  const phrase = retro.closingPhrase ?? "Você foi longe neste bolão. Que tal desafiar mais amigos no próximo?";
+  const ctaText = retro.templates.closingCtaText ?? "Crie seu bolão no ApostAI →";
+  const ctaUrl = retro.templates.closingCtaUrl ?? `${window.location.origin}/cadastro`;
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden min-h-[480px] flex flex-col items-center justify-center text-center p-8 space-y-6">
+      <SlideBackground url={retro.templates.slide5Url} gradient="from-brand/50 via-brand/25 to-zinc-900" />
+      <div className="relative z-10 space-y-6 flex flex-col items-center max-w-xs">
+        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+          <Sparkles className="w-7 h-7 text-white" />
+        </div>
+        <div>
+          <p className="text-xs text-white/60 uppercase tracking-widest mb-2">É isso!</p>
+          <p className="text-lg font-semibold text-white leading-relaxed">{phrase}</p>
+        </div>
+        <a
+          href={ctaUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block w-full py-3 px-4 rounded-xl bg-white text-zinc-900 text-sm font-bold hover:bg-white/90 transition-colors"
+        >
+          {ctaText}
+        </a>
+        <p className="text-xs text-white/40">apostai.com.br</p>
+      </div>
+    </div>
+  );
 }
 
 // ─── PÁGINA PRINCIPAL ─────────────────────────────────────────────────────────
 
+const TOTAL_SLIDES = 5;
+
 export default function PoolRetrospectiva() {
   const { slug } = useParams<{ slug: string }>();
   const [, navigate] = useLocation();
-  const { user } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isSharing, setIsSharing] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   // Buscar o pool pelo slug para obter o ID
   const { data: poolData, isLoading: poolLoading } = trpc.pools.getBySlug.useQuery(
     { slug: slug ?? "" },
     { enabled: !!slug }
   );
-
   const poolId = poolData?.pool?.id;
 
   const { data: retro, isLoading } = trpc.pools.getRetrospective.useQuery(
@@ -80,10 +395,13 @@ export default function PoolRetrospectiva() {
     { enabled: !!poolId }
   );
 
-  const TOTAL_SLIDES = 5;
+  const goNext = useCallback(() => {
+    setCurrentSlide((s) => Math.min(s + 1, TOTAL_SLIDES - 1));
+  }, []);
 
-  const goNext = () => setCurrentSlide((s) => Math.min(s + 1, TOTAL_SLIDES - 1));
-  const goPrev = () => setCurrentSlide((s) => Math.max(s - 1, 0));
+  const goPrev = useCallback(() => {
+    setCurrentSlide((s) => Math.max(s - 1, 0));
+  }, []);
 
   // Navegação por teclado
   useEffect(() => {
@@ -93,29 +411,41 @@ export default function PoolRetrospectiva() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [goNext, goPrev]);
+
+  // Swipe touch
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      if (dx < 0) goNext();
+      else goPrev();
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
 
   const handleShare = async () => {
-    if (!retro?.shareCard?.imageUrl) {
-      toast.error("Card de compartilhamento ainda não está pronto.");
-      return;
-    }
-
     setIsSharing(true);
     try {
-      // Tentar Web Share API (mobile)
       if (navigator.share) {
         await navigator.share({
-          title: `Minha retrospectiva no bolão "${retro.poolName}"`,
-          text: `Terminei em ${retro.finalPosition}º lugar com ${retro.totalPoints} pontos! Veja minha jornada no ApostAI.`,
+          title: `Minha retrospectiva no bolão "${retro?.poolName}"`,
+          text: `Terminei em ${retro?.finalPosition}º lugar com ${retro?.totalPoints} pontos! Veja minha jornada no ApostAI.`,
           url: window.location.href,
         });
       } else {
-        // Fallback: abrir imagem em nova aba
-        window.open(retro.shareCard.imageUrl, "_blank");
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copiado!", { description: "Cole e compartilhe com seus amigos." });
       }
     } catch {
-      // Usuário cancelou o share — não é erro
+      // Usuário cancelou
     } finally {
       setIsSharing(false);
     }
@@ -123,7 +453,7 @@ export default function PoolRetrospectiva() {
 
   const handleDownload = async () => {
     if (!retro?.shareCard?.imageUrl) {
-      toast.error("Card ainda não está pronto.");
+      toast.error("Card de compartilhamento ainda não está pronto.");
       return;
     }
     try {
@@ -132,21 +462,23 @@ export default function PoolRetrospectiva() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `apostai-retrospectiva-${retro.poolName.replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.download = `apostai-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Card salvo!");
     } catch {
-      toast.error("Erro ao baixar o card.");
+      toast.error("Não foi possível baixar o card.");
     }
   };
 
+  // ── Estados de carregamento / erro ──────────────────────────────────────────
+
   if (poolLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
         <div className="text-center space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground text-sm">Carregando sua retrospectiva...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-brand mx-auto" />
+          <p className="text-white/50 text-sm">Carregando sua retrospectiva...</p>
         </div>
       </div>
     );
@@ -154,13 +486,17 @@ export default function PoolRetrospectiva() {
 
   if (!retro) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4">
-        <Sparkles className="w-12 h-12 text-muted-foreground" />
-        <h2 className="text-lg font-semibold">Retrospectiva não disponível</h2>
-        <p className="text-muted-foreground text-sm text-center max-w-xs">
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4 px-4">
+        <Sparkles className="w-12 h-12 text-white/30" />
+        <h2 className="text-lg font-semibold text-white">Retrospectiva não disponível</h2>
+        <p className="text-white/50 text-sm text-center max-w-xs">
           A retrospectiva deste bolão ainda não foi gerada ou você não é participante.
         </p>
-        <Button variant="outline" onClick={() => navigate(`/pool/${slug}`)}>
+        <Button
+          variant="outline"
+          onClick={() => navigate(`/pool/${slug}`)}
+          className="border-white/20 text-white hover:bg-white/10"
+        >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar ao bolão
         </Button>
@@ -168,390 +504,145 @@ export default function PoolRetrospectiva() {
     );
   }
 
-  const isPodium = retro.finalPosition <= 3;
+  const slides = [
+    <Slide1 retro={retro} />,
+    <Slide2 retro={retro} />,
+    <Slide3 retro={retro} />,
+    <Slide4 retro={retro} />,
+    <Slide5 retro={retro} />,
+  ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-        <Button variant="ghost" size="sm" onClick={() => navigate(`/pool/${slug}`)}>
+    <div className="min-h-screen bg-zinc-950 flex flex-col select-none">
+      {/* ── Header ── */}
+      <header className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-zinc-950/90 backdrop-blur-sm sticky top-0 z-20">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`/pool/${slug}`)}
+          className="text-white/70 hover:text-white hover:bg-white/10"
+        >
           <ArrowLeft className="w-4 h-4 mr-1.5" />
           Voltar
         </Button>
-        <span className="text-sm font-medium text-muted-foreground">
+        <span className="text-sm font-medium text-white/40">
           {currentSlide + 1} / {TOTAL_SLIDES}
         </span>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleDownload} className="h-8 text-xs gap-1.5">
-            <Download className="w-3.5 h-3.5" />
-            Salvar
-          </Button>
-          <Button size="sm" onClick={handleShare} disabled={isSharing} className="h-8 text-xs gap-1.5">
+          {retro.shareCard?.imageUrl && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDownload}
+              className="h-8 text-xs gap-1.5 text-white/60 hover:text-white hover:bg-white/10"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Salvar</span>
+            </Button>
+          )}
+          <Button
+            size="sm"
+            onClick={handleShare}
+            disabled={isSharing}
+            className="h-8 text-xs gap-1.5 bg-brand hover:bg-brand/90"
+          >
             {isSharing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
-            Compartilhar
+            <span className="hidden sm:inline">Compartilhar</span>
           </Button>
         </div>
       </header>
 
-      {/* Progress bar */}
-      <div className="flex gap-1 px-4 pt-3">
+      {/* ── Barra de progresso ── */}
+      <div className="flex gap-1 px-4 pt-3 pb-1 bg-zinc-950">
         {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
-          <div
+          <button
             key={i}
-            className={`h-1 flex-1 rounded-full transition-all duration-300 cursor-pointer ${
-              i <= currentSlide ? "bg-primary" : "bg-muted"
+            aria-label={`Ir para slide ${i + 1}`}
+            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+              i < currentSlide
+                ? "bg-brand"
+                : i === currentSlide
+                ? "bg-white"
+                : "bg-white/20"
             }`}
             onClick={() => setCurrentSlide(i)}
           />
         ))}
       </div>
 
-      {/* Slide container */}
-      <div className="flex-1 relative overflow-hidden">
+      {/* ── Slide container com swipe ── */}
+      <div
+        className="flex-1 overflow-hidden relative"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div
           className="flex h-full transition-transform duration-500 ease-in-out"
-          style={{ transform: `translateX(-${currentSlide * 100}%)`, width: `${TOTAL_SLIDES * 100}%` }}
+          style={{
+            transform: `translateX(-${currentSlide * 100}%)`,
+            width: `${TOTAL_SLIDES * 100}%`,
+          }}
         >
-          <SlideWrapper><Slide1 retro={retro} /></SlideWrapper>
-          <SlideWrapper><Slide2 retro={retro} /></SlideWrapper>
-          <SlideWrapper><Slide3 retro={retro} /></SlideWrapper>
-          <SlideWrapper><Slide4 retro={retro} isPodium={isPodium} /></SlideWrapper>
-          <SlideWrapper><Slide5 retro={retro} /></SlideWrapper>
+          {slides.map((slide, i) => (
+            <div
+              key={i}
+              className="flex-shrink-0 flex items-center justify-center p-4"
+              style={{ width: `${100 / TOTAL_SLIDES}%` }}
+            >
+              <div className="w-full max-w-sm">{slide}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between px-4 py-4 border-t border-border/50">
+      {/* ── Navegação inferior ── */}
+      <div className="flex items-center justify-between px-4 py-4 border-t border-white/10 bg-zinc-950">
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={goPrev}
           disabled={currentSlide === 0}
-          className="gap-1.5"
+          className="gap-1.5 text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-25"
         >
           <ChevronLeft className="w-4 h-4" />
           Anterior
         </Button>
 
         {/* Dots */}
-        <div className="flex gap-1.5">
+        <div className="flex gap-2 items-center">
           {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentSlide(i)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === currentSlide ? "bg-primary scale-125" : "bg-muted-foreground/30"
+              className={`rounded-full transition-all duration-300 ${
+                i === currentSlide
+                  ? "w-4 h-2 bg-white"
+                  : "w-2 h-2 bg-white/25 hover:bg-white/50"
               }`}
             />
           ))}
         </div>
 
         {currentSlide < TOTAL_SLIDES - 1 ? (
-          <Button size="sm" onClick={goNext} className="gap-1.5">
+          <Button
+            size="sm"
+            onClick={goNext}
+            className="gap-1.5 bg-brand hover:bg-brand/90"
+          >
             Próximo
             <ChevronRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button size="sm" onClick={handleShare} disabled={isSharing} className="gap-1.5">
+          <Button
+            size="sm"
+            onClick={handleShare}
+            disabled={isSharing}
+            className="gap-1.5 bg-brand hover:bg-brand/90"
+          >
             {isSharing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
             Compartilhar
           </Button>
         )}
-      </div>
-    </div>
-  );
-}
-
-// ─── WRAPPER DE SLIDE ─────────────────────────────────────────────────────────
-
-function SlideWrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      className="flex-shrink-0 flex items-center justify-center p-4"
-      style={{ width: `${100 / 5}%` }}
-    >
-      <div className="w-full max-w-sm">{children}</div>
-    </div>
-  );
-}
-
-// ─── SLIDE 1: CAPA ────────────────────────────────────────────────────────────
-
-function Slide1({ retro }: { retro: Retrospective }) {
-  return (
-    <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-background border border-primary/20 p-8 text-center space-y-4 min-h-[420px] flex flex-col items-center justify-center">
-      <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto">
-        <Trophy className="w-8 h-8 text-primary" />
-      </div>
-      <div>
-        <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Retrospectiva</p>
-        <h1 className="text-2xl font-bold text-foreground leading-tight">{retro.poolName}</h1>
-        {retro.tournamentName && (
-          <p className="text-sm text-muted-foreground mt-1">{retro.tournamentName}</p>
-        )}
-      </div>
-      {(retro.poolStartDate || retro.poolEndDate) && (
-        <p className="text-xs text-muted-foreground">
-          {retro.poolStartDate ? new Date(retro.poolStartDate).toLocaleDateString("pt-BR") : ""}
-          {retro.poolStartDate && retro.poolEndDate ? " → " : ""}
-          {retro.poolEndDate ? new Date(retro.poolEndDate).toLocaleDateString("pt-BR") : ""}
-        </p>
-      )}
-      <div className="bg-primary/10 rounded-xl px-6 py-3">
-        <p className="text-3xl font-bold text-primary">{retro.totalParticipants}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">participantes</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── SLIDE 2: SEUS NÚMEROS ────────────────────────────────────────────────────
-
-function Slide2({ retro }: { retro: Retrospective }) {
-  const stats = [
-    { icon: "🎯", label: "Palpites feitos", value: retro.totalBets },
-    { icon: "✅", label: "Acerto geral", value: `${retro.accuracyPct ?? 0}%` },
-    { icon: "💎", label: "Placares exatos", value: retro.exactScoreCount },
-    { icon: "🦓", label: "Zebras acertadas", value: retro.zebraCount },
-  ];
-
-  return (
-    <div className="rounded-2xl bg-gradient-to-br from-violet-500/20 via-violet-500/10 to-background border border-violet-500/20 p-6 min-h-[420px] flex flex-col justify-center space-y-5">
-      <div className="text-center">
-        <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Seus números</p>
-        <h2 className="text-xl font-bold">Como você foi</h2>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-card/60 rounded-xl p-4 text-center border border-border/40">
-            <p className="text-2xl mb-1">{s.icon}</p>
-            <p className="text-2xl font-bold text-foreground">{s.value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
-          </div>
-        ))}
-      </div>
-      <div className="bg-violet-500/10 rounded-xl px-4 py-3 text-center border border-violet-500/20">
-        <p className="text-3xl font-bold text-violet-400">{retro.totalPoints}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">pontos no total</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── SLIDE 3: SEU MELHOR MOMENTO ─────────────────────────────────────────────
-
-function Slide3({ retro }: { retro: Retrospective }) {
-  const bestMoment = retro.bestMomentData as Record<string, unknown> | null;
-  const momentType = retro.bestMomentType;
-
-  const getMomentContent = () => {
-    if (momentType === "badge") {
-      return {
-        icon: "🏅",
-        title: "Você conquistou um badge!",
-        description: `"${(bestMoment?.badgeName as string) ?? "Badge especial"}" foi desbloqueado durante este bolão.`,
-        color: "from-amber-500/20 via-amber-500/10",
-        border: "border-amber-500/20",
-        accent: "text-amber-400",
-      };
-    }
-    if (momentType === "rank_jump") {
-      return {
-        icon: "🚀",
-        title: "Virada épica!",
-        description: `Você subiu ${(bestMoment?.positions as number) ?? "várias"} posições de uma vez no ranking.`,
-        color: "from-emerald-500/20 via-emerald-500/10",
-        border: "border-emerald-500/20",
-        accent: "text-emerald-400",
-      };
-    }
-    if (momentType === "zebra_exact") {
-      return {
-        icon: "🦓",
-        title: "Você foi na zebra e acertou o placar!",
-        description: `${(bestMoment?.teamA as string) ?? "Time"} ${bestMoment?.scoreA ?? 0} x ${bestMoment?.scoreB ?? 0} ${(bestMoment?.teamB as string) ?? "Time"} — ninguém acreditava, mas você acreditou.`,
-        color: "from-pink-500/20 via-pink-500/10",
-        border: "border-pink-500/20",
-        accent: "text-pink-400",
-      };
-    }
-    if (momentType === "exact_score") {
-      return {
-        icon: "🎯",
-        title: "Placar exato!",
-        description: `${(bestMoment?.teamA as string) ?? "Time"} ${bestMoment?.scoreA ?? 0} x ${bestMoment?.scoreB ?? 0} ${(bestMoment?.teamB as string) ?? "Time"} — você acertou na mosca.`,
-        color: "from-blue-500/20 via-blue-500/10",
-        border: "border-blue-500/20",
-        accent: "text-blue-400",
-      };
-    }
-    return {
-      icon: "⭐",
-      title: "Uma jornada incrível",
-      description: "Você participou de ponta a ponta e deixou sua marca neste bolão.",
-      color: "from-primary/20 via-primary/10",
-      border: "border-primary/20",
-      accent: "text-primary",
-    };
-  };
-
-  const content = getMomentContent();
-
-  return (
-    <div className={`rounded-2xl bg-gradient-to-br ${content.color} to-background border ${content.border} p-8 min-h-[420px] flex flex-col items-center justify-center text-center space-y-5`}>
-      <p className="text-xs text-muted-foreground uppercase tracking-widest">Seu melhor momento</p>
-      <p className="text-6xl">{content.icon}</p>
-      <div className="space-y-2">
-        <h2 className={`text-xl font-bold ${content.accent}`}>{content.title}</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">{content.description}</p>
-      </div>
-      {retro.shareCard?.imageUrl && (
-        <ShareCardPreview imageUrl={retro.shareCard.imageUrl} poolName={retro.poolName} />
-      )}
-    </div>
-  );
-}
-
-// ─── SLIDE 4: SUA POSIÇÃO FINAL ───────────────────────────────────────────────
-
-function Slide4({ retro, isPodium }: { retro: Retrospective; isPodium: boolean }) {
-  const positionEmoji = retro.finalPosition === 1 ? "🥇" : retro.finalPosition === 2 ? "🥈" : retro.finalPosition === 3 ? "🥉" : "🏅";
-  const positionColor = retro.finalPosition === 1
-    ? "from-yellow-500/30 via-yellow-500/15"
-    : retro.finalPosition === 2
-    ? "from-slate-400/30 via-slate-400/15"
-    : retro.finalPosition === 3
-    ? "from-amber-700/30 via-amber-700/15"
-    : "from-primary/20 via-primary/10";
-
-  return (
-    <div className={`rounded-2xl bg-gradient-to-br ${positionColor} to-background border border-border/30 p-8 min-h-[420px] flex flex-col items-center justify-center text-center space-y-5`}>
-      <p className="text-xs text-muted-foreground uppercase tracking-widest">Posição final</p>
-      <p className="text-7xl">{positionEmoji}</p>
-      <div>
-        <p className="text-5xl font-black text-foreground">{retro.finalPosition}º</p>
-        <p className="text-muted-foreground text-sm mt-1">
-          de {retro.totalParticipants} participantes
-        </p>
-      </div>
-      <div className="bg-card/60 rounded-xl px-6 py-3 border border-border/40">
-        <p className="text-2xl font-bold text-primary">{retro.totalPoints} pts</p>
-        <p className="text-xs text-muted-foreground mt-0.5">pontuação final</p>
-      </div>
-      {isPodium && (
-        <div className="bg-amber-500/10 rounded-xl px-4 py-2.5 border border-amber-500/20">
-          <p className="text-xs text-amber-400 font-medium">🏆 Você ficou no pódio!</p>
-        </div>
-      )}
-      {retro.shareCard?.imageUrl && (
-        <ShareCardPreview imageUrl={retro.shareCard.imageUrl} poolName={retro.poolName} />
-      )}
-    </div>
-  );
-}
-
-// ─── SLIDE 5: ENCERRAMENTO ────────────────────────────────────────────────────
-
-function Slide5({ retro }: { retro: Retrospective }) {
-  const defaultPhrase = `Você foi longe neste bolão. Que tal desafiar mais amigos no próximo?`;
-  const phrase = retro.closingPhrase ?? defaultPhrase;
-
-  return (
-    <div className="rounded-2xl bg-gradient-to-br from-primary/20 via-background to-background border border-primary/20 p-8 min-h-[420px] flex flex-col items-center justify-center text-center space-y-6">
-      <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center mx-auto">
-        <Sparkles className="w-6 h-6 text-primary" />
-      </div>
-      <div className="space-y-3">
-        <p className="text-xs text-muted-foreground uppercase tracking-widest">É isso!</p>
-        <p className="text-lg font-semibold text-foreground leading-relaxed max-w-xs">{phrase}</p>
-      </div>
-      <div className="w-full space-y-2.5">
-        <p className="text-xs text-muted-foreground">Compartilhe sua jornada</p>
-        <a
-          href={`${window.location.origin}/cadastro`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full py-3 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          Crie seu bolão no ApostAI →
-        </a>
-      </div>
-      <p className="text-xs text-muted-foreground/60">apostai.com.br</p>
-    </div>
-  );
-}
-
-// ─── SHARE CARD PREVIEW ───────────────────────────────────────────────────────
-
-function ShareCardPreview({ imageUrl, poolName }: { imageUrl: string; poolName: string }) {
-  const handleShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Minha retrospectiva — ${poolName}`,
-          text: `Veja minha jornada no bolão "${poolName}" no ApostAI!`,
-          url: window.location.href,
-        });
-      } else {
-        window.open(imageUrl, "_blank");
-      }
-    } catch {
-      // usuário cancelou
-    }
-  };
-
-  const handleDownload = async () => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `apostai-${poolName.replace(/\s+/g, "-").toLowerCase()}.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      // silencioso
-    }
-  };
-
-  return (
-    <div className="w-full space-y-3 mt-1">
-      {/* Label */}
-      <p className="text-xs text-muted-foreground text-center">
-        Seu card para compartilhar
-      </p>
-
-      {/* Moldura estilo celular */}
-      <div className="relative mx-auto w-fit">
-        {/* Reflexo/brilho decorativo */}
-        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary/30 via-transparent to-transparent blur-sm opacity-60 pointer-events-none" />
-        <div className="relative rounded-xl overflow-hidden border-2 border-border/60 shadow-xl shadow-black/40 max-w-[220px] mx-auto">
-          <img
-            src={imageUrl}
-            alt="Card de compartilhamento"
-            className="w-full object-cover block"
-            loading="lazy"
-          />
-        </div>
-      </div>
-
-      {/* Botões contextuais */}
-      <div className="flex gap-2 justify-center">
-        <button
-          onClick={handleDownload}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card border border-border/60 text-xs text-muted-foreground hover:text-foreground hover:border-border transition-colors"
-        >
-          <Download className="w-3.5 h-3.5" />
-          Salvar
-        </button>
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-xs text-primary hover:bg-primary/20 transition-colors font-medium"
-        >
-          <Share2 className="w-3.5 h-3.5" />
-          Compartilhar
-        </button>
       </div>
     </div>
   );

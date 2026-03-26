@@ -1322,36 +1322,60 @@ function ConclusionBanner({ poolId, poolName }: { poolId: number; poolName: stri
 
   return (
     <>
-      <div className="mx-4 mt-3 px-4 py-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-        <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-amber-300">Todos os jogos foram apurados</p>
-          <p className="text-xs text-amber-400/80 mt-0.5">
-            Confirma o encerramento do bolão para gerarmos o ranking final?
-          </p>
+      {/* Banner com gradiente para chamar atenção do organizador */}
+      <div className="mx-4 mt-3 rounded-xl overflow-hidden border border-amber-500/40 shadow-lg shadow-amber-500/10">
+        <div className="relative px-4 py-4 bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent pointer-events-none" />
+          <div className="relative flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-300">Todos os jogos foram apurados!</p>
+              <p className="text-xs text-amber-400/70 mt-0.5 leading-relaxed">
+                Confirme o encerramento para gerar o ranking final e as retrospectivas de cada participante.
+              </p>
+            </div>
+          </div>
+          <div className="relative mt-3 flex gap-2 justify-end">
+            <Button
+              size="sm"
+              className="h-8 text-xs bg-amber-500 hover:bg-amber-400 text-black font-bold gap-1.5 shadow-md shadow-amber-500/30"
+              onClick={() => setShowConfirm(true)}
+              disabled={conclude.isPending}
+            >
+              {conclude.isPending ? (
+                <><Loader2 className="w-3 h-3 animate-spin" /> Encerrando...</>
+              ) : (
+                <><CheckCircle2 className="w-3.5 h-3.5" /> Confirmar encerramento</>
+              )}
+            </Button>
+          </div>
         </div>
-        <Button
-          size="sm"
-          className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-black font-semibold shrink-0"
-          onClick={() => setShowConfirm(true)}
-          disabled={conclude.isPending}
-        >
-          {conclude.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirmar"}
-        </Button>
       </div>
 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Encerrar bolão "{poolName}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Após a confirmação, nenhuma informação do bolão poderá ser alterada. O ranking final será gerado e as retrospectivas serão enviadas para todos os participantes.
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              Encerrar bolão "{poolName}"?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>Após a confirmação, o bolão será encerrado definitivamente:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>O ranking final será calculado e exibido para todos</li>
+                  <li>Cada participante receberá sua retrospectiva personalizada</li>
+                  <li>Nenhuma alteração poderá ser feita após o encerramento</li>
+                </ul>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-amber-500 hover:bg-amber-600 text-black"
+              className="bg-amber-500 hover:bg-amber-400 text-black font-bold"
               onClick={() => conclude.mutate({ poolId })}
             >
               Confirmar encerramento
@@ -1369,21 +1393,29 @@ function ConclusionBanner({ poolId, poolName }: { poolId: number; poolName: stri
 function RetrospectiveBanner({ poolId, poolSlug }: { poolId: number; poolSlug: string }) {
   const [, navigate] = useLocation();
   return (
-    <div className="mx-4 mt-3 px-4 py-3.5 rounded-xl bg-primary/10 border border-primary/30 flex items-center gap-3">
-      <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-primary">Bolão encerrado</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Sua retrospectiva está pronta. Veja como foi a sua jornada!
-        </p>
+    <div className="mx-4 mt-3 rounded-xl overflow-hidden border border-brand/30 shadow-lg shadow-brand/10">
+      <div className="relative px-4 py-4 bg-gradient-to-r from-brand/15 via-brand/8 to-brand/15">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brand/5 to-transparent pointer-events-none" />
+        <div className="relative flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-brand/20 border border-brand/30 flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4 text-brand" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Sua retrospectiva está pronta!</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Veja como foi a sua jornada neste bolão — estilo Spotify Wrapped.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            className="h-8 text-xs shrink-0 bg-brand hover:bg-brand/90 gap-1.5 shadow-md shadow-brand/30"
+            onClick={() => navigate(`/pool/${poolSlug}/retrospectiva`)}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Ver agora
+          </Button>
+        </div>
       </div>
-      <Button
-        size="sm"
-        className="h-7 text-xs shrink-0"
-        onClick={() => navigate(`/pool/${poolSlug}/retrospectiva`)}
-      >
-        Ver retrospectiva
-      </Button>
     </div>
   );
 }

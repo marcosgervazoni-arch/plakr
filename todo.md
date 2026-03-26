@@ -1342,3 +1342,32 @@
 - [x] AdminRetrospectivas: configuração de prazo de auto-conclusão e CTA do slide 5
 - [x] Testes Vitest: cobrir getRetrospectiveConfig e updateRetrospectiveConfig
 - [x] Checkpoint final
+
+## Sprint — Retrospectiva Participante + Banner awaiting_conclusion
+
+### Backend
+- [ ] Verificar/adicionar status `awaiting_conclusion` e `concluded` no enum de pools
+- [ ] Procedure `pools.concludePool`: organizador confirma encerramento → gera retrospectiva + notifica todos
+- [ ] Procedure `pools.getRetrospectiva`: retorna slides gerados (URLs S3) para o participante
+- [ ] Scoring.ts: ao apurar último jogo, mover bolão para `awaiting_conclusion` e notificar organizador
+
+### Frontend
+- [ ] Página `/bolao/:slug/retrospectiva` — slides estilo Spotify Wrapped com navegação (swipe/setas)
+- [ ] Botão "Compartilhar" em cada slide (Web Share API + fallback copiar link)
+- [ ] Botão "Baixar imagem" — download do PNG do slide atual
+- [ ] Banner na tela do bolão (status `awaiting_conclusion`): "Todos os jogos foram apurados. Confirmar encerramento?"
+- [ ] Modal de confirmação antes de executar `concludePool`
+- [ ] Rota `/bolao/:slug/retrospectiva` registrada no App.tsx
+
+### QA
+- [ ] Testes Vitest: concludePool (permissões, status, idempotência)
+- [ ] Checkpoint final
+
+## Sprint — Retrospectiva Participante + Banner Awaiting Conclusion (26/03/2026) ✅
+- [x] Backend: enriquecer getRetrospective com templates de config (slide1Url..slide5Url, closingCta)
+- [x] Frontend: redesenhar PoolRetrospectiva com fundos de template, swipe touch, dots animados
+- [x] Frontend: melhorar ConclusionBanner com gradiente âmbar, ícone e modal detalhado com lista
+- [x] Frontend: melhorar RetrospectiveBanner com gradiente brand e botão de destaque
+- [x] SQL: adicionar colunas faltantes (awaitingConclusionSince em pools, cobaiaPoolId em platform_settings)
+- [x] QA: 205 testes passando (10 arquivos)
+- [x] Checkpoint final

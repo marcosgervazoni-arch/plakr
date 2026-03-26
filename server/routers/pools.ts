@@ -959,7 +959,7 @@ export const poolsRouter = router({
     .query(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const { poolRetrospectives, userShareCards } = await import("../../drizzle/schema");
+      const { poolRetrospectives, userShareCards, retrospectiveConfig } = await import("../../drizzle/schema");
       const { eq, and } = await import("drizzle-orm");
 
       const [retro] = await db
@@ -976,7 +976,23 @@ export const poolsRouter = router({
         .where(and(eq(userShareCards.poolId, input.poolId), eq(userShareCards.userId, ctx.user.id)))
         .limit(1);
 
-      return { ...retro, shareCard: card ?? null };
+      // Buscar templates de fundo configurados pelo admin
+      const [config] = await db.select().from(retrospectiveConfig).limit(1);
+      // Resolver URLs de fundo para cada slide (slide1 é fallback universal)
+      const fallback = config?.slide1Url ?? null;
+      const templates = {
+        slide1Url: config?.slide1Url ?? null,
+        slide2Url: config?.slide2Url ?? fallback,
+        slide3Url: config?.slide3Url ?? fallback,
+        slide4Url: config?.slide4Url ?? fallback,
+        slide5Url: config?.slide5Url ?? fallback,
+        cardPodiumUrl: config?.cardPodiumUrl ?? null,
+        cardParticipantUrl: config?.cardParticipantUrl ?? null,
+        closingCtaText: config?.closingCtaText ?? null,
+        closingCtaUrl: config?.closingCtaUrl ?? null,
+      };
+
+      return { ...retro, shareCard: card ?? null, templates };
     }),
 
   // ── Admin: listar retrospectivas de todos os bolões concluídos ────────────────────────
