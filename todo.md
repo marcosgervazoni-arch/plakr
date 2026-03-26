@@ -1371,3 +1371,9 @@
 - [x] SQL: adicionar colunas faltantes (awaitingConclusionSince em pools, cobaiaPoolId em platform_settings)
 - [x] QA: 205 testes passando (10 arquivos)
 - [x] Checkpoint final
+
+## Sprint — Retrospectiva v4: Notificações + Auto-conclusão + Share Nativo (26/03/2026) ✅
+- [x] Backend: notificação in-app para cada participante ao concluir bolão (link para /pool/:slug/retrospectiva)
+- [x] Backend: auto-conclusão no cron de arquivamento após autoCloseDays dias em awaiting_conclusion
+- [x] Frontend: compartilhamento nativo do card PNG com navigator.share({ files }) no slide 4
+- [x] QA: 205 testes passando + checkpoint final

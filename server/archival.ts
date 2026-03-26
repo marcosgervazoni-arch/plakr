@@ -11,8 +11,8 @@
  */
 
 import { getDb } from "./db";
-import { pools, poolMembers } from "../drizzle/schema";
-import { eq, and, lt, or } from "drizzle-orm";
+import { pools, poolMembers, retrospectiveConfig } from "../drizzle/schema";
+import { eq, and, lt } from "drizzle-orm";
 import { createNotification, getPoolMembers, getPlatformSettings } from "./db";
 import { logger } from "./logger";
 
@@ -27,7 +27,7 @@ export const archivalCronHealth = {
 
 // ─── CONSTANTES ───────────────────────────────────────────────────────────────
 
-const AUTO_CONCLUDE_DAYS = 3; // dias sem confirmação → auto-conclusão
+// AUTO_CONCLUDE_DAYS é lido dinâmicamente da tabela retrospective_config (default: 3)
 
 // ─── JOB PRINCIPAL ────────────────────────────────────────────────────────────
 
@@ -81,8 +81,14 @@ export async function runArchivalJob() {
     }
   }
 
-  // ── 2. Auto-conclusão: `awaiting_conclusion` há +3 dias ───────────────────
-  const autoConcludeCutoff = new Date(now.getTime() - AUTO_CONCLUDE_DAYS * 24 * 60 * 60 * 1000);
+  // ── 2. Auto-conclusão: `awaiting_conclusion` há +N dias (configurado em retrospective_config) ──────
+  // Ler autoCloseDays da config dinâmicamente
+  let autoCloseDays = 3;
+  try {
+    const [retConfig] = await db.select({ autoCloseDays: retrospectiveConfig.autoCloseDays }).from(retrospectiveConfig).limit(1);
+    if (retConfig?.autoCloseDays) autoCloseDays = retConfig.autoCloseDays;
+  } catch { /* usa default 3 */ }
+  const autoConcludeCutoff = new Date(now.getTime() - autoCloseDays * 24 * 60 * 60 * 1000);
 
   const awaitingPools = await db
     .select()
@@ -97,7 +103,7 @@ export async function runArchivalJob() {
   for (const pool of awaitingPools) {
     try {
       await concludePool(pool.id, null, "auto"); // null = sistema concluiu
-      logger.info({ poolId: pool.id }, "[Archival] Pool auto-concluded after 3 days");
+      logger.info({ poolId: pool.id, autoCloseDays }, "[Archival] Pool auto-concluded after configured days");
     } catch (err) {
       logger.error({ poolId: pool.id, err }, "[Archival] Failed to auto-conclude pool");
     }
@@ -210,6 +216,7 @@ export async function concludePool(
   if (!pool) return;
 
   // Gerar retrospectiva para todos os participantes em background
+  // Ao concluir, também envia notificação in-app para cada participante
   generateRetrospectivesForPool(poolId, pool.name, source).catch((err) =>
     logger.error({ poolId, err }, "[Archival] Erro ao gerar retrospectivas")
   );
@@ -237,6 +244,16 @@ async function generateRetrospectivesForPool(
 
   const { generateAndUploadRetrospective } = await import("./retrospective");
 
+  // Buscar slug do bolão para o link da notificação
+  let poolSlug: string | undefined;
+  try {
+    const db2 = await getDb();
+    if (db2) {
+      const [poolRow] = await db2.select({ slug: pools.slug }).from(pools).where(eq(pools.id, poolId)).limit(1);
+      poolSlug = poolRow?.slug;
+    }
+  } catch { /* usa fallback sem link */ }
+
   for (const { userId } of participants) {
     try {
       await generateAndUploadRetrospective(poolId, userId);
@@ -244,9 +261,25 @@ async function generateRetrospectivesForPool(
     } catch (err) {
       logger.error({ poolId, userId, err }, "[Archival] Failed to generate retrospective");
     }
+
+    // Notificar participante que a retrospectiva está pronta
+    try {
+      await createNotification({
+        userId,
+        poolId,
+        type: "pool_concluded",
+        title: `Sua retrospectiva do "${poolName}" está pronta!`,
+        message: `O bolão foi encerrado. Veja como foi a sua jornada — estilo Spotify Wrapped.`,
+        actionUrl: poolSlug ? `/pool/${poolSlug}/retrospectiva` : undefined,
+        actionLabel: "Ver retrospectiva",
+        priority: "high",
+      });
+    } catch (notifErr) {
+      logger.error({ poolId, userId, err: notifErr }, "[Archival] Failed to send retrospective notification");
+    }
   }
 
-  logger.info({ poolId, poolName }, "[Archival] All retrospectives generated");
+  logger.info({ poolId, poolName, notified: participants.length }, "[Archival] All retrospectives generated and participants notified");
 }
 
 // ─── CRON RUNNER ─────────────────────────────────────────────────────────────

@@ -272,6 +272,25 @@ function Slide4({ retro }: { retro: Retrospective }) {
 
   const handleShareCard = async () => {
     try {
+      // Tentar compartilhar o arquivo PNG diretamente
+      if (retro.shareCard?.imageUrl && navigator.canShare) {
+        try {
+          const response = await fetch(retro.shareCard.imageUrl);
+          const blob = await response.blob();
+          const file = new File([blob], `apostai-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: `Minha retrospectiva — ${retro.poolName}`,
+              text: `Terminei em ${pos}º lugar com ${retro.totalPoints} pontos!`,
+            });
+            return;
+          }
+        } catch {
+          // Fallback para share de URL
+        }
+      }
+      // Fallback: compartilhar URL
       if (navigator.share) {
         await navigator.share({
           title: `Minha retrospectiva — ${retro.poolName}`,
@@ -434,6 +453,25 @@ export default function PoolRetrospectiva() {
   const handleShare = async () => {
     setIsSharing(true);
     try {
+      // Se há card PNG e o browser suporta compartilhamento de arquivos
+      if (retro?.shareCard?.imageUrl && navigator.canShare) {
+        try {
+          const response = await fetch(retro.shareCard.imageUrl);
+          const blob = await response.blob();
+          const file = new File([blob], `apostai-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: `Minha retrospectiva — ${retro.poolName}`,
+              text: `Terminei em ${retro.finalPosition}º lugar com ${retro.totalPoints} pontos! Veja minha jornada no ApostAI.`,
+            });
+            return;
+          }
+        } catch {
+          // Fallback para share de URL se o share de arquivo falhar
+        }
+      }
+      // Fallback: compartilhar URL
       if (navigator.share) {
         await navigator.share({
           title: `Minha retrospectiva no bolão "${retro?.poolName}"`,
