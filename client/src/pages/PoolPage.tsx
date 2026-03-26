@@ -173,33 +173,47 @@ export default function PoolPage() {
     return nextPhase ?? uniquePhaseKeys[0] ?? "group_stage";
   }, [games, uniquePhaseKeys]);
 
-  // useEffect: detecta entrada no pódio e subida/descida de posição
+  // useEffect: animações de ranking
   useEffect(() => {
     if (!ranking || !user) return;
     const myIdx = ranking.findIndex((r) => r.user.id === user.id);
     if (myIdx < 0) return;
+    const hasPoints = (ranking[0]?.stats.totalPoints ?? 0) > 0;
 
-    // --- Pódio: dispara apenas uma vez por sessão ---
+    // --- Pódio: dispara apenas na PRIMEIRA VEZ no bolão (localStorage) ---
     if (!podiumChecked.current) {
-      const sessionKey = `podium_${slug}_${user.id}`;
-      const lastKnown = sessionStorage.getItem(sessionKey);
-      const isTopThree = myIdx < 3 && ranking[0]?.stats.totalPoints > 0;
-      const wasTopThree = lastKnown !== null && parseInt(lastKnown) < 3;
       podiumChecked.current = true;
-      sessionStorage.setItem(sessionKey, String(myIdx));
-      if (isTopThree && !wasTopThree) {
-        setPodiumAnimation(myIdx === 0 ? "confetti" : "enter");
-        setTimeout(() => setPodiumAnimation("idle"), myIdx === 0 ? 2500 : 1200);
-        lastPositionRef.current = myIdx;
-        return;
+      const lsKey = `podium_${slug}_${user.id}`;
+      const seen = localStorage.getItem(lsKey); // null = nunca viu
+
+      if (hasPoints) {
+        // Confetes: apenas 1º lugar, apenas se nunca chegou ao 1º neste bolão
+        if (myIdx === 0 && seen !== "1") {
+          localStorage.setItem(lsKey, "1");
+          setPodiumAnimation("confetti");
+          setTimeout(() => setPodiumAnimation("idle"), 2500);
+          lastPositionRef.current = myIdx;
+          return;
+        }
+        // Glow prata/bronze: apenas 2º/3º, apenas se nunca entrou no top-3 neste bolão
+        if (myIdx < 3 && seen === null) {
+          localStorage.setItem(lsKey, String(myIdx + 1));
+          setPodiumAnimation("enter"); // glow sem slide (controlado no CSS)
+          setTimeout(() => setPodiumAnimation("idle"), 1200);
+          lastPositionRef.current = myIdx;
+          return;
+        }
+        // Já viu o glow mas chegou ao 1º agora: atualiza o registro
+        if (myIdx === 0 && seen !== "1") {
+          localStorage.setItem(lsKey, "1");
+        }
       }
     }
 
-    // --- Subida/descida: detecta mudança a cada atualização do ranking ---
+    // --- Subida/descida: sempre dispara quando posição muda ---
     const prev = lastPositionRef.current;
     if (prev !== null && prev !== myIdx) {
-      const moved = prev > myIdx ? "rise" : "drop";
-      setPodiumAnimation(moved);
+      setPodiumAnimation(prev > myIdx ? "rise" : "drop");
       setTimeout(() => setPodiumAnimation("idle"), 2000);
     }
     lastPositionRef.current = myIdx;
@@ -758,10 +772,8 @@ export default function PoolPage() {
                           </span>
                         ) : null;
 
-                        // Animação de slide-up para o card do usuário ao entrar no pódio
-                        const cardAnim = isMe && (podiumAnimation === "enter" || podiumAnimation === "confetti")
-                          ? "animate-[podium-enter_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both]"
-                          : isMe && podiumAnimation === "rise"
+                        // Animação no card: rise/drop sempre; glow (enter/confetti) sem slide
+                        const cardAnim = isMe && podiumAnimation === "rise"
                           ? "animate-[rank-rise_0.5s_ease-out]"
                           : isMe && podiumAnimation === "drop"
                           ? "animate-[rank-drop_0.5s_ease-out]"
@@ -812,15 +824,15 @@ export default function PoolPage() {
                                       você
                                     </span>
                                   )}
-                                  {/* Indicador de subida/descida */}
+                                  {/* Indicador de subida/descida — apenas ícone, sem texto */}
                                   {isMe && podiumAnimation === "rise" && (
-                                    <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 animate-[podium-enter_0.3s_ease-out]">
-                                      ↑ subiu
+                                    <span className="shrink-0 w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center animate-[podium-enter_0.3s_ease-out]">
+                                      <svg viewBox="0 0 10 10" className="w-2.5 h-2.5 text-emerald-400" fill="currentColor"><path d="M5 2 L8.5 7 L1.5 7 Z"/></svg>
                                     </span>
                                   )}
                                   {isMe && podiumAnimation === "drop" && (
-                                    <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20 animate-[podium-enter_0.3s_ease-out]">
-                                      ↓ desceu
+                                    <span className="shrink-0 w-4 h-4 rounded-full bg-red-500/20 flex items-center justify-center animate-[podium-enter_0.3s_ease-out]">
+                                      <svg viewBox="0 0 10 10" className="w-2.5 h-2.5 text-red-400" fill="currentColor"><path d="M5 8 L8.5 3 L1.5 3 Z"/></svg>
                                     </span>
                                   )}
 

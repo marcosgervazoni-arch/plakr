@@ -1157,3 +1157,8 @@
 - [x] Animação de subida: indicador verde com seta para cima no card do usuário (2s, some sozinho)
 - [x] Animação de descida: indicador vermelho com seta para baixo no card do usuário (2s, some sozinho)
 - [x] Lógica sessionStorage: detectar mudança de posição a cada atualização do ranking
+
+## Revisão — Lógica das animações de ranking (26/03/2026)
+- [x] Confetes: apenas na primeira vez que o usuário chega ao 1º lugar no bolão (localStorage, nunca repete)
+- [x] Glow prata/bronze: apenas na primeira vez no top-3 (localStorage), sem slide-up
+- [x] Subida/descida: sempre dispara quando posição muda, sem texto — apenas ícone ↑ verde / ↓ vermelho
