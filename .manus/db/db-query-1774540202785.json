@@ -1,0 +1,135 @@
+{
+  "query": "\nSELECT id, name, criterionType, criterionValue, isActive, isManual FROM badges LIMIT 15;\nSELECT * FROM user_badges LIMIT 10;\nSELECT COUNT(*) as exactBets FROM bets WHERE resultType='exact';\nSELECT DISTINCT userId FROM bets WHERE resultType='exact' LIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT id, name, criterionType, criterionValue, isActive, isManual FROM badges LIMIT 15;\nSELECT * FROM user_badges LIMIT 10;\nSELECT COUNT(*) as exactBets FROM bets WHERE resultType='exact';\nSELECT DISTINCT userId FROM bets WHERE resultType='exact' LIMIT 5;\n",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Chute Certo",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "1",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30002",
+      "name": "Manja Muito",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "10",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30003",
+      "name": "Profeta",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "50",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30004",
+      "name": "Mafioso das Apostas",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "100",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30005",
+      "name": "Fiz de Novo",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "2",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30006",
+      "name": "Cola na Minha",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "5",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30007",
+      "name": "É Campeão",
+      "criterionType": "first_place_pools",
+      "criterionValue": "1",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30008",
+      "name": "Dinastia",
+      "criterionType": "first_place_pools",
+      "criterionValue": "3",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30009",
+      "name": "Intocável",
+      "criterionType": "first_place_margin",
+      "criterionValue": "20",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30010",
+      "name": "1/20",
+      "criterionType": "first_place_large_pool",
+      "criterionValue": "20",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30011",
+      "name": "Rei da Ultrapassagem",
+      "criterionType": "rank_jump",
+      "criterionValue": "5",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30012",
+      "name": "Ninguém Me Tira",
+      "criterionType": "rank_hold_1st",
+      "criterionValue": "3",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30013",
+      "name": "Só Eu Acreditei",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "1",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30014",
+      "name": "Sou do Contra",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "5",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30015",
+      "name": "Nem Eu Acreditava",
+      "criterionType": "zebra_in_pool",
+      "criterionValue": "3",
+      "isActive": "1",
+      "isManual": "0"
+    }
+  ],
+  "messages": [
+    "exactBets",
+    "1",
+    "userId",
+    "1"
+  ],
+  "stdout": "id\tname\tcriterionType\tcriterionValue\tisActive\tisManual\n30001\tChute Certo\texact_scores_career\t1\t1\t0\n30002\tManja Muito\texact_scores_career\t10\t1\t0\n30003\tProfeta\texact_scores_career\t50\t1\t0\n30004\tMafioso das Apostas\texact_scores_career\t100\t1\t0\n30005\tFiz de Novo\texact_scores_in_pool\t2\t1\t0\n30006\tCola na Minha\texact_scores_in_pool\t5\t1\t0\n30007\tÉ Campeão\tfirst_place_pools\t1\t1\t0\n30008\tDinastia\tfirst_place_pools\t3\t1\t0\n30009\tIntocável\tfirst_place_margin\t20\t1\t0\n30010\t1/20\tfirst_place_large_pool\t20\t1\t0\n30011\tRei da Ultrapassagem\trank_jump\t5\t1\t0\n30012\tNinguém Me Tira\trank_hold_1st\t3\t1\t0\n30013\tSó Eu Acreditei\tzebra_scores_career\t1\t1\t0\n30014\tSou do Contra\tzebra_scores_career\t5\t1\t0\n30015\tNem Eu Acreditava\tzebra_in_pool\t3\t1\t0\nexactBets\n1\nuserId\n1\n",
+  "stderr": "",
+  "execution_time_ms": 548
+}

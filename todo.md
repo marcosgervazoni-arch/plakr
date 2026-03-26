@@ -1470,3 +1470,8 @@
 - [x] AdminPools.tsx: já tinha link nos organizadores — confirmado
 - [x] AdminSubscriptions.tsx: já tinha link nos donos — confirmado
 - [x] TypeScript sem erros reais (tsc --noEmit exit 0)
+
+## Bug: Badges conquistados aparecem como inativos (26/03/2026)
+- [ ] Investigar lógica de concessão automática de badges (criterionType/criterionValue)
+- [ ] Corrigir exibição: badges com progresso completo (ex: 1/1) devem aparecer como conquistados
+- [ ] Garantir que userBadges é populado quando critério é atingido

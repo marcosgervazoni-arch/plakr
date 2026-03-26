@@ -455,6 +455,22 @@ export const badgesRouter = router({
     return withProgress;
   }),
 
+  // ─── Admin: recalcular badges de todos os usuários (retroativo) ──────────
+  recalculateAll: adminProcedure.mutation(async () => {
+    const db = await (await import("../../server/db")).getDb();
+    if (!db) return { processed: 0, totalNewBadges: 0 };
+    const { users } = await import("../../drizzle/schema");
+    const { calculateAndAssignBadges } = await import("../badges");
+    const allUsers = await db.select({ id: users.id }).from(users);
+    let totalNewBadges = 0;
+    for (const user of allUsers) {
+      const newBadges = await calculateAndAssignBadges(user.id);
+      totalNewBadges += newBadges.length;
+    }
+    logger.info({ processed: allUsers.length, totalNewBadges }, "[Badges] Recálculo retroativo concluído");
+    return { processed: allUsers.length, totalNewBadges };
+  }),
+
   // ─── Badges recém-desbloqueados não notificados ──────────────────────────
   getNewlyUnlocked: protectedProcedure.mutation(async ({ ctx }) => {
     const db = await (await import("../../server/db")).getDb();

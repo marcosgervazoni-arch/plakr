@@ -32,7 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
-import { Award, Edit2, Gift, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { Award, Edit2, Gift, Plus, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
 import { useRef, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { type BadgeRarity } from "@/components/BadgeCard";
@@ -209,6 +209,14 @@ export default function AdminBadges() {
     },
   });
 
+  const recalculateAllMutation = trpc.badges.recalculateAll.useMutation({
+    onSuccess: (result) => {
+      toast.success(`Recálculo concluído: ${result.totalNewBadges} badge(s) atribuído(s) para ${result.processed} usuário(s).`);
+      utils.badges.list.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const assignManualMutation = trpc.badges.assignManual.useMutation({
     onSuccess: (result) => {
       if (result.alreadyHad) {
@@ -343,6 +351,15 @@ export default function AdminBadges() {
           </div>
           {/* Botões empilhados em mobile, lado a lado em desktop */}
           <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => recalculateAllMutation.mutate()}
+              disabled={recalculateAllMutation.isPending}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${recalculateAllMutation.isPending ? "animate-spin" : ""}`} />
+              {recalculateAllMutation.isPending ? "Recalculando..." : "Recalcular Badges"}
+            </Button>
             <Button variant="outline" onClick={() => setAssignDialogOpen(true)} className="gap-2">
               <Gift className="h-4 w-4" />
               Atribuir Manual
