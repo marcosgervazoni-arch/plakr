@@ -73,9 +73,10 @@ export default function PoolPage() {
     return "games";
   });
   const [betInputs, setBetInputs] = useState<Record<number, { a: string; b: string }>>({});
-  // Animação de entrada no pódio — dispara uma vez por sessão quando posição muda para top-3
-  const [podiumAnimation, setPodiumAnimation] = useState<"idle" | "enter" | "confetti">("idle");
+  // Animações de ranking — pódio (confetti/enter) + subida/descida de posição
+  const [podiumAnimation, setPodiumAnimation] = useState<"idle" | "enter" | "confetti" | "rise" | "drop">("idle");
   const podiumChecked = useRef(false);
+  const lastPositionRef = useRef<number | null>(null);
 
   const { data, isLoading, error } = trpc.pools.getBySlug.useQuery(
     { slug: slug! },
@@ -172,21 +173,36 @@ export default function PoolPage() {
     return nextPhase ?? uniquePhaseKeys[0] ?? "group_stage";
   }, [games, uniquePhaseKeys]);
 
-  // useEffect: detecta entrada no pódio e dispara animação uma vez por sessão
+  // useEffect: detecta entrada no pódio e subida/descida de posição
   useEffect(() => {
-    if (!ranking || !user || podiumChecked.current) return;
+    if (!ranking || !user) return;
     const myIdx = ranking.findIndex((r) => r.user.id === user.id);
     if (myIdx < 0) return;
-    const sessionKey = `podium_${slug}_${user.id}`;
-    const lastKnown = sessionStorage.getItem(sessionKey);
-    const isTopThree = myIdx < 3 && ranking[0]?.stats.totalPoints > 0;
-    const wasTopThree = lastKnown !== null && parseInt(lastKnown) < 3;
-    podiumChecked.current = true;
-    sessionStorage.setItem(sessionKey, String(myIdx));
-    if (isTopThree && !wasTopThree) {
-      setPodiumAnimation(myIdx === 0 ? "confetti" : "enter");
-      setTimeout(() => setPodiumAnimation("idle"), myIdx === 0 ? 2500 : 1200);
+
+    // --- Pódio: dispara apenas uma vez por sessão ---
+    if (!podiumChecked.current) {
+      const sessionKey = `podium_${slug}_${user.id}`;
+      const lastKnown = sessionStorage.getItem(sessionKey);
+      const isTopThree = myIdx < 3 && ranking[0]?.stats.totalPoints > 0;
+      const wasTopThree = lastKnown !== null && parseInt(lastKnown) < 3;
+      podiumChecked.current = true;
+      sessionStorage.setItem(sessionKey, String(myIdx));
+      if (isTopThree && !wasTopThree) {
+        setPodiumAnimation(myIdx === 0 ? "confetti" : "enter");
+        setTimeout(() => setPodiumAnimation("idle"), myIdx === 0 ? 2500 : 1200);
+        lastPositionRef.current = myIdx;
+        return;
+      }
     }
+
+    // --- Subida/descida: detecta mudança a cada atualização do ranking ---
+    const prev = lastPositionRef.current;
+    if (prev !== null && prev !== myIdx) {
+      const moved = prev > myIdx ? "rise" : "drop";
+      setPodiumAnimation(moved);
+      setTimeout(() => setPodiumAnimation("idle"), 2000);
+    }
+    lastPositionRef.current = myIdx;
   }, [ranking, user, slug]);
 
   const [showAllGames, setShowAllGames] = useState(false);
@@ -288,10 +304,53 @@ export default function PoolPage() {
 
   const INITIAL_GAMES_SHOWN = 5;
 
+  // Helper para disparar animação manualmente (apenas em dev)
+  const triggerAnim = (anim: typeof podiumAnimation, duration = 2500) => {
+    setPodiumAnimation(anim);
+    setTimeout(() => setPodiumAnimation("idle"), duration);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Confetes de pódio — apenas para 1º lugar, some em 2.5s */}
       <PodiumConfetti active={podiumAnimation === "confetti"} />
+
+      {/* ── PAINEL DE TESTE DE ANIMAÇÕES — visível apenas em modo dev ── */}
+      {import.meta.env.DEV && (
+        <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-1.5 bg-background/95 border border-border/60 rounded-2xl p-3 shadow-xl backdrop-blur-sm">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Teste de animações</p>
+          <button
+            onClick={() => { triggerAnim("confetti", 2500); }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/25 transition-colors text-left"
+          >
+            🥇 1º lugar (confetes + glow)
+          </button>
+          <button
+            onClick={() => { triggerAnim("enter", 1200); }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-slate-400/15 text-slate-300 border border-slate-400/20 hover:bg-slate-400/25 transition-colors text-left"
+          >
+            🥈 2º lugar (glow prata + slide)
+          </button>
+          <button
+            onClick={() => { triggerAnim("enter", 1200); }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25 transition-colors text-left"
+          >
+            🥉 3º lugar (glow bronze + slide)
+          </button>
+          <button
+            onClick={() => { triggerAnim("rise", 2000); }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors text-left"
+          >
+            ⬆️ Subiu de posição
+          </button>
+          <button
+            onClick={() => { triggerAnim("drop", 2000); }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 transition-colors text-left"
+          >
+            ⬇️ Desceu de posição
+          </button>
+        </div>
+      )}
 
       {/* ── Header sticky ── */}
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-md">
@@ -700,8 +759,12 @@ export default function PoolPage() {
                         ) : null;
 
                         // Animação de slide-up para o card do usuário ao entrar no pódio
-                        const cardAnim = isMe && idx < 3 && podiumAnimation !== "idle"
+                        const cardAnim = isMe && (podiumAnimation === "enter" || podiumAnimation === "confetti")
                           ? "animate-[podium-enter_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both]"
+                          : isMe && podiumAnimation === "rise"
+                          ? "animate-[rank-rise_0.5s_ease-out]"
+                          : isMe && podiumAnimation === "drop"
+                          ? "animate-[rank-drop_0.5s_ease-out]"
                           : "";
 
                         return (
@@ -747,6 +810,17 @@ export default function PoolPage() {
                                   {isMe && (
                                     <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20">
                                       você
+                                    </span>
+                                  )}
+                                  {/* Indicador de subida/descida */}
+                                  {isMe && podiumAnimation === "rise" && (
+                                    <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 animate-[podium-enter_0.3s_ease-out]">
+                                      ↑ subiu
+                                    </span>
+                                  )}
+                                  {isMe && podiumAnimation === "drop" && (
+                                    <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/20 animate-[podium-enter_0.3s_ease-out]">
+                                      ↓ desceu
                                     </span>
                                   )}
 
@@ -1192,6 +1266,16 @@ function PodiumConfetti({ active }: { active: boolean }) {
           0%   { box-shadow: 0 0 0 0 rgba(251,146,60,0); background-color: rgba(249,115,22,0.15); }
           40%  { box-shadow: 0 0 0 6px rgba(251,146,60,0.35); background-color: rgba(249,115,22,0.35); }
           100% { box-shadow: 0 0 0 0 rgba(251,146,60,0); background-color: rgba(249,115,22,0.15); }
+        }
+        @keyframes rank-rise {
+          0%   { transform: translateY(6px); border-color: rgba(52,211,153,0); background-color: inherit; }
+          30%  { transform: translateY(-3px); border-color: rgba(52,211,153,0.5); background-color: rgba(52,211,153,0.08); }
+          100% { transform: translateY(0); border-color: rgba(52,211,153,0); background-color: inherit; }
+        }
+        @keyframes rank-drop {
+          0%   { transform: translateY(-6px); border-color: rgba(248,113,113,0); background-color: inherit; }
+          30%  { transform: translateY(3px); border-color: rgba(248,113,113,0.5); background-color: rgba(248,113,113,0.08); }
+          100% { transform: translateY(0); border-color: rgba(248,113,113,0); background-color: inherit; }
         }
       `}</style>
     </div>

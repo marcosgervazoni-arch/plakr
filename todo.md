@@ -1146,3 +1146,14 @@
 - [x] Glow pulse no ícone de coroa/medalha (1s, para sozinho)
 - [x] Confetes CSS para 1º lugar (2s, some sozinho)
 - [x] Lógica sessionStorage: dispara apenas quando posição muda para top-3 na sessão
+
+## Feature — Painel de teste de animações + animação de posição (26/03/2026)
+- [x] Painel de teste visível apenas em dev (import.meta.env.DEV) com botões para cada animação
+- [x] Botão: "🥇 1º lugar" — dispara confetes + glow ouro
+- [x] Botão: "🥈 2º lugar" — dispara glow prata + slide-up
+- [x] Botão: "🥉 3º lugar" — dispara glow bronze + slide-up
+- [x] Botão: "⬆️ Subiu" — dispara animação de subida de posição
+- [x] Botão: "⬇️ Desceu" — dispara animação de descida de posição
+- [x] Animação de subida: indicador verde com seta para cima no card do usuário (2s, some sozinho)
+- [x] Animação de descida: indicador vermelho com seta para baixo no card do usuário (2s, some sozinho)
+- [x] Lógica sessionStorage: detectar mudança de posição a cada atualização do ranking
