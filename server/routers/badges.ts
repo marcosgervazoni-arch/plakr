@@ -342,6 +342,119 @@ export const badgesRouter = router({
       }));
     }),
 
+  // ─── USUÁRIO: próximas conquistas (top 3 por % de progresso) ─────────────
+  nearestBadges: protectedProcedure.query(async ({ ctx }) => {
+    const db = await (await import("../../server/db")).getDb();
+    if (!db) return [];
+    const { badges, userBadges, bets, games, poolMemberStats, referrals } =
+      await import("../../drizzle/schema");
+    const { eq, and, sql } = await import("drizzle-orm");
+    const userId = ctx.user.id;
+
+    // Buscar badges ativos não-manuais ainda não conquistados
+    const allBadges = await db
+      .select()
+      .from(badges)
+      .where(and(eq(badges.isActive, true), eq(badges.isManual, false)));
+
+    const earned = await db
+      .select({ badgeId: userBadges.badgeId })
+      .from(userBadges)
+      .where(eq(userBadges.userId, userId));
+    const earnedIds = new Set(earned.map((e) => e.badgeId));
+
+    const pending = allBadges.filter((b) => !earnedIds.has(b.id) && b.criterionValue > 0);
+    if (pending.length === 0) return [];
+
+    // Calcular métricas de progresso (reutilizando a mesma lógica do myProgress)
+    const [exactRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(bets)
+      .where(and(eq(bets.userId, userId), eq(bets.resultType, "exact")));
+    const exactScoresCareer = Number(exactRow?.count ?? 0);
+
+    const [zebraRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(bets)
+      .innerJoin(games, eq(bets.gameId, games.id))
+      .where(
+        and(
+          eq(bets.userId, userId),
+          eq(games.isZebraResult, true),
+          sql`${bets.resultType} IN ('exact', 'correct_result')`
+        )
+      );
+    const zebraScoresCareer = Number(zebraRow?.count ?? 0);
+
+    const [firstRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(poolMemberStats)
+      .where(and(eq(poolMemberStats.userId, userId), eq(poolMemberStats.rankPosition, 1)));
+    const firstPlacePools = Number(firstRow?.count ?? 0);
+
+    const [totalBetsRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(bets)
+      .where(eq(bets.userId, userId));
+    const totalBets = Number(totalBetsRow?.count ?? 0);
+
+    const [poolsRow] = await db
+      .select({ count: sql<number>`COUNT(DISTINCT ${bets.poolId})` })
+      .from(bets)
+      .where(eq(bets.userId, userId));
+    const participatedPools = Number(poolsRow?.count ?? 0);
+
+    const [refRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(referrals)
+      .where(and(eq(referrals.inviterId, userId), sql`${referrals.registeredAt} IS NOT NULL`));
+    const referralsCount = Number(refRow?.count ?? 0);
+
+    const progressMap: Record<string, number> = {
+      exact_scores_career: exactScoresCareer,
+      exact_scores_in_pool: exactScoresCareer,
+      zebra_scores_career: zebraScoresCareer,
+      first_place_pools: firstPlacePools,
+      first_bet: totalBets,
+      participated_pools: participatedPools,
+      referrals_count: referralsCount,
+      early_user: userId,
+    };
+
+    // Calcular % de progresso e ordenar pelos mais próximos
+    const withProgress = pending
+      .map((badge) => {
+        const current = progressMap[badge.criterionType] ?? 0;
+        const pct = Math.min(99, Math.round((current / badge.criterionValue) * 100));
+        return {
+          id: badge.id,
+          name: badge.name,
+          emoji: badge.emoji,
+          category: badge.category,
+          description: badge.description,
+          iconUrl: badge.iconUrl,
+          criterionType: badge.criterionType,
+          criterionValue: badge.criterionValue,
+          rarity: badge.rarity ?? "common",
+          isManual: badge.isManual,
+          earned: false as const,
+          earnedAt: null,
+          currentProgress: current,
+          progressPercent: pct,
+        };
+      })
+      // Ordenar: primeiro os que têm progresso > 0 (mais próximos), depois por raridade
+      .sort((a, b) => {
+        if (b.progressPercent !== a.progressPercent) return b.progressPercent - a.progressPercent;
+        const rarityOrder = { legendary: 5, epic: 4, rare: 3, uncommon: 2, common: 1 };
+        return (rarityOrder[b.rarity as keyof typeof rarityOrder] ?? 1) -
+               (rarityOrder[a.rarity as keyof typeof rarityOrder] ?? 1);
+      })
+      .slice(0, 3);
+
+    return withProgress;
+  }),
+
   // ─── Badges recém-desbloqueados não notificados ──────────────────────────
   getNewlyUnlocked: protectedProcedure.mutation(async ({ ctx }) => {
     const db = await (await import("../../server/db")).getDb();

@@ -1255,3 +1255,10 @@
 ### Testes
 - [x] Testes Vitest: 192/192 passando (todos os arquivos de teste)
 - [x] Checkpoint final
+
+## Feature — Próximas Conquistas no Dashboard (26/03/2026)
+- [x] Backend: procedure `badges.nearestBadges` — retorna os 3 badges não conquistados com maior % de progresso
+- [x] Frontend: seção "Próximas Conquistas" no Dashboard com BadgeCard + barra de progresso + raridade
+- [x] Frontend: link "Ver todas" apontando para /conquistas
+- [x] Testes Vitest: 192/192 passando
+- [x] Checkpoint final

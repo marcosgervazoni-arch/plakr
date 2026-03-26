@@ -32,6 +32,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorCard } from "@/components/ErrorCard";
 import { AdBanner } from "@/components/AdBanner";
 import DashboardBadgeCarousel from "@/components/DashboardBadgeCarousel";
+import NearestBadges from "@/components/NearestBadges";
 import {
   AreaChart,
   Area,
@@ -447,6 +448,9 @@ export default function Dashboard() {
                 )}
               </div>
             </section>
+
+            {/* Próximas Conquistas */}
+            <NearestBadges />
 
             {/* Ad between sections */}
             <AdBanner position="between_sections" className="w-full" />
