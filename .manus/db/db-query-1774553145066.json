@@ -1,0 +1,70 @@
+{
+  "query": "\n-- Limpar logs de admin restantes (todos são de desenvolvimento)\nDELETE FROM admin_logs;\n\n-- Verificação final: contagem de todas as tabelas\nSELECT 'users' as tabela, COUNT(*) as total FROM users\nUNION ALL SELECT 'pools', COUNT(*) FROM pools\nUNION ALL SELECT 'pool_members', COUNT(*) FROM pool_members\nUNION ALL SELECT 'bets', COUNT(*) FROM bets\nUNION ALL SELECT 'games', COUNT(*) FROM games\nUNION ALL SELECT 'tournaments', COUNT(*) FROM tournaments\nUNION ALL SELECT 'teams', COUNT(*) FROM teams\nUNION ALL SELECT 'notifications', COUNT(*) FROM notifications\nUNION ALL SELECT 'admin_logs', COUNT(*) FROM admin_logs\nUNION ALL SELECT 'user_plans', COUNT(*) FROM user_plans\nUNION ALL SELECT 'user_badges', COUNT(*) FROM user_badges\nUNION ALL SELECT 'ads', COUNT(*) FROM ads\nUNION ALL SELECT 'referrals', COUNT(*) FROM referrals\nUNION ALL SELECT 'email_queue', COUNT(*) FROM email_queue\nUNION ALL SELECT 'push_subscriptions', COUNT(*) FROM push_subscriptions;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \n-- Limpar logs de admin restantes (todos são de desenvolvimento)\nDELETE FROM admin_logs;\n\n-- Verificação final: contagem de todas as tabelas\nSELECT 'users' as tabela, COUNT(*) as total FROM users\nUNION ALL SELECT 'pools', COUNT(*) FROM pools\nUNION ALL SELECT 'pool_members', COUNT(*) FROM pool_members\nUNION ALL SELECT 'bets', COUNT(*) FROM bets\nUNION ALL SELECT 'games', COUNT(*) FROM games\nUNION ALL SELECT 'tournaments', COUNT(*) FROM tournaments\nUNION ALL SELECT 'teams', COUNT(*) FROM teams\nUNION ALL SELECT 'notifications', COUNT(*) FROM notifications\nUNION ALL SELECT 'admin_logs', COUNT(*) FROM admin_logs\nUNION ALL SELECT 'user_plans', COUNT(*) FROM user_plans\nUNION ALL SELECT 'user_badges', COUNT(*) FROM user_badges\nUNION ALL SELECT 'ads', COUNT(*) FROM ads\nUNION ALL SELECT 'referrals', COUNT(*) FROM referrals\nUNION ALL SELECT 'email_queue', COUNT(*) FROM email_queue\nUNION ALL SELECT 'push_subscriptions', COUNT(*) FROM push_subscriptions;\n",
+  "rows": [
+    {
+      "tabela": "bets",
+      "total": "0"
+    },
+    {
+      "tabela": "pool_members",
+      "total": "0"
+    },
+    {
+      "tabela": "games",
+      "total": "104"
+    },
+    {
+      "tabela": "users",
+      "total": "3"
+    },
+    {
+      "tabela": "pools",
+      "total": "0"
+    },
+    {
+      "tabela": "admin_logs",
+      "total": "0"
+    },
+    {
+      "tabela": "tournaments",
+      "total": "1"
+    },
+    {
+      "tabela": "teams",
+      "total": "48"
+    },
+    {
+      "tabela": "user_plans",
+      "total": "0"
+    },
+    {
+      "tabela": "user_badges",
+      "total": "4"
+    },
+    {
+      "tabela": "ads",
+      "total": "0"
+    },
+    {
+      "tabela": "email_queue",
+      "total": "0"
+    },
+    {
+      "tabela": "referrals",
+      "total": "1"
+    },
+    {
+      "tabela": "push_subscriptions",
+      "total": "0"
+    },
+    {
+      "tabela": "notifications",
+      "total": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tabela\ttotal\nbets\t0\npool_members\t0\ngames\t104\nusers\t3\npools\t0\nadmin_logs\t0\ntournaments\t1\nteams\t48\nuser_plans\t0\nuser_badges\t4\nads\t0\nemail_queue\t0\nreferrals\t1\npush_subscriptions\t0\nnotifications\t0\n",
+  "stderr": "",
+  "execution_time_ms": 416
+}

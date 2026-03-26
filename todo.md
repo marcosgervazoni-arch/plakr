@@ -1577,3 +1577,15 @@
 - [x] Backend: endpoint POST /api/upload reutilizado via ImageUploader
 - [x] Frontend (AdminLandingPage.tsx): seção "SEO & Compartilhamento" com upload da OG image (drag-and-drop, preview 1200×630, badge de status, links para Facebook Debugger e Twitter Card Validator)
 - [x] Backend (og.ts): `registerLandingOgRoute` — bots que acessam / recebem HTML com ogImageUrl dinâmico do banco; usuários reais passam para o SPA normalmente
+
+## Limpeza de Código e Segurança — Sprint 26/03/2026
+- [x] SEGURANÇA: /api/docs e /api/docs.json protegidos com middleware requireAdminForDocs (401/403 para não-admins)
+- [x] SEGURANÇA: Rotas de dev removidas do App.tsx (/showcase, /admin-legacy, /project-status)
+- [x] LIMPEZA: AdminPanel.tsx deletado (431 linhas)
+- [x] LIMPEZA: ComponentShowcase.tsx deletado (409 linhas)
+- [x] LIMPEZA: ProjectDashboard.tsx deletado (452 linhas)
+- [x] LIMPEZA: framer-motion removido do package.json (~140KB a menos no bundle)
+- [x] NOTA: axios mantido — usado pelo sdk.ts no núcleo de autenticação OAuth (não era redundante)
+- [x] LIMPEZA: 19 componentes shadcn/ui não utilizados deletados
+- [x] QUALIDADE: console.log removido de useReferralCapture.ts
+- [x] QUALIDADE: Rota duplicada /pool/:slug/settings removida do App.tsx

@@ -1,0 +1,43 @@
+{
+  "query": "\nSELECT COUNT(*) as usuarios_teste FROM users WHERE email LIKE '%@test.com';\nSELECT COUNT(*) as usuarios_reais FROM users WHERE email NOT LIKE '%@test.com';\nSELECT id, name, status, createdAt FROM pools ORDER BY createdAt;\nSELECT id, name FROM tournaments;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT COUNT(*) as usuarios_teste FROM users WHERE email LIKE '%@test.com';\nSELECT COUNT(*) as usuarios_reais FROM users WHERE email NOT LIKE '%@test.com';\nSELECT id, name, status, createdAt FROM pools ORDER BY createdAt;\nSELECT id, name FROM tournaments;\n",
+  "rows": [
+    {
+      "usuarios_teste": "138"
+    },
+    {
+      "usuarios_teste": "usuarios_reais"
+    },
+    {
+      "usuarios_teste": "3"
+    },
+    {
+      "usuarios_teste": "id\tname\tstatus\tcreatedAt"
+    },
+    {
+      "usuarios_teste": "30001\tBolão da Copa Teste 2\tdeleted\t2026-03-23 04:27:31"
+    },
+    {
+      "usuarios_teste": "90001\tBolão para teste de uso\tactive\t2026-03-23 23:59:46"
+    },
+    {
+      "usuarios_teste": "120001\tTeste 123\tactive\t2026-03-24 12:58:42"
+    },
+    {
+      "usuarios_teste": "150008\tit59945089 Pool A\tactive\t2026-03-25 17:32:25"
+    },
+    {
+      "usuarios_teste": "150009\tit59945089 Pool B\tactive\t2026-03-25 17:32:25"
+    },
+    {
+      "usuarios_teste": "id\tname"
+    },
+    {
+      "usuarios_teste": "2\tCopa do Mundo FIFA"
+    }
+  ],
+  "messages": [],
+  "stdout": "usuarios_teste\n138\nusuarios_reais\n3\nid\tname\tstatus\tcreatedAt\n30001\tBolão da Copa Teste 2\tdeleted\t2026-03-23 04:27:31\n90001\tBolão para teste de uso\tactive\t2026-03-23 23:59:46\n120001\tTeste 123\tactive\t2026-03-24 12:58:42\n150008\tit59945089 Pool A\tactive\t2026-03-25 17:32:25\n150009\tit59945089 Pool B\tactive\t2026-03-25 17:32:25\nid\tname\n2\tCopa do Mundo FIFA\n",
+  "stderr": "",
+  "execution_time_ms": 554
+}

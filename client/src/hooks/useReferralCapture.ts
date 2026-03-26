@@ -57,10 +57,7 @@ export function useReferralCapture() {
   });
 
   const useInviteCode = trpc.users.useInviteCode.useMutation({
-    onSuccess: (data) => {
-      if (data?.success) {
-        console.log("[Referral] Convite registrado com sucesso.");
-      }
+    onSuccess: () => {
       clearRefCode();
     },
     onError: () => {

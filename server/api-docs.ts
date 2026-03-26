@@ -8,8 +8,32 @@
  * Nota: A API usa tRPC sobre HTTP. Todas as queries são GET /api/trpc/<procedure>
  * e todas as mutations são POST /api/trpc/<procedure>.
  */
+import type { Request, Response, NextFunction } from "express";
 import { Express } from "express";
 import swaggerUi from "swagger-ui-express";
+import { sdk } from "./_core/sdk";
+import { getUserByOpenId } from "./db";
+
+/**
+ * Middleware de autenticação admin para /api/docs.
+ * Rejeita qualquer acesso que não seja de um usuário com role === 'admin'.
+ */
+async function requireAdminForDocs(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    if (!user || user.role !== "admin") {
+      res.status(403).json({ error: "Acesso restrito a administradores." });
+      return;
+    }
+    next();
+  } catch {
+    res.status(401).json({ error: "Autenticação necessária para acessar a documentação da API." });
+  }
+}
 
 const openApiSpec = {
   openapi: "3.1.0",
@@ -1023,6 +1047,8 @@ Todos os erros seguem o contrato padronizado do \`server/errors.ts\`:
 };
 
 export function registerApiDocs(app: Express): void {
+  // [S-DOCS] Proteger documentação da API — apenas admins autenticados
+  app.use("/api/docs", requireAdminForDocs);
   app.use(
     "/api/docs",
     swaggerUi.serve,
@@ -1043,8 +1069,8 @@ export function registerApiDocs(app: Express): void {
     })
   );
 
-  // Endpoint JSON para integração com ferramentas externas
-  app.get("/api/docs.json", (_req, res) => {
+  // Endpoint JSON para integração com ferramentas externas — também protegido
+  app.get("/api/docs.json", requireAdminForDocs, (_req, res) => {
     res.json(openApiSpec);
   });
 }

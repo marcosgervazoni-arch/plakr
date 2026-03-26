@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Remover admin_logs de usuários de teste\nDELETE FROM admin_logs WHERE adminId IN (SELECT id FROM users WHERE email LIKE '%@test.com');\n\n-- Bolões de teste (notificações já foram removidas)\nDELETE FROM pools WHERE name LIKE '%teste%' OR name LIKE '%Teste%' OR name LIKE 'it%';\n\n-- Usuários de teste\nDELETE FROM users WHERE email LIKE '%@test.com';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \n-- Remover admin_logs de usuários de teste\nDELETE FROM admin_logs WHERE adminId IN (SELECT id FROM users WHERE email LIKE '%@test.com');\n\n-- Bolões de teste (notificações já foram removidas)\nDELETE FROM pools WHERE name LIKE '%teste%' OR name LIKE '%Teste%' OR name LIKE 'it%';\n\n-- Usuários de teste\nDELETE FROM users WHERE email LIKE '%@test.com';\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1766
+}

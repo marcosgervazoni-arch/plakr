@@ -1,0 +1,150 @@
+{
+  "query": "\nSELECT id, name, email, role, createdAt FROM users ORDER BY createdAt DESC LIMIT 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT id, name, email, role, createdAt FROM users ORDER BY createdAt DESC LIMIT 20;\n",
+  "rows": [
+    {
+      "id": "390541",
+      "name": "Test Admin",
+      "email": "it52219668-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 19:10:21"
+    },
+    {
+      "id": "390540",
+      "name": "Integration User B",
+      "email": "it52219668-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 19:10:20"
+    },
+    {
+      "id": "390506",
+      "name": "Test Admin",
+      "email": "it50296400-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 18:38:18"
+    },
+    {
+      "id": "390505",
+      "name": "Integration User B",
+      "email": "it50296400-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 18:38:16"
+    },
+    {
+      "id": "390503",
+      "name": "Test Admin",
+      "email": "it50249179-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 18:37:31"
+    },
+    {
+      "id": "390502",
+      "name": "Integration User B",
+      "email": "it50249179-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 18:37:29"
+    },
+    {
+      "id": "390376",
+      "name": "Test Admin",
+      "email": "it41208123-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 16:06:49"
+    },
+    {
+      "id": "390375",
+      "name": "Integration User B",
+      "email": "it41208123-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 16:06:48"
+    },
+    {
+      "id": "390315",
+      "name": "Test Admin",
+      "email": "it34672420-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 14:17:54"
+    },
+    {
+      "id": "390314",
+      "name": "Integration User B",
+      "email": "it34672420-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 14:17:52"
+    },
+    {
+      "id": "390301",
+      "name": "Test Admin",
+      "email": "it33980208-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 14:06:22"
+    },
+    {
+      "id": "390300",
+      "name": "Integration User B",
+      "email": "it33980208-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 14:06:20"
+    },
+    {
+      "id": "390298",
+      "name": "Test Admin",
+      "email": "it33766370-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 14:02:48"
+    },
+    {
+      "id": "390297",
+      "name": "Integration User B",
+      "email": "it33766370-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 14:02:46"
+    },
+    {
+      "id": "390295",
+      "name": "Test Admin",
+      "email": "it33604154-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 14:00:06"
+    },
+    {
+      "id": "390294",
+      "name": "Integration User B",
+      "email": "it33604154-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 14:00:04"
+    },
+    {
+      "id": "390283",
+      "name": "Test Admin",
+      "email": "it32260871-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 13:37:42"
+    },
+    {
+      "id": "390282",
+      "name": "Integration User B",
+      "email": "it32260871-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 13:37:41"
+    },
+    {
+      "id": "390264",
+      "name": "Test Admin",
+      "email": "it31181905-adm@test.com",
+      "role": "admin",
+      "createdAt": "2026-03-26 13:19:43"
+    },
+    {
+      "id": "390263",
+      "name": "Integration User B",
+      "email": "it31181905-b@test.com",
+      "role": "user",
+      "createdAt": "2026-03-26 13:19:42"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tcreatedAt\n390541\tTest Admin\tit52219668-adm@test.com\tadmin\t2026-03-26 19:10:21\n390540\tIntegration User B\tit52219668-b@test.com\tuser\t2026-03-26 19:10:20\n390506\tTest Admin\tit50296400-adm@test.com\tadmin\t2026-03-26 18:38:18\n390505\tIntegration User B\tit50296400-b@test.com\tuser\t2026-03-26 18:38:16\n390503\tTest Admin\tit50249179-adm@test.com\tadmin\t2026-03-26 18:37:31\n390502\tIntegration User B\tit50249179-b@test.com\tuser\t2026-03-26 18:37:29\n390376\tTest Admin\tit41208123-adm@test.com\tadmin\t2026-03-26 16:06:49\n390375\tIntegration User B\tit41208123-b@test.com\tuser\t2026-03-26 16:06:48\n390315\tTest Admin\tit34672420-adm@test.com\tadmin\t2026-03-26 14:17:54\n390314\tIntegration User B\tit34672420-b@test.com\tuser\t2026-03-26 14:17:52\n390301\tTest Admin\tit33980208-adm@test.com\tadmin\t2026-03-26 14:06:22\n390300\tIntegration User B\tit33980208-b@test.com\tuser\t2026-03-26 14:06:20\n390298\tTest Admin\tit33766370-adm@test.com\tadmin\t2026-03-26 14:02:48\n390297\tIntegration User B\tit33766370-b@test.com\tuser\t2026-03-26 14:02:46\n390295\tTest Admin\tit33604154-adm@test.com\tadmin\t2026-03-26 14:00:06\n390294\tIntegration User B\tit33604154-b@test.com\tuser\t2026-03-26 14:00:04\n390283\tTest Admin\tit32260871-adm@test.com\tadmin\t2026-03-26 13:37:42\n390282\tIntegration User B\tit32260871-b@test.com\tuser\t2026-03-26 13:37:41\n390264\tTest Admin\tit31181905-adm@test.com\tadmin\t2026-03-26 13:19:43\n390263\tIntegration User B\tit31181905-b@test.com\tuser\t2026-03-26 13:19:42\n",
+  "stderr": "",
+  "execution_time_ms": 369
+}

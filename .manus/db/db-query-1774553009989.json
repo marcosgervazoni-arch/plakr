@@ -1,0 +1,45 @@
+{
+  "query": "\nSELECT \n  ub.id,\n  u.name AS usuario,\n  u.email,\n  b.name AS conquista,\n  b.description AS descricao\nFROM user_badges ub\nJOIN users u ON u.id = ub.userId\nJOIN badges b ON b.id = ub.badgeId;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT \n  ub.id,\n  u.name AS usuario,\n  u.email,\n  b.name AS conquista,\n  b.description AS descricao\nFROM user_badges ub\nJOIN users u ON u.id = ub.userId\nJOIN badges b ON b.id = ub.badgeId;\n",
+  "rows": [
+    {
+      "id": "7",
+      "usuario": "Marcos Gervazoni",
+      "email": "marcos.gervazoni@gmail.com",
+      "conquista": "Chegou Cedo",
+      "descricao": "Um dos primeiros 100 usuários da plataforma. Estava aqui antes de todo mundo."
+    },
+    {
+      "id": "6",
+      "usuario": "Marcos Gervazoni",
+      "email": "marcos.gervazoni@gmail.com",
+      "conquista": "Desbravador",
+      "descricao": "Criou o primeiro bolão. Alguém tinha que começar."
+    },
+    {
+      "id": "2",
+      "usuario": "Filipe Postai",
+      "email": "postairech@gmail.com",
+      "conquista": "Desbravador",
+      "descricao": "Criou o primeiro bolão. Alguém tinha que começar."
+    },
+    {
+      "id": "1",
+      "usuario": "Filipe Postai",
+      "email": "postairech@gmail.com",
+      "conquista": "Boas-Vindas",
+      "descricao": "Fez o primeiro palpite. A jornada começa aqui."
+    },
+    {
+      "id": "3",
+      "usuario": "Integration User B",
+      "email": "it59945089-b@test.com",
+      "conquista": "Desbravador",
+      "descricao": "Criou o primeiro bolão. Alguém tinha que começar."
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tusuario\temail\tconquista\tdescricao\n7\tMarcos Gervazoni\tmarcos.gervazoni@gmail.com\tChegou Cedo\tUm dos primeiros 100 usuários da plataforma. Estava aqui antes de todo mundo.\n6\tMarcos Gervazoni\tmarcos.gervazoni@gmail.com\tDesbravador\tCriou o primeiro bolão. Alguém tinha que começar.\n2\tFilipe Postai\tpostairech@gmail.com\tDesbravador\tCriou o primeiro bolão. Alguém tinha que começar.\n1\tFilipe Postai\tpostairech@gmail.com\tBoas-Vindas\tFez o primeiro palpite. A jornada começa aqui.\n3\tIntegration User B\tit59945089-b@test.com\tDesbravador\tCriou o primeiro bolão. Alguém tinha que começar.\n",
+  "stderr": "",
+  "execution_time_ms": 351
+}

@@ -9,8 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import PoolPage from "./pages/PoolPage";
 import PoolSettings from "./pages/PoolSettings";
 import JoinPool from "./pages/JoinPool";
-import AdminPanel from "./pages/AdminPanel";
-import ProjectDashboard from "./pages/ProjectDashboard";
+
 import EnterPool from "./pages/EnterPool";
 import PublicPools from "./pages/PublicPools";
 import PublicProfile from "./pages/PublicProfile";
@@ -57,7 +56,6 @@ import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminImportLogs from "./pages/admin/AdminImportLogs";
 import AdminRetrospectivas from "./pages/admin/AdminRetrospectivas";
 import AdminLandingPage from "./pages/admin/AdminLandingPage";
-import ComponentShowcase from "./pages/ComponentShowcase";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useReferralCapture } from "./hooks/useReferralCapture";
 
@@ -99,9 +97,6 @@ function Router() {
       <Route path="/pool/:slug/manage/games" component={OrganizerGames} />
       <Route path="/pool/:slug/manage/communication" component={OrganizerCommunication} />
       <Route path="/pool/:slug/manage/tournament" component={CustomTournament} />
-      {/* Legacy settings route — redirect to manage */}
-      <Route path="/pool/:slug/settings" component={OrganizerDashboard} />
-
       {/* Admin routes A1-A10 */}
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/tournaments" component={AdminTournaments} />
@@ -121,13 +116,6 @@ function Router() {
       <Route path="/admin/import-logs" component={AdminImportLogs} />
       <Route path="/admin/retrospectivas" component={AdminRetrospectivas} />
       <Route path="/admin/landing-page" component={AdminLandingPage} />
-      <Route path="/showcase" component={ComponentShowcase} />
-      {/* Legacy admin panel */}
-      <Route path="/admin-legacy" component={AdminPanel} />
-
-      {/* Project tracking */}
-      <Route path="/project-status" component={ProjectDashboard} />
-
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
