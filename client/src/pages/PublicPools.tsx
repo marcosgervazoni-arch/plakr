@@ -148,7 +148,7 @@ export default function PublicPools() {
         {/* Cabeçalho */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
+            <h1 className="font-display font-bold text-xl">
               Explorar Bolões
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -268,7 +268,7 @@ export default function PublicPools() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <h3 className="font-bold text-sm leading-tight" style={{ fontFamily: "'Syne', sans-serif" }}>
+                        <h3 className="font-display font-bold text-sm leading-tight">
                           {pool.name}
                         </h3>
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -376,7 +376,7 @@ export default function PublicPools() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <DialogTitle className="text-base leading-tight" style={{ fontFamily: "'Syne', sans-serif" }}>
+                      <DialogTitle className="font-display text-base leading-tight">
                         {confirmPool.name}
                       </DialogTitle>
                       {confirmPool.tournamentName && (

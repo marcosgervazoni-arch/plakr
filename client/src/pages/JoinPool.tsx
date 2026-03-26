@@ -172,7 +172,7 @@ export default function JoinPool() {
 
             {/* Nome em Syne 24px */}
             <div>
-              <h1 className="font-bold text-2xl leading-tight" style={{ fontFamily: "'Syne', sans-serif" }}>
+              <h1 className="font-display font-bold text-2xl leading-tight">
                 {preview.name}
               </h1>
               {preview.tournament && (

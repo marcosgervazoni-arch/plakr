@@ -52,7 +52,7 @@ function MetricCard({
       </div>
       <p
         className={`font-bold text-3xl leading-none ${warn ? "text-yellow-400" : "text-foreground"}`}
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+
       >
         {value}
       </p>
@@ -214,7 +214,7 @@ export default function OrganizerDashboard() {
       <div className="p-6 space-y-6 max-w-5xl">
         {/* Page title */}
         <div>
-          <h1 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
+          <h1 className="font-display font-bold text-xl">
             Dashboard do Bolão
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -311,7 +311,7 @@ export default function OrganizerDashboard() {
                   <div key={r.userId} className="px-4 py-2.5 flex items-center gap-3">
                     <span
                       className={`w-6 text-center font-bold text-sm shrink-0 ${i === 0 ? "text-yellow-400" : i === 1 ? "text-slate-300" : i === 2 ? "text-amber-600" : "text-muted-foreground"}`}
-                      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+
                     >
                       {i + 1}
                     </span>
@@ -321,7 +321,7 @@ export default function OrganizerDashboard() {
                     <span className="text-sm flex-1 truncate">{r.userName ?? "Usuário"}</span>
                     <span
                       className="font-bold text-sm text-primary shrink-0"
-                      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+
                     >
                       {r.totalPoints} pts
                     </span>

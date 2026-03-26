@@ -199,7 +199,7 @@ export default function OrganizerAccess() {
         {accessType === "private_link" && (
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Link de Convite</h3>
-            <div className="bg-[#22263A] border border-border/30 rounded-xl p-5 space-y-4">
+            <div className="bg-surface-3 border border-border/30 rounded-xl p-5 space-y-4">
               <div>
                 <p
                   className="text-sm font-mono text-muted-foreground break-all leading-relaxed"

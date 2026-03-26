@@ -421,7 +421,7 @@ export default function PoolPage() {
 
             {/* Info principal */}
             <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-lg leading-tight truncate" style={{ fontFamily: "'Syne', sans-serif" }}>
+              <h1 className="font-display font-bold text-lg leading-tight truncate">
                 {pool.name}
               </h1>
               {tournament?.name && (

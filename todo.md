@@ -1404,3 +1404,11 @@
 - [x] SQL: UPDATE retrospective_config SET closingCtaText = 'Crie seu bolão no Plakr! →'
 - [x] Atualizar skill orchestrator-agent/SKILL.md
 - [x] QA: 205 testes passando + TypeScript sem erros + servidor sem erros + checkpoint final
+
+## Sprint A — Design System Plakr! (26/03/2026) ✅
+- [x] Extrair gradientes recorrentes para classes utilitárias Tailwind no index.css
+- [x] Substituir cores hardcoded (#hex, rgb) por variáveis CSS nos componentes
+- [x] Eliminar estilos inline style={{fontFamily}} substituindo por classes Tailwind
+- [x] Atualizar ComponentShowcase com paleta, tipografia, gradientes e componentes
+- [x] Adicionar rota /showcase e link no AdminLayout (grupo Configurações)
+- [x] QA: 205 testes passando + TypeScript sem erros + checkpoint final

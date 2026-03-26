@@ -192,7 +192,7 @@ export default function OrganizerLayout({
             <Trophy className="w-4 h-4 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm truncate" style={{ fontFamily: "'Syne', sans-serif" }}>
+            <p className="font-display font-bold text-sm truncate">
               {poolName}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
@@ -281,7 +281,7 @@ export default function OrganizerLayout({
         >
           <Menu className="w-4 h-4" />
         </Button>
-        <span className="font-bold text-sm truncate" style={{ fontFamily: "'Syne', sans-serif" }}>
+        <span className="font-display font-bold text-sm truncate">
           {poolName}
         </span>
         <Badge className={cn("text-xs py-0 px-1.5 border ml-auto", statusConfig.color)}>

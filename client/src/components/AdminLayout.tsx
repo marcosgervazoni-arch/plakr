@@ -18,6 +18,7 @@ import {
   Layers,
   Megaphone,
   Menu,
+  Palette,
   Settings,
   Shield,
   Trophy,

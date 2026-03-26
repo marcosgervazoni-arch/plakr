@@ -44,6 +44,21 @@
   /* Brand — alias de primary para compatibilidade com componentes que usam bg-brand */
   --color-brand: var(--primary);
   --color-brand-foreground: var(--primary-foreground);
+  /* Surface tokens */
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  /* Chart semantic tokens */
+  --color-chart-brand: var(--chart-brand);
+  --color-chart-indigo: var(--chart-indigo);
+  --color-chart-success: var(--chart-success);
+  --color-chart-warning: var(--chart-warning);
+  --color-chart-purple: var(--chart-purple);
+  /* Font families */
+  --font-display: 'Syne', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 :root {
@@ -87,6 +102,17 @@
   --chart-3: oklch(0.64 0.18 142);
   --chart-4: oklch(0.63 0.22 25);
   --chart-5: oklch(0.70 0.15 300);
+  /* Semantic chart colors (para Recharts inline styles) */
+  --chart-brand: oklch(0.78 0.16 75);
+  --chart-indigo: oklch(0.60 0.19 250);
+  --chart-success: oklch(0.64 0.18 142);
+  --chart-warning: oklch(0.63 0.22 25);
+  --chart-purple: oklch(0.70 0.15 300);
+  /* Surface tokens (para bg hardcodes em dark surfaces) */
+  --surface-1: oklch(0.15 0.025 264);
+  --surface-2: oklch(0.17 0.025 264);
+  --surface-3: oklch(0.20 0.03 264);
+  --surface-4: oklch(0.26 0.03 264);
 }
 
 .dark {
@@ -199,6 +225,47 @@
       padding-right: 2rem;
       max-width: 1280px; /* Standard content width */
     }
+  }
+
+  /* ─── Gradient Utilities — Plakr! Design System ──────────────────────────── */
+  /* Brand gradients */
+  .gradient-brand {
+    @apply bg-gradient-to-br from-primary/20 via-primary/8 to-background;
+  }
+  .gradient-brand-solid {
+    @apply bg-gradient-to-br from-primary to-primary/70;
+  }
+  .gradient-brand-subtle {
+    @apply bg-gradient-to-br from-primary/10 via-primary/5 to-transparent;
+  }
+  .gradient-brand-horizontal {
+    @apply bg-gradient-to-r from-primary/15 via-primary/8 to-primary/15;
+  }
+  /* Surface gradients */
+  .gradient-surface {
+    @apply bg-gradient-to-br from-card to-background;
+  }
+  .gradient-surface-elevated {
+    @apply bg-gradient-to-br from-surface-3 to-surface-1;
+  }
+  /* Status gradients */
+  .gradient-warning {
+    @apply bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80;
+  }
+  .gradient-success {
+    @apply bg-gradient-to-br from-green-500/20 to-green-500/5;
+  }
+  .gradient-danger {
+    @apply bg-gradient-to-br from-destructive/20 to-destructive/5;
+  }
+  /* Separator gradients */
+  .gradient-separator {
+    @apply bg-gradient-to-r from-transparent via-border to-transparent;
+  }
+
+  /* ─── Typography Utilities ────────────────────────────────────────────────── */
+  .font-display {
+    font-family: var(--font-display);
   }
 }
 

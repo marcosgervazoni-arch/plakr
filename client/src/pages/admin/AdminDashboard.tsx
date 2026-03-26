@@ -149,7 +149,7 @@ export default function AdminDashboard() {
       ]
     : [];
 
-  const chartColors = { users: "#6366f1", pools: "#22c55e", bets: "#f59e0b" };
+  const chartColors = { users: "var(--chart-indigo)", pools: "var(--chart-success)", bets: "var(--chart-warning)" };
   const chartLabels = { users: "Usuários", pools: "Bolões", bets: "Palpites" };
 
   return (

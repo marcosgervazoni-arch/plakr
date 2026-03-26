@@ -285,7 +285,7 @@ export default function Dashboard() {
                     {avatarUrl ? (
                       <img src={avatarUrl} alt={user?.name ?? ""} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="font-bold text-xl text-primary" style={{ fontFamily: "'Syne', sans-serif" }}>
+                      <span className="font-display font-bold text-xl text-primary">
                         {initials}
                       </span>
                     )}
@@ -297,7 +297,7 @@ export default function Dashboard() {
                   )}
                 </div>
                 <div>
-                  <h2 className="font-bold text-base" style={{ fontFamily: "'Syne', sans-serif" }}>
+                  <h2 className="font-display font-bold text-base">
                     {user?.name ?? "Usuário"}
                   </h2>
                   <p className="text-xs text-muted-foreground">
@@ -320,19 +320,19 @@ export default function Dashboard() {
               {/* Global stats in JetBrains Mono */}
               <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/30">
                 <div className="text-center">
-                  <p className="font-bold text-2xl text-primary leading-none" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  <p className="font-mono font-bold text-2xl text-primary leading-none">
                     {stats?.totalPoints ?? 0}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">Pontos</p>
                 </div>
                 <div className="text-center border-x border-border/30">
-                  <p className="font-bold text-2xl text-green-400 leading-none" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  <p className="font-mono font-bold text-2xl text-green-400 leading-none">
                     {stats?.exactScores ?? 0}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">Exatos</p>
                 </div>
                 <div className="text-center">
-                  <p className="font-bold text-2xl text-foreground leading-none" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  <p className="font-mono font-bold text-2xl text-foreground leading-none">
                     {stats?.poolsCount ?? activePools.length}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">Bolões</p>
@@ -437,7 +437,7 @@ export default function Dashboard() {
                             {pool.status === "awaiting_conclusion" ? (
                               <span className="text-xs font-semibold text-orange-400">Aguardando encerramento</span>
                             ) : rankPosition && totalMembers > 0 ? (
-                              <span className="text-xs font-semibold" style={{ color: rankPosition === 1 ? "#FBBF24" : rankPosition <= 3 ? "#94A3B8" : undefined }}>
+                              <span className="text-xs font-semibold" style={{ color: rankPosition === 1 ? "#FBBF24" : rankPosition <= 3 ? "var(--muted-foreground)" : undefined }}>
                                 {rankPosition === 1 ? "🥇" : rankPosition === 2 ? "🥈" : rankPosition === 3 ? "🥉" : `${rankPosition}º`} de {totalMembers}
                               </span>
                             ) : (
@@ -535,7 +535,7 @@ export default function Dashboard() {
                     <TrendingUp className="w-8 h-8 text-muted-foreground/20" />
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">Nenhum jogo pontuado neste bolão ainda.</p>
-                      <p className="font-bold text-3xl text-primary mt-2" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      <p className="font-mono font-bold text-3xl text-primary mt-2">
                         0 pts
                       </p>
                     </div>
@@ -550,11 +550,11 @@ export default function Dashboard() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#64748B" }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--chart-indigo)" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: "var(--chart-indigo)" }} axisLine={false} tickLine={false} />
                       <Tooltip
-                        contentStyle={{ background: "#1A1D27", border: "1px solid #2E3347", borderRadius: "8px", fontSize: "12px" }}
-                        labelStyle={{ color: "#94A3B8" }}
+                        contentStyle={{ background: "var(--card)", border: "1px solid #2E3347", borderRadius: "8px", fontSize: "12px" }}
+                        labelStyle={{ color: "var(--muted-foreground)" }}
                         formatter={(value: number) => [`${value} pts`, "Pontos acumulados"]}
                       />
                       <Area
@@ -599,12 +599,12 @@ export default function Dashboard() {
                       <PolarGrid stroke="rgba(255,255,255,0.08)" />
                       <PolarAngleAxis
                         dataKey="subject"
-                        tick={{ fontSize: 11, fill: "#94A3B8" }}
+                        tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                       />
                       <PolarRadiusAxis
                         angle={90}
                         domain={[0, 100]}
-                        tick={{ fontSize: 9, fill: "#64748B" }}
+                        tick={{ fontSize: 9, fill: "var(--chart-indigo)" }}
                         tickCount={4}
                       />
                       <RechartsRadar
@@ -617,7 +617,7 @@ export default function Dashboard() {
                         dot={{ fill: "hsl(var(--primary))", r: 3, strokeWidth: 0 }}
                       />
                       <Tooltip
-                        contentStyle={{ background: "#1A1D27", border: "1px solid #2E3347", borderRadius: "8px", fontSize: "12px" }}
+                        contentStyle={{ background: "var(--card)", border: "1px solid #2E3347", borderRadius: "8px", fontSize: "12px" }}
                         formatter={(value: number, name: string) => [`${value}%`, name]}
                       />
                     </RadarChart>
@@ -731,7 +731,7 @@ function WelcomeCard({
 
       {/* Mensagem de boas-vindas */}
       <div className="space-y-1.5">
-        <h2 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
+        <h2 className="font-display font-bold text-xl">
           Bem-vindo ao Plakr!, {firstName}!
         </h2>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">

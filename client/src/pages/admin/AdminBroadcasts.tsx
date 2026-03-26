@@ -173,8 +173,8 @@ function EmailPreview({
 }) {
   const displayTitle = emoji ? `${emoji} ${title || "Título"}` : (title || "Título");
   return (
-    <div className="border border-border/50 rounded-xl overflow-hidden bg-[#0f0f0f] text-sm">
-      <div className="px-4 py-2 bg-[#1a1a1a] border-b border-border/30">
+    <div className="border border-border/50 rounded-xl overflow-hidden bg-surface-1 text-sm">
+      <div className="px-4 py-2 bg-surface-1 border-b border-border/30">
         <p className="text-xs text-muted-foreground">Assunto:</p>
         <p className="text-sm font-medium text-white">{displayTitle}</p>
       </div>

@@ -56,6 +56,7 @@ import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminImportLogs from "./pages/admin/AdminImportLogs";
 import AdminRetrospectivas from "./pages/admin/AdminRetrospectivas";
+import ComponentShowcase from "./pages/ComponentShowcase";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useReferralCapture } from "./hooks/useReferralCapture";
 
@@ -118,6 +119,7 @@ function Router() {
       <Route path="/admin/referrals" component={AdminReferrals} />
       <Route path="/admin/import-logs" component={AdminImportLogs} />
       <Route path="/admin/retrospectivas" component={AdminRetrospectivas} />
+      <Route path="/showcase" component={ComponentShowcase} />
       {/* Legacy admin panel */}
       <Route path="/admin-legacy" component={AdminPanel} />
 

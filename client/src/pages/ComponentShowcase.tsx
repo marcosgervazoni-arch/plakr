@@ -1,1437 +1,409 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+/**
+ * ComponentShowcase — Referência Visual Oficial do Design System Plakr!
+ * Acesse em: /showcase (apenas admin)
+ */
 import { Badge } from "@/components/ui/badge";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
-import { Label } from "@/components/ui/label";
-import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarSeparator,
-  MenubarTrigger,
-} from "@/components/ui/menubar";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Toggle } from "@/components/ui/toggle";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useTheme } from "@/contexts/ThemeContext";
-import { format } from "date-fns";
-import { zhCN } from "date-fns/locale";
-import {
-  AlertCircle,
-  CalendarIcon,
-  Check,
-  Clock,
-  Moon,
-  Sun,
-  X,
+  AlertCircle, CheckCircle2, Info, Trophy, Zap, Star,
+  Palette, Type, Layers, Component, Sparkles, ArrowLeft
 } from "lucide-react";
-import { useState } from "react";
-import { toast as sonnerToast } from "sonner";
-import { AIChatBox, type Message } from "@/components/AIChatBox";
+import { Link } from "wouter";
 
-export default function ComponentsShowcase() {
-  const { theme, toggleTheme } = useTheme();
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [datePickerDate, setDatePickerDate] = useState<Date>();
-  const [selectedFruits, setSelectedFruits] = useState<string[]>([]);
-  const [progress, setProgress] = useState(33);
-  const [currentPage, setCurrentPage] = useState(2);
-  const [openCombobox, setOpenCombobox] = useState(false);
-  const [selectedFramework, setSelectedFramework] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
-  const [dialogInput, setDialogInput] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  // AI ChatBox demo state
-  const [chatMessages, setChatMessages] = useState<Message[]>([
-    { role: "system", content: "You are a helpful assistant." },
-  ]);
-  const [isChatLoading, setIsChatLoading] = useState(false);
-
-  const handleDialogSubmit = () => {
-    console.log("Dialog submitted with value:", dialogInput);
-    sonnerToast.success("Submitted successfully", {
-      description: `Input: ${dialogInput}`,
-    });
-    setDialogInput("");
-    setDialogOpen(false);
-  };
-
-  const handleDialogKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      handleDialogSubmit();
-    }
-  };
-
-  const handleChatSend = (content: string) => {
-    // Add user message
-    const newMessages: Message[] = [...chatMessages, { role: "user", content }];
-    setChatMessages(newMessages);
-
-    // Simulate AI response with delay
-    setIsChatLoading(true);
-    setTimeout(() => {
-      const aiResponse: Message = {
-        role: "assistant",
-        content: `This is a **demo response**. In a real app, you would call a tRPC mutation here:\n\n\`\`\`typescript\nconst chatMutation = trpc.ai.chat.useMutation({\n  onSuccess: (response) => {\n    setChatMessages(prev => [...prev, {\n      role: "assistant",\n      content: response.choices[0].message.content\n    }]);\n  }\n});\n\nchatMutation.mutate({ messages: newMessages });\n\`\`\`\n\nYour message was: "${content}"`,
-      };
-      setChatMessages([...newMessages, aiResponse]);
-      setIsChatLoading(false);
-    }, 1500);
-  };
-
+function Section({ title, icon: Icon, children }: {
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <main className="container max-w-6xl mx-auto">
-        <div className="space-y-2 justify-between flex">
-          <h2 className="text-3xl font-bold tracking-tight mb-6">
-            Shadcn/ui Component Library
-          </h2>
-          <Button variant="outline" size="icon" onClick={toggleTheme}>
-            {theme === "light" ? (
-              <Moon className="h-5 w-5" />
-            ) : (
-              <Sun className="h-5 w-5" />
-            )}
-          </Button>
+    <section className="space-y-4">
+      <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+        <Icon className="w-5 h-5 text-primary" />
+        <h2 className="font-display font-bold text-lg">{title}</h2>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ColorSwatch({ name, cssVar, tailwind }: { name: string; cssVar: string; tailwind: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div
+        className="h-14 w-full rounded-lg border border-border/40 shadow-sm"
+        style={{ background: `var(${cssVar})` }}
+      />
+      <p className="text-xs font-mono font-medium text-foreground">{name}</p>
+      <p className="text-[10px] text-muted-foreground font-mono">{tailwind}</p>
+      <p className="text-[10px] text-muted-foreground/60 font-mono">{cssVar}</p>
+    </div>
+  );
+}
+
+function GradientSwatch({ name, className }: { name: string; className: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className={`h-14 w-full rounded-lg border border-border/40 ${className}`} />
+      <p className="text-xs font-mono font-medium text-foreground">{name}</p>
+      <p className="text-[10px] text-muted-foreground font-mono">.{name}</p>
+    </div>
+  );
+}
+
+export default function ComponentShowcase() {
+  return (
+    <TooltipProvider>
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Header */}
+        <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="container py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Link href="/admin">
+                <Button variant="ghost" size="sm" className="gap-1.5">
+                  <ArrowLeft className="w-4 h-4" />
+                  Admin
+                </Button>
+              </Link>
+              <Separator orientation="vertical" className="h-5" />
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <h1 className="font-display font-bold text-lg">Design System</h1>
+                <Badge variant="outline" className="text-[10px] font-mono">Plakr! v1</Badge>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground hidden sm:block">
+              Referência visual oficial — use como guia ao criar novas telas
+            </p>
+          </div>
         </div>
 
-        <div className="space-y-12">
-          {/* Text Colors Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Text Colors</h3>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Foreground (Default)
-                      </p>
-                      <p className="text-foreground text-lg">
-                        Default text color for main content
-                      </p>
+        <div className="container py-8 space-y-12">
+          <Tabs defaultValue="colors">
+            <TabsList className="mb-8 flex flex-wrap gap-1 h-auto bg-card border border-border/50 p-1">
+              <TabsTrigger value="colors" className="gap-1.5 text-xs">
+                <Palette className="w-3.5 h-3.5" /> Cores
+              </TabsTrigger>
+              <TabsTrigger value="typography" className="gap-1.5 text-xs">
+                <Type className="w-3.5 h-3.5" /> Tipografia
+              </TabsTrigger>
+              <TabsTrigger value="gradients" className="gap-1.5 text-xs">
+                <Layers className="w-3.5 h-3.5" /> Gradientes
+              </TabsTrigger>
+              <TabsTrigger value="components" className="gap-1.5 text-xs">
+                <Component className="w-3.5 h-3.5" /> Componentes
+              </TabsTrigger>
+            </TabsList>
+
+            {/* ABA CORES */}
+            <TabsContent value="colors" className="space-y-8">
+              <Section title="Paleta Brand" icon={Palette}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                  <ColorSwatch name="Primary" cssVar="--primary" tailwind="bg-primary" />
+                  <ColorSwatch name="Primary FG" cssVar="--primary-foreground" tailwind="text-primary-foreground" />
+                  <ColorSwatch name="Brand" cssVar="--brand" tailwind="bg-brand" />
+                  <ColorSwatch name="Accent" cssVar="--accent" tailwind="bg-accent" />
+                  <ColorSwatch name="Ring" cssVar="--ring" tailwind="ring-ring" />
+                </div>
+              </Section>
+
+              <Section title="Backgrounds & Surfaces" icon={Layers}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                  <ColorSwatch name="Background" cssVar="--background" tailwind="bg-background" />
+                  <ColorSwatch name="Card" cssVar="--card" tailwind="bg-card" />
+                  <ColorSwatch name="Surface 1" cssVar="--surface-1" tailwind="bg-surface-1" />
+                  <ColorSwatch name="Surface 2" cssVar="--surface-2" tailwind="bg-surface-2" />
+                  <ColorSwatch name="Surface 3" cssVar="--surface-3" tailwind="bg-surface-3" />
+                  <ColorSwatch name="Surface 4" cssVar="--surface-4" tailwind="bg-surface-4" />
+                </div>
+              </Section>
+
+              <Section title="Semânticas" icon={Info}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                  <ColorSwatch name="Foreground" cssVar="--foreground" tailwind="text-foreground" />
+                  <ColorSwatch name="Muted" cssVar="--muted" tailwind="bg-muted" />
+                  <ColorSwatch name="Muted FG" cssVar="--muted-foreground" tailwind="text-muted-foreground" />
+                  <ColorSwatch name="Border" cssVar="--border" tailwind="border-border" />
+                  <ColorSwatch name="Destructive" cssVar="--destructive" tailwind="bg-destructive" />
+                  <ColorSwatch name="Secondary" cssVar="--secondary" tailwind="bg-secondary" />
+                </div>
+              </Section>
+
+              <Section title="Charts (Recharts)" icon={Zap}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+                  <ColorSwatch name="Chart Brand" cssVar="--chart-brand" tailwind="var(--chart-brand)" />
+                  <ColorSwatch name="Chart Indigo" cssVar="--chart-indigo" tailwind="var(--chart-indigo)" />
+                  <ColorSwatch name="Chart Success" cssVar="--chart-success" tailwind="var(--chart-success)" />
+                  <ColorSwatch name="Chart Warning" cssVar="--chart-warning" tailwind="var(--chart-warning)" />
+                  <ColorSwatch name="Chart Purple" cssVar="--chart-purple" tailwind="var(--chart-purple)" />
+                </div>
+                <Alert className="mt-4 border-primary/30 bg-primary/5">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle className="font-display text-sm">Uso em Recharts</AlertTitle>
+                  <AlertDescription className="text-xs font-mono mt-1">
+                    {'fill="var(--chart-brand)"  stroke="var(--chart-success)"  color="var(--muted-foreground)"'}
+                  </AlertDescription>
+                </Alert>
+              </Section>
+            </TabsContent>
+
+            {/* ABA TIPOGRAFIA */}
+            <TabsContent value="typography" className="space-y-8">
+              <Section title="Famílias de Fonte" icon={Type}>
+                <div className="grid gap-6">
+                  <Card className="p-6 space-y-2">
+                    <p className="text-xs text-muted-foreground font-mono">font-display (.font-display / Syne) — Títulos e destaques</p>
+                    <p className="font-display font-bold text-4xl">Plakr! Design System</p>
+                    <p className="font-display font-bold text-2xl text-primary">Títulos, Headings, Logos</p>
+                    <p className="font-display text-lg text-muted-foreground">Subtítulos e seções</p>
+                  </Card>
+                  <Card className="p-6 space-y-2">
+                    <p className="text-xs text-muted-foreground font-mono">font-sans (Inter) — Corpo de texto padrão</p>
+                    <p className="text-base">Texto de corpo padrão para parágrafos, labels e descrições. Inter oferece excelente legibilidade em telas digitais.</p>
+                    <p className="text-sm text-muted-foreground">Texto secundário, descrições, metadados e informações complementares.</p>
+                    <p className="text-xs text-muted-foreground/70">Texto terciário — timestamps, badges, tooltips</p>
+                  </Card>
+                  <Card className="p-6 space-y-2">
+                    <p className="text-xs text-muted-foreground font-mono">font-mono (JetBrains Mono) — Números e código</p>
+                    <p className="font-mono font-bold text-3xl text-primary">1.234 pts</p>
+                    <p className="font-mono text-xl">42° lugar · 87.5%</p>
+                    <p className="font-mono text-sm text-muted-foreground">trpc.pools.getBySlug.useQuery()</p>
+                  </Card>
+                </div>
+              </Section>
+
+              <Section title="Escala Tipográfica" icon={Type}>
+                <Card className="p-6 space-y-4">
+                  {[
+                    { size: "text-4xl", label: "4xl — 36px", sample: "Título Principal" },
+                    { size: "text-3xl", label: "3xl — 30px", sample: "Título de Seção" },
+                    { size: "text-2xl", label: "2xl — 24px", sample: "Subtítulo Grande" },
+                    { size: "text-xl", label: "xl — 20px", sample: "Subtítulo Médio" },
+                    { size: "text-lg", label: "lg — 18px", sample: "Corpo Grande" },
+                    { size: "text-base", label: "base — 16px", sample: "Corpo Padrão" },
+                    { size: "text-sm", label: "sm — 14px", sample: "Texto Secundário" },
+                    { size: "text-xs", label: "xs — 12px", sample: "Caption / Badge" },
+                  ].map(({ size, label, sample }) => (
+                    <div key={size} className="flex items-baseline gap-4">
+                      <span className="text-xs text-muted-foreground font-mono w-32 shrink-0">{label}</span>
+                      <span className={`font-display font-bold ${size}`}>{sample}</span>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Muted Foreground
-                      </p>
-                      <p className="text-muted-foreground text-lg">
-                        Muted text for secondary information
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Primary
-                      </p>
-                      <p className="text-primary text-lg font-medium">
-                        Primary brand color text
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Secondary Foreground
-                      </p>
-                      <p className="text-secondary-foreground text-lg">
-                        Secondary action text color
-                      </p>
-                    </div>
+                  ))}
+                </Card>
+              </Section>
+            </TabsContent>
+
+            {/* ABA GRADIENTES */}
+            <TabsContent value="gradients" className="space-y-8">
+              <Section title="Classes Utilitárias de Gradiente" icon={Layers}>
+                <Alert className="border-primary/30 bg-primary/5 mb-4">
+                  <Info className="h-4 w-4" />
+                  <AlertTitle className="font-display text-sm">Como usar</AlertTitle>
+                  <AlertDescription className="text-xs mt-1">
+                    Todas as classes abaixo estão definidas em{" "}
+                    <code className="font-mono bg-muted px-1 rounded">index.css</code>{" "}
+                    e podem ser usadas diretamente como className no JSX.
+                  </AlertDescription>
+                </Alert>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <GradientSwatch name="gradient-brand" className="gradient-brand" />
+                  <GradientSwatch name="gradient-brand-solid" className="gradient-brand-solid" />
+                  <GradientSwatch name="gradient-brand-subtle" className="gradient-brand-subtle" />
+                  <GradientSwatch name="gradient-brand-horizontal" className="gradient-brand-horizontal" />
+                  <GradientSwatch name="gradient-surface" className="gradient-surface" />
+                  <GradientSwatch name="gradient-surface-elevated" className="gradient-surface-elevated" />
+                  <GradientSwatch name="gradient-warning" className="gradient-warning" />
+                  <GradientSwatch name="gradient-success" className="gradient-success" />
+                  <GradientSwatch name="gradient-danger" className="gradient-danger" />
+                  <GradientSwatch name="gradient-separator" className="gradient-separator" />
+                </div>
+              </Section>
+
+              <Section title="Exemplos de Uso" icon={Sparkles}>
+                <div className="grid gap-4">
+                  <div className="gradient-brand rounded-xl p-6 border border-primary/20">
+                    <p className="font-display font-bold text-lg">gradient-brand</p>
+                    <p className="text-sm text-muted-foreground mt-1">Cards de destaque, seções hero, banners principais</p>
                   </div>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Accent Foreground
-                      </p>
-                      <p className="text-accent-foreground text-lg">
-                        Accent text for emphasis
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Destructive
-                      </p>
-                      <p className="text-destructive text-lg font-medium">
-                        Error or destructive action text
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Card Foreground
-                      </p>
-                      <p className="text-card-foreground text-lg">
-                        Text color on card backgrounds
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Popover Foreground
-                      </p>
-                      <p className="text-popover-foreground text-lg">
-                        Text color in popovers
-                      </p>
-                    </div>
+                  <div className="gradient-warning rounded-xl p-6 border border-amber-500/30">
+                    <p className="font-display font-bold text-lg text-amber-300">gradient-warning</p>
+                    <p className="text-sm text-amber-400/80 mt-1">Alertas, banners de atenção, awaiting_conclusion</p>
+                  </div>
+                  <div className="gradient-success rounded-xl p-6 border border-green-500/30">
+                    <p className="font-display font-bold text-lg text-green-300">gradient-success</p>
+                    <p className="text-sm text-green-400/80 mt-1">Confirmações, estados de sucesso, badges de campeão</p>
+                  </div>
+                  <div className="gradient-surface-elevated rounded-xl p-6 border border-border/50">
+                    <p className="font-display font-bold text-lg">gradient-surface-elevated</p>
+                    <p className="text-sm text-muted-foreground mt-1">Cards elevados, modais, painéis secundários</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </section>
+              </Section>
+            </TabsContent>
 
-          {/* Color Combinations Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Color Combinations</h3>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="bg-primary text-primary-foreground rounded-lg p-4">
-                    <p className="font-medium mb-1">Primary</p>
-                    <p className="text-sm opacity-90">
-                      Primary background with foreground text
-                    </p>
-                  </div>
-                  <div className="bg-secondary text-secondary-foreground rounded-lg p-4">
-                    <p className="font-medium mb-1">Secondary</p>
-                    <p className="text-sm opacity-90">
-                      Secondary background with foreground text
-                    </p>
-                  </div>
-                  <div className="bg-muted text-muted-foreground rounded-lg p-4">
-                    <p className="font-medium mb-1">Muted</p>
-                    <p className="text-sm opacity-90">
-                      Muted background with foreground text
-                    </p>
-                  </div>
-                  <div className="bg-accent text-accent-foreground rounded-lg p-4">
-                    <p className="font-medium mb-1">Accent</p>
-                    <p className="text-sm opacity-90">
-                      Accent background with foreground text
-                    </p>
-                  </div>
-                  <div className="bg-destructive text-destructive-foreground rounded-lg p-4">
-                    <p className="font-medium mb-1">Destructive</p>
-                    <p className="text-sm opacity-90">
-                      Destructive background with foreground text
-                    </p>
-                  </div>
-                  <div className="bg-card text-card-foreground rounded-lg p-4 border">
-                    <p className="font-medium mb-1">Card</p>
-                    <p className="text-sm opacity-90">
-                      Card background with foreground text
-                    </p>
-                  </div>
-                  <div className="bg-popover text-popover-foreground rounded-lg p-4 border">
-                    <p className="font-medium mb-1">Popover</p>
-                    <p className="text-sm opacity-90">
-                      Popover background with foreground text
-                    </p>
-                  </div>
-                  <div className="bg-background text-foreground rounded-lg p-4 border">
-                    <p className="font-medium mb-1">Background</p>
-                    <p className="text-sm opacity-90">
-                      Default background with foreground text
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Buttons Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Buttons</h3>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-wrap gap-4">
+            {/* ABA COMPONENTES */}
+            <TabsContent value="components" className="space-y-8">
+              <Section title="Botões" icon={Component}>
+                <div className="flex flex-wrap gap-3">
                   <Button>Default</Button>
                   <Button variant="secondary">Secondary</Button>
-                  <Button variant="destructive">Destructive</Button>
                   <Button variant="outline">Outline</Button>
                   <Button variant="ghost">Ghost</Button>
+                  <Button variant="destructive">Destructive</Button>
                   <Button variant="link">Link</Button>
+                  <Button disabled>Disabled</Button>
                   <Button size="sm">Small</Button>
                   <Button size="lg">Large</Button>
-                  <Button size="icon">
-                    <Check className="h-4 w-4" />
+                  <Button size="icon"><Star className="w-4 h-4" /></Button>
+                </div>
+                <div className="flex flex-wrap gap-3 mt-3">
+                  <Button className="gap-2"><Trophy className="w-4 h-4" /> Com ícone</Button>
+                  <Button variant="outline" className="gap-2 border-primary/50 text-primary hover:bg-primary/10">
+                    <Sparkles className="w-4 h-4" /> Brand outline
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </section>
+              </Section>
 
-          {/* Form Inputs Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Form Inputs</h3>
-            <Card>
-              <CardContent className="pt-6 space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="Email" />
+              <Section title="Badges" icon={Component}>
+                <div className="flex flex-wrap gap-2">
+                  <Badge>Default</Badge>
+                  <Badge variant="secondary">Secondary</Badge>
+                  <Badge variant="outline">Outline</Badge>
+                  <Badge variant="destructive">Destructive</Badge>
+                  <Badge className="bg-primary/20 text-primary border-primary/30">Brand</Badge>
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Sucesso</Badge>
+                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Atenção</Badge>
+                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Info</Badge>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Type your message here."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Select</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a fruit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="apple">Apple</SelectItem>
-                      <SelectItem value="banana">Banana</SelectItem>
-                      <SelectItem value="orange">Orange</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="terms" />
-                  <Label htmlFor="terms">Accept terms and conditions</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="airplane-mode" />
-                  <Label htmlFor="airplane-mode">Airplane Mode</Label>
-                </div>
-                <div className="space-y-2">
-                  <Label>Radio Group</Label>
-                  <RadioGroup defaultValue="option-one">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="option-one" id="option-one" />
-                      <Label htmlFor="option-one">Option One</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="option-two" id="option-two" />
-                      <Label htmlFor="option-two">Option Two</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                <div className="space-y-2">
-                  <Label>Slider</Label>
-                  <Slider defaultValue={[50]} max={100} step={1} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Input OTP</Label>
-                  <InputOTP maxLength={6}>
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-                <div className="space-y-2">
-                  <Label>Date Time Picker</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-start text-left font-normal ${
-                          !datePickerDate && "text-muted-foreground"
-                        }`}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {datePickerDate ? (
-                          format(datePickerDate, "PPP HH:mm", { locale: zhCN })
-                        ) : (
-                          <span>Select date and time</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <div className="p-3 space-y-3">
-                        <Calendar
-                          mode="single"
-                          selected={datePickerDate}
-                          onSelect={setDatePickerDate}
-                        />
-                        <div className="border-t pt-3 space-y-2">
-                          <Label className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            Time
-                          </Label>
-                          <div className="flex gap-2">
-                            <Input
-                              type="time"
-                              value={
-                                datePickerDate
-                                  ? format(datePickerDate, "HH:mm")
-                                  : "00:00"
-                              }
-                              onChange={e => {
-                                const [hours, minutes] =
-                                  e.target.value.split(":");
-                                const newDate = datePickerDate
-                                  ? new Date(datePickerDate)
-                                  : new Date();
-                                newDate.setHours(parseInt(hours));
-                                newDate.setMinutes(parseInt(minutes));
-                                setDatePickerDate(newDate);
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  {datePickerDate && (
-                    <p className="text-sm text-muted-foreground">
-                      Selected:{" "}
-                      {format(datePickerDate, "yyyy/MM/dd  HH:mm", {
-                        locale: zhCN,
-                      })}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Searchable Dropdown</Label>
-                  <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openCombobox}
-                        className="w-full justify-between"
-                      >
-                        {selectedFramework
-                          ? [
-                              { value: "react", label: "React" },
-                              { value: "vue", label: "Vue" },
-                              { value: "angular", label: "Angular" },
-                              { value: "svelte", label: "Svelte" },
-                              { value: "nextjs", label: "Next.js" },
-                              { value: "nuxt", label: "Nuxt" },
-                              { value: "remix", label: "Remix" },
-                            ].find(fw => fw.value === selectedFramework)?.label
-                          : "Select framework..."}
-                        <CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput placeholder="Search frameworks..." />
-                        <CommandList>
-                          <CommandEmpty>No framework found</CommandEmpty>
-                          <CommandGroup>
-                            {[
-                              { value: "react", label: "React" },
-                              { value: "vue", label: "Vue" },
-                              { value: "angular", label: "Angular" },
-                              { value: "svelte", label: "Svelte" },
-                              { value: "nextjs", label: "Next.js" },
-                              { value: "nuxt", label: "Nuxt" },
-                              { value: "remix", label: "Remix" },
-                            ].map(framework => (
-                              <CommandItem
-                                key={framework.value}
-                                value={framework.value}
-                                onSelect={currentValue => {
-                                  setSelectedFramework(
-                                    currentValue === selectedFramework
-                                      ? ""
-                                      : currentValue
-                                  );
-                                  setOpenCombobox(false);
-                                }}
-                              >
-                                <Check
-                                  className={`mr-2 h-4 w-4 ${
-                                    selectedFramework === framework.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  }`}
-                                />
-                                {framework.label}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {selectedFramework && (
-                    <p className="text-sm text-muted-foreground">
-                      Selected:{" "}
-                      {
-                        [
-                          { value: "react", label: "React" },
-                          { value: "vue", label: "Vue" },
-                          { value: "angular", label: "Angular" },
-                          { value: "svelte", label: "Svelte" },
-                          { value: "nextjs", label: "Next.js" },
-                          { value: "nuxt", label: "Nuxt" },
-                          { value: "remix", label: "Remix" },
-                        ].find(fw => fw.value === selectedFramework)?.label
-                      }
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="month" className="text-sm font-medium">
-                        Month
-                      </Label>
-                      <Select
-                        value={selectedMonth}
-                        onValueChange={setSelectedMonth}
-                      >
-                        <SelectTrigger id="month">
-                          <SelectValue placeholder="MM" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map(
-                            month => (
-                              <SelectItem
-                                key={month}
-                                value={month.toString().padStart(2, "0")}
-                              >
-                                {month.toString().padStart(2, "0")}
-                              </SelectItem>
-                            )
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="year" className="text-sm font-medium">
-                        Year
-                      </Label>
-                      <Select
-                        value={selectedYear}
-                        onValueChange={setSelectedYear}
-                      >
-                        <SelectTrigger id="year">
-                          <SelectValue placeholder="YYYY" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from(
-                            { length: 10 },
-                            (_, i) => new Date().getFullYear() - 5 + i
-                          ).map(year => (
-                            <SelectItem key={year} value={year.toString()}>
-                              {year}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  {selectedMonth && selectedYear && (
-                    <p className="text-sm text-muted-foreground">
-                      Selected: {selectedYear}/{selectedMonth}/
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+              </Section>
 
-          {/* Data Display Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Data Display</h3>
-            <Card>
-              <CardContent className="pt-6 space-y-6">
-                <div className="space-y-2">
-                  <Label>Badges</Label>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge>Default</Badge>
-                    <Badge variant="secondary">Secondary</Badge>
-                    <Badge variant="destructive">Destructive</Badge>
-                    <Badge variant="outline">Outline</Badge>
-                  </div>
+              <Section title="Alertas" icon={AlertCircle}>
+                <div className="space-y-3">
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle className="font-display">Informação</AlertTitle>
+                    <AlertDescription>Mensagem informativa padrão do sistema.</AlertDescription>
+                  </Alert>
+                  <Alert className="border-primary/30 bg-primary/5">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <AlertTitle className="font-display text-primary">Brand Alert</AlertTitle>
+                    <AlertDescription>Use para destaques e novidades da plataforma.</AlertDescription>
+                  </Alert>
+                  <Alert className="border-green-500/30 bg-green-500/5">
+                    <CheckCircle2 className="h-4 w-4 text-green-400" />
+                    <AlertTitle className="font-display text-green-400">Sucesso</AlertTitle>
+                    <AlertDescription>Operação realizada com sucesso.</AlertDescription>
+                  </Alert>
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle className="font-display">Erro</AlertTitle>
+                    <AlertDescription>Algo deu errado. Tente novamente.</AlertDescription>
+                  </Alert>
                 </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>Avatar</Label>
-                  <div className="flex gap-4">
-                    <Avatar>
-                      <AvatarImage src="https://github.com/shadcn.png" />
-                      <AvatarFallback>CN</AvatarFallback>
-                    </Avatar>
-                    <Avatar>
-                      <AvatarFallback>AB</AvatarFallback>
-                    </Avatar>
-                  </div>
+              </Section>
+
+              <Section title="Inputs" icon={Component}>
+                <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
+                  <Input placeholder="Input padrão" />
+                  <Input placeholder="Desabilitado" disabled />
+                  <Input placeholder="Com erro" className="border-destructive focus-visible:ring-destructive" />
+                  <Input type="password" placeholder="Senha" />
                 </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>Progress</Label>
-                  <Progress value={progress} />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => setProgress(Math.max(0, progress - 10))}
-                    >
-                      -10
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => setProgress(Math.min(100, progress + 10))}
-                    >
-                      +10
-                    </Button>
-                  </div>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>Skeleton</Label>
+              </Section>
+
+              <Section title="Progress & Switch" icon={Component}>
+                <div className="space-y-4 max-w-md">
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Progresso do bolão</span>
+                      <span>73%</span>
+                    </div>
+                    <Progress value={73} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Palpites enviados</span>
+                      <span>100%</span>
+                    </div>
+                    <Progress value={100} className="h-2" />
+                  </div>
+                  <div className="flex items-center gap-3 pt-2">
+                    <Switch id="notif" defaultChecked />
+                    <label htmlFor="notif" className="text-sm cursor-pointer">Notificações ativas</label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Switch id="pub" />
+                    <label htmlFor="pub" className="text-sm cursor-pointer">Bolão público</label>
                   </div>
                 </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>Pagination</Label>
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          href="#"
-                          onClick={e => {
-                            e.preventDefault();
-                            setCurrentPage(Math.max(1, currentPage - 1));
-                          }}
-                        />
-                      </PaginationItem>
-                      {[1, 2, 3, 4, 5].map(page => (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            href="#"
-                            isActive={currentPage === page}
-                            onClick={e => {
-                              e.preventDefault();
-                              setCurrentPage(page);
-                            }}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      ))}
-                      <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          onClick={e => {
-                            e.preventDefault();
-                            setCurrentPage(Math.min(5, currentPage + 1));
-                          }}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Current page: {currentPage}
-                  </p>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>Table</Label>
-                  <Table>
-                    <TableCaption>A list of your recent invoices.</TableCaption>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[100px]">Invoice</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Method</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium">INV001</TableCell>
-                        <TableCell>Paid</TableCell>
-                        <TableCell>Credit Card</TableCell>
-                        <TableCell className="text-right">$250.00</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">INV002</TableCell>
-                        <TableCell>Pending</TableCell>
-                        <TableCell>PayPal</TableCell>
-                        <TableCell className="text-right">$150.00</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">INV003</TableCell>
-                        <TableCell>Unpaid</TableCell>
-                        <TableCell>Bank Transfer</TableCell>
-                        <TableCell className="text-right">$350.00</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>Menubar</Label>
-                  <Menubar>
-                    <MenubarMenu>
-                      <MenubarTrigger>File</MenubarTrigger>
-                      <MenubarContent>
-                        <MenubarItem>New Tab</MenubarItem>
-                        <MenubarItem>New Window</MenubarItem>
-                        <MenubarSeparator />
-                        <MenubarItem>Share</MenubarItem>
-                        <MenubarSeparator />
-                        <MenubarItem>Print</MenubarItem>
-                      </MenubarContent>
-                    </MenubarMenu>
-                    <MenubarMenu>
-                      <MenubarTrigger>Edit</MenubarTrigger>
-                      <MenubarContent>
-                        <MenubarItem>Undo</MenubarItem>
-                        <MenubarItem>Redo</MenubarItem>
-                      </MenubarContent>
-                    </MenubarMenu>
-                    <MenubarMenu>
-                      <MenubarTrigger>View</MenubarTrigger>
-                      <MenubarContent>
-                        <MenubarItem>Reload</MenubarItem>
-                        <MenubarItem>Force Reload</MenubarItem>
-                      </MenubarContent>
-                    </MenubarMenu>
-                  </Menubar>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>Breadcrumb</Label>
-                  <Breadcrumb>
-                    <BreadcrumbList>
-                      <BreadcrumbItem>
-                        <BreadcrumbLink href="/">Home</BreadcrumbLink>
-                      </BreadcrumbItem>
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbLink href="/components">
-                          Components
-                        </BreadcrumbLink>
-                      </BreadcrumbItem>
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbPage>Breadcrumb</BreadcrumbPage>
-                      </BreadcrumbItem>
-                    </BreadcrumbList>
-                  </Breadcrumb>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+              </Section>
 
-          {/* Alerts Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Alerts</h3>
-            <div className="space-y-4">
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Heads up!</AlertTitle>
-                <AlertDescription>
-                  You can add components to your app using the cli.
-                </AlertDescription>
-              </Alert>
-              <Alert variant="destructive">
-                <X className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  Your session has expired. Please log in again.
-                </AlertDescription>
-              </Alert>
-            </div>
-          </section>
-
-          {/* Tabs Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Tabs</h3>
-            <Tabs defaultValue="account" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="account">Account</TabsTrigger>
-                <TabsTrigger value="password">Password</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-              </TabsList>
-              <TabsContent value="account">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Account</CardTitle>
-                    <CardDescription>
-                      Make changes to your account here.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="name">Name</Label>
-                      <Input id="name" defaultValue="Pedro Duarte" />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button>Save changes</Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-              <TabsContent value="password">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Password</CardTitle>
-                    <CardDescription>
-                      Change your password here.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="current">Current password</Label>
-                      <Input id="current" type="password" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="new">New password</Label>
-                      <Input id="new" type="password" />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button>Save password</Button>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-              <TabsContent value="settings">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Settings</CardTitle>
-                    <CardDescription>
-                      Manage your settings here.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Settings content goes here.
-                    </p>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </section>
-
-          {/* Accordion Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Accordion</h3>
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="item-1">
-                <AccordionTrigger>Is it accessible?</AccordionTrigger>
-                <AccordionContent>
-                  Yes. It adheres to the WAI-ARIA design pattern.
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="item-2">
-                <AccordionTrigger>Is it styled?</AccordionTrigger>
-                <AccordionContent>
-                  Yes. It comes with default styles that matches the other
-                  components' aesthetic.
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="item-3">
-                <AccordionTrigger>Is it animated?</AccordionTrigger>
-                <AccordionContent>
-                  Yes. It's animated by default, but you can disable it if you
-                  prefer.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </section>
-
-          {/* Collapsible Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Collapsible</h3>
-            <Collapsible>
-              <Card>
-                <CardHeader>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between">
-                      <CardTitle>@peduarte starred 3 repositories</CardTitle>
-                    </Button>
-                  </CollapsibleTrigger>
-                </CardHeader>
-                <CollapsibleContent>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="rounded-md border px-4 py-3 font-mono text-sm">
-                        @radix-ui/primitives
-                      </div>
-                      <div className="rounded-md border px-4 py-3 font-mono text-sm">
-                        @radix-ui/colors
-                      </div>
-                      <div className="rounded-md border px-4 py-3 font-mono text-sm">
-                        @stitches/react
-                      </div>
-                    </div>
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          </section>
-
-          {/* Dialog, Sheet, Drawer Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Overlays</h3>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-wrap gap-4">
-                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">Open Dialog</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Test Input</DialogTitle>
-                        <DialogDescription>
-                          Enter some text below. Press Enter to submit (IME composition supported).
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="dialog-input">Input</Label>
-                          <Input
-                            id="dialog-input"
-                            placeholder="Type something..."
-                            value={dialogInput}
-                            onChange={(e) => setDialogInput(e.target.value)}
-                            onKeyDown={handleDialogKeyDown}
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setDialogOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button onClick={handleDialogSubmit}>Submit</Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Sheet>
-                    <SheetTrigger asChild>
-                      <Button variant="outline">Open Sheet</Button>
-                    </SheetTrigger>
-                    <SheetContent>
-                      <SheetHeader>
-                        <SheetTitle>Edit profile</SheetTitle>
-                        <SheetDescription>
-                          Make changes to your profile here. Click save when
-                          you're done.
-                        </SheetDescription>
-                      </SheetHeader>
-                    </SheetContent>
-                  </Sheet>
-
-                  <Drawer>
-                    <DrawerTrigger asChild>
-                      <Button variant="outline">Open Drawer</Button>
-                    </DrawerTrigger>
-                    <DrawerContent>
-                      <DrawerHeader>
-                        <DrawerTitle>Are you absolutely sure?</DrawerTitle>
-                        <DrawerDescription>
-                          This action cannot be undone.
-                        </DrawerDescription>
-                      </DrawerHeader>
-                      <DrawerFooter>
-                        <Button>Submit</Button>
-                        <DrawerClose asChild>
-                          <Button variant="outline">Cancel</Button>
-                        </DrawerClose>
-                      </DrawerFooter>
-                    </DrawerContent>
-                  </Drawer>
-
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline">Open Popover</Button>
-                    </PopoverTrigger>
-                    <PopoverContent>
-                      <div className="space-y-2">
-                        <h4 className="font-medium leading-none">Dimensions</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Set the dimensions for the layer.
-                        </p>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline">Hover me</Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Add to library</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Menus Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Menus</h3>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-wrap gap-4">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline">Dropdown Menu</Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Profile</DropdownMenuItem>
-                      <DropdownMenuItem>Billing</DropdownMenuItem>
-                      <DropdownMenuItem>Team</DropdownMenuItem>
-                      <DropdownMenuItem>Subscription</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <ContextMenu>
-                    <ContextMenuTrigger asChild>
-                      <Button variant="outline">Right Click Me</Button>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                      <ContextMenuItem>Profile</ContextMenuItem>
-                      <ContextMenuItem>Billing</ContextMenuItem>
-                      <ContextMenuItem>Team</ContextMenuItem>
-                      <ContextMenuItem>Subscription</ContextMenuItem>
-                    </ContextMenuContent>
-                  </ContextMenu>
-
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <Button variant="outline">Hover Card</Button>
-                    </HoverCardTrigger>
-                    <HoverCardContent>
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold">@nextjs</h4>
-                        <p className="text-sm">
-                          The React Framework – created and maintained by
-                          @vercel.
-                        </p>
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Calendar Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Calendar</h3>
-            <Card>
-              <CardContent className="pt-6 flex justify-center">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  className="rounded-md border"
-                />
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Carousel Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Carousel</h3>
-            <Card>
-              <CardContent className="pt-6">
-                <Carousel className="w-full max-w-xs mx-auto">
-                  <CarouselContent>
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <CarouselItem key={index}>
-                        <div className="p-1">
-                          <Card>
-                            <CardContent className="flex aspect-square items-center justify-center p-6">
-                              <span className="text-4xl font-semibold">
-                                {index + 1}
-                              </span>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </CarouselItem>
+              <Section title="Avatares & Tooltips" icon={Component}>
+                <div className="flex items-center gap-3 flex-wrap">
+                  {["GV", "MR", "JS", "AB", "PL"].map((initials, i) => (
+                    <Tooltip key={initials}>
+                      <TooltipTrigger>
+                        <Avatar className={i === 0 ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}>
+                          <AvatarFallback className="bg-primary/20 text-primary font-display font-bold text-sm">
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Usuário {initials}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                  <div className="flex -space-x-2">
+                    {["A", "B", "C", "+5"].map((l) => (
+                      <Avatar key={l} className="border-2 border-background w-8 h-8">
+                        <AvatarFallback className="bg-surface-3 text-foreground text-xs font-bold">{l}</AvatarFallback>
+                      </Avatar>
                     ))}
-                  </CarouselContent>
-                  <CarouselPrevious />
-                  <CarouselNext />
-                </Carousel>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Toggle Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Toggle</h3>
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label>Toggle</Label>
-                  <div className="flex gap-2">
-                    <Toggle aria-label="Toggle italic">
-                      <span className="font-bold">B</span>
-                    </Toggle>
-                    <Toggle aria-label="Toggle italic">
-                      <span className="italic">I</span>
-                    </Toggle>
-                    <Toggle aria-label="Toggle underline">
-                      <span className="underline">U</span>
-                    </Toggle>
                   </div>
                 </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>Toggle Group</Label>
-                  <ToggleGroup type="multiple">
-                    <ToggleGroupItem value="bold" aria-label="Toggle bold">
-                      <span className="font-bold">B</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="italic" aria-label="Toggle italic">
-                      <span className="italic">I</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                      value="underline"
-                      aria-label="Toggle underline"
-                    >
-                      <span className="underline">U</span>
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+              </Section>
 
-          {/* Aspect Ratio & Scroll Area Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Layout Components</h3>
-            <Card>
-              <CardContent className="pt-6 space-y-6">
-                <div className="space-y-2">
-                  <Label>Aspect Ratio (16/9)</Label>
-                  <AspectRatio ratio={16 / 9} className="bg-muted">
-                    <div className="flex h-full items-center justify-center">
-                      <p className="text-muted-foreground">16:9 Aspect Ratio</p>
-                    </div>
-                  </AspectRatio>
+              <Section title="Cards" icon={Component}>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="font-display text-base">Card Padrão</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">Conteúdo do card com bg-card e border-border.</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="gradient-brand border-primary/20">
+                    <CardHeader>
+                      <CardTitle className="font-display text-base">Card Brand</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">Use .gradient-brand para cards de destaque.</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="gradient-surface-elevated border-border/30">
+                    <CardHeader>
+                      <CardTitle className="font-display text-base">Card Elevado</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">Use .gradient-surface-elevated para hierarquia visual.</p>
+                    </CardContent>
+                  </Card>
                 </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label>Scroll Area</Label>
-                  <ScrollArea className="h-[200px] w-full rounded-md border overflow-hidden">
-                    <div className="p-4">
-                      <div className="space-y-4">
-                        {Array.from({ length: 20 }).map((_, i) => (
-                          <div key={i} className="text-sm">
-                            Item {i + 1}: This is a scrollable content area
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </ScrollArea>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Resizable Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Resizable Panels</h3>
-            <Card>
-              <CardContent className="pt-6">
-                <ResizablePanelGroup
-                  direction="horizontal"
-                  className="min-h-[200px] rounded-lg border"
-                >
-                  <ResizablePanel defaultSize={50}>
-                    <div className="flex h-full items-center justify-center p-6">
-                      <span className="font-semibold">Panel One</span>
-                    </div>
-                  </ResizablePanel>
-                  <ResizableHandle />
-                  <ResizablePanel defaultSize={50}>
-                    <div className="flex h-full items-center justify-center p-6">
-                      <span className="font-semibold">Panel Two</span>
-                    </div>
-                  </ResizablePanel>
-                </ResizablePanelGroup>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Toast Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">Toast</h3>
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label>Sonner Toast</Label>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        sonnerToast.success("Operation successful", {
-                          description: "Your changes have been saved",
-                        });
-                      }}
-                    >
-                      Success
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        sonnerToast.error("Operation failed", {
-                          description:
-                            "Cannot complete operation, please try again",
-                        });
-                      }}
-                    >
-                      Error
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        sonnerToast.info("Information", {
-                          description: "This is an information message",
-                        });
-                      }}
-                    >
-                      Info
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        sonnerToast.warning("Warning", {
-                          description:
-                            "Please note the impact of this operation",
-                        });
-                      }}
-                    >
-                      Warning
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        sonnerToast.loading("Loading", {
-                          description: "Please wait",
-                        });
-                      }}
-                    >
-                      Loading
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        const promise = new Promise(resolve =>
-                          setTimeout(resolve, 2000)
-                        );
-                        sonnerToast.promise(promise, {
-                          loading: "Processing...",
-                          success: "Processing complete!",
-                          error: "Processing failed",
-                        });
-                      }}
-                    >
-                      Promise
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* AI ChatBox Section */}
-          <section className="space-y-4">
-            <h3 className="text-2xl font-semibold">AI ChatBox</h3>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground">
-                    <p>
-                      A ready-to-use chat interface component that integrates with the LLM system.
-                      Features markdown rendering, auto-scrolling, and loading states.
-                    </p>
-                    <p className="mt-2">
-                      This is a demo with simulated responses. In a real app, you'd connect it to a tRPC mutation.
-                    </p>
-                  </div>
-                  <AIChatBox
-                    messages={chatMessages}
-                    onSendMessage={handleChatSend}
-                    isLoading={isChatLoading}
-                    placeholder="Try sending a message..."
-                    height="500px"
-                    emptyStateMessage="How can I help you today?"
-                    suggestedPrompts={[
-                      "What is React?",
-                      "Explain TypeScript",
-                      "How to use tRPC?",
-                      "Best practices for web development",
-                    ]}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </section>
+              </Section>
+            </TabsContent>
+          </Tabs>
         </div>
-      </main>
-
-      <footer className="border-t py-6 mt-12">
-        <div className="container text-center text-sm text-muted-foreground">
-          <p>Shadcn/ui Component Showcase</p>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

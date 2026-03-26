@@ -122,7 +122,7 @@ export default function AppShell({ children }: AppShellProps) {
             </div>
             <span
               className="font-bold text-base"
-              style={{ fontFamily: "'Syne', sans-serif" }}
+
             >
               Plakr!
             </span>
@@ -361,7 +361,7 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
           <span
             className="font-bold text-sm truncate"
-            style={{ fontFamily: "'Syne', sans-serif" }}
+
           >
             Plakr!
           </span>
