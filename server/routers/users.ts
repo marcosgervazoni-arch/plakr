@@ -32,7 +32,7 @@ export const usersRouter = router({
     const db = await (await import("../db")).getDb();
     if (!db) return basePools;
     const { eq, and, sql } = await import("drizzle-orm");
-    const { poolMemberStats, games, bets, poolScoringRules } = await import("../../drizzle/schema");
+    const { poolMemberStats, games, bets, poolScoringRules, poolRetrospectives, userShareCards } = await import("../../drizzle/schema");
     const enriched = await Promise.all(
       basePools.map(async ({ pool, member }) => {
         const rankRows = await db
@@ -70,12 +70,38 @@ export const usersRouter = router({
           const bettedGameIds = new Set(existingBets.map((b) => b.gameId));
           pendingBetsCount = openGameIds.filter((id) => !bettedGameIds.has(id)).length;
         }
+
+        // Para bolões concluídos: verificar se há retrospectiva + card de compartilhamento
+        let hasRetrospective = false;
+        let shareCardUrl: string | null = null;
+        let finalPosition: number | null = null;
+        if (pool.status === "concluded") {
+          const [retro] = await db
+            .select({ id: poolRetrospectives.id, finalPosition: poolRetrospectives.finalPosition })
+            .from(poolRetrospectives)
+            .where(and(eq(poolRetrospectives.poolId, pool.id), eq(poolRetrospectives.userId, ctx.user.id)))
+            .limit(1);
+          if (retro) {
+            hasRetrospective = true;
+            finalPosition = retro.finalPosition ?? null;
+            const [card] = await db
+              .select({ imageUrl: userShareCards.imageUrl })
+              .from(userShareCards)
+              .where(and(eq(userShareCards.poolId, pool.id), eq(userShareCards.userId, ctx.user.id)))
+              .limit(1);
+            shareCardUrl = card?.imageUrl ?? null;
+          }
+        }
+
         return {
           pool,
           member,
           rankPosition: rankPosition > 0 ? rankPosition : null,
           totalMembers,
           pendingBetsCount,
+          hasRetrospective,
+          shareCardUrl,
+          finalPosition,
         };
       })
     );

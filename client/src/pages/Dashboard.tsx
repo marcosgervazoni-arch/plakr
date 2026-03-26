@@ -23,6 +23,8 @@ import {
   Crown,
   ChevronRight,
   Radar,
+  Sparkles,
+  Clock,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -117,7 +119,8 @@ export default function Dashboard() {
   const isPro = userData?.plan?.plan === "pro" && userData?.plan?.isActive;
   const avatarUrl = (userData?.user as any)?.avatarUrl as string | null | undefined;
   const initials = user?.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
-  const activePools = (pools as any[]).filter((p: any) => p.pool?.status === "active");
+  const activePools = (pools as any[]).filter((p: any) => p.pool?.status === "active" || p.pool?.status === "finished" || p.pool?.status === "awaiting_conclusion");
+  const concludedPools = (pools as any[]).filter((p: any) => p.pool?.status === "concluded");
 
   return (
     <AppShell>
@@ -231,7 +234,7 @@ export default function Dashboard() {
 
               {poolsError ? (
                 <ErrorCard error={poolsError} onRetry={() => refetchPools()} />
-              ) : pools.length === 0 ? (
+              ) : activePools.length === 0 && concludedPools.length === 0 ? (
                 isNewUser ? (
                   <WelcomeCard
                     name={userData?.user?.name ?? user?.name ?? ""}
@@ -251,24 +254,27 @@ export default function Dashboard() {
                 )
               ) : (
                 <div className="space-y-2.5">
-                  {(pools as any[]).map(({ pool, member, rankPosition, totalMembers, pendingBetsCount }: { pool: any; member: any; rankPosition: number | null; totalMembers: number; pendingBetsCount: number }) => (
+                  {activePools.map(({ pool, member, rankPosition, totalMembers, pendingBetsCount }: { pool: any; member: any; rankPosition: number | null; totalMembers: number; pendingBetsCount: number }) => (
                     <Link key={pool.id} href={`/pool/${pool.slug}`}>
                       <div className={`group flex items-center gap-3 rounded-xl px-4 py-3.5 transition-all cursor-pointer border ${
                         pendingBetsCount > 0
                           ? "bg-amber-500/5 border-amber-500/30 hover:bg-amber-500/10 hover:border-amber-500/50"
+                          : pool.status === "awaiting_conclusion"
+                          ? "bg-orange-500/5 border-orange-500/30 hover:bg-orange-500/10 hover:border-orange-500/50"
                           : "bg-card border-border/40 hover:border-primary/40 hover:bg-primary/5"
                       }`}>
                         <div className="relative">
                           <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${
-                            pendingBetsCount > 0 ? "bg-amber-500/15" : "bg-primary/10"
+                            pendingBetsCount > 0 ? "bg-amber-500/15" : pool.status === "awaiting_conclusion" ? "bg-orange-500/15" : "bg-primary/10"
                           }`}>
                             {pool.logoUrl ? (
                               <img src={pool.logoUrl} alt={pool.name} className="w-full h-full object-cover" />
                             ) : (
-                              <Trophy className={`w-5 h-5 ${pendingBetsCount > 0 ? "text-amber-500" : "text-primary"}`} />
+                              pool.status === "awaiting_conclusion"
+                                ? <Clock className="w-5 h-5 text-orange-500" />
+                                : <Trophy className={`w-5 h-5 ${pendingBetsCount > 0 ? "text-amber-500" : "text-primary"}`} />
                             )}
                           </div>
-                          {/* Pending bets badge */}
                           {pendingBetsCount > 0 && (
                             <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-[10px] font-bold text-white flex items-center justify-center px-1 leading-none border-2 border-card shadow-sm">
                               {pendingBetsCount > 9 ? "9+" : pendingBetsCount}
@@ -281,7 +287,9 @@ export default function Dashboard() {
                             {pool.plan === "pro" && <Crown className="w-3 h-3 text-primary shrink-0" />}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            {rankPosition && totalMembers > 0 ? (
+                            {pool.status === "awaiting_conclusion" ? (
+                              <span className="text-xs font-semibold text-orange-400">Aguardando encerramento</span>
+                            ) : rankPosition && totalMembers > 0 ? (
                               <span className="text-xs font-semibold" style={{ color: rankPosition === 1 ? "#FBBF24" : rankPosition <= 3 ? "#94A3B8" : undefined }}>
                                 {rankPosition === 1 ? "🥇" : rankPosition === 2 ? "🥈" : rankPosition === 3 ? "🥉" : `${rankPosition}º`} de {totalMembers}
                               </span>
@@ -300,6 +308,60 @@ export default function Dashboard() {
                         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                       </div>
                     </Link>
+                  ))}
+                </div>
+              )}
+
+              {/* Seção de retrospectivas — bolões concluídos */}
+              {concludedPools.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Retrospectivas</h4>
+                  </div>
+                  {concludedPools.map(({ pool, hasRetrospective, shareCardUrl, finalPosition, totalMembers }: { pool: any; hasRetrospective: boolean; shareCardUrl: string | null; finalPosition: number | null; totalMembers: number }) => (
+                    <div
+                      key={pool.id}
+                      className="group rounded-xl border border-primary/20 bg-gradient-to-r from-primary/8 via-primary/5 to-primary/8 hover:border-primary/40 hover:from-primary/12 transition-all cursor-pointer"
+                      onClick={() => navigate(`/pool/${pool.slug}${hasRetrospective ? "/retrospectiva" : ""}`)}
+                    >
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        {/* Card preview ou ícone */}
+                        <div className="relative shrink-0">
+                          {shareCardUrl ? (
+                            <div className="w-10 h-14 rounded-lg overflow-hidden border-2 border-primary/30 shadow-md shadow-primary/20">
+                              <img src={shareCardUrl} alt="Card" className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-14 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                              <Sparkles className="w-4 h-4 text-primary" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-semibold text-sm truncate">{pool.name}</p>
+                          </div>
+                          {hasRetrospective && finalPosition ? (
+                            <p className="text-xs text-primary font-semibold mt-0.5">
+                              {finalPosition === 1 ? "🥇" : finalPosition === 2 ? "🥈" : finalPosition === 3 ? "🥉" : "🏅"} {finalPosition}º lugar de {totalMembers}
+                            </p>
+                          ) : hasRetrospective ? (
+                            <p className="text-xs text-primary mt-0.5">Retrospectiva pronta</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground mt-0.5">Bolão encerrado</p>
+                          )}
+                        </div>
+                        {hasRetrospective ? (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/25 text-xs font-semibold text-primary shrink-0">
+                            <Sparkles className="w-3 h-3" />
+                            Ver
+                          </div>
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                        )}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}

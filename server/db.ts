@@ -296,7 +296,12 @@ export async function getPoolsByUser(userId: number) {
     .select({ pool: pools, member: poolMembers })
     .from(poolMembers)
     .innerJoin(pools, eq(poolMembers.poolId, pools.id))
-    .where(and(eq(poolMembers.userId, userId), eq(pools.status, "active")))
+    .where(
+      and(
+        eq(poolMembers.userId, userId),
+        sql`${pools.status} IN ('active', 'finished', 'awaiting_conclusion', 'concluded')`
+      )
+    )
     .orderBy(desc(pools.createdAt));
 }
 

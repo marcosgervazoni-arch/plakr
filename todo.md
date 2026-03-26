@@ -1377,3 +1377,10 @@
 - [x] Backend: auto-conclusão no cron de arquivamento após autoCloseDays dias em awaiting_conclusion
 - [x] Frontend: compartilhamento nativo do card PNG com navigator.share({ files }) no slide 4
 - [x] QA: 205 testes passando + checkpoint final
+
+## Sprint — Descoberta da Retrospectiva (26/03/2026) ✅
+- [x] Backend: incluir bolões concluded na query myPools (além de active)
+- [x] Backend: retornar flag hasRetrospective + shareCardUrl + finalPosition em myPools
+- [x] Frontend: Dashboard — seção "Retrospectivas" com card especial para bolões concluídos (preview do card PNG, posição final, botão "Ver retrospectiva")
+- [x] Frontend: NotificationBell — ícone especial (Sparkles) e destaque visual para notificações pool_concluded
+- [x] QA: 205 testes passando + checkpoint final
