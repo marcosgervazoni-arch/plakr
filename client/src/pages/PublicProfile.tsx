@@ -1,16 +1,18 @@
 /**
  * Ficha Pública do Usuário — /profile/:userId
  * Exibe dados de apresentação: avatar, nome, plano, membro desde, bolões e badges.
+ * Cards padronizados com o Dashboard: métricas (Aproveit./Melhor pos./Palpites) e
+ * DashboardBadgeCarousel (grid 5 colunas, badges md, barra de progresso).
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import AppShell from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import BadgeGrid from "@/components/BadgeGrid";
+import DashboardBadgeCarousel from "@/components/DashboardBadgeCarousel";
 import {
   Trophy, Crown, Medal, Loader2, AlertCircle, Calendar,
-  MessageCircle, Send, ExternalLink, Share2, Award, Sparkles, ChevronRight, Info,
+  MessageCircle, Send, Share2, Award, Sparkles, ChevronRight, Info,
 } from "lucide-react";
 import {
   Tooltip,
@@ -24,6 +26,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { BadgeCardItem } from "@/components/BadgeCard";
 
 // Tipo explícito para o retorno de getPublicProfile (evita falsos positivos do LSP do Vite)
 type PublicProfileData = {
@@ -32,7 +35,7 @@ type PublicProfileData = {
   stats: { totalPoints: number; exactScores: number; poolsCount: number; totalBets: number; accuracy: number };
   bestPosition: number | null;
   recentPools: { id: number; name: string; slug: string; status: string; tournamentName: string | null }[];
-  badges: { id: number; name: string; description: string; emoji: string | null; iconUrl: string | null; category: string; rarity: "common" | "uncommon" | "rare" | "epic" | "legendary" | null; earnedAt: Date | null; earned?: boolean }[];
+  badges: BadgeCardItem[];
   finalPositions: { poolId: number; poolName: string; position: number; totalMembers: number; achievedAt: Date }[];
 };
 
@@ -57,7 +60,6 @@ export default function PublicProfile() {
   const data = rawData as PublicProfileData | undefined;
 
   const handleShare = () => {
-    // Sempre usa o ID numérico para garantir que o link funcione para não-logados
     const shareUrl = resolvedId
       ? `${window.location.origin}/profile/${resolvedId}`
       : window.location.href;
@@ -66,7 +68,7 @@ export default function PublicProfile() {
     });
   };
 
-  // Se o slug for "me" mas o usuário não estiver logado, exibir mensagem amigável
+  // Se o slug for "me" mas o usuário não estiver logado
   if (userIdParam === "me" && !isAuthenticated && !currentUser) {
     return (
       <AppShell>
@@ -116,7 +118,7 @@ export default function PublicProfile() {
   const isPro = plan?.plan === "pro" && plan?.isActive;
   const isOwnProfile = isAuthenticated && currentUser?.id === resolvedId;
   const initials = user.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
-  const earnedBadgesCount = badges?.filter((b: any) => b.earnedAt).length ?? 0;
+  const earnedBadgesCount = badges?.filter((b) => b.earned ?? !!b.earnedAt).length ?? 0;
 
   return (
     <AppShell>
@@ -203,22 +205,30 @@ export default function PublicProfile() {
           </div>
         </div>
 
-        {/* ── Card de métricas ── */}
+        {/* ── Perfil do Apostador — card de métricas padronizado com o Dashboard ── */}
         <TooltipProvider>
-          <div className="bg-card border border-border/30 rounded-2xl p-5">
-            <div className="grid grid-cols-3 gap-2">
+          <div className="bg-card border border-border/30 rounded-xl p-5 space-y-4">
+            {/* Header igual ao card do Dashboard */}
+            <div>
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                Perfil do Apostador
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Estatísticas gerais de {isOwnProfile ? "você" : user.name?.split(" ")[0] ?? "este apostador"}
+              </p>
+            </div>
+            {/* Grid de 3 métricas — idêntico ao Dashboard */}
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/30">
               {/* Aproveitamento */}
               <div className="text-center">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center justify-center gap-1 cursor-help">
-                      <div className="flex items-baseline gap-0.5">
-                        <p className="font-mono font-bold text-2xl text-primary leading-none">
-                          {stats?.accuracy ?? 0}
-                        </p>
-                        <span className="font-mono font-bold text-sm text-primary/70 leading-none">%</span>
-                      </div>
-                      <Info className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                    <div className="flex items-center justify-center gap-0.5 cursor-help">
+                      <p className="font-mono font-bold text-2xl text-primary leading-none">
+                        {stats?.accuracy ?? 0}
+                      </p>
+                      <span className="font-mono font-bold text-sm text-primary/70 leading-none mt-1">%</span>
+                      <Info className="w-3 h-3 text-muted-foreground/40 ml-0.5" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[200px] text-center">
@@ -257,7 +267,7 @@ export default function PublicProfile() {
                       <Info className="w-3 h-3 text-muted-foreground/40 shrink-0" />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                  <TooltipContent side="bottom" className="max-w-[220px] text-center">
                     <p className="text-xs">
                       {bestPosition != null
                         ? `Melhor colocação final em bolões encerrados`
@@ -276,7 +286,7 @@ export default function PublicProfile() {
                       <p className="font-mono font-bold text-2xl text-foreground leading-none">
                         {stats?.totalBets ?? 0}
                       </p>
-                      <Info className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                      <Info className="w-3 h-3 text-muted-foreground/40" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[200px] text-center">
@@ -289,26 +299,12 @@ export default function PublicProfile() {
           </div>
         </TooltipProvider>
 
-        {/* ── Badges / Conquistas ── */}
+        {/* ── Conquistas — DashboardBadgeCarousel padronizado com o Dashboard ── */}
         {badges && badges.length > 0 && (
-          <div className="bg-card border border-border/30 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-primary" />
-                <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
-                  Conquistas
-                </h3>
-              </div>
-              {isOwnProfile && (
-                <Link href="/conquistas">
-                  <span className="text-xs text-primary hover:underline cursor-pointer">
-                    Ver todas →
-                  </span>
-                </Link>
-              )}
-            </div>
-            <BadgeGrid badges={badges} />
-          </div>
+          <DashboardBadgeCarousel
+            badges={badges}
+            userId={resolvedId ?? undefined}
+          />
         )}
 
         {/* ── Bolões que participa ── */}
@@ -338,7 +334,6 @@ export default function PublicProfile() {
                       #{pool.rankPosition ?? pool.rank} · {pool.totalPoints ?? 0} pts
                     </p>
                   </div>
-
                 </div>
               ))}
             </div>
@@ -360,7 +355,7 @@ export default function PublicProfile() {
                   pos === 2 ? <Medal className="w-4 h-4 text-slate-300" /> :
                   pos === 3 ? <Medal className="w-4 h-4 text-[#CD7F32]" /> : null;
                 return (
-                  <div key={fp.id} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
+                  <div key={fp.id ?? `${fp.poolId}-${fp.position}`} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
                     <span className={`text-sm font-bold w-6 text-center shrink-0 ${
                       pos === 1 ? "text-primary" : pos === 2 ? "text-[#E5E5E5]" : pos === 3 ? "text-[#CD7F32]" : "text-muted-foreground"
                     }`}>{pos}º</span>
@@ -388,8 +383,8 @@ export default function PublicProfile() {
         {/* ── Nota informativa ── */}
         <div className="bg-muted/30 border border-border/20 rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground">
-            Para ver o desempenho detalhado de{" "}
-            {isOwnProfile ? "você" : user.name?.split(" ")[0] ?? "este apostador"}{" "}
+            Para ver o desempenho detalhado de{" "}
+            {isOwnProfile ? "você" : user.name?.split(" ")[0] ?? "este apostador"}{" "}
             em um bolão específico, clique em "Ver desempenho" ao lado de cada bolão acima.
           </p>
         </div>
@@ -397,7 +392,6 @@ export default function PublicProfile() {
         {/* ── CTA de conversão — apenas para visitantes não autenticados ── */}
         {!isAuthenticated && (
           <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 text-center space-y-4">
-            {/* Detalhe decorativo */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 

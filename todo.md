@@ -1486,3 +1486,8 @@
 
 ## Redesign Card de Conquistas — Sprint 26/03/2026
 - [x] DashboardBadgeCarousel: aumentar badges de sm para md, grid 5 colunas, barra de progresso, espaçamento melhorado
+
+## Perfil Público — Cards do Dashboard — Sprint 26/03/2026
+- [x] PublicProfile: substituir card de métricas antigo pelo componente padronizado "Perfil do Apostador" (Aproveitamento, Melhor Posição, Total de Palpites) igual ao Dashboard
+- [x] PublicProfile: substituir seção de badges antiga pelo DashboardBadgeCarousel redesenhado (grid 5 colunas, badges md, barra de progresso)
+- [x] Backend: garantir que getPublicProfile retorna badges no formato BadgeCardItem (name, description, emoji, rarity, earnedAt, earned)
