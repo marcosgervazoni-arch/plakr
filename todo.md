@@ -1225,3 +1225,33 @@
 ### Fase 4 — Testes
 - [x] badges.test.ts: 43 testes cobrindo todos os critérios e 25 badges aprovados
 - [x] Checkpoint final
+
+## Sprint — Badges v2: Padronização Visual e UX (26/03/2026)
+
+### CTO / Schema
+- [x] Schema: adicionar campo `rarity` (enum: common, uncommon, rare, epic, legendary) na tabela `badges`
+- [x] Migração SQL: aplicar campo rarity no banco
+- [x] Seed: atualizar os 25 badges com raridade definida + inserir badges da categoria "publicidade"
+
+### Admin / Configuração
+- [x] AdminBadges: botões do cabeçalho empilhados (flex-col ou wrap em telas menores)
+- [x] AdminBadges: campo de busca/pesquisa por nome ou descrição
+- [x] AdminBadges: filtros por categoria e raridade
+- [x] AdminBadges: campo `rarity` no formulário de criação/edição de badge
+- [x] AdminBadges: categoria "publicidade" disponível no select de categoria
+
+### Frontend / Padronização Visual
+- [x] BadgeCard: componente único padronizado com emoji grande + nome + raridade (cor por tier)
+- [x] BadgeCard: tooltip ao hover com descrição + raridade em todas as telas
+- [x] Padronizar exibição: PublicProfile, Dashboard, Conquistas, DashboardBadgeCarousel
+- [x] Badge genérico visual: quando sem SVG/iconUrl, usar emoji + fundo colorido por raridade (não ícone genérico)
+
+### Backend / Notificação e Log
+- [x] badges.ts: notificação in-app automática ao desbloquear qualquer badge (ativo tanto para automático quanto manual)
+- [x] badges.ts: badge fica ativo (isActive=true) por padrão ao ser criado
+- [x] admin_logs: registrar atribuição manual de badge (quem atribuiu, para quem, qual badge)
+- [x] admin_logs: registrar revogação de badge
+
+### Testes
+- [x] Testes Vitest: 192/192 passando (todos os arquivos de teste)
+- [x] Checkpoint final

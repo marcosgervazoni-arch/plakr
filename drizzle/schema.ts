@@ -552,6 +552,7 @@ export const badges = mysqlTable("badges", {
   iconUrl: text("iconUrl"),                           // URL S3 do SVG (opcional)
   criterionType: varchar("criterionType", { length: 64 }).notNull(), // BadgeCriterionType
   criterionValue: int("criterionValue").notNull(),    // Valor mínimo para o critério
+  rarity: mysqlEnum("rarity", ["common", "uncommon", "rare", "epic", "legendary"]).default("common").notNull(), // Raridade do badge
   isRetroactive: boolean("isRetroactive").default(true).notNull(),
   isManual: boolean("isManual").default(false).notNull(), // Atribuição manual pelo admin
   isActive: boolean("isActive").default(true).notNull(),

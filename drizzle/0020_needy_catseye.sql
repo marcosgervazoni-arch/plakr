@@ -1,0 +1,1 @@
+ALTER TABLE `badges` ADD `rarity` enum('common','uncommon','rare','epic','legendary') DEFAULT 'common' NOT NULL;

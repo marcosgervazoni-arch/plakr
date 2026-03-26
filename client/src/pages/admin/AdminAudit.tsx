@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   AlertTriangle,
+  Award,
   Ban,
   Bell,
   ChevronDown,
@@ -17,6 +18,7 @@ import {
   Crown,
   Download,
   FileText,
+  Gift,
   Import,
   Info,
   Loader2,
@@ -48,7 +50,13 @@ const ACTION_META: Record<string, { label: string; icon: React.ElementType; colo
   import_games: { label: "Jogos importados", icon: Import, color: "border-purple-400/30 text-purple-400" },
   recalculate_pool: { label: "Pontos recalculados", icon: FileText, color: "border-green-400/30 text-green-400" },
   set_result: { label: "Resultado registrado", icon: FileText, color: "border-green-400/30 text-green-400" },
-  generate_vapid: { label: "VAPID keys geradas", icon: Shield, color: "border-yellow-400/30 text-yellow-400" },
+  generate_vapid:    { label: "VAPID keys geradas",       icon: Shield, color: "border-yellow-400/30 text-yellow-400" },
+  // Badges
+  "badges.create":       { label: "Badge criado",             icon: Award, color: "border-amber-400/30 text-amber-400" },
+  "badges.update":       { label: "Badge atualizado",         icon: Award, color: "border-amber-400/30 text-amber-400" },
+  "badges.delete":       { label: "Badge excluído",           icon: Trash2, color: "border-red-400/30 text-red-400" },
+  "badges.assignManual": { label: "Badge atribuído (manual)", icon: Gift,  color: "border-purple-400/30 text-purple-400" },
+  "badges.revoke":       { label: "Badge revogado",           icon: Award, color: "border-orange-400/30 text-orange-400" },
 };
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -59,6 +67,8 @@ const ENTITY_LABELS: Record<string, string> = {
   tournament: "Campeonato",
   game: "Jogo",
   team: "Time",
+  badge: "Badge",
+  user_badge: "Conquista",
 };
 
 const LEVEL_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {

@@ -9,7 +9,6 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useEffect } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,139 +24,36 @@ import {
   ChevronLeft,
   Sparkles,
 } from "lucide-react";
-
-// ─── LABELS E UNIDADES ────────────────────────────────────────────────────────
-
-const CRITERION_LABELS: Record<string, string> = {
-  accuracy_rate: "Taxa de acerto",
-  exact_scores_career: "Placares exatos",
-  zebra_scores_career: "Zebras acertadas",
-  top3_pools: "Top 3 em bolões",
-  first_place_pools: "1º lugar em bolões",
-  complete_pool_no_blank: "Bolões sem branco",
-  consecutive_correct: "Acertos consecutivos",
-  referrals_count: "Convites aceitos",
-  accuracy_in_pool: "Taxa de acerto",
-};
-
-const CRITERION_UNIT: Record<string, string> = {
-  accuracy_in_pool: "%",
-  accuracy_rate: "%",
-};
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { BadgeCard, type BadgeCardItem, type BadgeRarity } from "@/components/BadgeCard";
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────────
 
-interface BadgeProgress {
-  id: number;
-  name: string;
-  description: string;
-  iconUrl: string | null;
-  criterionType: string;
-  criterionValue: number;
-  earned: boolean;
-  earnedAt: Date | null;
-  currentProgress: number;
-  progressPercent: number;
+interface BadgeProgress extends BadgeCardItem {
   platformPercent: number;
   holders: number;
 }
 
-// ─── COMPONENTE: Hexágono de Badge ────────────────────────────────────────────
+// ─── CONFIGURAÇÃO DE RARIDADE ─────────────────────────────────────────────────
 
-function BadgeHexagonFull({ badge }: { badge: BadgeProgress }) {
-  const isEarned = badge.earned;
-  const label = CRITERION_LABELS[badge.criterionType] ?? badge.criterionType;
-  const unit = CRITERION_UNIT[badge.criterionType] ?? "";
+const RARITY_CONFIG: Record<BadgeRarity, { label: string; color: string; barColor: string }> = {
+  common:    { label: "Comum",    color: "text-slate-400",  barColor: "bg-slate-400" },
+  uncommon:  { label: "Incomum",  color: "text-green-400",  barColor: "bg-green-400" },
+  rare:      { label: "Raro",     color: "text-blue-400",   barColor: "bg-blue-400" },
+  epic:      { label: "Épico",    color: "text-purple-400", barColor: "bg-purple-400" },
+  legendary: { label: "Lendário", color: "text-amber-400",  barColor: "bg-amber-400" },
+};
 
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div
-          className={`relative flex flex-col items-center gap-2 cursor-default transition-all duration-200 group ${
-            isEarned ? "opacity-100" : "opacity-40 grayscale"
-          }`}
-        >
-          {/* Hexagon container */}
-          <div
-            className={`relative w-16 h-16 flex items-center justify-center rounded-2xl border-2 transition-all ${
-              isEarned
-                ? "bg-gradient-to-br from-brand/20 to-brand/5 border-brand/40 shadow-[0_0_16px_rgba(var(--brand-rgb),0.25)] group-hover:shadow-[0_0_24px_rgba(var(--brand-rgb),0.4)]"
-                : "bg-muted/30 border-border/30"
-            }`}
-          >
-            {badge.iconUrl ? (
-              <img
-                src={badge.iconUrl}
-                alt={badge.name}
-                className="w-9 h-9 object-contain"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
-                }}
-              />
-            ) : null}
-            <Award
-              className={`h-8 w-8 ${badge.iconUrl ? "hidden" : ""} ${
-                isEarned ? "text-brand" : "text-muted-foreground/50"
-              }`}
-            />
-            {/* Lock overlay para não conquistados */}
-            {!isEarned && (
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center">
-                <Lock className="h-2.5 w-2.5 text-muted-foreground" />
-              </div>
-            )}
-            {/* Estrela para conquistados */}
-            {isEarned && (
-              <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-brand flex items-center justify-center">
-                <Star className="h-2.5 w-2.5 text-brand-foreground fill-brand-foreground" />
-              </div>
-            )}
-          </div>
-          {/* Nome */}
-          <span
-            className={`text-xs font-medium text-center leading-tight max-w-[64px] ${
-              isEarned ? "text-foreground" : "text-muted-foreground/60"
-            }`}
-          >
-            {badge.name}
-          </span>
-          {/* Barra de progresso para não conquistados */}
-          {!isEarned && badge.criterionValue > 0 && (
-            <div className="w-16">
-              <Progress value={badge.progressPercent} className="h-1" />
-              <p className="text-[10px] text-muted-foreground/50 text-center mt-0.5 tabular-nums">
-                {badge.currentProgress}/{badge.criterionValue}
-              </p>
-            </div>
-          )}
-        </div>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-[220px] text-center space-y-1">
-        <p className="font-semibold text-sm">{badge.name}</p>
-        <p className="text-xs text-muted-foreground">{badge.description}</p>
-        <p className="text-xs text-brand/80">
-          {label} ≥ {badge.criterionValue}{unit}
-        </p>
-        {isEarned && badge.earnedAt && (
-          <p className="text-xs text-muted-foreground">
-            Conquistado em{" "}
-            {new Date(badge.earnedAt).toLocaleDateString("pt-BR", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
-          </p>
-        )}
-        {!isEarned && (
-          <p className="text-xs text-muted-foreground/60 italic">
-            Progresso: {badge.currentProgress}/{badge.criterionValue} ({badge.progressPercent}%)
-          </p>
-        )}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
+const CATEGORY_LABELS: Record<string, string> = {
+  precisao:    "🎯 Precisão",
+  ranking:     "🏆 Ranking",
+  zebra:       "🦓 Zebra",
+  comunidade:  "🌱 Comunidade",
+  publicidade: "📢 Publicidade",
+  exclusivo:   "🎖️ Exclusivo",
+};
+const CATEGORY_ORDER = ["precisao", "ranking", "zebra", "comunidade", "publicidade", "exclusivo"];
 
 // ─── COMPONENTE: Skeleton de carregamento ─────────────────────────────────────
 
@@ -179,7 +75,7 @@ export default function Conquistas() {
     enabled: !!user,
   });
 
-  // [A1] Disparar trackBadgeUnlocked para badges recém-desbloqueados não notificados
+  // Disparar trackBadgeUnlocked para badges recém-desbloqueados não notificados
   const getNewlyUnlocked = trpc.badges.getNewlyUnlocked.useMutation();
   useEffect(() => {
     if (!user) return;
@@ -191,14 +87,25 @@ export default function Conquistas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const earnedBadges = data?.badges.filter((b) => b.earned) ?? [];
-  const unearnedBadges = data?.badges.filter((b) => !b.earned) ?? [];
+  const allBadges = (data?.badges ?? []) as BadgeProgress[];
+  const earnedBadges = allBadges.filter((b) => b.earned);
+  const unearnedBadges = allBadges.filter((b) => !b.earned);
   const timeline = data?.timeline ?? [];
 
-  // Ordenar badges da plataforma por % de usuários (mais raro primeiro)
-  const platformRanking = [...(data?.badges ?? [])].sort(
-    (a, b) => a.platformPercent - b.platformPercent
-  );
+  // Agrupar por categoria
+  const byCategory = allBadges.reduce<Record<string, BadgeProgress[]>>((acc, b) => {
+    const cat = b.category ?? "outros";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(b);
+    return acc;
+  }, {});
+  const orderedCats = [
+    ...CATEGORY_ORDER.filter((c) => byCategory[c]),
+    ...Object.keys(byCategory).filter((c) => !CATEGORY_ORDER.includes(c)),
+  ];
+
+  // Ordenar badges da plataforma por raridade (mais raro primeiro)
+  const platformRanking = [...allBadges].sort((a, b) => a.platformPercent - b.platformPercent);
 
   return (
     <AppShell>
@@ -239,7 +146,7 @@ export default function Conquistas() {
           )}
         </div>
 
-        {/* ── SEÇÃO 1: GRADE DE BADGES ── */}
+        {/* ── SEÇÃO 1: GRADE DE BADGES POR CATEGORIA ── */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Award className="h-4 w-4 text-brand" />
@@ -256,11 +163,11 @@ export default function Conquistas() {
           <div className="bg-card border border-border/30 rounded-xl p-6">
             {isLoading ? (
               <div className="flex flex-wrap gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
+                {Array.from({ length: 8 }).map((_, i) => (
                   <BadgeSkeleton key={i} />
                 ))}
               </div>
-            ) : data?.badges.length === 0 ? (
+            ) : allBadges.length === 0 ? (
               <div className="text-center py-8">
                 <Award className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">
@@ -268,36 +175,41 @@ export default function Conquistas() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Conquistados */}
-                {earnedBadges.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium flex items-center gap-1.5">
-                      <Star className="h-3 w-3 text-brand fill-brand" />
-                      Conquistados ({earnedBadges.length})
-                    </p>
-                    <div className="flex flex-wrap gap-6">
-                      {earnedBadges.map((badge) => (
-                        <BadgeHexagonFull key={badge.id} badge={badge} />
-                      ))}
+              <div className="space-y-8">
+                {orderedCats.map((cat) => {
+                  const catBadges = byCategory[cat];
+                  if (!catBadges || catBadges.length === 0) return null;
+                  const catEarned = catBadges.filter((b) => b.earned).length;
+                  return (
+                    <div key={cat}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {CATEGORY_LABELS[cat] ?? cat}
+                        </h3>
+                        <span className="text-xs text-muted-foreground">
+                          {catEarned}/{catBadges.length}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-5">
+                        {catBadges.map((badge) => (
+                          <div key={badge.id} className="flex flex-col items-center gap-1">
+                            <BadgeCard badge={badge} size="lg" showStar />
+                            {/* Barra de progresso para não conquistados */}
+                            {!badge.earned && (badge.criterionValue ?? 0) > 0 && (
+                              <div className="w-16 mt-0.5">
+                                <Progress value={badge.progressPercent ?? 0} className="h-1" />
+                                <p className="text-[10px] text-muted-foreground/50 text-center mt-0.5 tabular-nums">
+                                  {badge.currentProgress ?? 0}/{badge.criterionValue}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {/* Não conquistados */}
-                {unearnedBadges.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium flex items-center gap-1.5">
-                      <Lock className="h-3 w-3" />
-                      Em progresso ({unearnedBadges.length})
-                    </p>
-                    <div className="flex flex-wrap gap-6">
-                      {unearnedBadges.map((badge) => (
-                        <BadgeHexagonFull key={badge.id} badge={badge} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {/* Estado: nenhum conquistado */}
+                  );
+                })}
+
                 {earnedBadges.length === 0 && unearnedBadges.length > 0 && (
                   <p className="text-xs text-muted-foreground/50 italic text-center pt-2">
                     Continue apostando para desbloquear seus primeiros badges!
@@ -346,61 +258,53 @@ export default function Conquistas() {
                 {/* Linha vertical da timeline */}
                 <div className="absolute left-6 top-6 bottom-6 w-px bg-border/40" />
                 <div className="space-y-6">
-                  {timeline.map((badge, index) => (
-                    <div key={badge.id} className="flex items-start gap-4 relative">
-                      {/* Ponto na linha */}
-                      <div
-                        className={`relative z-10 w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-2xl border-2 bg-gradient-to-br from-brand/20 to-brand/5 border-brand/40 shadow-[0_0_12px_rgba(var(--brand-rgb),0.2)]`}
-                      >
-                        {badge.iconUrl ? (
-                          <img
-                            src={badge.iconUrl}
-                            alt={badge.name}
-                            className="w-7 h-7 object-contain"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = "none";
-                              (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
-                            }}
-                          />
-                        ) : null}
-                        <Award className={`h-6 w-6 text-brand ${badge.iconUrl ? "hidden" : ""}`} />
-                      </div>
-                      {/* Conteúdo */}
-                      <div className="flex-1 min-w-0 pt-1">
-                        <p className="font-semibold text-sm text-foreground">{badge.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                          {badge.description}
-                        </p>
-                        {badge.platformPercent > 0 && (
-                          <p className="text-xs text-muted-foreground/50 mt-1">
-                            {badge.platformPercent <= 10 ? "🏆 Raro — " : ""}
-                            {badge.platformPercent}% dos usuários têm este badge
+                  {timeline.map((badge: BadgeProgress) => {
+                    const rarity = (badge.rarity ?? "common") as BadgeRarity;
+                    const rarityConf = RARITY_CONFIG[rarity];
+                    return (
+                      <div key={badge.id} className="flex items-start gap-4 relative">
+                        {/* Ícone na linha */}
+                        <div className="relative z-10 flex-shrink-0">
+                          <BadgeCard badge={badge} size="sm" />
+                        </div>
+                        {/* Conteúdo */}
+                        <div className="flex-1 min-w-0 pt-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-sm text-foreground">{badge.name}</p>
+                            <span className={`text-[10px] font-semibold uppercase ${rarityConf.color}`}>
+                              {rarityConf.label}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {badge.description}
                           </p>
+                          {badge.platformPercent > 0 && (
+                            <p className="text-xs text-muted-foreground/50 mt-1">
+                              {badge.platformPercent}% dos usuários têm este badge
+                            </p>
+                          )}
+                        </div>
+                        {/* Data */}
+                        {badge.earnedAt && (
+                          <div className="text-right flex-shrink-0 pt-1">
+                            <p className="text-xs text-muted-foreground tabular-nums">
+                              {format(new Date(badge.earnedAt), "d MMM", { locale: ptBR })}
+                            </p>
+                            <p className="text-xs text-muted-foreground/50 tabular-nums">
+                              {new Date(badge.earnedAt).getFullYear()}
+                            </p>
+                          </div>
                         )}
                       </div>
-                      {/* Data */}
-                      {badge.earnedAt && (
-                        <div className="text-right flex-shrink-0 pt-1">
-                          <p className="text-xs text-muted-foreground tabular-nums">
-                            {new Date(badge.earnedAt).toLocaleDateString("pt-BR", {
-                              day: "2-digit",
-                              month: "short",
-                            })}
-                          </p>
-                          <p className="text-xs text-muted-foreground/50 tabular-nums">
-                            {new Date(badge.earnedAt).getFullYear()}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
         </section>
 
-        {/* ── SEÇÃO 3: COMPARAÇÃO COM A PLATAFORMA ── */}
+        {/* ── SEÇÃO 3: RARIDADE DOS BADGES ── */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-brand" />
@@ -433,9 +337,6 @@ export default function Conquistas() {
                 <p className="text-sm text-muted-foreground">
                   Dados de comparação ainda não disponíveis.
                 </p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
-                  As estatísticas serão exibidas conforme os usuários conquistam badges.
-                </p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -444,40 +345,24 @@ export default function Conquistas() {
                 </p>
                 {platformRanking.map((badge) => {
                   const isEarned = badge.earned;
-                  const rarityLabel =
-                    badge.platformPercent === 0
-                      ? "Ninguém ainda"
-                      : badge.platformPercent <= 5
-                      ? "Lendário"
-                      : badge.platformPercent <= 15
-                      ? "Raro"
-                      : badge.platformPercent <= 35
-                      ? "Incomum"
-                      : "Comum";
-                  const rarityColor =
-                    badge.platformPercent === 0
-                      ? "text-muted-foreground/40"
-                      : badge.platformPercent <= 5
-                      ? "text-yellow-500"
-                      : badge.platformPercent <= 15
-                      ? "text-blue-400"
-                      : badge.platformPercent <= 35
-                      ? "text-green-400"
-                      : "text-muted-foreground";
+                  const rarity = (badge.rarity ?? "common") as BadgeRarity;
+                  const rarityConf = RARITY_CONFIG[rarity];
 
                   return (
                     <div key={badge.id} className="space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          {/* Mini badge icon */}
+                          {/* Mini badge usando BadgeCard size=sm sem nome */}
                           <div
-                            className={`w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-lg border ${
+                            className={`w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-lg border-2 transition-all ${
                               isEarned
-                                ? "bg-brand/20 border-brand/40"
-                                : "bg-muted/30 border-border/30 grayscale opacity-50"
+                                ? "bg-gradient-to-br from-brand/20 to-brand/5 border-brand/40"
+                                : "bg-muted/30 border-border/30 grayscale opacity-40"
                             }`}
                           >
-                            {badge.iconUrl ? (
+                            {badge.emoji ? (
+                              <span className="text-sm leading-none">{badge.emoji}</span>
+                            ) : badge.iconUrl ? (
                               <img src={badge.iconUrl} alt="" className="w-4 h-4 object-contain" />
                             ) : (
                               <Award className={`h-3.5 w-3.5 ${isEarned ? "text-brand" : "text-muted-foreground/40"}`} />
@@ -495,8 +380,8 @@ export default function Conquistas() {
                           )}
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className={`text-xs font-medium ${rarityColor}`}>
-                            {rarityLabel}
+                          <span className={`text-xs font-semibold ${rarityConf.color}`}>
+                            {rarityConf.label}
                           </span>
                           <span className="text-xs text-muted-foreground tabular-nums">
                             {badge.platformPercent}%

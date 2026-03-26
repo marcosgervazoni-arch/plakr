@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -30,10 +30,12 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
-import { Award, Edit2, Gift, Plus, Trash2, Upload, Users } from "lucide-react";
-import { useRef, useState } from "react";
+import { Award, Edit2, Gift, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { useRef, useState, useMemo } from "react";
 import { toast } from "sonner";
+import { type BadgeRarity } from "@/components/BadgeCard";
 
 // ─── Critérios disponíveis ────────────────────────────────────────────────────
 const CRITERION_OPTIONS = [
@@ -66,19 +68,51 @@ const CRITERION_OPTIONS = [
 type CriterionType = typeof CRITERION_OPTIONS[number]["value"];
 
 const CATEGORY_OPTIONS = [
-  { value: "precisao",   label: "Precisão" },
-  { value: "ranking",    label: "Ranking" },
-  { value: "zebra",      label: "Zebra" },
-  { value: "comunidade", label: "Comunidade" },
-  { value: "exclusivo",  label: "Exclusivo" },
+  { value: "precisao",    label: "🎯 Precisão" },
+  { value: "ranking",     label: "🏆 Ranking" },
+  { value: "zebra",       label: "🦓 Zebra" },
+  { value: "comunidade",  label: "🌱 Comunidade" },
+  { value: "publicidade", label: "📢 Publicidade" },
+  { value: "exclusivo",   label: "🎖️ Exclusivo" },
+];
+
+const RARITY_OPTIONS: { value: BadgeRarity; label: string; color: string }[] = [
+  { value: "common",    label: "Comum",    color: "text-slate-400" },
+  { value: "uncommon",  label: "Incomum",  color: "text-green-400" },
+  { value: "rare",      label: "Raro",     color: "text-blue-400" },
+  { value: "epic",      label: "Épico",    color: "text-purple-400" },
+  { value: "legendary", label: "Lendário", color: "text-amber-400" },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  precisao:   "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  ranking:    "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  zebra:      "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  comunidade: "bg-green-500/10 text-green-400 border-green-500/20",
-  exclusivo:  "bg-rose-500/10 text-rose-400 border-rose-500/20",
+  precisao:    "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  ranking:     "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+  zebra:       "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  comunidade:  "bg-green-500/10 text-green-400 border-green-500/20",
+  publicidade: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+  exclusivo:   "bg-rose-500/10 text-rose-400 border-rose-500/20",
+};
+
+const RARITY_BADGE_COLORS: Record<BadgeRarity, string> = {
+  common:    "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  uncommon:  "bg-green-500/10 text-green-400 border-green-500/20",
+  rare:      "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  epic:      "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  legendary: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+};
+
+const RARITY_LABELS: Record<BadgeRarity, string> = {
+  common: "Comum", uncommon: "Incomum", rare: "Raro", epic: "Épico", legendary: "Lendário",
+};
+
+const CATEGORY_ORDER = ["precisao", "ranking", "zebra", "comunidade", "publicidade", "exclusivo"];
+const CATEGORY_LABELS: Record<string, string> = {
+  precisao:    "🎯 Precisão",
+  ranking:     "🏆 Ranking",
+  zebra:       "🦓 Zebra",
+  comunidade:  "🌱 Comunidade",
+  publicidade: "📢 Publicidade",
+  exclusivo:   "🎖️ Exclusivo",
 };
 
 interface BadgeForm {
@@ -89,6 +123,7 @@ interface BadgeForm {
   iconUrl: string;
   criterionType: CriterionType | "";
   criterionValue: number;
+  rarity: BadgeRarity;
   isRetroactive: boolean;
   isManual: boolean;
   isActive: boolean;
@@ -102,12 +137,12 @@ const DEFAULT_FORM: BadgeForm = {
   iconUrl: "",
   criterionType: "",
   criterionValue: 1,
+  rarity: "common",
   isRetroactive: true,
   isManual: false,
   isActive: true,
 };
 
-// Formulário de atribuição manual
 interface AssignForm {
   userId: string;
   badgeId: number | null;
@@ -122,6 +157,12 @@ export default function AdminBadges() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignForm, setAssignForm] = useState<AssignForm>({ userId: "", badgeId: null });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Filtros
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterRarity, setFilterRarity] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const utils = trpc.useUtils();
   const { data: badges = [], isLoading } = trpc.badges.list.useQuery();
@@ -197,6 +238,7 @@ export default function AdminBadges() {
       iconUrl: badge.iconUrl ?? "",
       criterionType: badge.criterionType as CriterionType,
       criterionValue: badge.criterionValue,
+      rarity: (badge.rarity as BadgeRarity) ?? "common",
       isRetroactive: badge.isRetroactive ?? true,
       isManual: badge.isManual ?? false,
       isActive: badge.isActive ?? true,
@@ -237,6 +279,7 @@ export default function AdminBadges() {
       iconUrl: form.iconUrl || undefined,
       criterionType: form.criterionType as CriterionType,
       criterionValue: form.criterionValue,
+      rarity: form.rarity,
       isRetroactive: form.isRetroactive,
       isManual: form.isManual,
       isActive: form.isActive,
@@ -258,36 +301,48 @@ export default function AdminBadges() {
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
-  // Agrupar badges por categoria
-  const badgesByCategory = badges.reduce<Record<string, typeof badges>>((acc, b) => {
+  // ─── Filtros aplicados ────────────────────────────────────────────────────
+  const filteredBadges = useMemo(() => {
+    return badges.filter((b) => {
+      if (search && !b.name.toLowerCase().includes(search.toLowerCase()) &&
+          !b.description.toLowerCase().includes(search.toLowerCase())) return false;
+      if (filterCategory !== "all" && b.category !== filterCategory) return false;
+      if (filterRarity !== "all" && b.rarity !== filterRarity) return false;
+      if (filterStatus === "active" && !b.isActive) return false;
+      if (filterStatus === "inactive" && b.isActive) return false;
+      if (filterStatus === "manual" && !b.isManual) return false;
+      return true;
+    });
+  }, [badges, search, filterCategory, filterRarity, filterStatus]);
+
+  const hasFilters = search || filterCategory !== "all" || filterRarity !== "all" || filterStatus !== "all";
+
+  // Agrupar badges filtrados por categoria
+  const badgesByCategory = filteredBadges.reduce<Record<string, typeof filteredBadges>>((acc, b) => {
     const cat = b.category ?? "outros";
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(b);
     return acc;
   }, {});
 
-  const categoryOrder = ["precisao", "ranking", "zebra", "comunidade", "exclusivo", "outros"];
-  const categoryLabels: Record<string, string> = {
-    precisao: "🎯 Precisão",
-    ranking: "🏆 Ranking",
-    zebra: "🦓 Zebra",
-    comunidade: "🌱 Comunidade",
-    exclusivo: "🎖️ Exclusivo",
-    outros: "Outros",
-  };
+  const orderedCats = [
+    ...CATEGORY_ORDER.filter((c) => badgesByCategory[c]),
+    ...Object.keys(badgesByCategory).filter((c) => !CATEGORY_ORDER.includes(c)),
+  ];
 
   return (
     <AdminLayout activeSection="badges">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        {/* ── Header ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold font-display">Badges</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
-              Gerencie as conquistas que são atribuídas automaticamente ou manualmente.
+              Gerencie as conquistas atribuídas automaticamente ou manualmente.
             </p>
           </div>
-          <div className="flex gap-2">
+          {/* Botões empilhados em mobile, lado a lado em desktop */}
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setAssignDialogOpen(true)} className="gap-2">
               <Gift className="h-4 w-4" />
               Atribuir Manual
@@ -299,7 +354,7 @@ export default function AdminBadges() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* ── Stats ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-4 pb-4">
@@ -333,7 +388,81 @@ export default function AdminBadges() {
           </Card>
         </div>
 
-        {/* Badge list por categoria */}
+        {/* ── Filtros e busca ── */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome ou descrição..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+            {search && (
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setSearch("")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as categorias</SelectItem>
+              {CATEGORY_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterRarity} onValueChange={setFilterRarity}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Raridade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as raridades</SelectItem>
+              {RARITY_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  <span className={o.color}>{o.label}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-full sm:w-36">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="active">Ativos</SelectItem>
+              <SelectItem value="inactive">Inativos</SelectItem>
+              <SelectItem value="manual">Manuais</SelectItem>
+            </SelectContent>
+          </Select>
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground"
+              onClick={() => { setSearch(""); setFilterCategory("all"); setFilterRarity("all"); setFilterStatus("all"); }}
+            >
+              <X className="h-3.5 w-3.5" />
+              Limpar
+            </Button>
+          )}
+        </div>
+
+        {/* Resultado da busca */}
+        {hasFilters && (
+          <p className="text-xs text-muted-foreground">
+            {filteredBadges.length} badge{filteredBadges.length !== 1 ? "s" : ""} encontrado{filteredBadges.length !== 1 ? "s" : ""}
+          </p>
+        )}
+
+        {/* ── Lista de badges ── */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
@@ -342,107 +471,137 @@ export default function AdminBadges() {
               </Card>
             ))}
           </div>
-        ) : badges.length === 0 ? (
+        ) : filteredBadges.length === 0 ? (
           <Card>
             <CardContent className="py-16 flex flex-col items-center gap-3 text-center">
               <Award className="h-12 w-12 text-muted-foreground/40" />
-              <p className="text-muted-foreground">Nenhum badge cadastrado ainda.</p>
-              <Button onClick={openCreate} size="sm">
-                Criar primeiro badge
-              </Button>
+              <p className="text-muted-foreground">
+                {hasFilters ? "Nenhum badge encontrado com os filtros aplicados." : "Nenhum badge cadastrado ainda."}
+              </p>
+              {!hasFilters && (
+                <Button onClick={openCreate} size="sm">
+                  Criar primeiro badge
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-8">
-            {categoryOrder.map((cat) => {
+            {orderedCats.map((cat) => {
               const catBadges = badgesByCategory[cat];
               if (!catBadges || catBadges.length === 0) return null;
               return (
                 <div key={cat}>
                   <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                    {categoryLabels[cat] ?? cat}
+                    {CATEGORY_LABELS[cat] ?? cat}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground/50">
+                      ({catBadges.length})
+                    </span>
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {catBadges.map((badge) => (
-                      <Card
-                        key={badge.id}
-                        className={`relative overflow-hidden transition-all hover:shadow-md ${
-                          !badge.isActive ? "opacity-50" : ""
-                        }`}
-                      >
-                        <CardContent className="pt-4 pb-4">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-3 min-w-0">
-                              {badge.emoji ? (
-                                <span className="text-3xl leading-none">{badge.emoji}</span>
-                              ) : badge.iconUrl ? (
-                                <img
-                                  src={badge.iconUrl}
-                                  alt={badge.name}
-                                  className="w-10 h-10 object-contain"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                                  <Award className="h-5 w-5 text-muted-foreground" />
+                    {catBadges.map((badge) => {
+                      const rarity = (badge.rarity as BadgeRarity) ?? "common";
+                      return (
+                        <Tooltip key={badge.id}>
+                          <TooltipTrigger asChild>
+                            <Card
+                              className={`relative overflow-hidden transition-all hover:shadow-md cursor-default ${
+                                !badge.isActive ? "opacity-50" : ""
+                              }`}
+                            >
+                              <CardContent className="pt-4 pb-4">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {/* Ícone: emoji > iconUrl > genérico */}
+                                    {badge.emoji ? (
+                                      <span className="text-3xl leading-none flex-shrink-0">{badge.emoji}</span>
+                                    ) : badge.iconUrl ? (
+                                      <img
+                                        src={badge.iconUrl}
+                                        alt={badge.name}
+                                        className="w-10 h-10 object-contain flex-shrink-0"
+                                      />
+                                    ) : (
+                                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                        <Award className="h-5 w-5 text-muted-foreground" />
+                                      </div>
+                                    )}
+                                    <div className="min-w-0">
+                                      <p className="font-semibold text-sm leading-tight truncate">
+                                        {badge.name}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                        {badge.description}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-1 shrink-0">
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7"
+                                      onClick={() => openEdit(badge)}
+                                    >
+                                      <Edit2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7 text-destructive hover:text-destructive"
+                                      onClick={() => setDeleteConfirm(badge.id)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
                                 </div>
-                              )}
-                              <div className="min-w-0">
-                                <p className="font-semibold text-sm leading-tight truncate">
-                                  {badge.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                                  {badge.description}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex gap-1 shrink-0">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7"
-                                onClick={() => openEdit(badge)}
-                              >
-                                <Edit2 className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                onClick={() => setDeleteConfirm(badge.id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </div>
 
-                          <div className="flex flex-wrap gap-1.5 mt-3">
-                            {badge.category && (
-                              <span
-                                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
-                                  CATEGORY_COLORS[badge.category] ??
-                                  "bg-muted text-muted-foreground border-border"
-                                }`}
-                              >
-                                {badge.category}
-                              </span>
-                            )}
-                            {badge.isManual && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full border bg-rose-500/10 text-rose-400 border-rose-500/20 font-medium">
-                                manual
-                              </span>
-                            )}
-                            {!badge.isActive && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full border bg-muted text-muted-foreground border-border font-medium">
-                                inativo
-                              </span>
-                            )}
-                            <span className="text-[10px] px-2 py-0.5 rounded-full border bg-muted text-muted-foreground border-border font-mono">
-                              {badge.criterionType} ≥ {badge.criterionValue}
+                                <div className="flex flex-wrap gap-1.5 mt-3">
+                                  {badge.category && (
+                                    <span
+                                      className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
+                                        CATEGORY_COLORS[badge.category] ??
+                                        "bg-muted text-muted-foreground border-border"
+                                      }`}
+                                    >
+                                      {badge.category}
+                                    </span>
+                                  )}
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${RARITY_BADGE_COLORS[rarity]}`}>
+                                    {RARITY_LABELS[rarity]}
+                                  </span>
+                                  {badge.isManual && (
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full border bg-rose-500/10 text-rose-400 border-rose-500/20 font-medium">
+                                      manual
+                                    </span>
+                                  )}
+                                  {!badge.isActive && (
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full border bg-muted text-muted-foreground border-border font-medium">
+                                      inativo
+                                    </span>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[240px] text-center space-y-1 p-3">
+                            <p className="font-semibold text-sm">
+                              {badge.emoji ? `${badge.emoji} ` : ""}{badge.name}
+                            </p>
+                            <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border font-semibold uppercase tracking-wide ${RARITY_BADGE_COLORS[rarity]}`}>
+                              {RARITY_LABELS[rarity]}
                             </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                            <p className="text-xs text-muted-foreground">{badge.description}</p>
+                            {badge.isManual ? (
+                              <p className="text-xs text-rose-400">Atribuição exclusiva pelo admin</p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground/70">
+                                Critério: {badge.criterionType.replace(/_/g, " ")} ≥ {badge.criterionValue}
+                              </p>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -451,7 +610,7 @@ export default function AdminBadges() {
         )}
       </div>
 
-      {/* Dialog: criar/editar badge */}
+      {/* ── Dialog: criar/editar badge ── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -459,6 +618,7 @@ export default function AdminBadges() {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Emoji + Categoria */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Emoji</Label>
@@ -489,6 +649,7 @@ export default function AdminBadges() {
               </div>
             </div>
 
+            {/* Nome */}
             <div className="space-y-1.5">
               <Label>Nome *</Label>
               <Input
@@ -498,6 +659,7 @@ export default function AdminBadges() {
               />
             </div>
 
+            {/* Descrição */}
             <div className="space-y-1.5">
               <Label>Descrição *</Label>
               <Textarea
@@ -508,6 +670,27 @@ export default function AdminBadges() {
               />
             </div>
 
+            {/* Raridade */}
+            <div className="space-y-1.5">
+              <Label>Raridade</Label>
+              <Select
+                value={form.rarity}
+                onValueChange={(v) => setForm((f) => ({ ...f, rarity: v as BadgeRarity }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a raridade..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {RARITY_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      <span className={o.color}>{o.label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Critério */}
             <div className="space-y-1.5">
               <Label>Critério *</Label>
               <Select
@@ -542,6 +725,7 @@ export default function AdminBadges() {
               </Select>
             </div>
 
+            {/* Valor mínimo */}
             {!form.isManual && (
               <div className="space-y-1.5">
                 <Label>Valor mínimo *</Label>
@@ -588,6 +772,7 @@ export default function AdminBadges() {
               </div>
             </div>
 
+            {/* Switches */}
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center gap-2">
                 <Switch
@@ -632,7 +817,7 @@ export default function AdminBadges() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: atribuição manual */}
+      {/* ── Dialog: atribuição manual ── */}
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -684,7 +869,7 @@ export default function AdminBadges() {
         </DialogContent>
       </Dialog>
 
-      {/* AlertDialog: confirmar exclusão */}
+      {/* ── AlertDialog: confirmar exclusão ── */}
       <AlertDialog open={deleteConfirm !== null} onOpenChange={() => setDeleteConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

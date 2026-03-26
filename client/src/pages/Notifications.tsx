@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Bell, BellOff, Check, CheckCheck, Loader2,
-  Trophy, Calendar, TrendingUp, Megaphone, Info, Settings,
+  Trophy, Calendar, TrendingUp, Megaphone, Info, Settings, Award,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,6 +25,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   pool_invite:      { icon: Bell,        color: "text-purple-400", label: "Convite" },
   plan_expired:     { icon: Info,        color: "text-red-400",    label: "Plano" },
   plan_expiring:    { icon: Info,        color: "text-orange-400", label: "Plano" },
+  badge_unlocked:   { icon: Award,       color: "text-amber-400",  label: "Conquista" },
 };
 
 export default function Notifications() {
