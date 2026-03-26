@@ -1471,7 +1471,15 @@
 - [x] AdminSubscriptions.tsx: já tinha link nos donos — confirmado
 - [x] TypeScript sem erros reais (tsc --noEmit exit 0)
 
-## Bug: Badges conquistados aparecem como inativos (26/03/2026)
-- [ ] Investigar lógica de concessão automática de badges (criterionType/criterionValue)
-- [ ] Corrigir exibição: badges com progresso completo (ex: 1/1) devem aparecer como conquistados
-- [ ] Garantir que userBadges é populado quando critério é atingido
+## Bug: Badges conquistados aparecem como inativos (26/03/2026) ✅
+- [x] Causa raiz: tabela user_badges vazia — calculateAndAssignBadges só rodava após scoring
+- [x] Adicionada procedure adminProcedure `recalculateAll` no badges.ts
+- [x] Adicionado botão "Recalcular Badges" no AdminBadges.tsx com spinner e feedback
+- [x] TypeScript sem erros (tsc --noEmit exit 0)
+
+## Badges: Recálculo Automático + Notificação In-App (26/03/2026) ✅
+- [x] calculateAndAssignBadges já integrado ao scoring.ts (linha 471) — confirmado
+- [x] Notificação in-app já criada dentro de calculateAndAssignBadges — confirmado
+- [x] Notificação com título "🏅 Badge desbloqueado", descrição, link /profile/me, prioridade high
+- [x] Sino de notificações (polling 30s) exibe badges conquistados automaticamente
+- [x] TypeScript sem erros (tsc --noEmit exit 0)

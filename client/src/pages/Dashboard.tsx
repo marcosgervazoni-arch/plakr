@@ -64,6 +64,18 @@ import {
   Radar as RechartsRadar,
 } from "recharts";
 
+// Tipo explícito para o retorno de myStats (evita falsos positivos do LSP do Vite)
+type MyStatsData = {
+  totalPoints: number;
+  exactScores: number;
+  poolsCount: number;
+  totalBets: number;
+  accuracy: number;
+  bestPosition: number | null;
+  pointsHistory: { label: string; points: number }[];
+  radarData: { subject: string; value: number; fullMark: number }[];
+};
+
 // ─── COMPONENTE: Card de posição expandido no Dashboard ─────────────────────
 function ShareCardDashboardItem({
   pool,
@@ -214,7 +226,8 @@ export default function Dashboard() {
 
   const { data: userData } = trpc.users.me.useQuery(undefined, { enabled: isAuthenticated });
   const { data: pools = [], isLoading: poolsLoading, error: poolsError, refetch: refetchPools } = trpc.users.myPools.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: stats, isLoading: statsLoading } = trpc.users.myStats.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: statsRaw, isLoading: statsLoading } = trpc.users.myStats.useQuery(undefined, { enabled: isAuthenticated });
+  const stats = statsRaw as MyStatsData | undefined;
   const { data: badgesData } = trpc.badges.userBadges.useQuery(
     { userId: user?.id ?? 0 },
     { enabled: isAuthenticated && !!user?.id }

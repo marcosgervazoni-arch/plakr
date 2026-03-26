@@ -25,6 +25,17 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+// Tipo explícito para o retorno de getPublicProfile (evita falsos positivos do LSP do Vite)
+type PublicProfileData = {
+  user: { id: number; name: string | null; avatarUrl: string | null; createdAt: Date; whatsappLink: string | null; telegramLink: string | null };
+  plan: { id: number; userId: number; plan: "free" | "pro" | "unlimited"; isActive: boolean; expiresAt: Date | null; stripeSubscriptionId: string | null; updatedAt: Date } | null;
+  stats: { totalPoints: number; exactScores: number; poolsCount: number; totalBets: number; accuracy: number };
+  bestPosition: number | null;
+  recentPools: { id: number; name: string; slug: string; status: string; tournamentName: string | null }[];
+  badges: { id: number; name: string; description: string; emoji: string | null; iconUrl: string | null; category: string; rarity: "common" | "uncommon" | "rare" | "epic" | "legendary" | null; earnedAt: Date | null; earned?: boolean }[];
+  finalPositions: { poolId: number; poolName: string; position: number; totalMembers: number; achievedAt: Date }[];
+};
+
 export default function PublicProfile() {
   const { userId: userIdParam } = useParams<{ userId: string }>();
   const { user: currentUser, isAuthenticated } = useAuth();
@@ -39,10 +50,11 @@ export default function PublicProfile() {
     }
   }, [userIdParam, currentUser?.id]);
 
-  const { data, isLoading, error } = trpc.users.getPublicProfile.useQuery(
+  const { data: rawData, isLoading, error } = trpc.users.getPublicProfile.useQuery(
     { userId: resolvedId! },
     { enabled: resolvedId !== null }
   );
+  const data = rawData as PublicProfileData | undefined;
 
   const handleShare = () => {
     // Sempre usa o ID numérico para garantir que o link funcione para não-logados
