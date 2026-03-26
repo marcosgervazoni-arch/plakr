@@ -714,3 +714,39 @@ export type InsertRetrospectiveConfig = typeof retrospectiveConfig.$inferInsert;
 export type InsertUserPlan = typeof userPlans.$inferInsert;
 export type InsertPool = typeof pools.$inferInsert;
 export type InsertBet = typeof bets.$inferInsert;
+
+// ─── CONFIGURAÇÃO DA LANDING PAGE ────────────────────────────────────────────
+// Tabela single-row para controle completo da página de vendas pelo Super Admin.
+// Cada seção pode ser ativada/desativada e ter seu conteúdo editado sem deploy.
+export const landingPageConfig = mysqlTable("landing_page_config", {
+  id: int("id").primaryKey().default(1),
+  // ── Configurações globais ──────────────────────────────────────────────────
+  heroHeadline: varchar("heroHeadline", { length: 255 }).default("Faça seu bolão com a galera").notNull(),
+  heroSubheadline: text("heroSubheadline"),
+  heroBadgeText: varchar("heroBadgeText", { length: 128 }).default("FAÇA SEU BOLÃO PARA A COPA DO MUNDO").notNull(),
+  heroBadgeEnabled: boolean("heroBadgeEnabled").default(true).notNull(),
+  heroCountdownEnabled: boolean("heroCountdownEnabled").default(true).notNull(),
+  heroCountdownDate: varchar("heroCountdownDate", { length: 32 }).default("2026-06-11T16:00:00Z").notNull(),
+  heroCtaPrimaryText: varchar("heroCtaPrimaryText", { length: 64 }).default("Criar bolão grátis").notNull(),
+  heroCtaSecondaryText: varchar("heroCtaSecondaryText", { length: 64 }).default("Quero campeonato personalizado → Pro").notNull(),
+  heroCtaSecondaryEnabled: boolean("heroCtaSecondaryEnabled").default(true).notNull(),
+  // ── Controle de seções (ativo/inativo) ────────────────────────────────────
+  sectionCredibilityEnabled: boolean("sectionCredibilityEnabled").default(true).notNull(),
+  sectionHowItWorksEnabled: boolean("sectionHowItWorksEnabled").default(true).notNull(),
+  sectionDifferentialEnabled: boolean("sectionDifferentialEnabled").default(true).notNull(),
+  sectionFeaturesEnabled: boolean("sectionFeaturesEnabled").default(true).notNull(),
+  sectionPlansEnabled: boolean("sectionPlansEnabled").default(true).notNull(),
+  sectionFaqEnabled: boolean("sectionFaqEnabled").default(true).notNull(),
+  sectionCtaFinalEnabled: boolean("sectionCtaFinalEnabled").default(true).notNull(),
+  // ── Conteúdo editável das seções ──────────────────────────────────────────
+  differentialHeadline: varchar("differentialHeadline", { length: 255 }).default("Seu campeonato. Suas regras.").notNull(),
+  differentialBody: text("differentialBody"),
+  ctaFinalHeadline: varchar("ctaFinalHeadline", { length: 255 }).default("A Copa do Mundo 2026 começa em junho. O seu bolão pode começar hoje.").notNull(),
+  ctaFinalPrimaryText: varchar("ctaFinalPrimaryText", { length: 64 }).default("Criar bolão grátis").notNull(),
+  ctaFinalSecondaryText: varchar("ctaFinalSecondaryText", { length: 64 }).default("Criar campeonato personalizado").notNull(),
+  ctaFinalSecondaryEnabled: boolean("ctaFinalSecondaryEnabled").default(true).notNull(),
+  // ── Metadados ─────────────────────────────────────────────────────────────
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type LandingPageConfig = typeof landingPageConfig.$inferSelect;
+export type InsertLandingPageConfig = typeof landingPageConfig.$inferInsert;

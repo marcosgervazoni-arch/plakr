@@ -17,6 +17,7 @@ import { notificationsRouter } from "./routers/notifications";
 import { platformRouter } from "./routers/platform";
 import { stripeRouter } from "./routers/stripe";
 import { notificationTemplatesRouter } from "./routers/notificationTemplates";
+import { landingPageRouter } from "./routers/landingPage";
 import { router } from "./_core/trpc";
 
 export const appRouter = router({
@@ -34,6 +35,7 @@ export const appRouter = router({
   stripe: stripeRouter,
   notificationTemplates: notificationTemplatesRouter,
   ads: adsRouter,
+  landingPage: landingPageRouter,
 });
 
 export type AppRouter = typeof appRouter;

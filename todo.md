@@ -1512,3 +1512,33 @@
 ## Bug: Tooltip no Card de Conquistas — Sprint 26/03/2026
 - [x] Diagnosticar por que o tooltip não dispara no DashboardBadgeCarousel — causa: TooltipProvider aninhado (shadcn Tooltip cria Provider interno que conflita com o global)
 - [x] Corrigir tooltip: BadgeCard agora usa TooltipPrimitive.Root diretamente, sem Provider aninhado
+
+## Redesign Landing Page + Admin Config — Sprint 26/03/2026
+
+### Schema & Backend
+- [x] Criar tabela `landing_page_config` com todos os campos de conteúdo e toggles de seções
+- [x] Seed inicial com valores padrão para todas as seções (defaults no schema Drizzle)
+- [x] tRPC procedure `landingPage.getConfig` (public) — retorna config ativa
+- [x] tRPC procedure `landingPage.updateConfig` (admin) — salva config completa
+- [x] tRPC procedure `landingPage.toggleSection` (admin) — ativa/desativa seção
+
+### Frontend — Home.tsx (Landing Page)
+- [x] Navbar mínima: logo + "Como funciona" + "Planos" + CTA "Criar bolão grátis"
+- [x] Hero: headline "Faça seu bolão com a galera" + badge "FAÇA SEU BOLÃO PARA A COPA DO MUNDO" + sub-headline + contador Copa 2026 + CTA duplo
+- [x] Seção credibilidade: campeonatos suportados + "+ crie o seu próprio"
+- [x] Seção "Como funciona" — 4 passos (organizador como protagonista)
+- [x] Seção diferencial "Seu campeonato, suas regras" com CTA Pro inline
+- [x] Seção features — grid 9 cards de funcionalidades
+- [x] Seção planos — comparativo Gratuito vs Pro com CTA duplo
+- [x] Seção FAQ — 6 perguntas com accordion
+- [x] Seção CTA final duplo — "Criar bolão grátis" + "Criar campeonato personalizado"
+- [x] Footer mínimo
+- [x] Renderização condicional de cada seção baseada em `landingPage.getConfig`
+
+### Admin — Painel "Página de Vendas"
+- [x] Adicionar item "Página de Vendas" na sidebar do Super Admin (grupo Comunicação)
+- [x] Toggles de seções com ativo/inativo e descrição de cada seção
+- [x] Editor de conteúdo por seção (hero, diferencial Pro, CTA final)
+- [x] Configurações gerais: badge Copa 2026, data do contador, CTAs
+- [x] Proteção de rota: AdminLayout já garante acesso apenas a admins
+- [x] Botão "Visualizar" abre a landing page em nova aba

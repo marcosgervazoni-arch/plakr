@@ -16,6 +16,7 @@ import {
   Film,
   Globe,
   Layers,
+  LayoutTemplate,
   Megaphone,
   Menu,
   Palette,
@@ -45,7 +46,8 @@ export type AdminSection =
   | "import-logs"
   | "integrations"
   | "badges"
-  | "retrospectivas";
+  | "retrospectivas"
+  | "landing-page";
 
 interface NavItem {
   id: AdminSection;
@@ -96,6 +98,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "broadcasts", label: "Broadcasts", icon: Megaphone, path: "/admin/broadcasts" },
       { id: "ads", label: "Publicidade", icon: Bell, path: "/admin/ads" },
+      { id: "landing-page", label: "Página de Vendas", icon: LayoutTemplate, path: "/admin/landing-page" },
     ],
   },
   {
