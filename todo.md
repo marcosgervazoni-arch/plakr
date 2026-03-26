@@ -1491,3 +1491,7 @@
 - [x] PublicProfile: substituir card de métricas antigo pelo componente padronizado "Perfil do Apostador" (Aproveitamento, Melhor Posição, Total de Palpites) igual ao Dashboard
 - [x] PublicProfile: substituir seção de badges antiga pelo DashboardBadgeCarousel redesenhado (grid 5 colunas, badges md, barra de progresso)
 - [x] Backend: garantir que getPublicProfile retorna badges no formato BadgeCardItem (name, description, emoji, rarity, earnedAt, earned)
+
+## Perfil Público — Gráfico Radar — Sprint 26/03/2026
+- [x] PublicProfile: adicionar gráfico radar "Perfil de Apostador" (Placar Exato, Resultado, Dif. Gols, Goleada, Zebra) igual ao Dashboard
+- [x] Backend: adicionar radarData ao getPublicProfile (zebraCount, landslideCount, goalDiffCount) e incluir no retorno

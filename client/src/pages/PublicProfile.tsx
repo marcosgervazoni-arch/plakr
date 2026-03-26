@@ -27,6 +27,16 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { BadgeCardItem } from "@/components/BadgeCard";
+import {
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar as RechartsRadar,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { Radar } from "lucide-react";
 
 // Tipo explícito para o retorno de getPublicProfile (evita falsos positivos do LSP do Vite)
 type PublicProfileData = {
@@ -37,6 +47,7 @@ type PublicProfileData = {
   recentPools: { id: number; name: string; slug: string; status: string; tournamentName: string | null }[];
   badges: BadgeCardItem[];
   finalPositions: { poolId: number; poolName: string; position: number; totalMembers: number; achievedAt: Date }[];
+  radarData: { subject: string; value: number; fullMark: number }[];
 };
 
 export default function PublicProfile() {
@@ -298,6 +309,55 @@ export default function PublicProfile() {
             </div>
           </div>
         </TooltipProvider>
+
+        {/* ── Perfil de Apostador — gráfico radar idêntico ao Dashboard ── */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Radar className="w-4 h-4 text-muted-foreground" />
+            <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">
+              Perfil de Apostador
+            </h3>
+          </div>
+          <div className="bg-card border border-border/30 rounded-xl p-4">
+            {!data.radarData || data.radarData.every((d) => d.value === 0) ? (
+              <div className="h-[200px] flex flex-col items-center justify-center gap-3">
+                <Radar className="w-8 h-8 text-muted-foreground/20" />
+                <p className="text-sm text-muted-foreground text-center">
+                  O perfil de apostador aparecerá aqui após os primeiros jogos pontuados.
+                </p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <RadarChart data={data.radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+                  <PolarGrid stroke="rgba(255,255,255,0.08)" />
+                  <PolarAngleAxis
+                    dataKey="subject"
+                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                  />
+                  <PolarRadiusAxis
+                    angle={90}
+                    domain={[0, 100]}
+                    tick={{ fontSize: 9, fill: "var(--chart-indigo)" }}
+                    tickCount={4}
+                  />
+                  <RechartsRadar
+                    name="Perfil"
+                    dataKey="value"
+                    stroke="hsl(var(--primary))"
+                    fill="hsl(var(--primary))"
+                    fillOpacity={0.2}
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--primary))", r: 3, strokeWidth: 0 }}
+                  />
+                  <RechartsTooltip
+                    contentStyle={{ background: "var(--card)", border: "1px solid #2E3347", borderRadius: "8px", fontSize: "12px" }}
+                    formatter={(value: number, name: string) => [`${value}%`, name]}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </section>
 
         {/* ── Conquistas — DashboardBadgeCarousel padronizado com o Dashboard ── */}
         {badges && badges.length > 0 && (

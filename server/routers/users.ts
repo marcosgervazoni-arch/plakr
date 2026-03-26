@@ -355,9 +355,20 @@ export const usersRouter = router({
         exactScores: sql<number>`COALESCE(SUM(${poolMemberStats.exactScoreCount}), 0)`,
         poolsCount: sql<number>`COUNT(DISTINCT ${poolMemberStats.poolId})`,
         correctScores: sql<number>`COALESCE(SUM(${poolMemberStats.correctResultCount}), 0)`,
+        zebraCount: sql<number>`COALESCE(SUM(${poolMemberStats.zebraCount}), 0)`,
+        landslideCount: sql<number>`COALESCE(SUM(${poolMemberStats.landslideCount}), 0)`,
+        goalDiffCount: sql<number>`COALESCE(SUM(${poolMemberStats.goalDiffCount}), 0)`,
         totalBets: sql<number>`COALESCE(SUM(${poolMemberStats.totalBets}), 0)`,
       }).from(poolMemberStats).where(eq(poolMemberStats.userId, input.userId));
-      const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, poolsCount: 0, correctScores: 0, totalBets: 0 };
+      const stats = statsRows[0] ?? { totalPoints: 0, exactScores: 0, poolsCount: 0, correctScores: 0, zebraCount: 0, landslideCount: 0, goalDiffCount: 0, totalBets: 0 };
+      const tb = Math.max(Number(stats.totalBets), 1);
+      const radarData = [
+        { subject: "Placar Exato", value: Math.round((Number(stats.exactScores) / tb) * 100), fullMark: 100 },
+        { subject: "Resultado", value: Math.round((Number(stats.correctScores) / tb) * 100), fullMark: 100 },
+        { subject: "Zebra", value: Math.min(100, Math.round((Number(stats.zebraCount) / tb) * 200)), fullMark: 100 },
+        { subject: "Goleada", value: Math.min(100, Math.round((Number(stats.landslideCount) / tb) * 200)), fullMark: 100 },
+        { subject: "Dif. Gols", value: Math.min(100, Math.round((Number(stats.goalDiffCount) / tb) * 150)), fullMark: 100 },
+      ];
       const recentPools = await db.select({
         poolId: poolsT.id,
         poolName: poolsT.name,
@@ -420,6 +431,7 @@ export const usersRouter = router({
             .where(eq(poolFinalPositions.userId, input.userId));
           return row[0]?.bestPos ? Number(row[0].bestPos) : null;
         })(),
+        radarData,
       };
     }),
 
