@@ -44,6 +44,12 @@ import DashboardBadgeCarousel from "@/components/DashboardBadgeCarousel";
 import NearestBadges from "@/components/NearestBadges";
 import OnboardingTour from "@/components/OnboardingTour";
 import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   AreaChart,
   Area,
   XAxis,
@@ -321,46 +327,84 @@ export default function Dashboard() {
               </div>
 
               {/* Global stats in JetBrains Mono — métricas relevantes */}
+              <TooltipProvider>
               <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/30">
                 {/* Aproveitamento */}
                 <div className="text-center">
-                  <div className="flex items-center justify-center gap-0.5">
-                    <p className="font-mono font-bold text-2xl text-primary leading-none">
-                      {stats?.accuracy ?? 0}
-                    </p>
-                    <span className="font-mono font-bold text-sm text-primary/70 leading-none mt-1">%</span>
-                  </div>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center gap-0.5 cursor-help">
+                        <p className="font-mono font-bold text-2xl text-primary leading-none">
+                          {stats?.accuracy ?? 0}
+                        </p>
+                        <span className="font-mono font-bold text-sm text-primary/70 leading-none mt-1">%</span>
+                        <Info className="w-3 h-3 text-muted-foreground/40 ml-0.5" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                      <p className="text-xs">
+                        {stats?.totalBets
+                          ? `${Math.round(((stats.accuracy / 100) * stats.totalBets))} palpites corretos de ${stats.totalBets} totais`
+                          : "Nenhum palpite registrado ainda"}
+                      </p>
+                    </TooltipContent>
+                  </UITooltip>
                   <p className="text-xs text-muted-foreground mt-1">Aproveit.</p>
                 </div>
                 {/* Melhor posição */}
                 <div className="text-center border-x border-border/30">
-                  {stats?.bestPosition != null ? (
-                    <div className="flex items-center justify-center gap-1">
-                      {stats.bestPosition === 1 && <Crown className="w-4 h-4 text-yellow-400" />}
-                      {stats.bestPosition === 2 && <Medal className="w-4 h-4 text-slate-300" />}
-                      {stats.bestPosition === 3 && <Medal className="w-4 h-4 text-amber-600" />}
-                      <p className={`font-mono font-bold text-2xl leading-none ${
-                        stats.bestPosition === 1 ? "text-yellow-400" :
-                        stats.bestPosition === 2 ? "text-slate-300" :
-                        stats.bestPosition === 3 ? "text-amber-600" :
-                        "text-foreground"
-                      }`}>
-                        {stats.bestPosition}º
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center gap-1 cursor-help">
+                        {stats?.bestPosition != null ? (
+                          <>
+                            {stats.bestPosition === 1 && <Crown className="w-4 h-4 text-yellow-400" />}
+                            {stats.bestPosition === 2 && <Medal className="w-4 h-4 text-slate-300" />}
+                            {stats.bestPosition === 3 && <Medal className="w-4 h-4 text-amber-600" />}
+                            <p className={`font-mono font-bold text-2xl leading-none ${
+                              stats.bestPosition === 1 ? "text-yellow-400" :
+                              stats.bestPosition === 2 ? "text-slate-300" :
+                              stats.bestPosition === 3 ? "text-amber-600" :
+                              "text-foreground"
+                            }`}>
+                              {stats.bestPosition}º
+                            </p>
+                          </>
+                        ) : (
+                          <p className="font-mono font-bold text-2xl text-muted-foreground/40 leading-none">—</p>
+                        )}
+                        <Info className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[220px] text-center">
+                      <p className="text-xs">
+                        {stats?.bestPosition != null
+                          ? `Sua melhor colocação final em bolões encerrados`
+                          : "Nenhum bolão encerrado ainda"}
                       </p>
-                    </div>
-                  ) : (
-                    <p className="font-mono font-bold text-2xl text-muted-foreground/40 leading-none">—</p>
-                  )}
+                    </TooltipContent>
+                  </UITooltip>
                   <p className="text-xs text-muted-foreground mt-1">Melhor pos.</p>
                 </div>
                 {/* Total de palpites */}
                 <div className="text-center">
-                  <p className="font-mono font-bold text-2xl text-foreground leading-none">
-                    {stats?.totalBets ?? 0}
-                  </p>
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center gap-1 cursor-help">
+                        <p className="font-mono font-bold text-2xl text-foreground leading-none">
+                          {stats?.totalBets ?? 0}
+                        </p>
+                        <Info className="w-3 h-3 text-muted-foreground/40" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                      <p className="text-xs">Total de palpites registrados em todos os seus bolões</p>
+                    </TooltipContent>
+                  </UITooltip>
                   <p className="text-xs text-muted-foreground mt-1">Palpites</p>
                 </div>
               </div>
+              </TooltipProvider>
             </div>
 
             {/* Upgrade CTA for free users */}

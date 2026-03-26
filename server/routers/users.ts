@@ -412,6 +412,14 @@ export const usersRouter = router({
           .where(eq(poolFinalPositions.userId, input.userId))
           .orderBy(desc(poolFinalPositions.finishedAt))
           .limit(20),
+        bestPosition: await (async () => {
+          const { min } = await import("drizzle-orm");
+          const row = await db
+            .select({ bestPos: min(poolFinalPositions.position) })
+            .from(poolFinalPositions)
+            .where(eq(poolFinalPositions.userId, input.userId));
+          return row[0]?.bestPos ? Number(row[0].bestPos) : null;
+        })(),
       };
     }),
 

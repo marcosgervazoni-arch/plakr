@@ -10,8 +10,14 @@ import { Button } from "@/components/ui/button";
 import BadgeGrid from "@/components/BadgeGrid";
 import {
   Trophy, Crown, Medal, Loader2, AlertCircle, Calendar,
-  MessageCircle, Send, ExternalLink, Share2, Award, Sparkles, ChevronRight,
+  MessageCircle, Send, ExternalLink, Share2, Award, Sparkles, ChevronRight, Info,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useParams, Link } from "wouter";
 import { getLoginUrl } from "@/const";
 import { useEffect, useState } from "react";
@@ -94,7 +100,7 @@ export default function PublicProfile() {
     );
   }
 
-  const { user, plan, recentPools, badges, finalPositions } = data;
+  const { user, plan, recentPools, badges, finalPositions, stats, bestPosition } = data;
   const isPro = plan?.plan === "pro" && plan?.isActive;
   const isOwnProfile = isAuthenticated && currentUser?.id === resolvedId;
   const initials = user.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
@@ -184,6 +190,92 @@ export default function PublicProfile() {
             </div>
           </div>
         </div>
+
+        {/* ── Card de métricas ── */}
+        <TooltipProvider>
+          <div className="bg-card border border-border/30 rounded-2xl p-5">
+            <div className="grid grid-cols-3 gap-2">
+              {/* Aproveitamento */}
+              <div className="text-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center justify-center gap-1 cursor-help">
+                      <div className="flex items-baseline gap-0.5">
+                        <p className="font-mono font-bold text-2xl text-primary leading-none">
+                          {stats?.accuracy ?? 0}
+                        </p>
+                        <span className="font-mono font-bold text-sm text-primary/70 leading-none">%</span>
+                      </div>
+                      <Info className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                    <p className="text-xs">
+                      {stats?.totalBets
+                        ? `${Math.round(((stats.accuracy / 100) * stats.totalBets))} palpites corretos de ${stats.totalBets} totais`
+                        : "Nenhum palpite registrado ainda"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <p className="text-xs text-muted-foreground mt-1">Aproveit.</p>
+              </div>
+
+              {/* Melhor posição */}
+              <div className="text-center border-x border-border/30">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center justify-center gap-1 cursor-help">
+                      {bestPosition != null ? (
+                        <>
+                          {bestPosition === 1 && <Crown className="w-4 h-4 text-yellow-400" />}
+                          {bestPosition === 2 && <Medal className="w-4 h-4 text-slate-300" />}
+                          {bestPosition === 3 && <Medal className="w-4 h-4 text-amber-600" />}
+                          <p className={`font-mono font-bold text-2xl leading-none ${
+                            bestPosition === 1 ? "text-yellow-400" :
+                            bestPosition === 2 ? "text-slate-300" :
+                            bestPosition === 3 ? "text-amber-600" :
+                            "text-foreground"
+                          }`}>
+                            {bestPosition}º
+                          </p>
+                        </>
+                      ) : (
+                        <p className="font-mono font-bold text-2xl text-muted-foreground/40 leading-none">—</p>
+                      )}
+                      <Info className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                    <p className="text-xs">
+                      {bestPosition != null
+                        ? `Melhor colocação final em bolões encerrados`
+                        : "Nenhum bolão encerrado ainda"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+                <p className="text-xs text-muted-foreground mt-1">Melhor pos.</p>
+              </div>
+
+              {/* Total de palpites */}
+              <div className="text-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center justify-center gap-1 cursor-help">
+                      <p className="font-mono font-bold text-2xl text-foreground leading-none">
+                        {stats?.totalBets ?? 0}
+                      </p>
+                      <Info className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                    <p className="text-xs">Total de palpites registrados em todos os bolões</p>
+                  </TooltipContent>
+                </Tooltip>
+                <p className="text-xs text-muted-foreground mt-1">Palpites</p>
+              </div>
+            </div>
+          </div>
+        </TooltipProvider>
 
         {/* ── Badges / Conquistas ── */}
         {badges && badges.length > 0 && (

@@ -1452,3 +1452,11 @@
 - [x] Card: Aproveitamento % (dourado) | Melhor Posição com coroa/medalha | Total de Palpites
 - [x] Ícones contextuais: Crown para 1º lugar, Medal para 2º/3º com cores dourado/prata/bronze
 - [x] Exibe "—" quando usuário ainda não concluiu nenhum bolão (bestPosition null)
+
+## Redesign Perfil Público + Tooltips (26/03/2026) ✅
+- [x] Adicionar `bestPosition` ao retorno do `getPublicProfile` no backend
+- [x] Inserir card de métricas (Aproveit. %, Melhor pos., Palpites) no PublicProfile.tsx
+- [x] Tooltips shadcn/ui nas 3 métricas do Dashboard: detalhe de palpites corretos/total, melhor colocação, total de palpites
+- [x] Tooltips nas 3 métricas do Perfil Público com mesma semântica
+- [x] Ícones de coroa/medalha no Perfil Público conforme posição final (1º=coroa dourada, 2º=prata, 3º=bronze)
+- [x] TypeScript sem erros (tsc --noEmit exit 0)
