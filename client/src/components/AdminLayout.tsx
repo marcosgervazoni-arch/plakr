@@ -77,7 +77,6 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "tournaments", label: "Campeonatos", icon: Trophy, path: "/admin/tournaments" },
       { id: "pools", label: "Bolões", icon: BookOpen, path: "/admin/pools" },
       { id: "game-results", label: "Resultados", icon: ClipboardList, path: "/admin/game-results" },
-      { id: "retrospectivas", label: "Retrospectivas", icon: Film, path: "/admin/retrospectivas" },
     ],
   },
   {
@@ -114,6 +113,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "settings", label: "Configurações", icon: Settings, path: "/admin/settings" },
       { id: "integrations", label: "Integrações", icon: Globe, path: "/admin/integrations" },
+      { id: "retrospectivas", label: "Retrospectivas", icon: Film, path: "/admin/retrospectivas" },
     ],
   },
   {

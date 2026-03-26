@@ -47,6 +47,21 @@ import {
   UserX,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Film, RefreshCw, Clock, AlertCircle, ChevronLeft, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -124,6 +139,11 @@ function PoolMembersList({ poolId }: { poolId: number }) {
 export default function AdminPools() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<"pools" | "concluded">("pools");
+  const [retroPage, setRetroPage] = useState(1);
+  const [retroSearch, setRetroSearch] = useState("");
+  const [retroSearchInput, setRetroSearchInput] = useState("");
+  const [reprocessingId, setReprocessingId] = useState<number | null>(null);
   const [, navigate] = useLocation();
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -143,6 +163,22 @@ export default function AdminPools() {
   });
 
   const { data: pools, isLoading, refetch } = trpc.pools.adminList.useQuery({ limit: 200 });
+  const { data: retroData, isLoading: retroLoading, refetch: retroRefetch } = trpc.pools.adminGetRetrospectives.useQuery({
+    page: retroPage,
+    limit: 20,
+    search: retroSearch || undefined,
+  });
+  const reprocessRetro = trpc.pools.adminReprocessRetrospective.useMutation({
+    onSuccess: () => {
+      toast.success("Retrospectiva reprocessada com sucesso.");
+      setReprocessingId(null);
+      retroRefetch();
+    },
+    onError: (err) => {
+      toast.error(err.message || "Erro ao reprocessar retrospectiva.");
+      setReprocessingId(null);
+    },
+  });
   const { data: tournaments } = trpc.tournaments.list.useQuery();
 
   const deletePool = trpc.pools.delete.useMutation({
@@ -252,6 +288,12 @@ export default function AdminPools() {
     return "Arquivado";
   };
 
+  const RETRO_STATUS_CONFIG = {
+    complete: { label: "Completo", icon: CheckCircle2, className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
+    partial: { label: "Parcial", icon: AlertCircle, className: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+    pending: { label: "Pendente", icon: Clock, className: "bg-zinc-800 text-zinc-400 border-zinc-700" },
+  };
+
   return (
     <AdminLayout activeSection="pools">
       <div className="space-y-6">
@@ -262,15 +304,174 @@ export default function AdminPools() {
               <h1 className="text-2xl font-bold font-display">Bolões</h1>
               <p className="text-muted-foreground text-sm mt-1">Visão geral de todos os bolões da plataforma</p>
             </div>
-            <Button
-              size="sm"
-              onClick={() => setShowCreate(true)}
-              className="gap-2 bg-brand hover:bg-brand/90 shrink-0"
-            >
-              <Plus className="h-4 w-4" />
-              Novo Bolão
-            </Button>
+            {activeTab === "pools" && (
+              <Button
+                size="sm"
+                onClick={() => setShowCreate(true)}
+                className="gap-2 bg-brand hover:bg-brand/90 shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                Novo Bolão
+              </Button>
+            )}
           </div>
+          {/* Tabs principais */}
+          <div className="flex gap-0 border-b border-border/50">
+            <button
+              onClick={() => setActiveTab("pools")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "pools"
+                  ? "border-brand text-brand"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Todos os Bolões
+            </button>
+            <button
+              onClick={() => setActiveTab("concluded")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${
+                activeTab === "concluded"
+                  ? "border-brand text-brand"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Film className="h-3.5 w-3.5" />
+              Concluídos &amp; Retrospectivas
+            </button>
+          </div>
+        </div>
+
+        {/* Aba: Concluídos & Retrospectivas */}
+        {activeTab === "concluded" && (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome do bolão..."
+                  value={retroSearchInput}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRetroSearchInput(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent) => { if (e.key === "Enter") { setRetroSearch(retroSearchInput); setRetroPage(1); } }}
+                  className="pl-9"
+                />
+              </div>
+              <Button size="sm" variant="outline" onClick={() => { setRetroSearch(retroSearchInput); setRetroPage(1); }}>Buscar</Button>
+            </div>
+            {retroLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : !retroData?.items?.length ? (
+              <div className="text-center py-16 text-muted-foreground">
+                <Film className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">Nenhum bolão concluído encontrado.</p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-border/50 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/50 hover:bg-transparent">
+                      <TableHead className="text-xs">Bolão</TableHead>
+                      <TableHead className="text-xs text-center">Participantes</TableHead>
+                      <TableHead className="text-xs text-center">Retrospectivas</TableHead>
+                      <TableHead className="text-xs text-center">Cards</TableHead>
+                      <TableHead className="text-xs">Status</TableHead>
+                      <TableHead className="text-right text-xs">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {retroData.items.map((item) => {
+                      const status = item.totalCards === 0 ? "pending" : item.totalCards < item.totalRetrospectives ? "partial" : "complete";
+                      const cfg = RETRO_STATUS_CONFIG[status];
+                      const StatusIcon = cfg.icon;
+                      const isReprocessing = reprocessingId === item.id;
+                      return (
+                        <TableRow key={item.id} className="border-border/50">
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-sm">{item.name}</p>
+                              <p className="text-xs text-muted-foreground font-mono">{item.slug}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="font-mono text-sm">{item.totalRetrospectives}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="font-mono text-sm">{item.totalRetrospectives}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className={`font-mono text-sm ${item.totalCards < item.totalRetrospectives ? "text-amber-400" : "text-emerald-400"}`}>
+                              {item.totalCards}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`text-xs border ${cfg.className} flex items-center gap-1 w-fit`}>
+                              <StatusIcon className="h-3 w-3" />
+                              {cfg.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      disabled={isReprocessing}
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <RefreshCw className={`h-4 w-4 ${isReprocessing ? "animate-spin" : ""}`} />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Reprocessar retrospectiva?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Isso vai regenerar os cards de todos os participantes do bolão <strong>{item.name}</strong>.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => { setReprocessingId(item.id); reprocessRetro.mutate({ poolId: item.id }); }}
+                                        className="bg-brand hover:bg-brand/90 text-white"
+                                      >
+                                        Reprocessar
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </TooltipTrigger>
+                              <TooltipContent>Reprocessar cards</TooltipContent>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+                {(retroData?.totalPages ?? 1) > 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground">{retroData?.total} bolão{(retroData?.total ?? 0) !== 1 ? "ões" : ""} concluído{(retroData?.total ?? 0) !== 1 ? "s" : ""}</p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setRetroPage((p) => Math.max(1, p - 1))} disabled={retroPage === 1} className="h-7 w-7 p-0">
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground font-mono">{retroPage} / {retroData?.totalPages}</span>
+                      <Button variant="outline" size="sm" onClick={() => setRetroPage((p) => Math.min(retroData?.totalPages ?? 1, p + 1))} disabled={retroPage === (retroData?.totalPages ?? 1)} className="h-7 w-7 p-0">
+                        <ChevronRightIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Aba: Todos os Bolões */}
+        {activeTab === "pools" && (<>
           <div className="flex gap-1 flex-wrap">
             {(["all", "active", "finished", "deleted"] as const).map((s) => (
               <Button
@@ -285,7 +486,6 @@ export default function AdminPools() {
               </Button>
             ))}
           </div>
-        </div>
 
         {/* Search */}
         <div className="relative">
@@ -371,8 +571,8 @@ export default function AdminPools() {
             )}
           </div>
         )}
+        </>)}
       </div>
-
       {/* Sheet: Painel Gerenciável */}
       <Sheet open={!!selectedPool} onOpenChange={(open) => !open && setSelectedPool(null)}>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto">

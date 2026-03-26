@@ -680,6 +680,36 @@ export const userShareCards = mysqlTable(
 export type UserShareCard = typeof userShareCards.$inferSelect;
 export type InsertUserShareCard = typeof userShareCards.$inferInsert;
 
+// ─── CONFIGURAÇÃO DE RETROSPECTIVA (single-row) ──────────────────────────────
+// Templates de fundo (PNG/JPG) para slides e cards. Gerenciado pelo Super Admin.
+// Quando slide2..5 não forem enviados, o sistema usa slide1 como fundo universal.
+export const retrospectiveConfig = mysqlTable("retrospective_config", {
+  id: int("id").primaryKey().default(1),
+  // Templates de fundo para os 5 slides (9:16, PNG/JPG, max 5MB)
+  slide1Url: text("slide1Url"),   // Slide 1: Capa
+  slide1Key: varchar("slide1Key", { length: 255 }),
+  slide2Url: text("slide2Url"),   // Slide 2: Seus números
+  slide2Key: varchar("slide2Key", { length: 255 }),
+  slide3Url: text("slide3Url"),   // Slide 3: Melhor momento
+  slide3Key: varchar("slide3Key", { length: 255 }),
+  slide4Url: text("slide4Url"),   // Slide 4: Posição final
+  slide4Key: varchar("slide4Key", { length: 255 }),
+  slide5Url: text("slide5Url"),   // Slide 5: Encerramento
+  slide5Key: varchar("slide5Key", { length: 255 }),
+  // Templates de fundo para os cards de compartilhamento
+  cardPodiumUrl: text("cardPodiumUrl"),   // Card pódio (1º, 2º, 3º)
+  cardPodiumKey: varchar("cardPodiumKey", { length: 255 }),
+  cardParticipantUrl: text("cardParticipantUrl"), // Card participante geral
+  cardParticipantKey: varchar("cardParticipantKey", { length: 255 }),
+  // Configurações de comportamento
+  autoCloseDays: int("autoCloseDays").default(3).notNull(), // dias para auto-conclusão
+  closingCtaText: varchar("closingCtaText", { length: 128 }).default("Crie seu bolão no ApostAI →"),
+  closingCtaUrl: text("closingCtaUrl"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type RetrospectiveConfig = typeof retrospectiveConfig.$inferSelect;
+export type InsertRetrospectiveConfig = typeof retrospectiveConfig.$inferInsert;
+
 // ─── EXPORTS DE TIPOS ADICIONAIS ────────────────────────────────────────────
 export type InsertUserPlan = typeof userPlans.$inferInsert;
 export type InsertPool = typeof pools.$inferInsert;

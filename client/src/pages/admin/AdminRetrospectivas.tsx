@@ -1,354 +1,490 @@
-import { useState } from "react";
+/**
+ * AdminRetrospectivas — Painel de Configuração de Templates
+ * Permite upload de fundos personalizados para os 5 slides e cards de compartilhamento.
+ */
+import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import AdminLayout from "@/components/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  Search,
-  RefreshCw,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Film,
-  Users,
   ImageIcon,
+  Loader2,
+  Info,
+  Layers,
+  Film,
+  Trash2,
+  Save,
+  Upload,
 } from "lucide-react";
 
-const STATUS_CONFIG = {
-  complete: {
-    label: "Completo",
-    icon: CheckCircle2,
-    variant: "default" as const,
-    className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  },
-  partial: {
-    label: "Parcial",
-    icon: AlertCircle,
-    variant: "secondary" as const,
-    className: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  },
-  pending: {
-    label: "Pendente",
-    icon: Clock,
-    variant: "outline" as const,
-    className: "bg-zinc-800 text-zinc-400 border-zinc-700",
-  },
+// ─── Tipos ───────────────────────────────────────────────────────────────────
+
+type SlotKey = "slide1" | "slide2" | "slide3" | "slide4" | "slide5" | "cardPodium" | "cardParticipant";
+
+interface SlotConfig {
+  key: SlotKey;
+  label: string;
+  description: string;
+  ratio: string;
+  isFallback?: boolean;
+}
+
+const SLIDE_SLOTS: SlotConfig[] = [
+  { key: "slide1", label: "Slide 1 — Capa", description: "Tela de abertura. Usado como fallback para slides sem template.", ratio: "9:16", isFallback: true },
+  { key: "slide2", label: "Slide 2 — Números", description: "Estatísticas do participante: palpites, acertos, pontuação.", ratio: "9:16" },
+  { key: "slide3", label: "Slide 3 — Momento", description: "Destaque do melhor palpite ou movimento de ranking.", ratio: "9:16" },
+  { key: "slide4", label: "Slide 4 — Posição", description: "Posição no ranking e card de compartilhamento.", ratio: "9:16" },
+  { key: "slide5", label: "Slide 5 — CTA", description: "Chamada para novos usuários e próxima temporada.", ratio: "9:16" },
+];
+
+const CARD_SLOTS: SlotConfig[] = [
+  { key: "cardPodium", label: "Card Pódio", description: "Background para 1º, 2º e 3º lugar.", ratio: "4:5" },
+  { key: "cardParticipant", label: "Card Participante", description: "Background para demais participantes.", ratio: "4:5" },
+];
+
+// ─── Mock data para prévia ────────────────────────────────────────────────────
+
+const MOCK = {
+  poolName: "Bolão da Copa 2026",
+  userName: "João Silva",
+  position: 3,
+  totalMembers: 24,
+  exactScores: 7,
+  totalBets: 38,
+  points: 142,
+  bestMoment: "Acertou placar: Brasil 2 × 1 Argentina",
 };
 
-export default function AdminRetrospectivas() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [reprocessingId, setReprocessingId] = useState<number | null>(null);
+// ─── Componente de zona de upload ─────────────────────────────────────────────
 
-  const { data, isLoading, refetch } = trpc.pools.adminGetRetrospectives.useQuery({
-    page,
-    limit: 20,
-    search: search || undefined,
-  });
-
-  const reprocess = trpc.pools.adminReprocessRetrospective.useMutation({
+function UploadZone({
+  slot,
+  currentUrl,
+  onUploaded,
+  onRemove,
+}: {
+  slot: SlotConfig;
+  currentUrl?: string | null;
+  onUploaded: () => void;
+  onRemove: () => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const upload = trpc.pools.uploadRetrospectiveTemplate.useMutation({
     onSuccess: () => {
-      toast.success("Retrospectiva reprocessada com sucesso.");
-      setReprocessingId(null);
-      refetch();
+      toast.success(`Template "${slot.label}" enviado.`);
+      onUploaded();
+      setUploading(false);
     },
     onError: (err) => {
-      toast.error(err.message || "Erro ao reprocessar retrospectiva.");
-      setReprocessingId(null);
+      toast.error(err.message || "Erro ao enviar template.");
+      setUploading(false);
     },
   });
 
-  const handleSearch = () => {
-    setSearch(searchInput);
-    setPage(1);
+  const handleFile = (file: File) => {
+    if (!file.type.match(/^image\/(png|jpeg)$/)) {
+      toast.error("Apenas PNG ou JPG são aceitos.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 5 MB.");
+      return;
+    }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = (e.target?.result as string).split(",")[1];
+      upload.mutate({
+        slot: slot.key,
+        fileBase64: base64,
+        mimeType: file.type as "image/png" | "image/jpeg",
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleReprocess = (poolId: number) => {
-    setReprocessingId(poolId);
-    reprocess.mutate({ poolId });
+  const aspectStyle = slot.ratio === "9:16" ? { aspectRatio: "9/16" } : { aspectRatio: "4/5" };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-xs font-semibold">{slot.label}</p>
+            {slot.isFallback && (
+              <Badge variant="outline" className="text-xs border-brand/30 text-brand px-1 h-4">Fallback</Badge>
+            )}
+            <Badge variant="outline" className="text-xs text-muted-foreground px-1 h-4">{slot.ratio}</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-tight">{slot.description}</p>
+        </div>
+        {currentUrl && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-400/10 shrink-0"
+            onClick={onRemove}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+
+      {/* Zona de upload */}
+      <div
+        className={`relative border-2 border-dashed rounded-lg transition-colors cursor-pointer group overflow-hidden ${
+          currentUrl
+            ? "border-brand/30 bg-brand/5"
+            : "border-border hover:border-brand/40 hover:bg-muted/30"
+        }`}
+        style={{ ...aspectStyle, maxHeight: "180px" }}
+        onClick={() => !uploading && fileRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const file = e.dataTransfer.files[0];
+          if (file) handleFile(file);
+        }}
+      >
+        {currentUrl ? (
+          <>
+            <img
+              src={currentUrl}
+              alt={slot.label}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div className="text-white text-center">
+                <Upload className="h-4 w-4 mx-auto mb-1" />
+                <p className="text-xs">Substituir</p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground">
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <ImageIcon className="h-5 w-5 opacity-40" />
+                <p className="text-xs text-center px-2 opacity-70">PNG/JPG</p>
+              </>
+            )}
+          </div>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+            e.target.value = "";
+          }}
+        />
+      </div>
+
+      {/* Prévia */}
+      <div>
+        <p className="text-xs text-muted-foreground text-center mb-1 opacity-60">Prévia</p>
+        <SlidePreview slot={slot} backgroundUrl={currentUrl} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Prévia de slide com mock data ────────────────────────────────────────────
+
+function SlidePreview({ slot, backgroundUrl }: { slot: SlotConfig; backgroundUrl?: string | null }) {
+  const aspectStyle = slot.ratio === "9:16" ? { aspectRatio: "9/16" } : { aspectRatio: "4/5" };
+
+  const renderContent = () => {
+    switch (slot.key) {
+      case "slide1":
+        return (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-3 text-white text-center">
+            <div className="text-2xl">🏆</div>
+            <p className="text-xs font-bold uppercase tracking-widest opacity-70">Retrospectiva</p>
+            <p className="text-xs font-bold leading-tight">{MOCK.poolName}</p>
+            <p className="text-xs opacity-60">{MOCK.userName}</p>
+          </div>
+        );
+      case "slide2":
+        return (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-3 text-white text-center">
+            <p className="text-xs font-bold uppercase tracking-widest opacity-70">Seus Números</p>
+            <div className="grid grid-cols-2 gap-1 w-full mt-1">
+              <div className="bg-white/10 rounded p-1">
+                <p className="text-base font-bold">{MOCK.points}</p>
+                <p className="text-xs opacity-70">pts</p>
+              </div>
+              <div className="bg-white/10 rounded p-1">
+                <p className="text-base font-bold">{MOCK.exactScores}</p>
+                <p className="text-xs opacity-70">exatos</p>
+              </div>
+            </div>
+          </div>
+        );
+      case "slide3":
+        return (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-3 text-white text-center">
+            <div className="text-xl">⭐</div>
+            <p className="text-xs font-bold uppercase tracking-widest opacity-70">Melhor Momento</p>
+            <p className="text-xs font-semibold leading-tight">{MOCK.bestMoment}</p>
+          </div>
+        );
+      case "slide4":
+        return (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-3 text-white text-center">
+            <p className="text-xs font-bold uppercase tracking-widest opacity-70">Posição Final</p>
+            <p className="text-4xl font-bold">#{MOCK.position}</p>
+            <p className="text-xs opacity-70">de {MOCK.totalMembers}</p>
+          </div>
+        );
+      case "slide5":
+        return (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-3 text-white text-center">
+            <div className="text-xl">🎯</div>
+            <p className="text-xs font-bold leading-tight">Crie seu bolão no ApostAI</p>
+            <p className="text-xs opacity-60">apostai.com</p>
+          </div>
+        );
+      case "cardPodium":
+        return (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-2 text-white text-center">
+            <div className="text-xl">🥇</div>
+            <p className="text-xs font-bold">{MOCK.userName}</p>
+            <p className="text-xs opacity-70">{MOCK.points} pts</p>
+          </div>
+        );
+      case "cardParticipant":
+        return (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-2 text-white text-center">
+            <p className="text-xs font-bold">{MOCK.userName}</p>
+            <p className="text-xs opacity-70">#{MOCK.position} · {MOCK.points} pts</p>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
-  const formatDate = (date: Date | string | null) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+  return (
+    <div
+      className="relative rounded-lg overflow-hidden bg-zinc-900 border border-border/50"
+      style={{ ...aspectStyle, maxHeight: "180px" }}
+    >
+      {backgroundUrl ? (
+        <img src={backgroundUrl} alt="bg" className="absolute inset-0 w-full h-full object-cover" />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900" />
+      )}
+      <div className="absolute inset-0 bg-black/30" />
+      {renderContent()}
+    </div>
+  );
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
+
+export default function AdminRetrospectivas() {
+  const { data: config, isLoading, refetch } = trpc.pools.getRetrospectiveConfig.useQuery();
+  const updateConfig = trpc.pools.updateRetrospectiveConfig.useMutation({
+    onSuccess: () => {
+      toast.success("Configurações salvas.");
+      refetch();
+    },
+    onError: (err) => toast.error(err.message || "Erro ao salvar configurações."),
+  });
+
+  const [ctaText, setCtaText] = useState("");
+  const [ctaUrl, setCtaUrl] = useState("");
+  const [autoCloseDays, setAutoCloseDays] = useState("3");
+  const [configLoaded, setConfigLoaded] = useState(false);
+
+  if (config && !configLoaded) {
+    setCtaText(config.closingCtaText ?? "Crie seu bolão no ApostAI →");
+    setCtaUrl(config.closingCtaUrl ?? "");
+    setAutoCloseDays(String(config.autoCloseDays ?? 3));
+    setConfigLoaded(true);
+  }
+
+  const getUrl = (slot: SlotKey): string | null | undefined => {
+    if (!config) return undefined;
+    const map: Record<SlotKey, string | null | undefined> = {
+      slide1: config.slide1Url,
+      slide2: config.slide2Url,
+      slide3: config.slide3Url,
+      slide4: config.slide4Url,
+      slide5: config.slide5Url,
+      cardPodium: config.cardPodiumUrl,
+      cardParticipant: config.cardParticipantUrl,
+    };
+    return map[slot];
+  };
+
+  const handleRemove = (slot: SlotKey) => {
+    const urlField = `${slot}Url`;
+    const keyField = `${slot}Key`;
+    updateConfig.mutate({ [urlField]: null, [keyField]: null } as any);
+  };
+
+  const handleSaveBehavior = () => {
+    updateConfig.mutate({
+      closingCtaText: ctaText,
+      closingCtaUrl: ctaUrl || null,
+      autoCloseDays: parseInt(autoCloseDays) || 3,
     });
   };
 
-  // Métricas resumidas
-  const totalComplete = data?.items.filter((i) => i.status === "complete").length ?? 0;
-  const totalPartial = data?.items.filter((i) => i.status === "partial").length ?? 0;
-  const totalPending = data?.items.filter((i) => i.status === "pending").length ?? 0;
-
   return (
     <AdminLayout activeSection="retrospectivas">
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-5xl">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Film className="h-6 w-6 text-brand-500" />
+          <h1 className="text-2xl font-bold font-display flex items-center gap-2">
+            <Film className="h-6 w-6 text-brand" />
             Retrospectivas
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Geração de retrospectivas e cards de compartilhamento dos bolões concluídos.
+            Personalize os fundos dos slides e cards de compartilhamento gerados ao concluir um bolão.
           </p>
         </div>
 
-        {/* Cards de resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="bg-surface border-border">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-emerald-500/10">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Completos</p>
-                  <p className="text-2xl font-bold text-foreground font-mono">{totalComplete}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-surface border-border">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/10">
-                  <AlertCircle className="h-5 w-5 text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Parciais</p>
-                  <p className="text-2xl font-bold text-foreground font-mono">{totalPartial}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-surface border-border">
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-zinc-700/30">
-                  <Clock className="h-5 w-5 text-zinc-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Pendentes</p>
-                  <p className="text-2xl font-bold text-foreground font-mono">{totalPending}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Info box */}
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-brand/5 border border-brand/20">
+          <Info className="h-4 w-4 text-brand mt-0.5 shrink-0" />
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>Os templates são imagens de <strong>fundo</strong> (PNG ou JPG). O conteúdo dinâmico (nome, pontos, posição) é sobreposto automaticamente.</p>
+            <p>Se um slide não tiver template, o <strong>Slide 1</strong> é usado como fallback. Slides sem nenhum template usam fundo escuro padrão.</p>
+          </div>
         </div>
 
-        {/* Tabela */}
-        <Card className="bg-surface border-border">
-          <CardHeader className="pb-3">
-            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-              <CardTitle className="text-base font-semibold">Bolões Concluídos</CardTitle>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-64">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar bolão..."
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="pl-8 bg-background border-border text-sm"
-                  />
+        {isLoading ? (
+          <div className="flex items-center justify-center h-32">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+            {/* Slides */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-brand" />
+                  Templates de Slides
+                </CardTitle>
+                <CardDescription>
+                  Proporção 9:16 (stories). Máximo 5 MB cada. Clique ou arraste para enviar.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {SLIDE_SLOTS.map((slot) => (
+                    <UploadZone
+                      key={slot.key}
+                      slot={slot}
+                      currentUrl={getUrl(slot.key)}
+                      onUploaded={refetch}
+                      onRemove={() => handleRemove(slot.key)}
+                    />
+                  ))}
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSearch}
-                  className="border-border"
-                >
-                  Buscar
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-8 text-center text-muted-foreground text-sm">
-                Carregando retrospectivas...
-              </div>
-            ) : !data?.items.length ? (
-              <div className="p-12 text-center">
-                <Film className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
-                <p className="text-muted-foreground text-sm">
-                  {search ? "Nenhum bolão encontrado para esta busca." : "Nenhum bolão concluído ainda."}
-                </p>
-              </div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border hover:bg-transparent">
-                      <TableHead className="text-xs text-muted-foreground font-medium">Bolão</TableHead>
-                      <TableHead className="text-xs text-muted-foreground font-medium">Organizador</TableHead>
-                      <TableHead className="text-xs text-muted-foreground font-medium">Concluído em</TableHead>
-                      <TableHead className="text-xs text-muted-foreground font-medium text-center">
-                        <div className="flex items-center gap-1 justify-center">
-                          <Users className="h-3 w-3" />
-                          Retrospectivas
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-xs text-muted-foreground font-medium text-center">
-                        <div className="flex items-center gap-1 justify-center">
-                          <ImageIcon className="h-3 w-3" />
-                          Cards
-                        </div>
-                      </TableHead>
-                      <TableHead className="text-xs text-muted-foreground font-medium">Status</TableHead>
-                      <TableHead className="text-xs text-muted-foreground font-medium text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.items.map((item) => {
-                      const cfg = STATUS_CONFIG[item.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.pending;
-                      const StatusIcon = cfg.icon;
-                      const isReprocessing = reprocessingId === item.id;
+              </CardContent>
+            </Card>
 
-                      return (
-                        <TableRow key={item.id} className="border-border hover:bg-white/[0.02]">
-                          <TableCell>
-                            <div>
-                              <p className="font-medium text-sm text-foreground">{item.name}</p>
-                              <p className="text-xs text-muted-foreground font-mono">{item.slug}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-muted-foreground">{item.ownerName}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-muted-foreground font-mono text-xs">
-                              {formatDate(item.concludedAt)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span className="font-mono text-sm text-foreground">
-                              {item.totalRetrospectives}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span className={`font-mono text-sm ${item.totalCards < item.totalRetrospectives ? "text-amber-400" : "text-emerald-400"}`}>
-                              {item.totalCards}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`text-xs border ${cfg.className} flex items-center gap-1 w-fit`}>
-                              <StatusIcon className="h-3 w-3" />
-                              {cfg.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      disabled={isReprocessing}
-                                      className="h-8 w-8 p-0 hover:bg-brand-500/10 hover:text-brand-400"
-                                    >
-                                      <RefreshCw className={`h-4 w-4 ${isReprocessing ? "animate-spin" : ""}`} />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent className="bg-surface border-border">
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Reprocessar retrospectiva?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Isso vai regenerar os cards de compartilhamento de todos os participantes do bolão <strong>{item.name}</strong>. Cards existentes serão substituídos.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => handleReprocess(item.id)}
-                                        className="bg-brand-500 hover:bg-brand-600 text-white"
-                                      >
-                                        Reprocessar
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </TooltipTrigger>
-                              <TooltipContent>Reprocessar cards</TooltipContent>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+            {/* Cards */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-brand" />
+                  Templates de Cards de Compartilhamento
+                </CardTitle>
+                <CardDescription>
+                  Proporção 4:5. Máximo 5 MB cada.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {CARD_SLOTS.map((slot) => (
+                    <UploadZone
+                      key={slot.key}
+                      slot={slot}
+                      currentUrl={getUrl(slot.key)}
+                      onUploaded={refetch}
+                      onRemove={() => handleRemove(slot.key)}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-                {/* Paginação */}
-                {(data?.totalPages ?? 1) > 1 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+            {/* Configurações de comportamento */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Film className="h-4 w-4 text-brand" />
+                  Configurações de Comportamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Dias para auto-conclusão</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="30"
+                      value={autoCloseDays}
+                      onChange={(e) => setAutoCloseDays(e.target.value)}
+                      className="h-9"
+                    />
                     <p className="text-xs text-muted-foreground">
-                      {data?.total} bolão{(data?.total ?? 0) !== 1 ? "ões" : ""} concluído{(data?.total ?? 0) !== 1 ? "s" : ""}
+                      Após todos os jogos finalizados, o bolão é concluído automaticamente se o organizador não confirmar.
                     </p>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                        className="h-7 w-7 p-0 border-border"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <span className="text-xs text-muted-foreground font-mono">
-                        {page} / {data?.totalPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => Math.min(data?.totalPages ?? 1, p + 1))}
-                        disabled={page === (data?.totalPages ?? 1)}
-                        className="h-7 w-7 p-0 border-border"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
+                  </div>
+                  <div className="space-y-3 sm:col-span-2">
+                    <div className="space-y-1.5">
+                      <Label>Texto do CTA (Slide 5)</Label>
+                      <Input
+                        value={ctaText}
+                        onChange={(e) => setCtaText(e.target.value)}
+                        maxLength={128}
+                        placeholder="Crie seu bolão no ApostAI →"
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>URL do CTA</Label>
+                      <Input
+                        value={ctaUrl}
+                        onChange={(e) => setCtaUrl(e.target.value)}
+                        placeholder="https://apostai.com"
+                        className="h-9"
+                      />
                     </div>
                   </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSaveBehavior}
+                    disabled={updateConfig.isPending}
+                    className="bg-brand hover:bg-brand/90 gap-2"
+                  >
+                    {updateConfig.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Salvar Configurações
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     </AdminLayout>
   );

@@ -169,6 +169,13 @@
       "when": 1774521801690,
       "tag": "0023_grey_trauma",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1774524938485,
+      "tag": "0024_lethal_george_stacy",
+      "breakpoints": true
     }
   ]
 }

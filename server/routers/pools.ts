@@ -45,6 +45,7 @@ import {
   updatePoolMemberRole,
   upsertPoolScoringRules,
   getGamesByPool,
+  getDb,
 } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
 
@@ -1096,6 +1097,83 @@ export const poolsRouter = router({
       await createAdminLog(ctx.user.id, "pool.reprocessRetrospective", "pool", input.poolId, {});
 
       return { success: true };
+    }),
+
+  // ── Configuração de Retrospectiva (Admin) ────────────────────────────────────────────────────────
+  getRetrospectiveConfig: adminProcedure.query(async () => {
+    const db2 = await getDb();
+    if (!db2) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    const { retrospectiveConfig } = await import("../../drizzle/schema");
+    const [config] = await db2.select().from(retrospectiveConfig).limit(1);
+    return config ?? null;
+  }),
+
+  updateRetrospectiveConfig: adminProcedure
+    .input(z.object({
+      autoCloseDays: z.number().min(1).max(30).optional(),
+      closingCtaText: z.string().max(128).optional(),
+      closingCtaUrl: z.string().optional().nullable(),
+      slide1Url: z.string().optional().nullable(),
+      slide1Key: z.string().optional().nullable(),
+      slide2Url: z.string().optional().nullable(),
+      slide2Key: z.string().optional().nullable(),
+      slide3Url: z.string().optional().nullable(),
+      slide3Key: z.string().optional().nullable(),
+      slide4Url: z.string().optional().nullable(),
+      slide4Key: z.string().optional().nullable(),
+      slide5Url: z.string().optional().nullable(),
+      slide5Key: z.string().optional().nullable(),
+      cardPodiumUrl: z.string().optional().nullable(),
+      cardPodiumKey: z.string().optional().nullable(),
+      cardParticipantUrl: z.string().optional().nullable(),
+      cardParticipantKey: z.string().optional().nullable(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db2 = await getDb();
+      if (!db2) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { retrospectiveConfig } = await import("../../drizzle/schema");
+      const updateData: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(input)) {
+        if (v !== undefined) updateData[k] = v;
+      }
+      const existing = await db2.select({ id: retrospectiveConfig.id }).from(retrospectiveConfig).limit(1);
+      if (existing.length === 0) {
+        await db2.insert(retrospectiveConfig).values({ id: 1, autoCloseDays: 3, ...updateData });
+      } else {
+        const { eq } = await import("drizzle-orm");
+        await db2.update(retrospectiveConfig).set(updateData).where(eq(retrospectiveConfig.id, 1));
+      }
+      await createAdminLog(ctx.user.id, "retrospectiveConfig.update", "platform", 1, updateData);
+      return { success: true };
+    }),
+
+  uploadRetrospectiveTemplate: adminProcedure
+    .input(z.object({
+      slot: z.enum(["slide1", "slide2", "slide3", "slide4", "slide5", "cardPodium", "cardParticipant"]),
+      fileBase64: z.string(),
+      mimeType: z.enum(["image/png", "image/jpeg"]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { storagePut } = await import("../storage");
+      const buffer = Buffer.from(input.fileBase64, "base64");
+      const ext = input.mimeType === "image/png" ? "png" : "jpg";
+      const key = `retrospective-templates/${input.slot}-${Date.now()}.${ext}`;
+      const { url } = await storagePut(key, buffer, input.mimeType);
+      const db2 = await getDb();
+      if (!db2) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { retrospectiveConfig } = await import("../../drizzle/schema");
+      const urlField = `${input.slot}Url`;
+      const keyField = `${input.slot}Key`;
+      const updateData = { [urlField]: url, [keyField]: key };
+      const existing = await db2.select({ id: retrospectiveConfig.id }).from(retrospectiveConfig).limit(1);
+      if (existing.length === 0) {
+        await db2.insert(retrospectiveConfig).values({ id: 1, autoCloseDays: 3, ...updateData });
+      } else {
+        const { eq } = await import("drizzle-orm");
+        await db2.update(retrospectiveConfig).set(updateData).where(eq(retrospectiveConfig.id, 1));
+      }
+      await createAdminLog(ctx.user.id, "retrospectiveConfig.uploadTemplate", "platform", 1, { slot: input.slot, key });
+      return { url, key };
     }),
 
   getBracket: protectedProcedure

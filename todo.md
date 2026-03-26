@@ -1327,3 +1327,18 @@
 - [ ] Frontend: botão "Compartilhar este card" contextual nos slides que exibem o card
 - [ ] Testes Vitest: cobrir adminGetRetrospectives e adminReprocessRetrospective
 - [ ] Checkpoint final
+
+## Sprint — Retrospectivas v3: Templates + Personalização
+
+- [x] Schema: tabela `retrospective_config` com campos de template S3 (slide1Url..slide5Url, cardPodiumUrl, cardParticipantUrl, autoCloseDays, closingCtaText, closingCtaUrl)
+- [x] Migração SQL: aplicar tabela no banco
+- [x] AdminLayout: mover Retrospectivas para grupo Configurações; remover do grupo Campeonato
+- [x] AdminPools: adicionar aba "Concluídos" com lista de bolões concluídos (status concluded)
+- [x] Procedures: getRetrospectiveConfig + updateRetrospectiveConfig (admin only)
+- [x] Procedure: uploadRetrospectiveTemplate (upload de imagem PNG/JPG para S3)
+- [x] retrospective.ts: usar templates do banco como fundo dos slides/cards quando disponíveis
+- [x] AdminRetrospectivas: redesenhar como painel de personalização (upload slides 1-5 + card pódio + card participante)
+- [x] AdminRetrospectivas: prévia estática com dados fictícios para cada template
+- [x] AdminRetrospectivas: configuração de prazo de auto-conclusão e CTA do slide 5
+- [x] Testes Vitest: cobrir getRetrospectiveConfig e updateRetrospectiveConfig
+- [x] Checkpoint final

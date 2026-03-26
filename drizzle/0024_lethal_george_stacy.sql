@@ -1,0 +1,22 @@
+CREATE TABLE `retrospective_config` (
+	`id` int NOT NULL DEFAULT 1,
+	`slide1Url` text,
+	`slide1Key` varchar(255),
+	`slide2Url` text,
+	`slide2Key` varchar(255),
+	`slide3Url` text,
+	`slide3Key` varchar(255),
+	`slide4Url` text,
+	`slide4Key` varchar(255),
+	`slide5Url` text,
+	`slide5Key` varchar(255),
+	`cardPodiumUrl` text,
+	`cardPodiumKey` varchar(255),
+	`cardParticipantUrl` text,
+	`cardParticipantKey` varchar(255),
+	`autoCloseDays` int NOT NULL DEFAULT 3,
+	`closingCtaText` varchar(128) DEFAULT 'Crie seu bolão no ApostAI →',
+	`closingCtaUrl` text,
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `retrospective_config_id` PRIMARY KEY(`id`)
+);
