@@ -1,0 +1,33 @@
+# Plakr! — Robots.txt
+# https://plakr.io/
+
+User-agent: *
+Allow: /
+
+# Bloquear rotas privadas de indexação
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /api/
+Disallow: /bolao/
+Disallow: /profile/me
+Disallow: /conquistas
+Disallow: /ranking
+Disallow: /notificacoes
+Disallow: /planos
+
+# Permitir indexação da landing page e perfis públicos
+Allow: /$
+Allow: /u/
+
+# Sitemap
+Sitemap: https://plakr.io/sitemap.xml
+
+# Crawl-delay para bots menos importantes
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+User-agent: MJ12bot
+Disallow: /

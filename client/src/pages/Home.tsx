@@ -252,19 +252,19 @@ export default function Home() {
     <div className="min-h-screen" style={{ background: "#0B0F1A", color: "#F9FAFB" }}>
 
       {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
-      <nav className="sticky top-0 z-50 border-b" style={{ background: "rgba(11,15,26,0.95)", backdropFilter: "blur(12px)", borderColor: "rgba(255,255,255,0.06)" }}>
+      <nav className="sticky top-0 z-50 border-b" style={{ background: "rgba(11,15,26,0.95)", backdropFilter: "blur(12px)", borderColor: "rgba(255,255,255,0.06)" }} role="navigation" aria-label="Menu principal do Plakr!">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
+          <a href="/" className="flex items-center gap-2" aria-label="Plakr! — Página inicial">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black"
               style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}>P!</div>
             <span className="font-bold text-white text-lg">Plakr!</span>
           </a>
           <div className="hidden md:flex items-center gap-6 text-sm" style={{ color: "#9CA3AF" }}>
-            <a href="#como-funciona" className="hover:text-white transition-colors">Como funciona</a>
-            <a href="#diferencial" className="hover:text-white transition-colors">Campeonato personalizado</a>
-            <a href="#planos" className="hover:text-white transition-colors">Planos</a>
+            <a href="#como-funciona" className="hover:text-white transition-colors" title="Como criar um bolão no Plakr!">Como funciona</a>
+            <a href="#diferencial" className="hover:text-white transition-colors" title="Campeonato personalizado — exclusivo Plakr! Pro">Campeonato personalizado</a>
+            <a href="#planos" className="hover:text-white transition-colors" title="Planos Plakr! — Gratuito e Pro">Planos</a>
           </div>
-          <a href={loginUrl}>
+          <a href={loginUrl} aria-label="Criar bolão grátis no Plakr!">
             <Button size="sm" className="font-semibold"
               style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
               {heroCtaPrimaryText}
@@ -275,7 +275,7 @@ export default function Home() {
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
       <CustomOrDefault customCode={config?.heroCustomCode}>
-        <section className="relative overflow-hidden">
+        <section className="relative overflow-hidden" aria-label="Seção principal — Bolão da Copa do Mundo 2026">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full opacity-10"
               style={{ background: "radial-gradient(ellipse, #FFB800 0%, transparent 70%)" }} />
@@ -290,18 +290,18 @@ export default function Home() {
                     {heroBadgeText}
                   </div>
                 )}
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6" itemProp="name">
                   {heroHeadline}
                 </h1>
                 <p className="text-lg leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0" style={{ color: "#9CA3AF" }}>
                   {heroSubheadline}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                  <a href={loginUrl}>
+                  <a href={loginUrl} aria-label="Criar bolão grátis — começar agora no Plakr!">
                     <Button size="lg" className="w-full sm:w-auto font-bold text-base px-8 py-3"
                       style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
                       {heroCtaPrimaryText}
-                      <ArrowRight size={16} className="ml-2" />
+                      <ArrowRight size={16} className="ml-2" aria-hidden="true" />
                     </Button>
                   </a>
                   {heroCtaSecondaryEnabled && (
@@ -345,7 +345,7 @@ export default function Home() {
       {/* ── CREDIBILIDADE ──────────────────────────────────────────────────── */}
       {(config?.sectionCredibilityEnabled ?? true) && (
         <CustomOrDefault customCode={config?.credibilityCustomCode}>
-          <section className="py-12 border-y" style={{ borderColor: "rgba(255,255,255,0.06)", background: "#0D1120" }}>
+          <section className="py-12 border-y" style={{ borderColor: "rgba(255,255,255,0.06)", background: "#0D1120" }} aria-label="Campeonatos disponíveis no Plakr!">
             <div className="max-w-6xl mx-auto px-4">
               <p className="text-center text-sm uppercase tracking-widest mb-8 font-semibold" style={{ color: "#6B7280" }}>
                 Campeonatos disponíveis gratuitamente
@@ -382,10 +382,10 @@ export default function Home() {
       {/* ── COMO FUNCIONA ──────────────────────────────────────────────────── */}
       {(config?.sectionHowItWorksEnabled ?? true) && (
         <CustomOrDefault customCode={config?.howItWorksCustomCode}>
-          <section id="como-funciona" className="py-20">
+          <section id="como-funciona" className="py-20" aria-labelledby="section-como-funciona">
             <div className="max-w-6xl mx-auto px-4">
               <div className="text-center mb-14">
-                <h2 className="text-3xl md:text-4xl font-black mb-4">
+                <h2 id="section-como-funciona" className="text-3xl md:text-4xl font-black mb-4">
                   Seu bolão pronto em{" "}
                   <span style={{ color: "#FFB800" }}>2 minutos</span>
                 </h2>
@@ -414,7 +414,7 @@ export default function Home() {
       {/* ── DIFERENCIAL PRO ────────────────────────────────────────────────── */}
       {(config?.sectionDifferentialEnabled ?? true) && (
         <CustomOrDefault customCode={config?.differentialCustomCode}>
-          <section id="diferencial" className="py-20" style={{ background: "#0D1120" }}>
+          <section id="diferencial" className="py-20" style={{ background: "#0D1120" }} aria-labelledby="section-diferencial">
             <div className="max-w-6xl mx-auto px-4">
               <div className="grid md:grid-cols-2 gap-12 items-center">
                 <MockCustomTournamentCard />
@@ -424,7 +424,7 @@ export default function Home() {
                     <Crown size={12} />
                     Exclusivo Pro
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
+                  <h2 id="section-diferencial" className="text-3xl md:text-4xl font-black mb-4 leading-tight">
                     {differentialHeadline}
                   </h2>
                   <p className="text-base leading-relaxed mb-6" style={{ color: "#9CA3AF" }}>
@@ -461,10 +461,10 @@ export default function Home() {
       {/* ── FEATURES ───────────────────────────────────────────────────────── */}
       {(config?.sectionFeaturesEnabled ?? true) && (
         <CustomOrDefault customCode={config?.featuresCustomCode}>
-          <section className="py-20">
+          <section className="py-20" aria-labelledby="section-features">
             <div className="max-w-6xl mx-auto px-4">
               <div className="text-center mb-14">
-                <h2 className="text-3xl md:text-4xl font-black mb-4">
+                <h2 id="section-features" className="text-3xl md:text-4xl font-black mb-4">
                   Tudo que você precisa para um{" "}
                   <span style={{ color: "#FFB800" }}>bolão épico</span>
                 </h2>
@@ -500,10 +500,10 @@ export default function Home() {
       {/* ── PLANOS ─────────────────────────────────────────────────────────── */}
       {(config?.sectionPlansEnabled ?? true) && (
         <CustomOrDefault customCode={config?.plansCustomCode}>
-          <section id="planos" className="py-20" style={{ background: "#0D1120" }}>
+          <section id="planos" className="py-20" style={{ background: "#0D1120" }} aria-labelledby="section-planos">
             <div className="max-w-4xl mx-auto px-4">
               <div className="text-center mb-14">
-                <h2 className="text-3xl md:text-4xl font-black mb-4">
+                <h2 id="section-planos" className="text-3xl md:text-4xl font-black mb-4">
                   Comece grátis.{" "}
                   <span style={{ color: "#FFB800" }}>Evolua quando quiser.</span>
                 </h2>
@@ -576,10 +576,10 @@ export default function Home() {
       {/* ── FAQ ────────────────────────────────────────────────────────────── */}
       {(config?.sectionFaqEnabled ?? true) && (
         <CustomOrDefault customCode={config?.faqCustomCode}>
-          <section className="py-20">
+          <section className="py-20" aria-labelledby="section-faq">
             <div className="max-w-3xl mx-auto px-4">
               <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-black mb-4">
+                <h2 id="section-faq" className="text-3xl md:text-4xl font-black mb-4">
                   Perguntas{" "}
                   <span style={{ color: "#FFB800" }}>frequentes</span>
                 </h2>
@@ -605,13 +605,13 @@ export default function Home() {
       {/* ── CTA FINAL ──────────────────────────────────────────────────────── */}
       {(config?.sectionCtaFinalEnabled ?? true) && (
         <CustomOrDefault customCode={config?.ctaFinalCustomCode}>
-          <section className="py-24 relative overflow-hidden" style={{ background: "#0D1120" }}>
+          <section className="py-24 relative overflow-hidden" style={{ background: "#0D1120" }} aria-label="Comece agora no Plakr!">
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-10"
                 style={{ background: "radial-gradient(ellipse, #FFB800 0%, transparent 70%)" }} />
             </div>
             <div className="max-w-3xl mx-auto px-4 text-center relative">
-              <div className="text-5xl mb-6">🏆</div>
+              <div className="text-5xl mb-6" aria-hidden="true">🏆</div>
               <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
                 {ctaFinalHeadline}
               </h2>
@@ -619,11 +619,11 @@ export default function Home() {
                 Gratuito para começar. Sem cartão de crédito. Pronto em 2 minutos.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href={loginUrl}>
+                <a href={loginUrl} aria-label="Criar bolão grátis agora no Plakr!">
                   <Button size="lg" className="font-bold text-base px-8 py-3"
                     style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
                     {ctaFinalPrimaryText}
-                    <ArrowRight size={16} className="ml-2" />
+                    <ArrowRight size={16} className="ml-2" aria-hidden="true" />
                   </Button>
                 </a>
                 {ctaFinalSecondaryEnabled && (
@@ -642,7 +642,7 @@ export default function Home() {
       )}
 
       {/* ── FOOTER ─────────────────────────────────────────────────────────── */}
-      <footer className="py-10 border-t" style={{ borderColor: "rgba(255,255,255,0.06)", background: "#0B0F1A" }}>
+      <footer className="py-10 border-t" style={{ borderColor: "rgba(255,255,255,0.06)", background: "#0B0F1A" }} role="contentinfo" aria-label="Rodapé do Plakr!">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black"
@@ -652,10 +652,10 @@ export default function Home() {
           <p className="text-sm" style={{ color: "#6B7280" }}>
             © {new Date().getFullYear()} Plakr! · Todos os direitos reservados
           </p>
-          <div className="flex items-center gap-4 text-sm" style={{ color: "#6B7280" }}>
-            <a href="/terms" className="hover:text-white transition-colors">Termos</a>
-            <a href="/privacy" className="hover:text-white transition-colors">Privacidade</a>
-          </div>
+          <nav className="flex items-center gap-4 text-sm" style={{ color: "#6B7280" }} aria-label="Links legais">
+            <a href="/terms" className="hover:text-white transition-colors" title="Termos de uso do Plakr!">Termos</a>
+            <a href="/privacy" className="hover:text-white transition-colors" title="Política de privacidade do Plakr!">Privacidade</a>
+          </nav>
         </div>
       </footer>
     </div>

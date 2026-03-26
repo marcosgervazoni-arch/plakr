@@ -3,16 +3,236 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    <meta name="description" content="Plakr! — Crie seu bolão da Copa em minutos. Palpites, ranking automático e muito mais." />
-    <title>Plakr! - Plataforma de Bolões Esportivos</title>
-    <!-- Google Fonts: Syne (headings), Inter (body), JetBrains Mono (scores/numbers) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SEO PRIMÁRIO
+    ═══════════════════════════════════════════════════════════ -->
+    <title>Plakr! — Bolão da Copa do Mundo 2026 | Crie seu bolão grátis</title>
+    <meta name="description" content="Crie seu bolão da Copa do Mundo 2026 em minutos. Convide a galera, faça seus palpites, acompanhe o ranking em tempo real. Gratuito para sempre. Campeonatos personalizados com o Plakr! Pro." />
+    <meta name="keywords" content="bolão copa do mundo 2026, bolão futebol, bolão online grátis, palpites copa do mundo, bolão personalizado, plakr, criar bolão, bolão com amigos, fantasy sports brasil" />
+    <meta name="author" content="Plakr!" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <link rel="canonical" href="https://plakr.io/" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         OPEN GRAPH (Facebook, WhatsApp, LinkedIn, Telegram)
+    ═══════════════════════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Plakr!" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content="https://plakr.io/" />
+    <meta property="og:title" content="Plakr! — Faça seu bolão da Copa do Mundo 2026 com a galera" />
+    <meta property="og:description" content="Crie bolões para qualquer campeonato, convide seus amigos e acompanhe tudo em tempo real. Simples, divertido e gratuito. Campeonatos personalizados com o Pro." />
+    <meta property="og:image" content="https://plakr.io/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Plakr! — Plataforma de Bolões Esportivos. Faça seu bolão da Copa do Mundo 2026." />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         TWITTER CARDS
+    ═══════════════════════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@plakrio" />
+    <meta name="twitter:creator" content="@plakrio" />
+    <meta name="twitter:title" content="Plakr! — Faça seu bolão da Copa do Mundo 2026 com a galera" />
+    <meta name="twitter:description" content="Crie bolões para qualquer campeonato, convide seus amigos e acompanhe tudo em tempo real. Gratuito para sempre." />
+    <meta name="twitter:image" content="https://plakr.io/og-image.png" />
+    <meta name="twitter:image:alt" content="Plakr! — Plataforma de Bolões Esportivos" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PWA / MOBILE
+    ═══════════════════════════════════════════════════════════ -->
+    <meta name="theme-color" content="#FFB800" />
+    <meta name="msapplication-TileColor" content="#0B0F1A" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Plakr!" />
+    <meta name="application-name" content="Plakr!" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         FAVICON
+    ═══════════════════════════════════════════════════════════ -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PERFORMANCE: PRECONNECT / DNS-PREFETCH
+    ═══════════════════════════════════════════════════════════ -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+
+    <!-- Google Fonts: Syne (headings), Inter (body), JetBrains Mono (scores/numbers) -->
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         JSON-LD: SCHEMA.ORG STRUCTURED DATA
+    ═══════════════════════════════════════════════════════════ -->
+
+    <!-- WebSite + SearchAction (Sitelinks Search Box) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Plakr!",
+      "alternateName": "Plakr! Bolões Esportivos",
+      "url": "https://plakr.io/",
+      "description": "Plataforma de bolões esportivos. Crie seu bolão da Copa do Mundo 2026 com a galera.",
+      "inLanguage": "pt-BR",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://plakr.io/boloes?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Plakr!",
+      "operatingSystem": "Web, iOS, Android",
+      "applicationCategory": "SportsApplication",
+      "applicationSubCategory": "Fantasy Sports",
+      "description": "Crie bolões esportivos para qualquer campeonato. Palpites, ranking automático, conquistas e campeonatos personalizados. Gratuito para sempre, com plano Pro para organizadores avançados.",
+      "url": "https://plakr.io/",
+      "screenshot": "https://plakr.io/og-image.png",
+      "inLanguage": "pt-BR",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Plakr! Gratuito",
+          "price": "0",
+          "priceCurrency": "BRL",
+          "description": "Crie até 2 bolões, até 50 participantes por bolão. Gratuito para sempre."
+        },
+        {
+          "@type": "Offer",
+          "name": "Plakr! Pro",
+          "price": "19.90",
+          "priceCurrency": "BRL",
+          "billingIncrement": "P1M",
+          "description": "Bolões ilimitados, participantes ilimitados, campeonatos personalizados, regras customizadas e muito mais."
+        }
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1",
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    }
+    </script>
+
+    <!-- Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Plakr!",
+      "url": "https://plakr.io/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://plakr.io/og-image.png",
+        "width": 1200,
+        "height": 630
+      },
+      "sameAs": [],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "availableLanguage": "Portuguese",
+        "url": "https://plakr.io/"
+      }
+    }
+    </script>
+
+    <!-- FAQPage (Rich Results no Google) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "O Plakr! é gratuito?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sim! O Plakr! é gratuito para sempre. No plano gratuito você pode criar até 2 bolões com até 50 participantes cada. Para bolões ilimitados e campeonatos personalizados, existe o plano Pro."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Posso criar um bolão da Copa do Mundo 2026 no Plakr!?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sim! O Plakr! já tem a Copa do Mundo FIFA 2026 cadastrada. Basta criar seu bolão, escolher o campeonato e convidar seus amigos. Em menos de 2 minutos seu bolão está pronto."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "O que é o campeonato personalizado do Plakr! Pro?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Com o Plakr! Pro você pode criar seu próprio campeonato do zero — define os times, as fases, as regras de pontuação e tudo mais. Ideal para campeonatos da empresa, do bairro, da família ou qualquer grupo."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Como funciona o ranking automático?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Após cada jogo, o Plakr! calcula automaticamente os pontos de cada participante com base nos palpites feitos. O ranking é atualizado em tempo real, sem precisar de nenhuma ação manual do organizador."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quantos participantes podem entrar em um bolão?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No plano gratuito, cada bolão suporta até 50 participantes. Com o Plakr! Pro, o número de participantes é ilimitado."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Preciso instalar algum aplicativo?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Não! O Plakr! funciona diretamente no navegador do celular ou computador, sem precisar instalar nada. Basta acessar plakr.io e criar sua conta gratuitamente."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Início",
+          "item": "https://plakr.io/"
+        }
+      ]
+    }
+    </script>
+
   </head>
 
   <body>

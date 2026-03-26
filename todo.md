@@ -1549,3 +1549,20 @@
 - [x] Frontend (Home.tsx): wrapper CustomOrDefault em todas as 8 seções — customCode tem prioridade total via dangerouslySetInnerHTML
 - [x] Admin (AdminLandingPage.tsx): reorganizado em acordeão com 8 seções — toggle + editor + campo CustomCodeField colapsável
 - [x] Admin: badges Ativo/Inativo + badge Código no header de cada item do acordeão
+
+## SEO Completo — Landing Page Plakr! — Sprint 26/03/2026
+- [x] index.html: meta title, description, keywords, author, robots, canonical
+- [x] index.html: Open Graph (og:title, og:description, og:image, og:url, og:type, og:locale, og:site_name)
+- [x] index.html: Twitter Cards (twitter:card, twitter:title, twitter:description, twitter:image)
+- [x] index.html: JSON-LD Schema.org (WebSite, SoftwareApplication, FAQPage, Organization, BreadcrumbList)
+- [x] index.html: preconnect/dns-prefetch para Google Fonts e CDN
+- [x] index.html: viewport, theme-color, apple-mobile-web-app
+- [x] robots.txt: configuração correta com Sitemap, crawl-delay e bloqueio de bots agressivos
+- [x] sitemap.xml: URL principal com lastmod, changefreq, priority e hreflang pt-BR
+- [x] Home.tsx: hierarquia H1→H2→H3 semântica correta (único H1 com itemProp="name")
+- [x] Home.tsx: aria-label em botões e links sem texto visível
+- [x] Home.tsx: aria-labelledby nas seções com IDs nos headings
+- [x] Home.tsx: role="navigation" e role="contentinfo" no nav e footer
+- [x] Home.tsx: aria-hidden="true" em ícones decorativos
+- [x] Home.tsx: title descritivo nos links de navegação
+- [x] badges.test.ts: ne adicionado ao mock do drizzle-orm (251/251 testes passando)

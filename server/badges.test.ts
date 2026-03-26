@@ -116,6 +116,7 @@ vi.mock("../drizzle/schema", () => ({
 
 vi.mock("drizzle-orm", () => ({
   eq: vi.fn((a, b) => ({ type: "eq", a, b })),
+  ne: vi.fn((a, b) => ({ type: "ne", a, b })),
   and: vi.fn((...args) => ({ type: "and", args })),
   sql: Object.assign(vi.fn((s: TemplateStringsArray) => s[0]), { raw: vi.fn() }),
   desc: vi.fn((col) => ({ type: "desc", col })),
