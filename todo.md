@@ -1384,3 +1384,9 @@
 - [x] Frontend: Dashboard — seção "Retrospectivas" com card especial para bolões concluídos (preview do card PNG, posição final, botão "Ver retrospectiva")
 - [x] Frontend: NotificationBell — ícone especial (Sparkles) e destaque visual para notificações pool_concluded
 - [x] QA: 205 testes passando + checkpoint final
+
+## Sprint — Encerramento do Ciclo: Retrospectiva Some ao Arquivar (26/03/2026) ✅
+- [x] Backend: getRetrospective verifica status do bolão — retorna null se archived ou deleted
+- [x] Backend: myPools exclui bolões archived (não aparecem no Dashboard)
+- [x] Frontend: PoolRetrospectiva exibe tela "Retrospectiva arquivada" com mensagem clara
+- [x] QA: 205 testes passando + checkpoint final

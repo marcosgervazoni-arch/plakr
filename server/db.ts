@@ -299,7 +299,7 @@ export async function getPoolsByUser(userId: number) {
     .where(
       and(
         eq(poolMembers.userId, userId),
-        sql`${pools.status} IN ('active', 'finished', 'awaiting_conclusion', 'concluded')`
+        sql`${pools.status} IN ('active', 'finished', 'awaiting_conclusion', 'concluded')` // archived e deleted excluídos intencionalmente
       )
     )
     .orderBy(desc(pools.createdAt));

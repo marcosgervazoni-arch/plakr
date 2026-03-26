@@ -523,20 +523,34 @@ export default function PoolRetrospectiva() {
   }
 
   if (!retro) {
+    // Verificar se o bolão foi arquivado para exibir mensagem adequada
+    const isArchived = poolData?.pool?.status === "archived";
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4 px-4">
-        <Sparkles className="w-12 h-12 text-white/30" />
-        <h2 className="text-lg font-semibold text-white">Retrospectiva não disponível</h2>
-        <p className="text-white/50 text-sm text-center max-w-xs">
-          A retrospectiva deste bolão ainda não foi gerada ou você não é participante.
-        </p>
+        <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+          {isArchived ? (
+            <Trophy className="w-8 h-8 text-white/20" />
+          ) : (
+            <Sparkles className="w-8 h-8 text-white/20" />
+          )}
+        </div>
+        <div className="text-center space-y-1.5">
+          <h2 className="text-lg font-semibold text-white">
+            {isArchived ? "Retrospectiva arquivada" : "Retrospectiva não disponível"}
+          </h2>
+          <p className="text-white/50 text-sm text-center max-w-xs leading-relaxed">
+            {isArchived
+              ? "Este bolão foi arquivado e sua retrospectiva não está mais acessível."
+              : "A retrospectiva deste bolão ainda não foi gerada ou você não é participante."}
+          </p>
+        </div>
         <Button
           variant="outline"
-          onClick={() => navigate(`/pool/${slug}`)}
+          onClick={() => navigate("/")}
           className="border-white/20 text-white hover:bg-white/10"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar ao bolão
+          Ir para o início
         </Button>
       </div>
     );

@@ -959,8 +959,16 @@ export const poolsRouter = router({
     .query(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
-      const { poolRetrospectives, userShareCards, retrospectiveConfig } = await import("../../drizzle/schema");
+      const { poolRetrospectives, userShareCards, retrospectiveConfig, pools: poolsT } = await import("../../drizzle/schema");
       const { eq, and } = await import("drizzle-orm");
+
+      // Bloquear acesso se o bolão estiver arquivado ou deletado — retrospectiva some junto
+      const [pool] = await db
+        .select({ status: poolsT.status })
+        .from(poolsT)
+        .where(eq(poolsT.id, input.poolId))
+        .limit(1);
+      if (!pool || pool.status === "archived" || pool.status === "deleted") return null;
 
       const [retro] = await db
         .select()
