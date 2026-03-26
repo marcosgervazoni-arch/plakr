@@ -95,7 +95,7 @@ const RULE_SECTIONS: RuleSection[] = [
         defaultValue: 5,
         type: "number",
         min: 0, max: 50,
-        icon: <Flame className="w-4 h-4 text-orange-400" />,
+        icon: <Flame className="w-4 h-4 text-primary" />,
       },
       {
         key: "zebraPoints",
@@ -146,7 +146,7 @@ const RULE_SECTIONS: RuleSection[] = [
         type: "number",
         min: 1, max: 10,
         unit: "gols",
-        icon: <Flame className="w-4 h-4 text-orange-400" />,
+        icon: <Flame className="w-4 h-4 text-primary" />,
       },
     ],
   },

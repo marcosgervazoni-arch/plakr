@@ -26,7 +26,7 @@ function NotificationIcon({ type }: { type: string }) {
     case "pool_concluded":
       return <Sparkles className="w-4 h-4 text-primary" />;
     case "badge_unlocked":
-      return <Trophy className="w-4 h-4 text-amber-400" />;
+      return <Trophy className="w-4 h-4 text-primary" />;
     case "result_available":
     case "ranking_update":
       return <Star className="w-4 h-4 text-yellow-400" />;
@@ -36,7 +36,7 @@ function NotificationIcon({ type }: { type: string }) {
     case "pool_invite":
       return <Gift className="w-4 h-4 text-emerald-400" />;
     case "pool_closing":
-      return <Clock className="w-4 h-4 text-orange-400" />;
+      return <Clock className="w-4 h-4 text-primary" />;
     default:
       return <Bell className="w-4 h-4 text-muted-foreground" />;
   }

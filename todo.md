@@ -1412,3 +1412,17 @@
 - [x] Atualizar ComponentShowcase com paleta, tipografia, gradientes e componentes
 - [x] Adicionar rota /showcase e link no AdminLayout (grupo Configurações)
 - [x] QA: 205 testes passando + TypeScript sem erros + checkpoint final
+
+## Sprint B — API Design (26/03/2026)
+- [ ] Padronizar mensagens de erro tRPC: criar helpers em server/errors.ts
+- [ ] Quebrar pools.ts em sub-routers: pools-core, pools-members, pools-bets, pools-admin, pools-retrospective
+- [ ] Criar documentação OpenAPI: endpoint /api/docs com Swagger UI
+- [ ] QA: 205 testes passando + TypeScript sem erros + checkpoint final
+
+## Sprint — Identidade Visual Plakr! (26/03/2026) ✅
+- [x] Sincronizar index.css com paleta oficial OKLCH exatos: dourado #FFB800, verde #00FF88, vermelho #FF3B3B, azul #00C2FF, backgrounds #0B0F1A / #121826
+- [x] Corrigir ranking top3: dourado #FFB800, prata #E5E5E5, bronze #CD7F32
+- [x] Substituir 64 ocorrências amber/orange genéricas por tokens primary em 23 arquivos
+- [x] AdminBadges, Conquistas, Notifications, PoolRules, MyProfile, PublicProfile, PoolRetrospectiva: corrigidos
+- [x] AdminDashboard, AdminTournamentDetail, AdminIntegrations, AdminReferrals: corrigidos
+- [x] QA: 205 testes passando + zero amber/orange fora do ComponentShowcase + checkpoint final

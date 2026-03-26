@@ -42,7 +42,7 @@ const RARITY_CONFIG: Record<BadgeRarity, { label: string; color: string; barColo
   uncommon:  { label: "Incomum",  color: "text-green-400",  barColor: "bg-green-400" },
   rare:      { label: "Raro",     color: "text-blue-400",   barColor: "bg-blue-400" },
   epic:      { label: "Épico",    color: "text-purple-400", barColor: "bg-purple-400" },
-  legendary: { label: "Lendário", color: "text-amber-400",  barColor: "bg-amber-400" },
+  legendary: { label: "Lendário", color: "text-primary",  barColor: "bg-primary" },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {

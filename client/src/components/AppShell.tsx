@@ -236,7 +236,7 @@ export default function AppShell({ children }: AppShellProps) {
                           </div>
                           <span className="flex-1 truncate text-sm font-medium">{poolName}</span>
                           {pendingBets > 0 ? (
-                            <span className="min-w-[18px] h-[18px] rounded-full bg-amber-500 text-[10px] font-bold text-white flex items-center justify-center px-1 shrink-0">
+                            <span className="min-w-[18px] h-[18px] rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center px-1 shrink-0">
                               {pendingBets > 9 ? "9+" : pendingBets}
                             </span>
                           ) : p.rankPosition ? (

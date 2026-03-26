@@ -170,7 +170,7 @@ export default function PublicProfile() {
                   <Badge variant="outline" className="text-xs text-muted-foreground">Você</Badge>
                 )}
                 {earnedBadgesCount > 0 && (
-                  <Badge variant="outline" className="text-xs gap-1 text-amber-500 border-amber-500/30">
+                  <Badge variant="outline" className="text-xs gap-1 text-primary border-primary/30">
                     <Award className="w-3 h-3" /> {earnedBadgesCount} badge{earnedBadgesCount !== 1 ? "s" : ""}
                   </Badge>
                 )}
@@ -190,7 +190,7 @@ export default function PublicProfile() {
           <div className="bg-card border border-border/30 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-500" />
+                <Award className="w-4 h-4 text-primary" />
                 <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
                   Conquistas
                 </h3>
@@ -254,11 +254,11 @@ export default function PublicProfile() {
                 const posIcon =
                   pos === 1 ? <Crown className="w-4 h-4 text-yellow-400" /> :
                   pos === 2 ? <Medal className="w-4 h-4 text-slate-300" /> :
-                  pos === 3 ? <Medal className="w-4 h-4 text-amber-600" /> : null;
+                  pos === 3 ? <Medal className="w-4 h-4 text-[#CD7F32]" /> : null;
                 return (
                   <div key={fp.id} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
                     <span className={`text-sm font-bold w-6 text-center shrink-0 ${
-                      pos === 1 ? "text-yellow-400" : pos === 2 ? "text-slate-300" : pos === 3 ? "text-amber-600" : "text-muted-foreground"
+                      pos === 1 ? "text-primary" : pos === 2 ? "text-[#E5E5E5]" : pos === 3 ? "text-[#CD7F32]" : "text-muted-foreground"
                     }`}>{pos}º</span>
                     <div className="w-5 shrink-0 flex items-center justify-center">{posIcon}</div>
                     <div className="flex-1 min-w-0">

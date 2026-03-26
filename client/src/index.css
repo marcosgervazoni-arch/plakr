@@ -63,94 +63,129 @@
 
 :root {
   /* Plakr! — Dark theme as default */
+  /* Paleta oficial: design-tokens.ts da skill visual-identity-plakr */
   --radius: 0.5rem;
-  /* Brand */
-  --primary: oklch(0.78 0.16 75);
-  --primary-foreground: oklch(0.13 0.02 264);
-  --brand: oklch(0.78 0.16 75);
-  --brand-foreground: oklch(0.13 0.02 264);
-  /* Backgrounds */
-  --background: oklch(0.13 0.02 264);
+
+  /* ── Brand: dourado #FFB800 ───────────────────────────────────────────── */
+  --primary: oklch(0.8272 0.171 80.5);
+  --primary-foreground: oklch(0.1702 0.024 268.5);
+  --brand: oklch(0.8272 0.171 80.5);
+  --brand-foreground: oklch(0.1702 0.024 268.5);
+  /* Gradient end: #FF8A00 */
+  --primary-gradient-end: oklch(0.7474 0.1801 57.4);
+
+  /* ── Backgrounds: #0B0F1A / #121826 ──────────────────────────────────── */
+  --background: oklch(0.1702 0.024 268.5);
   --foreground: oklch(0.95 0.01 248);
-  --card: oklch(0.17 0.025 264);
+  --card: oklch(0.2103 0.0294 266.1);
   --card-foreground: oklch(0.95 0.01 248);
-  --popover: oklch(0.20 0.03 264);
+  --popover: oklch(0.23 0.03 266);
   --popover-foreground: oklch(0.95 0.01 248);
-  --secondary: oklch(0.20 0.03 264);
+  --secondary: oklch(0.23 0.03 266);
   --secondary-foreground: oklch(0.95 0.01 248);
-  --muted: oklch(0.20 0.03 264);
+  --muted: oklch(0.23 0.03 266);
   --muted-foreground: oklch(0.63 0.03 248);
-  --accent: oklch(0.78 0.16 75);
-  --accent-foreground: oklch(0.13 0.02 264);
-  --destructive: oklch(0.63 0.22 25);
+  --accent: oklch(0.8272 0.171 80.5);
+  --accent-foreground: oklch(0.1702 0.024 268.5);
+
+  /* ── Status: success #00FF88, error #FF3B3B, info #00C2FF ────────────── */
+  --destructive: oklch(0.6553 0.2308 26.4);
   --destructive-foreground: oklch(0.95 0.01 248);
-  --border: oklch(0.26 0.03 264);
-  --input: oklch(0.26 0.03 264);
-  --ring: oklch(0.78 0.16 75);
-  /* Sidebar */
-  --sidebar: oklch(0.15 0.025 264);
+  /* Tokens semânticos de status (usados em classes utilitárias) */
+  --success: oklch(0.8763 0.2278 152.6);
+  --success-foreground: oklch(0.1702 0.024 268.5);
+  --info: oklch(0.7623 0.152 230.0);
+  --info-foreground: oklch(0.1702 0.024 268.5);
+  --warning: oklch(0.8272 0.171 80.5);
+  --warning-foreground: oklch(0.1702 0.024 268.5);
+
+  /* ── Ranking: gold #FFB800, silver #E5E5E5, bronze #CD7F32 ───────────── */
+  --ranking-gold: oklch(0.8272 0.171 80.5);
+  --ranking-silver: oklch(0.9219 0.0001 263.3);
+  --ranking-bronze: oklch(0.6661 0.1315 61.3);
+
+  --border: oklch(0.28 0.03 266);
+  --input: oklch(0.28 0.03 266);
+  --ring: oklch(0.8272 0.171 80.5);
+
+  /* ── Sidebar ──────────────────────────────────────────────────────────── */
+  --sidebar: oklch(0.1702 0.024 268.5);
   --sidebar-foreground: oklch(0.95 0.01 248);
-  --sidebar-primary: oklch(0.78 0.16 75);
-  --sidebar-primary-foreground: oklch(0.13 0.02 264);
-  --sidebar-accent: oklch(0.20 0.03 264);
+  --sidebar-primary: oklch(0.8272 0.171 80.5);
+  --sidebar-primary-foreground: oklch(0.1702 0.024 268.5);
+  --sidebar-accent: oklch(0.23 0.03 266);
   --sidebar-accent-foreground: oklch(0.95 0.01 248);
-  --sidebar-border: oklch(0.26 0.03 264);
-  --sidebar-ring: oklch(0.78 0.16 75);
-  /* Charts */
-  --chart-1: oklch(0.78 0.16 75);
-  --chart-2: oklch(0.60 0.19 250);
-  --chart-3: oklch(0.64 0.18 142);
-  --chart-4: oklch(0.63 0.22 25);
-  --chart-5: oklch(0.70 0.15 300);
+  --sidebar-border: oklch(0.28 0.03 266);
+  --sidebar-ring: oklch(0.8272 0.171 80.5);
+
+  /* ── Charts ───────────────────────────────────────────────────────────── */
+  --chart-1: oklch(0.8272 0.171 80.5);   /* dourado brand */
+  --chart-2: oklch(0.7623 0.152 230.0);  /* info azul */
+  --chart-3: oklch(0.8763 0.2278 152.6); /* success verde */
+  --chart-4: oklch(0.6553 0.2308 26.4);  /* error vermelho */
+  --chart-5: oklch(0.70 0.15 300);       /* roxo */
   /* Semantic chart colors (para Recharts inline styles) */
-  --chart-brand: oklch(0.78 0.16 75);
-  --chart-indigo: oklch(0.60 0.19 250);
-  --chart-success: oklch(0.64 0.18 142);
-  --chart-warning: oklch(0.63 0.22 25);
+  --chart-brand: oklch(0.8272 0.171 80.5);
+  --chart-indigo: oklch(0.7623 0.152 230.0);
+  --chart-success: oklch(0.8763 0.2278 152.6);
+  --chart-warning: oklch(0.8272 0.171 80.5);
   --chart-purple: oklch(0.70 0.15 300);
-  /* Surface tokens (para bg hardcodes em dark surfaces) */
-  --surface-1: oklch(0.15 0.025 264);
-  --surface-2: oklch(0.17 0.025 264);
-  --surface-3: oklch(0.20 0.03 264);
-  --surface-4: oklch(0.26 0.03 264);
+
+  /* ── Surface tokens ───────────────────────────────────────────────────── */
+  --surface-1: oklch(0.1702 0.024 268.5); /* #0B0F1A */
+  --surface-2: oklch(0.2103 0.0294 266.1); /* #121826 */
+  --surface-3: oklch(0.23 0.03 266);
+  --surface-4: oklch(0.28 0.03 266);
 }
 
 .dark {
-  /* Same as :root — Plakr! is dark-first */
-  --primary: oklch(0.78 0.16 75);
-  --primary-foreground: oklch(0.13 0.02 264);
-  --brand: oklch(0.78 0.16 75);
-  --brand-foreground: oklch(0.13 0.02 264);
-  --background: oklch(0.13 0.02 264);
+  /* Mirror de :root — Plakr! é dark-first, mesmos valores */
+  --primary: oklch(0.8272 0.171 80.5);
+  --primary-foreground: oklch(0.1702 0.024 268.5);
+  --brand: oklch(0.8272 0.171 80.5);
+  --brand-foreground: oklch(0.1702 0.024 268.5);
+  --primary-gradient-end: oklch(0.7474 0.1801 57.4);
+  --background: oklch(0.1702 0.024 268.5);
   --foreground: oklch(0.95 0.01 248);
-  --card: oklch(0.17 0.025 264);
+  --card: oklch(0.2103 0.0294 266.1);
   --card-foreground: oklch(0.95 0.01 248);
-  --popover: oklch(0.20 0.03 264);
+  --popover: oklch(0.23 0.03 266);
   --popover-foreground: oklch(0.95 0.01 248);
-  --secondary: oklch(0.20 0.03 264);
+  --secondary: oklch(0.23 0.03 266);
   --secondary-foreground: oklch(0.95 0.01 248);
-  --muted: oklch(0.20 0.03 264);
+  --muted: oklch(0.23 0.03 266);
   --muted-foreground: oklch(0.63 0.03 248);
-  --accent: oklch(0.78 0.16 75);
-  --accent-foreground: oklch(0.13 0.02 264);
-  --destructive: oklch(0.63 0.22 25);
+  --accent: oklch(0.8272 0.171 80.5);
+  --accent-foreground: oklch(0.1702 0.024 268.5);
+  --destructive: oklch(0.6553 0.2308 26.4);
   --destructive-foreground: oklch(0.95 0.01 248);
-  --border: oklch(0.26 0.03 264);
-  --input: oklch(0.26 0.03 264);
-  --ring: oklch(0.78 0.16 75);
-  --sidebar: oklch(0.15 0.025 264);
+  --success: oklch(0.8763 0.2278 152.6);
+  --success-foreground: oklch(0.1702 0.024 268.5);
+  --info: oklch(0.7623 0.152 230.0);
+  --info-foreground: oklch(0.1702 0.024 268.5);
+  --ranking-gold: oklch(0.8272 0.171 80.5);
+  --ranking-silver: oklch(0.9219 0.0001 263.3);
+  --ranking-bronze: oklch(0.6661 0.1315 61.3);
+  --border: oklch(0.28 0.03 266);
+  --input: oklch(0.28 0.03 266);
+  --ring: oklch(0.8272 0.171 80.5);
+  --sidebar: oklch(0.1702 0.024 268.5);
   --sidebar-foreground: oklch(0.95 0.01 248);
-  --sidebar-primary: oklch(0.78 0.16 75);
-  --sidebar-primary-foreground: oklch(0.13 0.02 264);
-  --sidebar-accent: oklch(0.20 0.03 264);
+  --sidebar-primary: oklch(0.8272 0.171 80.5);
+  --sidebar-primary-foreground: oklch(0.1702 0.024 268.5);
+  --sidebar-accent: oklch(0.23 0.03 266);
   --sidebar-accent-foreground: oklch(0.95 0.01 248);
-  --sidebar-border: oklch(0.26 0.03 264);
-  --sidebar-ring: oklch(0.78 0.16 75);
-  --chart-1: oklch(0.78 0.16 75);
-  --chart-2: oklch(0.60 0.19 250);
-  --chart-3: oklch(0.64 0.18 142);
-  --chart-4: oklch(0.63 0.22 25);
+  --sidebar-border: oklch(0.28 0.03 266);
+  --sidebar-ring: oklch(0.8272 0.171 80.5);
+  --chart-1: oklch(0.8272 0.171 80.5);
+  --chart-2: oklch(0.7623 0.152 230.0);
+  --chart-3: oklch(0.8763 0.2278 152.6);
+  --chart-4: oklch(0.6553 0.2308 26.4);
   --chart-5: oklch(0.70 0.15 300);
+  --surface-1: oklch(0.1702 0.024 268.5);
+  --surface-2: oklch(0.2103 0.0294 266.1);
+  --surface-3: oklch(0.23 0.03 266);
+  --surface-4: oklch(0.28 0.03 266);
 }
 
 @layer base {
@@ -228,18 +263,36 @@
   }
 
   /* ─── Gradient Utilities — Plakr! Design System ──────────────────────────── */
-  /* Brand gradients */
+  /* Brand gradients — dourado #FFB800 → #FF8A00 */
   .gradient-brand {
     @apply bg-gradient-to-br from-primary/20 via-primary/8 to-background;
   }
   .gradient-brand-solid {
-    @apply bg-gradient-to-br from-primary to-primary/70;
+    background: linear-gradient(135deg, oklch(0.8272 0.171 80.5), oklch(0.7474 0.1801 57.4));
+  }
+  .gradient-brand-button {
+    /* Botão CTA primário: gradiente oficial #FFB800 → #FF8A00 */
+    background: linear-gradient(135deg, oklch(0.8272 0.171 80.5), oklch(0.7474 0.1801 57.4));
+    color: oklch(0.1702 0.024 268.5);
+  }
+  .gradient-brand-button:hover {
+    background: linear-gradient(135deg, oklch(0.88 0.17 80.5), oklch(0.80 0.18 57.4));
   }
   .gradient-brand-subtle {
     @apply bg-gradient-to-br from-primary/10 via-primary/5 to-transparent;
   }
   .gradient-brand-horizontal {
     @apply bg-gradient-to-r from-primary/15 via-primary/8 to-primary/15;
+  }
+  /* Status gradients com cores exatas da paleta */
+  .gradient-success-exact {
+    background: linear-gradient(135deg, oklch(0.8763 0.2278 152.6 / 0.2), oklch(0.8763 0.2278 152.6 / 0.05));
+  }
+  .gradient-error-exact {
+    background: linear-gradient(135deg, oklch(0.6553 0.2308 26.4 / 0.2), oklch(0.6553 0.2308 26.4 / 0.05));
+  }
+  .gradient-info-exact {
+    background: linear-gradient(135deg, oklch(0.7623 0.152 230.0 / 0.2), oklch(0.7623 0.152 230.0 / 0.05));
   }
   /* Surface gradients */
   .gradient-surface {

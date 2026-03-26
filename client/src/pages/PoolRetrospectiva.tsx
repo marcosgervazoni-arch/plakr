@@ -209,7 +209,7 @@ function Slide3({ retro }: { retro: Retrospective }) {
         };
       case "badge":
         return {
-          icon: <Trophy className="w-8 h-8 text-amber-300" />,
+          icon: <Trophy className="w-8 h-8 text-primary" />,
           title: "Badge Conquistado",
           subtitle: data.badgeName ? String(data.badgeName) : "Você ganhou um badge especial!",
           gradient: "from-amber-600/50 via-amber-500/25 to-zinc-900",
@@ -321,8 +321,8 @@ function Slide4({ retro }: { retro: Retrospective }) {
           <p className="text-xs text-white/60 mt-0.5">pontuação final</p>
         </div>
         {isPodium && (
-          <div className="rounded-xl bg-amber-500/20 border border-amber-400/30 px-4 py-2">
-            <p className="text-xs text-amber-300 font-semibold">🏆 Você ficou no pódio!</p>
+          <div className="rounded-xl bg-primary/20 border border-primary/30 px-4 py-2">
+            <p className="text-xs text-primary font-semibold">🏆 Você ficou no pódio!</p>
           </div>
         )}
         {/* Card de compartilhamento */}

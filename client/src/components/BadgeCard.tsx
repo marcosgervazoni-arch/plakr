@@ -81,12 +81,12 @@ const RARITY_CONFIG: Record<
   },
   legendary: {
     label: "Lendário",
-    ring: "border-amber-400/80",
-    glow: "shadow-[0_0_18px_rgba(251,191,36,0.4)]",
-    bg: "bg-gradient-to-br from-amber-500/25 to-amber-500/5",
-    text: "text-amber-400",
-    genBg: "bg-amber-500/20",
-    genText: "text-amber-400",
+    ring: "border-primary/80",
+    glow: "shadow-[0_0_18px_rgba(255,184,0,0.4)]",
+    bg: "bg-gradient-to-br from-primary/25 to-primary/5",
+    text: "text-primary",
+    genBg: "bg-primary/20",
+    genText: "text-primary",
   },
 };
 
@@ -95,7 +95,7 @@ const RARITY_BADGE_COLORS: Record<BadgeRarity, string> = {
   uncommon:  "bg-green-500/15 text-green-400 border-green-500/30",
   rare:      "bg-blue-500/15 text-blue-400 border-blue-500/30",
   epic:      "bg-purple-500/15 text-purple-400 border-purple-500/30",
-  legendary: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  legendary: "bg-primary/15 text-primary border-primary/30",
 };
 
 // ─── Componente principal ─────────────────────────────────────────────────────

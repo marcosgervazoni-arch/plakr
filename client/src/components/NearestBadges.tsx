@@ -23,7 +23,7 @@ const RARITY_BAR_COLOR: Record<BadgeRarity, string> = {
   uncommon:  "bg-green-400",
   rare:      "bg-blue-400",
   epic:      "bg-purple-400",
-  legendary: "bg-amber-400",
+  legendary: "bg-primary",
 };
 
 const RARITY_TEXT: Record<BadgeRarity, string> = {
@@ -31,7 +31,7 @@ const RARITY_TEXT: Record<BadgeRarity, string> = {
   uncommon:  "text-green-400",
   rare:      "text-blue-400",
   epic:      "text-purple-400",
-  legendary: "text-amber-400",
+  legendary: "text-primary",
 };
 
 export function NearestBadges() {

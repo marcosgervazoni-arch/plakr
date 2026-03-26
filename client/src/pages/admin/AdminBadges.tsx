@@ -81,7 +81,7 @@ const RARITY_OPTIONS: { value: BadgeRarity; label: string; color: string }[] = [
   { value: "uncommon",  label: "Incomum",  color: "text-green-400" },
   { value: "rare",      label: "Raro",     color: "text-blue-400" },
   { value: "epic",      label: "Épico",    color: "text-purple-400" },
-  { value: "legendary", label: "Lendário", color: "text-amber-400" },
+  { value: "legendary", label: "Lendário", color: "text-primary" },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -89,7 +89,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   ranking:     "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
   zebra:       "bg-purple-500/10 text-purple-400 border-purple-500/20",
   comunidade:  "bg-green-500/10 text-green-400 border-green-500/20",
-  publicidade: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+  publicidade: "bg-primary/10 text-primary border-primary/20",
   exclusivo:   "bg-rose-500/10 text-rose-400 border-rose-500/20",
 };
 
@@ -98,7 +98,7 @@ const RARITY_BADGE_COLORS: Record<BadgeRarity, string> = {
   uncommon:  "bg-green-500/10 text-green-400 border-green-500/20",
   rare:      "bg-blue-500/10 text-blue-400 border-blue-500/20",
   epic:      "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  legendary: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  legendary: "bg-primary/10 text-primary border-primary/20",
 };
 
 const RARITY_LABELS: Record<BadgeRarity, string> = {

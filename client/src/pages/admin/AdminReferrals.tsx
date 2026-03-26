@@ -168,7 +168,7 @@ export default function AdminReferrals() {
                       <span className={`text-sm font-bold font-mono w-5 shrink-0 ${
                         index === 0 ? "text-yellow-400" :
                         index === 1 ? "text-slate-400" :
-                        index === 2 ? "text-amber-600" :
+                        index === 2 ? "text-[#CD7F32]" :
                         "text-muted-foreground"
                       }`}>
                         {index + 1}

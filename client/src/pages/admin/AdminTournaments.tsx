@@ -459,7 +459,7 @@ export default function AdminTournaments() {
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">Atalhos</Label>
                 <div className="flex gap-2 flex-wrap">
-                  <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8 border-amber-400/30 text-amber-400 hover:bg-amber-400/10"
+                  <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8 border-primary/30 text-primary hover:bg-primary/10"
                     onClick={() => handleApplyTemplate(WORLD_CUP_PHASES)}
                     disabled={addPhaseMutation.isPending}>
                     <Trophy className="h-3.5 w-3.5" /> Copa do Mundo (14 fases)
@@ -479,7 +479,7 @@ export default function AdminTournaments() {
                   <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
                     {phases.map((p, i) => (
                       <div key={i} className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-1.5">
-                        {p.isKnockout ? <GitBranch className="h-3.5 w-3.5 text-amber-400 shrink-0" /> : <Trophy className="h-3.5 w-3.5 text-brand shrink-0" />}
+                        {p.isKnockout ? <GitBranch className="h-3.5 w-3.5 text-primary shrink-0" /> : <Trophy className="h-3.5 w-3.5 text-brand shrink-0" />}
                         <span className="text-sm flex-1 truncate">{p.label}</span>
                         <span className="text-xs text-muted-foreground font-mono">{p.slots} vagas</span>
                         <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-red-400 shrink-0"

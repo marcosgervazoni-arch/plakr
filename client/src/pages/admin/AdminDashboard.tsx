@@ -138,7 +138,7 @@ export default function AdminDashboard() {
           title: "Palpites Hoje",
           value: enriched.betsToday.toLocaleString("pt-BR"),
           sub: `${enriched.totalBets.toLocaleString("pt-BR")} no total`,
-          icon: Target, color: "text-orange-400", bg: "bg-orange-500/10",
+          icon: Target, color: "text-primary", bg: "bg-primary/10",
         },
         {
           title: "Campeonatos",

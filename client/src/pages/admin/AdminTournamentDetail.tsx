@@ -347,7 +347,7 @@ export default function AdminTournamentDetail() {
             <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowSheetsModal(true)}>
               <FileSpreadsheet className="h-4 w-4" /> Sheets
             </Button>
-            <Button size="sm" variant="outline" className="gap-2 text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
+            <Button size="sm" variant="outline" className="gap-2 text-primary border-primary/30 hover:bg-primary/10"
               disabled={recalculateMutation.isPending}
               onClick={() => recalculateMutation.mutate({ tournamentId })}>
               {recalculateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -446,7 +446,7 @@ export default function AdminTournamentDetail() {
                 <AccordionTrigger className="hover:no-underline py-3">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {phase.isKnockout ? (
-                      <GitBranch className="h-4 w-4 text-amber-400 shrink-0" />
+                      <GitBranch className="h-4 w-4 text-primary shrink-0" />
                     ) : (
                       <Trophy className="h-4 w-4 text-brand shrink-0" />
                     )}
@@ -472,7 +472,7 @@ export default function AdminTournamentDetail() {
                     )}
                     <Badge variant="outline" className="text-xs ml-1 shrink-0">{phase.games.length} jogos</Badge>
                     {phase.isKnockout && (
-                      <Badge variant="outline" className="text-xs border-amber-400/30 text-amber-400 shrink-0">Eliminatória</Badge>
+                      <Badge variant="outline" className="text-xs border-primary/30 text-primary shrink-0">Eliminatória</Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-1 mr-2 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -482,7 +482,7 @@ export default function AdminTournamentDetail() {
                           onClick={() => { setEditingPhaseId(phase.id); setEditPhaseLabel(phase.label); }}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-amber-400"
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary"
                           title="Edição em lote"
                           onClick={() => { setBatchPhase(phase.label); setBatchEdits({}); }}>
                           <Zap className="h-3.5 w-3.5" />
@@ -515,13 +515,13 @@ export default function AdminTournamentDetail() {
 
                   {/* Batch edit mode */}
                   {batchPhase === phase.label && (
-                    <div className="mb-4 p-3 bg-amber-400/5 border border-amber-400/20 rounded-lg">
+                    <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                       <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs font-medium text-amber-400 flex items-center gap-1">
+                        <p className="text-xs font-medium text-primary flex items-center gap-1">
                           <Zap className="h-3 w-3" /> Edição em lote — {phase.label}
                         </p>
                         <div className="flex gap-2">
-                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-amber-400/30 text-amber-400"
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1 border-primary/30 text-primary"
                             disabled={batchUpdateMutation.isPending}
                             onClick={() => {
                               const updates = Object.entries(batchEdits).map(([gameId, fields]) => ({
@@ -712,7 +712,7 @@ export default function AdminTournamentDetail() {
                     if (!nextPhase || nextPhase.id < 0) return null;
                     return (
                       <div className="mt-3 pt-3 border-t border-border/30">
-                        <Button size="sm" variant="outline" className="gap-2 text-xs text-amber-400 border-amber-400/30 hover:bg-amber-400/10"
+                        <Button size="sm" variant="outline" className="gap-2 text-xs text-primary border-primary/30 hover:bg-primary/10"
                           disabled={generateNextPhaseMutation.isPending}
                           onClick={() => {
                             generateNextPhaseMutation.mutate({

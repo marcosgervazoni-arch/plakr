@@ -310,7 +310,7 @@ export default function OrganizerDashboard() {
                 {top5.map((r: any, i: number) => (
                   <div key={r.userId} className="px-4 py-2.5 flex items-center gap-3">
                     <span
-                      className={`w-6 text-center font-bold text-sm shrink-0 ${i === 0 ? "text-yellow-400" : i === 1 ? "text-slate-300" : i === 2 ? "text-amber-600" : "text-muted-foreground"}`}
+                      className={`w-6 text-center font-bold text-sm shrink-0 ${i === 0 ? "text-primary" : i === 1 ? "text-[#E5E5E5]" : i === 2 ? "text-[#CD7F32]" : "text-muted-foreground"}`}
 
                     >
                       {i + 1}

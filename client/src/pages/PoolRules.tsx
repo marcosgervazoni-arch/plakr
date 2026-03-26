@@ -130,15 +130,15 @@ export default function PoolRules() {
                 {rules.goalDiffPoints > 0 && (
                   <div className="px-5 py-3.5 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                        <TrendingUp className="w-3.5 h-3.5 text-orange-400" />
+                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <TrendingUp className="w-3.5 h-3.5 text-primary" />
                       </div>
                       <div>
                         <p className="text-sm font-medium">Saldo de gols</p>
                         <p className="text-xs text-muted-foreground">Acertou a diferença de gols (independente do resultado)</p>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-orange-400 border-orange-500/20 font-bold">
+                    <Badge variant="outline" className="text-primary border-primary/20 font-bold">
                       +{rules.goalDiffPoints} pts
                     </Badge>
                   </div>

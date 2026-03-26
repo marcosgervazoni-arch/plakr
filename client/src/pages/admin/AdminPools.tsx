@@ -290,7 +290,7 @@ export default function AdminPools() {
 
   const RETRO_STATUS_CONFIG = {
     complete: { label: "Completo", icon: CheckCircle2, className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
-    partial: { label: "Parcial", icon: AlertCircle, className: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+    partial: { label: "Parcial", icon: AlertCircle, className: "bg-primary/20 text-primary border-primary/30" },
     pending: { label: "Pendente", icon: Clock, className: "bg-zinc-800 text-zinc-400 border-zinc-700" },
   };
 
@@ -400,7 +400,7 @@ export default function AdminPools() {
                             <span className="font-mono text-sm">{item.totalRetrospectives}</span>
                           </TableCell>
                           <TableCell className="text-center">
-                            <span className={`font-mono text-sm ${item.totalCards < item.totalRetrospectives ? "text-amber-400" : "text-emerald-400"}`}>
+                            <span className={`font-mono text-sm ${item.totalCards < item.totalRetrospectives ? "text-primary" : "text-emerald-400"}`}>
                               {item.totalCards}
                             </span>
                           </TableCell>

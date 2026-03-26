@@ -302,7 +302,7 @@ export default function PublicPools() {
                   <div className="px-4 pb-3">
                     {progress.status === "not_started" ? (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                           <Clock className="w-3 h-3" /> Aguardando início
                         </span>
                         {progress.nextMatch && (
@@ -402,7 +402,7 @@ export default function PublicPools() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Status</span>
                     <span className="font-medium">
-                      {progress.status === "not_started" && <span className="text-amber-400">Aguardando início</span>}
+                      {progress.status === "not_started" && <span className="text-primary">Aguardando início</span>}
                       {progress.status === "in_progress" && <span className="text-primary">{progress.percent}% concluído</span>}
                       {progress.status === "finished" && <span className="text-muted-foreground">Encerrado</span>}
                     </span>

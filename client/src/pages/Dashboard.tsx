@@ -405,25 +405,23 @@ export default function Dashboard() {
                     <Link key={pool.id} href={`/pool/${pool.slug}`}>
                       <div className={`group flex items-center gap-3 rounded-xl px-4 py-3.5 transition-all cursor-pointer border ${
                         pendingBetsCount > 0
-                          ? "bg-amber-500/5 border-amber-500/30 hover:bg-amber-500/10 hover:border-amber-500/50"
+                          ? "bg-primary/5 border-primary/30 hover:bg-primary/10 hover:border-primary/50"
                           : pool.status === "awaiting_conclusion"
-                          ? "bg-orange-500/5 border-orange-500/30 hover:bg-orange-500/10 hover:border-orange-500/50"
+                          ? "bg-primary/5 border-primary/25 hover:bg-primary/10 hover:border-primary/40"
                           : "bg-card border-border/40 hover:border-primary/40 hover:bg-primary/5"
                       }`}>
                         <div className="relative">
-                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${
-                            pendingBetsCount > 0 ? "bg-amber-500/15" : pool.status === "awaiting_conclusion" ? "bg-orange-500/15" : "bg-primary/10"
-                          }`}>
+                          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-primary/10">
                             {pool.logoUrl ? (
                               <img src={pool.logoUrl} alt={pool.name} className="w-full h-full object-cover" />
                             ) : (
                               pool.status === "awaiting_conclusion"
-                                ? <Clock className="w-5 h-5 text-orange-500" />
-                                : <Trophy className={`w-5 h-5 ${pendingBetsCount > 0 ? "text-amber-500" : "text-primary"}`} />
+                                ? <Clock className="w-5 h-5 text-primary" />
+                                : <Trophy className="w-5 h-5 text-primary" />
                             )}
                           </div>
                           {pendingBetsCount > 0 && (
-                            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-amber-500 text-[10px] font-bold text-white flex items-center justify-center px-1 leading-none border-2 border-card shadow-sm">
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center px-1 leading-none border-2 border-card shadow-sm">
                               {pendingBetsCount > 9 ? "9+" : pendingBetsCount}
                             </span>
                           )}
@@ -435,9 +433,9 @@ export default function Dashboard() {
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             {pool.status === "awaiting_conclusion" ? (
-                              <span className="text-xs font-semibold text-orange-400">Aguardando encerramento</span>
+                              <span className="text-xs font-semibold text-primary">Aguardando encerramento</span>
                             ) : rankPosition && totalMembers > 0 ? (
-                              <span className="text-xs font-semibold" style={{ color: rankPosition === 1 ? "#FBBF24" : rankPosition <= 3 ? "var(--muted-foreground)" : undefined }}>
+                              <span className="text-xs font-semibold" style={{ color: rankPosition === 1 ? "#FFB800" : rankPosition === 2 ? "#E5E5E5" : rankPosition === 3 ? "#CD7F32" : undefined }}>
                                 {rankPosition === 1 ? "🥇" : rankPosition === 2 ? "🥈" : rankPosition === 3 ? "🥉" : `${rankPosition}º`} de {totalMembers}
                               </span>
                             ) : (
@@ -446,7 +444,7 @@ export default function Dashboard() {
                               </span>
                             )}
                             {pendingBetsCount > 0 && (
-                              <span className="text-xs font-semibold text-amber-500">
+                              <span className="text-xs font-semibold text-primary">
                                 · {pendingBetsCount} palpite{pendingBetsCount > 1 ? "s" : ""} pendente{pendingBetsCount > 1 ? "s" : ""}
                               </span>
                             )}
@@ -660,7 +658,7 @@ export default function Dashboard() {
                           <XCircle className="w-4 h-4 text-red-400 shrink-0" />
                         );
                       const resultColor =
-                        bet.result === "exact" ? "text-green-400" : bet.result === "correct" ? "text-yellow-400" : "text-red-400";
+                        bet.result === "exact" ? "text-green-400" : bet.result === "correct" ? "text-primary" : "text-red-400";
 
                       return (
                         <div key={bet.gameId} className="px-4 py-3 flex items-center gap-3">

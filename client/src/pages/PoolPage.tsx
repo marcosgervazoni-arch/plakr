@@ -436,7 +436,7 @@ export default function PoolPage() {
                     {liveGames} jogo{liveGames > 1 ? "s" : ""} ao vivo
                   </span>
                 ) : finishedGames === 0 && totalGames > 0 ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                     <Calendar className="w-3 h-3" />
                     {nextGame
                       ? `Começa ${formatDistanceToNow(new Date(nextGame.matchDate), { locale: ptBR, addSuffix: true })}`
@@ -731,23 +731,33 @@ export default function PoolPage() {
                         // Badge de posição — Crown/Medal apenas para top-3
                         // Glow pulse no ícone quando o usuário acabou de entrar no pódio
                         const isMePodium = isMe && idx < 3 && podiumAnimation !== "idle";
+                        // Paleta oficial Plakr!: gold=#FFB800, silver=#E5E5E5, bronze=#CD7F32
                         const positionBadge = idx === 0 ? (
-                          <span className={`w-7 h-7 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0 ${
-                            isMePodium ? "animate-[podium-glow-gold_1s_ease-out]" : ""
-                          }`}>
-                            <Crown className="w-4 h-4 text-yellow-400" />
+                          <span
+                            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                              isMePodium ? "animate-[podium-glow-gold_1s_ease-out]" : ""
+                            }`}
+                            style={{ background: "rgba(255,184,0,0.15)" }}
+                          >
+                            <Crown className="w-4 h-4" style={{ color: "#FFB800" }} />
                           </span>
                         ) : idx === 1 ? (
-                          <span className={`w-7 h-7 rounded-full bg-slate-400/15 flex items-center justify-center shrink-0 ${
-                            isMePodium ? "animate-[podium-glow-silver_1s_ease-out]" : ""
-                          }`}>
-                            <Medal className="w-4 h-4 text-slate-300" />
+                          <span
+                            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                              isMePodium ? "animate-[podium-glow-silver_1s_ease-out]" : ""
+                            }`}
+                            style={{ background: "rgba(229,229,229,0.12)" }}
+                          >
+                            <Medal className="w-4 h-4" style={{ color: "#E5E5E5" }} />
                           </span>
                         ) : idx === 2 ? (
-                          <span className={`w-7 h-7 rounded-full bg-orange-500/15 flex items-center justify-center shrink-0 ${
-                            isMePodium ? "animate-[podium-glow-bronze_1s_ease-out]" : ""
-                          }`}>
-                            <Medal className="w-4 h-4 text-orange-400" />
+                          <span
+                            className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                              isMePodium ? "animate-[podium-glow-bronze_1s_ease-out]" : ""
+                            }`}
+                            style={{ background: "rgba(205,127,50,0.15)" }}
+                          >
+                            <Medal className="w-4 h-4" style={{ color: "#CD7F32" }} />
                           </span>
                         ) : null;
 
@@ -776,14 +786,30 @@ export default function PoolPage() {
                               {/* Badge de posição (apenas top-3) */}
                               {positionBadge}
 
-                              {/* Avatar */}
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                                isMe
-                                  ? "bg-primary/20 text-primary"
-                                  : idx === 0 && !allZero
-                                  ? "bg-yellow-500/20 text-yellow-400"
-                                  : "bg-muted text-muted-foreground"
-                              }`}>
+                              {/* Avatar — borda dinâmica por posição (paleta oficial) */}
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 border-2"
+                                style={{
+                                  background: isMe
+                                    ? "rgba(255,184,0,0.2)"
+                                    : idx === 0 && !allZero ? "rgba(255,184,0,0.15)"
+                                    : idx === 1 && !allZero ? "rgba(229,229,229,0.1)"
+                                    : idx === 2 && !allZero ? "rgba(205,127,50,0.15)"
+                                    : undefined,
+                                  borderColor: isMe
+                                    ? "rgba(255,184,0,0.6)"
+                                    : idx === 0 && !allZero ? "rgba(255,184,0,0.7)"
+                                    : idx === 1 && !allZero ? "rgba(229,229,229,0.5)"
+                                    : idx === 2 && !allZero ? "rgba(205,127,50,0.6)"
+                                    : "transparent",
+                                  color: isMe
+                                    ? "#FFB800"
+                                    : idx === 0 && !allZero ? "#FFB800"
+                                    : idx === 1 && !allZero ? "#E5E5E5"
+                                    : idx === 2 && !allZero ? "#CD7F32"
+                                    : undefined,
+                                }}
+                              >
                                 {rankUser.name?.charAt(0)?.toUpperCase() ?? "?"}
                               </div>
 
@@ -792,9 +818,12 @@ export default function PoolPage() {
                                 <div className="flex items-center gap-1.5 min-w-0">
                                   <a
                                     href={`/profile/${rankUser.id}`}
-                                    className={`text-sm font-semibold truncate hover:text-primary transition-colors ${
-                                      isMe ? "text-primary" : idx === 0 && !allZero ? "text-yellow-400" : ""
-                                    }`}
+                                    className="text-sm font-semibold truncate hover:text-primary transition-colors"
+                                    style={{
+                                      color: isMe ? "var(--primary)"
+                                        : idx === 0 && !allZero ? "#FFB800"
+                                        : undefined
+                                    }}
                                   >
                                     {rankUser.name}
                                   </a>
@@ -825,15 +854,15 @@ export default function PoolPage() {
 
                               {/* Pontos + delta */}
                               <div className="text-right shrink-0">
-                                <p className={`text-base font-black font-mono leading-tight ${
-                                  allZero
-                                    ? "text-muted-foreground"
-                                    : isMe
-                                    ? "text-primary"
-                                    : idx === 0
-                                    ? "text-yellow-400"
-                                    : "text-foreground"
-                                }`}>
+                                <p
+                                  className="text-base font-black font-mono leading-tight"
+                                  style={{
+                                    color: allZero ? undefined
+                                      : isMe ? "var(--primary)"
+                                      : idx === 0 ? "#FFB800"
+                                      : undefined
+                                  }}
+                                >
                                   {stats.totalPoints} <span className="text-xs font-normal text-muted-foreground">pts</span>
                                 </p>
                                 {delta !== null && (
@@ -1046,10 +1075,10 @@ function GameCard({
             <span className={`inline-flex items-center gap-1 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
               isCritical
                 ? "bg-red-500/15 text-red-400 border border-red-500/25"
-                : "bg-amber-500/15 text-amber-400 border border-amber-500/25"
+                : "bg-primary/15 text-primary border border-primary/25"
             }`}>
               <span className={`w-1 h-1 rounded-full ${
-                isCritical ? "bg-red-400 animate-pulse" : "bg-amber-400"
+                isCritical ? "bg-red-400 animate-pulse" : "bg-primary"
               }`} />
               {urgencyLabel}
             </span>
@@ -1243,30 +1272,36 @@ function PodiumConfetti({ active }: { active: boolean }) {
           0%   { opacity: 0; transform: translateY(12px) scale(0.97); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
+        /* Animações de pódio — paleta oficial Plakr! */
         @keyframes podium-glow-gold {
-          0%   { box-shadow: 0 0 0 0 rgba(250,204,21,0); background-color: rgba(234,179,8,0.15); }
-          40%  { box-shadow: 0 0 0 6px rgba(250,204,21,0.35); background-color: rgba(234,179,8,0.35); }
-          100% { box-shadow: 0 0 0 0 rgba(250,204,21,0); background-color: rgba(234,179,8,0.15); }
+          /* #FFB800 */
+          0%   { box-shadow: 0 0 0 0 rgba(255,184,0,0); background-color: rgba(255,184,0,0.15); }
+          40%  { box-shadow: 0 0 0 6px rgba(255,184,0,0.45); background-color: rgba(255,184,0,0.35); }
+          100% { box-shadow: 0 0 0 0 rgba(255,184,0,0); background-color: rgba(255,184,0,0.15); }
         }
         @keyframes podium-glow-silver {
-          0%   { box-shadow: 0 0 0 0 rgba(148,163,184,0); background-color: rgba(148,163,184,0.15); }
-          40%  { box-shadow: 0 0 0 6px rgba(148,163,184,0.35); background-color: rgba(148,163,184,0.35); }
-          100% { box-shadow: 0 0 0 0 rgba(148,163,184,0); background-color: rgba(148,163,184,0.15); }
+          /* #E5E5E5 */
+          0%   { box-shadow: 0 0 0 0 rgba(229,229,229,0); background-color: rgba(229,229,229,0.12); }
+          40%  { box-shadow: 0 0 0 6px rgba(229,229,229,0.35); background-color: rgba(229,229,229,0.28); }
+          100% { box-shadow: 0 0 0 0 rgba(229,229,229,0); background-color: rgba(229,229,229,0.12); }
         }
         @keyframes podium-glow-bronze {
-          0%   { box-shadow: 0 0 0 0 rgba(251,146,60,0); background-color: rgba(249,115,22,0.15); }
-          40%  { box-shadow: 0 0 0 6px rgba(251,146,60,0.35); background-color: rgba(249,115,22,0.35); }
-          100% { box-shadow: 0 0 0 0 rgba(251,146,60,0); background-color: rgba(249,115,22,0.15); }
+          /* #CD7F32 */
+          0%   { box-shadow: 0 0 0 0 rgba(205,127,50,0); background-color: rgba(205,127,50,0.15); }
+          40%  { box-shadow: 0 0 0 6px rgba(205,127,50,0.45); background-color: rgba(205,127,50,0.35); }
+          100% { box-shadow: 0 0 0 0 rgba(205,127,50,0); background-color: rgba(205,127,50,0.15); }
         }
         @keyframes rank-rise {
-          0%   { transform: translateY(6px); border-color: rgba(52,211,153,0); background-color: inherit; }
-          30%  { transform: translateY(-3px); border-color: rgba(52,211,153,0.5); background-color: rgba(52,211,153,0.08); }
-          100% { transform: translateY(0); border-color: rgba(52,211,153,0); background-color: inherit; }
+          /* #00FF88 */
+          0%   { transform: translateY(6px); border-color: rgba(0,255,136,0); background-color: inherit; }
+          30%  { transform: translateY(-3px); border-color: rgba(0,255,136,0.5); background-color: rgba(0,255,136,0.08); }
+          100% { transform: translateY(0); border-color: rgba(0,255,136,0); background-color: inherit; }
         }
         @keyframes rank-drop {
-          0%   { transform: translateY(-6px); border-color: rgba(248,113,113,0); background-color: inherit; }
-          30%  { transform: translateY(3px); border-color: rgba(248,113,113,0.5); background-color: rgba(248,113,113,0.08); }
-          100% { transform: translateY(0); border-color: rgba(248,113,113,0); background-color: inherit; }
+          /* #FF3B3B */
+          0%   { transform: translateY(-6px); border-color: rgba(255,59,59,0); background-color: inherit; }
+          30%  { transform: translateY(3px); border-color: rgba(255,59,59,0.5); background-color: rgba(255,59,59,0.08); }
+          100% { transform: translateY(0); border-color: rgba(255,59,59,0); background-color: inherit; }
         }
       `}</style>
     </div>
@@ -1331,16 +1366,16 @@ function ConclusionBanner({ poolId, poolName }: { poolId: number; poolName: stri
   return (
     <>
       {/* Banner com gradiente para chamar atenção do organizador */}
-      <div className="mx-4 mt-3 rounded-xl overflow-hidden border border-amber-500/40 shadow-lg shadow-amber-500/10">
+      <div className="mx-4 mt-3 rounded-xl overflow-hidden border border-primary/40 shadow-lg shadow-primary/10">
         <div className="relative px-4 py-4 bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent pointer-events-none" />
           <div className="relative flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 mt-0.5">
-              <Sparkles className="w-4 h-4 text-amber-400" />
+            <div className="w-9 h-9 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0 mt-0.5">
+              <Sparkles className="w-4 h-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-300">Todos os jogos foram apurados!</p>
-              <p className="text-xs text-amber-400/70 mt-0.5 leading-relaxed">
+              <p className="text-sm font-semibold text-primary">Todos os jogos foram apurados!</p>
+              <p className="text-xs text-primary/70 mt-0.5 leading-relaxed">
                 Confirme o encerramento para gerar o ranking final e as retrospectivas de cada participante.
               </p>
             </div>
@@ -1348,7 +1383,7 @@ function ConclusionBanner({ poolId, poolName }: { poolId: number; poolName: stri
           <div className="relative mt-3 flex gap-2 justify-end">
             <Button
               size="sm"
-              className="h-8 text-xs bg-amber-500 hover:bg-amber-400 text-black font-bold gap-1.5 shadow-md shadow-amber-500/30"
+              className="h-8 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 shadow-md shadow-primary/30"
               onClick={() => setShowConfirm(true)}
               disabled={conclude.isPending}
             >
@@ -1366,7 +1401,7 @@ function ConclusionBanner({ poolId, poolName }: { poolId: number; poolName: stri
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-400" />
+              <Sparkles className="w-5 h-5 text-primary" />
               Encerrar bolão "{poolName}"?
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
@@ -1383,7 +1418,7 @@ function ConclusionBanner({ poolId, poolName }: { poolId: number; poolName: stri
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-amber-500 hover:bg-amber-400 text-black font-bold"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold"
               onClick={() => conclude.mutate({ poolId })}
             >
               Confirmar encerramento

@@ -20,12 +20,12 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   ranking_update:   { icon: TrendingUp,  color: "text-yellow-400", label: "Ranking" },
   result_available: { icon: Trophy,      color: "text-green-400",  label: "Resultado" },
   system:           { icon: Info,        color: "text-primary",    label: "Sistema" },
-  ad:               { icon: Megaphone,   color: "text-orange-400", label: "Novidade" },
+  ad:               { icon: Megaphone,   color: "text-primary", label: "Novidade" },
   pool_closing:     { icon: BellOff,     color: "text-red-400",    label: "Encerramento" },
   pool_invite:      { icon: Bell,        color: "text-purple-400", label: "Convite" },
   plan_expired:     { icon: Info,        color: "text-red-400",    label: "Plano" },
-  plan_expiring:    { icon: Info,        color: "text-orange-400", label: "Plano" },
-  badge_unlocked:   { icon: Award,       color: "text-amber-400",  label: "Conquista" },
+  plan_expiring:    { icon: Info,        color: "text-primary", label: "Plano" },
+  badge_unlocked:   { icon: Award,       color: "text-primary",  label: "Conquista" },
 };
 
 export default function Notifications() {

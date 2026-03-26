@@ -183,7 +183,7 @@ const NEXT_STEPS = [
   },
   {
     priority: "Alta",
-    color: "border-orange-500/40 text-orange-400",
+    color: "border-primary/40 text-primary",
     icon: CreditCard,
     title: "Configurar Price ID Stripe",
     desc: "Criar produto Pro no Stripe Dashboard e inserir o Price ID em Admin → Configurações para ativar o checkout real.",

@@ -66,8 +66,8 @@ const CRITERIA: CriterionDef[] = [
     key: "pointsLandslide",
     icon: "💥",
     label: "Goleada",
-    color: "text-orange-400",
-    bgColor: "bg-orange-500/15 border-orange-500/30",
+    color: "text-primary",
+    bgColor: "bg-primary/15 border-primary/30",
   },
   {
     key: "pointsZebra",

@@ -37,7 +37,7 @@ const ACTION_META: Record<string, { label: string; icon: React.ElementType; colo
   block_user: { label: "Usuário bloqueado", icon: Ban, color: "border-red-400/30 text-red-400" },
   unblock_user: { label: "Usuário desbloqueado", icon: Shield, color: "border-green-400/30 text-green-400" },
   promote_admin: { label: "Promovido a Admin", icon: Crown, color: "border-yellow-400/30 text-yellow-400" },
-  demote_admin: { label: "Rebaixado de Admin", icon: UserX, color: "border-orange-400/30 text-orange-400" },
+  demote_admin: { label: "Rebaixado de Admin", icon: UserX, color: "border-primary/30 text-primary" },
   remove_user: { label: "Usuário removido", icon: Trash2, color: "border-red-400/30 text-red-400" },
   send_notification: { label: "Notificação enviada", icon: Bell, color: "border-blue-400/30 text-blue-400" },
   broadcast: { label: "Broadcast enviado", icon: Megaphone, color: "border-blue-400/30 text-blue-400" },
@@ -52,11 +52,11 @@ const ACTION_META: Record<string, { label: string; icon: React.ElementType; colo
   set_result: { label: "Resultado registrado", icon: FileText, color: "border-green-400/30 text-green-400" },
   generate_vapid:    { label: "VAPID keys geradas",       icon: Shield, color: "border-yellow-400/30 text-yellow-400" },
   // Badges
-  "badges.create":       { label: "Badge criado",             icon: Award, color: "border-amber-400/30 text-amber-400" },
-  "badges.update":       { label: "Badge atualizado",         icon: Award, color: "border-amber-400/30 text-amber-400" },
+  "badges.create":       { label: "Badge criado",             icon: Award, color: "border-primary/30 text-primary" },
+  "badges.update":       { label: "Badge atualizado",         icon: Award, color: "border-primary/30 text-primary" },
   "badges.delete":       { label: "Badge excluído",           icon: Trash2, color: "border-red-400/30 text-red-400" },
   "badges.assignManual": { label: "Badge atribuído (manual)", icon: Gift,  color: "border-purple-400/30 text-purple-400" },
-  "badges.revoke":       { label: "Badge revogado",           icon: Award, color: "border-orange-400/30 text-orange-400" },
+  "badges.revoke":       { label: "Badge revogado",           icon: Award, color: "border-primary/30 text-primary" },
 };
 
 const ENTITY_LABELS: Record<string, string> = {

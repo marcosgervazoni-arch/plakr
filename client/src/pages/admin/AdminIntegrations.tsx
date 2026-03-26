@@ -85,8 +85,8 @@ export default function AdminIntegrations() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded bg-orange-500/20 flex items-center justify-center">
-                      <span className="text-xs font-bold text-orange-400">G</span>
+                    <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-primary">G</span>
                     </div>
                     <CardTitle className="text-base">Google Analytics 4</CardTitle>
                   </div>
