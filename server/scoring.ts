@@ -421,6 +421,34 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
           category: "ranking_update",
         });
       }
+
+      // 📣 Push de pódio: envia apenas para usuários que entraram no top-3
+      // Usa o canal pushRankingUpdate (respeita preferências do usuário)
+      if (position <= 3) {
+        try {
+          const { sendPushToUser } = await import("./push");
+          const pushTitle = position === 1
+            ? `🥇 Você é o líder! — ${pool.name}`
+            : position === 2
+            ? `🥈 Você está no pódio! — ${pool.name}`
+            : `🥉 Você está no pódio! — ${pool.name}`;
+          const pushBody = position === 1
+            ? `Parabéns! Você lidera o bolão com ${totalPoints} ponto${totalPoints !== 1 ? "s" : ""}. Continue assim! 🔥`
+            : `Você está em ${position}º lugar com ${totalPoints} ponto${totalPoints !== 1 ? "s" : ""}. Bora manter o pódio!`;
+          await sendPushToUser(
+            userId,
+            {
+              title: pushTitle,
+              body: pushBody,
+              url: `/pool/${pool.slug}`,
+              tag: `podium-${pool.id}`,
+            },
+            "pushRankingUpdate"
+          );
+        } catch (pushErr) {
+          logger.warn({ userId, poolId: pool.id, pushErr }, "[Scoring] Push de pódio falhou (não crítico)");
+        }
+      }
     }
   }
 

@@ -318,53 +318,12 @@ export default function PoolPage() {
 
   const INITIAL_GAMES_SHOWN = 5;
 
-  // Helper para disparar animação manualmente (apenas em dev)
-  const triggerAnim = (anim: typeof podiumAnimation, duration = 2500) => {
-    setPodiumAnimation(anim);
-    setTimeout(() => setPodiumAnimation("idle"), duration);
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Confetes de pódio — apenas para 1º lugar, some em 2.5s */}
       <PodiumConfetti active={podiumAnimation === "confetti"} />
 
-      {/* ── PAINEL DE TESTE DE ANIMAÇÕES — visível apenas em modo dev ── */}
-      {(
-        <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-1.5 bg-background/95 border border-border/60 rounded-2xl p-3 shadow-xl backdrop-blur-sm">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Teste de animações</p>
-          <button
-            onClick={() => { triggerAnim("confetti", 2500); }}
-            className="text-xs px-3 py-1.5 rounded-lg bg-yellow-500/15 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/25 transition-colors text-left"
-          >
-            🥇 1º lugar (confetes + glow)
-          </button>
-          <button
-            onClick={() => { triggerAnim("enter", 1200); }}
-            className="text-xs px-3 py-1.5 rounded-lg bg-slate-400/15 text-slate-300 border border-slate-400/20 hover:bg-slate-400/25 transition-colors text-left"
-          >
-            🥈 2º lugar (glow prata + slide)
-          </button>
-          <button
-            onClick={() => { triggerAnim("enter", 1200); }}
-            className="text-xs px-3 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25 transition-colors text-left"
-          >
-            🥉 3º lugar (glow bronze + slide)
-          </button>
-          <button
-            onClick={() => { triggerAnim("rise", 2000); }}
-            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/25 transition-colors text-left"
-          >
-            ⬆️ Subiu de posição
-          </button>
-          <button
-            onClick={() => { triggerAnim("drop", 2000); }}
-            className="text-xs px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 transition-colors text-left"
-          >
-            ⬇️ Desceu de posição
-          </button>
-        </div>
-      )}
+
 
       {/* ── Header sticky ── */}
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-md">

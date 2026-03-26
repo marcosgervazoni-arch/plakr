@@ -1162,3 +1162,10 @@
 - [x] Confetes: apenas na primeira vez que o usuário chega ao 1º lugar no bolão (localStorage, nunca repete)
 - [x] Glow prata/bronze: apenas na primeira vez no top-3 (localStorage), sem slide-up
 - [x] Subida/descida: sempre dispara quando posição muda, sem texto — apenas ícone ↑ verde / ↓ vermelho
+
+## Feature — Remoção do painel de teste + push de pódio (26/03/2026)
+- [x] Remover painel de teste de animações do PoolPage (restaurar restrição DEV ou remover completamente)
+- [x] Push ao entrar no top-3: trigger no recálculo do ranking (procedure ou job)
+- [x] Push ao chegar ao 1º lugar: mensagem especial diferenciada
+- [x] Push ao entrar no 2º/3º lugar: mensagem de pódio
+- [x] Não enviar push se o usuário já estava naquela posição (evitar spam) — respeitado via preferências do canal pushRankingUpdate
