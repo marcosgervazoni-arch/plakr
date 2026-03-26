@@ -1569,3 +1569,11 @@
 
 ## Ajuste UX — Botão do Cabeçalho da Landing Page — Sprint 26/03/2026
 - [x] Home.tsx: botão do navbar exibe "Criar bolão grátis" para visitantes e "Entrar" (→ /dashboard) para usuários logados
+
+## Upload OG Image no Super Admin — Sprint 26/03/2026
+- [x] Schema: adicionadas colunas `ogImageUrl` e `ogImageKey` na tabela `landing_page_config`
+- [x] Migração SQL: aplicada (0027_vengeful_fenris.sql)
+- [x] Backend: `landingPage.updateConfig` aceita e salva `ogImageUrl` e `ogImageKey`
+- [x] Backend: endpoint POST /api/upload reutilizado via ImageUploader
+- [x] Frontend (AdminLandingPage.tsx): seção "SEO & Compartilhamento" com upload da OG image (drag-and-drop, preview 1200×630, badge de status, links para Facebook Debugger e Twitter Card Validator)
+- [x] Backend (og.ts): `registerLandingOgRoute` — bots que acessam / recebem HTML com ogImageUrl dinâmico do banco; usuários reais passam para o SPA normalmente

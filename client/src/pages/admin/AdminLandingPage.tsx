@@ -21,15 +21,18 @@ import {
   EyeOff,
   Globe,
   HelpCircle,
+  Image,
   LayoutGrid,
   LayoutTemplate,
   Megaphone,
   RotateCcw,
   Save,
+  Search,
   Trophy,
   Users,
   Zap,
 } from "lucide-react";
+import ImageUploader from "@/components/ImageUploader";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -58,6 +61,8 @@ interface LandingConfig {
   sectionPlansEnabled: boolean;
   sectionFaqEnabled: boolean;
   sectionCtaFinalEnabled: boolean;
+  // SEO
+  ogImageUrl: string;
   // Custom code per section
   heroCustomCode: string;
   credibilityCustomCode: string;
@@ -92,6 +97,7 @@ const DEFAULTS: LandingConfig = {
   sectionPlansEnabled: true,
   sectionFaqEnabled: true,
   sectionCtaFinalEnabled: true,
+  ogImageUrl: "",
   heroCustomCode: "",
   credibilityCustomCode: "",
   howItWorksCustomCode: "",
@@ -346,6 +352,7 @@ export default function AdminLandingPage() {
           serverConfig.sectionFaqEnabled ?? DEFAULTS.sectionFaqEnabled,
         sectionCtaFinalEnabled:
           serverConfig.sectionCtaFinalEnabled ?? DEFAULTS.sectionCtaFinalEnabled,
+        ogImageUrl: serverConfig.ogImageUrl ?? "",
         heroCustomCode: serverConfig.heroCustomCode ?? "",
         credibilityCustomCode: serverConfig.credibilityCustomCode ?? "",
         howItWorksCustomCode: serverConfig.howItWorksCustomCode ?? "",
@@ -860,6 +867,88 @@ export default function AdminLandingPage() {
                 onChange={(v) => update("ctaFinalCustomCode", v)}
                 sectionName="CTA Final"
               />
+            </AccordionContent>
+          </AccordionItem>
+          {/* ── SEO & COMPARTILHAMENTO ── */}
+          <AccordionItem
+            value="seo"
+            className="rounded-2xl overflow-hidden border"
+            style={{
+              background: "#121826",
+              borderColor: "rgba(255,255,255,0.06)",
+            }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <div className="flex items-center gap-3 flex-1 pr-4">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,184,0,0.1)" }}
+                >
+                  <Search size={14} style={{ color: "#FFB800" }} />
+                </div>
+                <span className="font-semibold text-sm" style={{ color: "#F9FAFB" }}>
+                  SEO &amp; Compartilhamento
+                </span>
+                <div className="flex items-center gap-2 ml-auto">
+                  {config.ogImageUrl && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs"
+                      style={{ borderColor: "rgba(0,255,136,0.4)", color: "#00FF88" }}
+                    >
+                      <Image size={10} className="mr-1" />
+                      OG Image
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-5">
+              <p className="text-sm text-muted-foreground">
+                A <strong style={{ color: "#F9FAFB" }}>OG Image</strong> é a imagem exibida quando o link do Plakr! é compartilhado no WhatsApp, Instagram, LinkedIn e outras redes. Recomendado: <strong style={{ color: "#FFB800" }}>1200 × 630 px</strong>.
+              </p>
+
+              {/* Preview da proporção 1200×630 */}
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Imagem de compartilhamento (Open Graph)</Label>
+                <div
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "#0B0F1A",
+                    // Proporção 1200×630 ≈ aspect-ratio 1.905
+                    aspectRatio: "1200 / 630",
+                    maxWidth: "600px",
+                  }}
+                >
+                  <ImageUploader
+                    value={config.ogImageUrl || null}
+                    onChange={(url) => update("ogImageUrl", url ?? "")}
+                    folder="landing-page/og"
+                    label="Fazer upload da OG Image"
+                    hint="PNG ou JPG • 1200 × 630 px recomendado • máx. 5 MB"
+                    aspectRatio="wide"
+                    className="w-full h-full"
+                  />
+                </div>
+                {config.ogImageUrl && (
+                  <p className="text-xs" style={{ color: "#6B7280" }}>
+                    URL: <a href={config.ogImageUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-white transition-colors" style={{ color: "#9CA3AF" }}>{config.ogImageUrl}</a>
+                  </p>
+                )}
+              </div>
+
+              <div
+                className="flex items-start gap-3 rounded-lg px-4 py-3 text-xs"
+                style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.2)" }}
+              >
+                <Search size={14} style={{ color: "#FFB800", flexShrink: 0, marginTop: 1 }} />
+                <div style={{ color: "#9CA3AF" }}>
+                  <strong style={{ color: "#FFB800" }}>Dica SEO:</strong> após salvar, a URL da imagem será usada automaticamente nas meta tags <code style={{ color: "#E5E7EB" }}>og:image</code> e <code style={{ color: "#E5E7EB" }}>twitter:image</code> da página de vendas. Verifique o resultado em{" "}
+                  <a href="https://developers.facebook.com/tools/debug/" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "#FFB800" }}>Facebook Debugger</a>{" "}e{" "}
+                  <a href="https://cards-dev.twitter.com/validator" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: "#FFB800" }}>Twitter Card Validator</a>.
+                </div>
+              </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>

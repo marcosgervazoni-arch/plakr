@@ -72,6 +72,50 @@ function buildOgHtml({
 </html>`;
 }
 
+/**
+ * Landing page OG SSR — rota raiz (/)
+ * Quando um bot de rede social acessa a raiz, retorna HTML com a ogImageUrl
+ * configurada pelo Super Admin. Usuários reais passam para o SPA normalmente.
+ */
+export function registerLandingOgRoute(app: Express): void {
+  app.get("/", async (req, res, next) => {
+    const ua = req.headers["user-agent"] ?? "";
+    if (!isBot(ua)) return next();
+
+    const origin = `${req.protocol}://${req.headers.host}`;
+    const pageUrl = `${origin}/`;
+    const fallbackImage = `${origin}/og-image.png`;
+
+    try {
+      const db = await (await import("./db")).getDb();
+      let ogImageUrl = fallbackImage;
+      if (db) {
+        const { landingPageConfig } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [cfg] = await db.select({ ogImageUrl: landingPageConfig.ogImageUrl })
+          .from(landingPageConfig).where(eq(landingPageConfig.id, 1)).limit(1);
+        if (cfg?.ogImageUrl) ogImageUrl = cfg.ogImageUrl;
+      }
+
+      const html = buildOgHtml({
+        title: "Plakr! — Faça seu bolão da Copa do Mundo 2026 com a galera",
+        description: "Crie bolões para qualquer campeonato, convide seus amigos e acompanhe tudo em tempo real. Simples, divertido e gratuito.",
+        imageUrl: ogImageUrl,
+        pageUrl,
+      });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    } catch {
+      const html = buildOgHtml({
+        title: "Plakr! — Faça seu bolão da Copa do Mundo 2026 com a galera",
+        description: "Crie bolões para qualquer campeonato, convide seus amigos e acompanhe tudo em tempo real. Simples, divertido e gratuito.",
+        imageUrl: fallbackImage,
+        pageUrl,
+      });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    }
+  });
+}
+
 export function registerOgRoutes(app: Express): void {
   app.get("/join/:token", async (req, res, next) => {
     const ua = req.headers["user-agent"] ?? "";

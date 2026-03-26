@@ -745,6 +745,9 @@ export const landingPageConfig = mysqlTable("landing_page_config", {
   ctaFinalPrimaryText: varchar("ctaFinalPrimaryText", { length: 64 }).default("Criar bolão grátis").notNull(),
   ctaFinalSecondaryText: varchar("ctaFinalSecondaryText", { length: 64 }).default("Criar campeonato personalizado").notNull(),
   ctaFinalSecondaryEnabled: boolean("ctaFinalSecondaryEnabled").default(true).notNull(),
+  // ── SEO & Open Graph ─────────────────────────────────────────────────────
+  ogImageUrl: text("ogImageUrl"),   // URL pública da imagem OG (1200×630)
+  ogImageKey: varchar("ogImageKey", { length: 255 }), // Chave S3 para remoção
   // ── Código customizado por seção (prioridade sobre conteúdo padrão) ─────────────────────
   heroCustomCode: text("heroCustomCode"),
   credibilityCustomCode: text("credibilityCustomCode"),

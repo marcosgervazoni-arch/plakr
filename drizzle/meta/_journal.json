@@ -190,6 +190,13 @@
       "when": 1774548694387,
       "tag": "0026_oval_microbe",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1774551989703,
+      "tag": "0027_vengeful_fenris",
+      "breakpoints": true
     }
   ]
 }

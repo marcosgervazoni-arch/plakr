@@ -4,7 +4,7 @@ import { startArchivalCron } from "../archival";
 import { startEmailCrons } from "../emailCron";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
-import { registerOgRoutes } from "../og";
+import { registerOgRoutes, registerLandingOgRoute } from "../og";
 import { registerApiDocs } from "../api-docs";
 import express from "express";
 import { createServer } from "http";
@@ -94,6 +94,9 @@ async function startServer() {
 
   // Open Graph SSR — must be before Vite/static so bots get OG HTML
   registerOgRoutes(app);
+
+  // Landing page OG SSR — inject dynamic ogImageUrl for social bots on root
+  registerLandingOgRoute(app);
 
   // API Documentation (Swagger UI)
   registerApiDocs(app);
