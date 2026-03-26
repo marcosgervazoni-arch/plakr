@@ -1140,3 +1140,9 @@
 - [x] Backend: procedure platform.updateSettings aceita restrictedInviteMessage
 - [x] Frontend PoolPage.tsx: exibir aviso quando invitePermission=organizer_only e usuário não é organizador
 - [x] Frontend AdminSettings.tsx: campo de texto editável para restrictedInviteMessage
+
+## Feature — Animação de entrada no pódio (25/03/2026)
+- [x] Animação slide-up + fade-in no card do usuário ao entrar no top-3
+- [x] Glow pulse no ícone de coroa/medalha (1s, para sozinho)
+- [x] Confetes CSS para 1º lugar (2s, some sozinho)
+- [x] Lógica sessionStorage: dispara apenas quando posição muda para top-3 na sessão

@@ -44,7 +44,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
@@ -73,6 +73,9 @@ export default function PoolPage() {
     return "games";
   });
   const [betInputs, setBetInputs] = useState<Record<number, { a: string; b: string }>>({});
+  // Animação de entrada no pódio — dispara uma vez por sessão quando posição muda para top-3
+  const [podiumAnimation, setPodiumAnimation] = useState<"idle" | "enter" | "confetti">("idle");
+  const podiumChecked = useRef(false);
 
   const { data, isLoading, error } = trpc.pools.getBySlug.useQuery(
     { slug: slug! },
@@ -168,6 +171,23 @@ export default function PoolPage() {
       .sort((a, b) => new Date(a.matchDate).getTime() - new Date(b.matchDate).getTime())[0]?.phase;
     return nextPhase ?? uniquePhaseKeys[0] ?? "group_stage";
   }, [games, uniquePhaseKeys]);
+
+  // useEffect: detecta entrada no pódio e dispara animação uma vez por sessão
+  useEffect(() => {
+    if (!ranking || !user || podiumChecked.current) return;
+    const myIdx = ranking.findIndex((r) => r.user.id === user.id);
+    if (myIdx < 0) return;
+    const sessionKey = `podium_${slug}_${user.id}`;
+    const lastKnown = sessionStorage.getItem(sessionKey);
+    const isTopThree = myIdx < 3 && ranking[0]?.stats.totalPoints > 0;
+    const wasTopThree = lastKnown !== null && parseInt(lastKnown) < 3;
+    podiumChecked.current = true;
+    sessionStorage.setItem(sessionKey, String(myIdx));
+    if (isTopThree && !wasTopThree) {
+      setPodiumAnimation(myIdx === 0 ? "confetti" : "enter");
+      setTimeout(() => setPodiumAnimation("idle"), myIdx === 0 ? 2500 : 1200);
+    }
+  }, [ranking, user, slug]);
 
   const [showAllGames, setShowAllGames] = useState(false);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(() => new Set([activePhaseKey ?? ""]));
@@ -270,6 +290,8 @@ export default function PoolPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Confetes de pódio — apenas para 1º lugar, some em 2.5s */}
+      <PodiumConfetti active={podiumAnimation === "confetti"} />
 
       {/* ── Header sticky ── */}
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-md">
@@ -655,25 +677,38 @@ export default function PoolPage() {
                         );
 
                         // Badge de posição — Crown/Medal apenas para top-3
+                        // Glow pulse no ícone quando o usuário acabou de entrar no pódio
+                        const isMePodium = isMe && idx < 3 && podiumAnimation !== "idle";
                         const positionBadge = idx === 0 ? (
-                          <span className="w-7 h-7 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0">
+                          <span className={`w-7 h-7 rounded-full bg-yellow-500/15 flex items-center justify-center shrink-0 ${
+                            isMePodium ? "animate-[podium-glow-gold_1s_ease-out]" : ""
+                          }`}>
                             <Crown className="w-4 h-4 text-yellow-400" />
                           </span>
                         ) : idx === 1 ? (
-                          <span className="w-7 h-7 rounded-full bg-slate-400/15 flex items-center justify-center shrink-0">
+                          <span className={`w-7 h-7 rounded-full bg-slate-400/15 flex items-center justify-center shrink-0 ${
+                            isMePodium ? "animate-[podium-glow-silver_1s_ease-out]" : ""
+                          }`}>
                             <Medal className="w-4 h-4 text-slate-300" />
                           </span>
                         ) : idx === 2 ? (
-                          <span className="w-7 h-7 rounded-full bg-orange-500/15 flex items-center justify-center shrink-0">
+                          <span className={`w-7 h-7 rounded-full bg-orange-500/15 flex items-center justify-center shrink-0 ${
+                            isMePodium ? "animate-[podium-glow-bronze_1s_ease-out]" : ""
+                          }`}>
                             <Medal className="w-4 h-4 text-orange-400" />
                           </span>
                         ) : null;
+
+                        // Animação de slide-up para o card do usuário ao entrar no pódio
+                        const cardAnim = isMe && idx < 3 && podiumAnimation !== "idle"
+                          ? "animate-[podium-enter_0.4s_cubic-bezier(0.34,1.56,0.64,1)_both]"
+                          : "";
 
                         return (
                           <>
                             <div
                               key={`${rankUser.id}-${idx}`}
-                              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl border transition-all ${
+                              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl border transition-all ${cardAnim} ${
                                 isMe
                                   ? "border-primary/40 bg-primary/5"
                                   : idx < 3 && !allZero
@@ -1091,6 +1126,74 @@ function InviteBanner({ inviteToken, onCopy }: { inviteToken: string; onCopy: ()
           <Copy className="w-3 h-3" /> Copiar
         </Button>
       </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────
+ * PodiumConfetti — chuva de confetes leve para 1º lugar (CSS puro, sem lib)
+ * ─────────────────────────────────────────────────────────────────────────────── */
+const CONFETTI_COLORS = ["#facc15", "#fb923c", "#34d399", "#60a5fa", "#f472b6", "#a78bfa"];
+
+function PodiumConfetti({ active }: { active: boolean }) {
+  if (!active) return null;
+  const pieces = Array.from({ length: 28 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    delay: `${(Math.random() * 0.8).toFixed(2)}s`,
+    duration: `${(1.2 + Math.random() * 0.8).toFixed(2)}s`,
+    size: Math.random() > 0.5 ? 6 : 8,
+    rotate: Math.floor(Math.random() * 360),
+  }));
+
+  return (
+    <div
+      className="pointer-events-none fixed inset-0 overflow-hidden z-50"
+      aria-hidden
+    >
+      {pieces.map((p) => (
+        <div
+          key={p.id}
+          style={{
+            position: "absolute",
+            left: p.left,
+            top: "-10px",
+            width: p.size,
+            height: p.size,
+            background: p.color,
+            borderRadius: Math.random() > 0.5 ? "50%" : "2px",
+            transform: `rotate(${p.rotate}deg)`,
+            animation: `confetti-fall ${p.duration} ${p.delay} ease-in forwards`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes confetti-fall {
+          0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+          80%  { opacity: 1; }
+          100% { transform: translateY(100vh) rotate(720deg) scale(0.6); opacity: 0; }
+        }
+        @keyframes podium-enter {
+          0%   { opacity: 0; transform: translateY(12px) scale(0.97); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes podium-glow-gold {
+          0%   { box-shadow: 0 0 0 0 rgba(250,204,21,0); background-color: rgba(234,179,8,0.15); }
+          40%  { box-shadow: 0 0 0 6px rgba(250,204,21,0.35); background-color: rgba(234,179,8,0.35); }
+          100% { box-shadow: 0 0 0 0 rgba(250,204,21,0); background-color: rgba(234,179,8,0.15); }
+        }
+        @keyframes podium-glow-silver {
+          0%   { box-shadow: 0 0 0 0 rgba(148,163,184,0); background-color: rgba(148,163,184,0.15); }
+          40%  { box-shadow: 0 0 0 6px rgba(148,163,184,0.35); background-color: rgba(148,163,184,0.35); }
+          100% { box-shadow: 0 0 0 0 rgba(148,163,184,0); background-color: rgba(148,163,184,0.15); }
+        }
+        @keyframes podium-glow-bronze {
+          0%   { box-shadow: 0 0 0 0 rgba(251,146,60,0); background-color: rgba(249,115,22,0.15); }
+          40%  { box-shadow: 0 0 0 6px rgba(251,146,60,0.35); background-color: rgba(249,115,22,0.35); }
+          100% { box-shadow: 0 0 0 0 rgba(251,146,60,0); background-color: rgba(249,115,22,0.15); }
+        }
+      `}</style>
     </div>
   );
 }
