@@ -204,6 +204,7 @@ export default function Home() {
   const { data: config } = trpc.landingPage.getConfig.useQuery();
   const { user, loading: authLoading } = useAuth();
   const loginUrl = getLoginUrl("/dashboard");
+  const upgradeLoginUrl = getLoginUrl("/upgrade");
 
   const heroHeadline = config?.heroHeadline ?? "Faça seu bolão com a galera";
   const heroSubheadline = config?.heroSubheadline ?? "Crie bolões para qualquer campeonato, convide seus amigos e acompanhe tudo em tempo real. Simples, divertido e gratuito.";
@@ -318,7 +319,7 @@ export default function Home() {
                     </Button>
                   </a>
                   {heroCtaSecondaryEnabled && (
-                    <a href={loginUrl}>
+                    <a href={user ? "/upgrade" : upgradeLoginUrl}>
                       <Button size="lg" variant="outline" className="w-full sm:w-auto font-semibold text-sm px-6 py-3"
                         style={{ borderColor: "rgba(255,184,0,0.3)", color: "#FFB800", background: "transparent" }}>
                         {heroCtaSecondaryText}
@@ -572,7 +573,7 @@ export default function Home() {
                       </li>
                     ))}
                   </ul>
-                  <a href={loginUrl} className="block">
+                  <a href={user ? "/upgrade" : upgradeLoginUrl} className="block">
                     <Button className="w-full font-bold"
                       style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
                       Começar com Pro
@@ -640,7 +641,7 @@ export default function Home() {
                   </Button>
                 </a>
                 {ctaFinalSecondaryEnabled && (
-                  <a href={loginUrl}>
+                  <a href={user ? "/upgrade" : upgradeLoginUrl}>
                     <Button size="lg" variant="outline" className="font-semibold text-sm px-6 py-3"
                       style={{ borderColor: "rgba(255,184,0,0.3)", color: "#FFB800", background: "transparent" }}>
                       {ctaFinalSecondaryText}

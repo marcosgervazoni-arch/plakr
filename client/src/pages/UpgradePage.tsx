@@ -148,7 +148,7 @@ export default function UpgradePage() {
                 Plano atual
               </Button>
             ) : (
-              <a href={getLoginUrl()}>
+              <a href={getLoginUrl("/upgrade")}>
                 <Button variant="outline" className="w-full">Começar grátis</Button>
               </a>
             )}
@@ -179,7 +179,7 @@ export default function UpgradePage() {
             </div>
 
             {!isAuthenticated ? (
-              <a href={getLoginUrl()}>
+              <a href={getLoginUrl("/upgrade")}>
                 <Button className="w-full gap-2">
                   <Crown className="w-4 h-4" /> Entrar e fazer upgrade
                 </Button>
@@ -301,7 +301,7 @@ export default function UpgradePage() {
             Use o cartão de teste <span className="font-mono font-bold">4242 4242 4242 4242</span> para experimentar o checkout sem custo real.
           </p>
           {!isAuthenticated ? (
-            <a href={getLoginUrl()}>
+            <a href={getLoginUrl("/upgrade")}>
               <Button size="lg" className="gap-2">
                 <Crown className="w-4 h-4" /> Começar agora
               </Button>

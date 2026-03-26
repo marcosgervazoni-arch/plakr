@@ -1589,3 +1589,6 @@
 - [x] LIMPEZA: 19 componentes shadcn/ui não utilizados deletados
 - [x] QUALIDADE: console.log removido de useReferralCapture.ts
 - [x] QUALIDADE: Rota duplicada /pool/:slug/settings removida do App.tsx
+
+## Correção Fluxo Botões Upgrade — Sprint 26/03/2026
+- [x] Home.tsx / UpgradePage.tsx: botões "Assinar Pro" corrigidos — não logado faz login e retorna ao /upgrade; logado vai direto ao /upgrade para escolher o bolão e iniciar o checkout
