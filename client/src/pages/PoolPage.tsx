@@ -316,7 +316,7 @@ export default function PoolPage() {
       <PodiumConfetti active={podiumAnimation === "confetti"} />
 
       {/* ── PAINEL DE TESTE DE ANIMAÇÕES — visível apenas em modo dev ── */}
-      {import.meta.env.DEV && (
+      {(
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-1.5 bg-background/95 border border-border/60 rounded-2xl p-3 shadow-xl backdrop-blur-sm">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Teste de animações</p>
           <button
