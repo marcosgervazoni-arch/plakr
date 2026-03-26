@@ -14,12 +14,17 @@ import { Link } from "wouter";
 interface BadgeItem {
   id: number;
   name: string;
+  emoji?: string | null;
+  category?: string | null;
   description: string;
-  iconUrl: string | null;
+  iconUrl?: string | null;
   criterionType: string;
   criterionValue: number;
+  isManual?: boolean;
   earnedAt?: string | Date | null;
   earned?: boolean;
+  progressPercent?: number;
+  currentProgress?: number;
 }
 
 interface DashboardBadgeCarouselProps {
@@ -45,7 +50,7 @@ const CRITERION_UNIT: Record<string, string> = {
 const PAGE_SIZE = 5;
 
 function BadgeHexagon({ badge }: { badge: BadgeItem }) {
-  const isEarned = !!badge.earnedAt;
+  const isEarned = badge.earned ?? !!badge.earnedAt;
 
   return (
     <Tooltip>
@@ -63,22 +68,24 @@ function BadgeHexagon({ badge }: { badge: BadgeItem }) {
                 : "bg-muted/30 border-border/30"
             }`}
           >
-            {badge.iconUrl ? (
+            {badge.emoji ? (
+              <span className="text-2xl leading-none select-none">{badge.emoji}</span>
+            ) : badge.iconUrl ? (
               <img
                 src={badge.iconUrl}
                 alt={badge.name}
                 className="w-8 h-8 object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = "none";
-                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");
                 }}
               />
-            ) : null}
-            <Award
-              className={`h-7 w-7 ${badge.iconUrl ? "hidden" : ""} ${
-                isEarned ? "text-brand" : "text-muted-foreground/50"
-              }`}
-            />
+            ) : (
+              <Award
+                className={`h-7 w-7 ${
+                  isEarned ? "text-brand" : "text-muted-foreground/50"
+                }`}
+              />
+            )}
             {/* Lock overlay para não conquistados */}
             {!isEarned && (
               <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-background border border-border flex items-center justify-center">
@@ -100,10 +107,14 @@ function BadgeHexagon({ badge }: { badge: BadgeItem }) {
       <TooltipContent side="top" className="max-w-[200px] text-center">
         <p className="font-semibold text-sm">{badge.name}</p>
         <p className="text-xs text-muted-foreground mt-0.5">{badge.description}</p>
-        <p className="text-xs mt-1 text-brand/80">
-          {CRITERION_LABELS[badge.criterionType] ?? badge.criterionType} ≥ {badge.criterionValue}
-          {CRITERION_UNIT[badge.criterionType] ?? ""}
-        </p>
+        {badge.isManual ? (
+          <p className="text-xs mt-1 text-rose-400">Atribuição especial pelo admin</p>
+        ) : (
+          <p className="text-xs mt-1 text-brand/80">
+            {CRITERION_LABELS[badge.criterionType] ?? badge.criterionType.replace(/_/g, " ")} ≥ {badge.criterionValue}
+            {CRITERION_UNIT[badge.criterionType] ?? ""}
+          </p>
+        )}
         {isEarned && badge.earnedAt && (
           <p className="text-xs text-muted-foreground mt-1">
             Conquistado em{" "}
@@ -122,13 +133,13 @@ function BadgeHexagon({ badge }: { badge: BadgeItem }) {
   );
 }
 
-export default function DashboardBadgeCarousel({ badges }: DashboardBadgeCarouselProps) {
+export default function DashboardBadgeCarousel({ badges, stats }: DashboardBadgeCarouselProps) {
   const [page, setPage] = useState(0);
 
   if (!badges || badges.length === 0) return null;
 
-  const earned = badges.filter((b) => b.earnedAt);
-  const unearned = badges.filter((b) => !b.earnedAt);
+  const earned = badges.filter((b) => b.earned ?? !!b.earnedAt);
+  const unearned = badges.filter((b) => !(b.earned ?? !!b.earnedAt));
   const hasEarned = earned.length > 0;
 
   // Ordenação: conquistados primeiro, depois não conquistados

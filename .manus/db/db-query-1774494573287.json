@@ -1,0 +1,235 @@
+{
+  "query": "SELECT id, emoji, name, category, criterionType, criterionValue, isManual FROM badges ORDER BY category, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, emoji, name, category, criterionType, criterionValue, isManual FROM badges ORDER BY category, id;",
+  "rows": [
+    {
+      "id": "30017",
+      "emoji": "🌱",
+      "name": "Boas-Vindas",
+      "category": "comunidade",
+      "criterionType": "first_bet",
+      "criterionValue": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30018",
+      "emoji": "🔥",
+      "name": "Levou a Sério",
+      "category": "comunidade",
+      "criterionType": "all_bets_in_pool",
+      "criterionValue": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30019",
+      "emoji": "🏗️",
+      "name": "Desbravador",
+      "category": "comunidade",
+      "criterionType": "created_pool",
+      "criterionValue": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30020",
+      "emoji": "🕸️",
+      "name": "Barra Brava",
+      "category": "comunidade",
+      "criterionType": "pool_members_via_invite",
+      "criterionValue": "10",
+      "isManual": "0"
+    },
+    {
+      "id": "30021",
+      "emoji": "🎪",
+      "name": "Presida",
+      "category": "comunidade",
+      "criterionType": "organized_pools",
+      "criterionValue": "5",
+      "isManual": "0"
+    },
+    {
+      "id": "30022",
+      "emoji": "⏰",
+      "name": "Ansioso Competitivo",
+      "category": "comunidade",
+      "criterionType": "early_bet",
+      "criterionValue": "10",
+      "isManual": "0"
+    },
+    {
+      "id": "30023",
+      "emoji": "🌍",
+      "name": "Veterano",
+      "category": "comunidade",
+      "criterionType": "participated_pools",
+      "criterionValue": "10",
+      "isManual": "0"
+    },
+    {
+      "id": "30024",
+      "emoji": "🧪",
+      "name": "Cobaia",
+      "category": "exclusivo",
+      "criterionType": "manual",
+      "criterionValue": "0",
+      "isManual": "1"
+    },
+    {
+      "id": "30025",
+      "emoji": "🎖️",
+      "name": "Chegou Cedo",
+      "category": "exclusivo",
+      "criterionType": "early_user",
+      "criterionValue": "100",
+      "isManual": "0"
+    },
+    {
+      "id": "30001",
+      "emoji": "🎯",
+      "name": "Chute Certo",
+      "category": "precisao",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30002",
+      "emoji": "🎯",
+      "name": "Manja Muito",
+      "category": "precisao",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "10",
+      "isManual": "0"
+    },
+    {
+      "id": "30003",
+      "emoji": "🔭",
+      "name": "Profeta",
+      "category": "precisao",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "50",
+      "isManual": "0"
+    },
+    {
+      "id": "30004",
+      "emoji": "💎",
+      "name": "Mafioso das Apostas",
+      "category": "precisao",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "100",
+      "isManual": "0"
+    },
+    {
+      "id": "30005",
+      "emoji": "⚡",
+      "name": "Fiz de Novo",
+      "category": "precisao",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "2",
+      "isManual": "0"
+    },
+    {
+      "id": "30006",
+      "emoji": "🌩️",
+      "name": "Cola na Minha",
+      "category": "precisao",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "5",
+      "isManual": "0"
+    },
+    {
+      "id": "30007",
+      "emoji": "🏆",
+      "name": "É Campeão",
+      "category": "ranking",
+      "criterionType": "first_place_pools",
+      "criterionValue": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30008",
+      "emoji": "👑",
+      "name": "Dinastia",
+      "category": "ranking",
+      "criterionType": "first_place_pools",
+      "criterionValue": "3",
+      "isManual": "0"
+    },
+    {
+      "id": "30009",
+      "emoji": "🌕",
+      "name": "Intocável",
+      "category": "ranking",
+      "criterionType": "first_place_margin",
+      "criterionValue": "20",
+      "isManual": "0"
+    },
+    {
+      "id": "30010",
+      "emoji": "🦅",
+      "name": "1/20",
+      "category": "ranking",
+      "criterionType": "first_place_large_pool",
+      "criterionValue": "20",
+      "isManual": "0"
+    },
+    {
+      "id": "30011",
+      "emoji": "🌋",
+      "name": "Rei da Ultrapassagem",
+      "category": "ranking",
+      "criterionType": "rank_jump",
+      "criterionValue": "5",
+      "isManual": "0"
+    },
+    {
+      "id": "30012",
+      "emoji": "🧊",
+      "name": "Ninguém Me Tira",
+      "category": "ranking",
+      "criterionType": "rank_hold_1st",
+      "criterionValue": "3",
+      "isManual": "0"
+    },
+    {
+      "id": "30013",
+      "emoji": "🦓",
+      "name": "Só Eu Acreditei",
+      "category": "zebra",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30014",
+      "emoji": "🔮",
+      "name": "Sou do Contra",
+      "category": "zebra",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "5",
+      "isManual": "0"
+    },
+    {
+      "id": "30015",
+      "emoji": "🌀",
+      "name": "Nem Eu Acreditava",
+      "category": "zebra",
+      "criterionType": "zebra_in_pool",
+      "criterionValue": "3",
+      "isManual": "0"
+    },
+    {
+      "id": "30016",
+      "emoji": "🎲",
+      "name": "Foi na Sorte",
+      "category": "zebra",
+      "criterionType": "zebra_exact_score",
+      "criterionValue": "1",
+      "isManual": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temoji\tname\tcategory\tcriterionType\tcriterionValue\tisManual\n30017\t🌱\tBoas-Vindas\tcomunidade\tfirst_bet\t1\t0\n30018\t🔥\tLevou a Sério\tcomunidade\tall_bets_in_pool\t1\t0\n30019\t🏗️\tDesbravador\tcomunidade\tcreated_pool\t1\t0\n30020\t🕸️\tBarra Brava\tcomunidade\tpool_members_via_invite\t10\t0\n30021\t🎪\tPresida\tcomunidade\torganized_pools\t5\t0\n30022\t⏰\tAnsioso Competitivo\tcomunidade\tearly_bet\t10\t0\n30023\t🌍\tVeterano\tcomunidade\tparticipated_pools\t10\t0\n30024\t🧪\tCobaia\texclusivo\tmanual\t0\t1\n30025\t🎖️\tChegou Cedo\texclusivo\tearly_user\t100\t0\n30001\t🎯\tChute Certo\tprecisao\texact_scores_career\t1\t0\n30002\t🎯\tManja Muito\tprecisao\texact_scores_career\t10\t0\n30003\t🔭\tProfeta\tprecisao\texact_scores_career\t50\t0\n30004\t💎\tMafioso das Apostas\tprecisao\texact_scores_career\t100\t0\n30005\t⚡\tFiz de Novo\tprecisao\texact_scores_in_pool\t2\t0\n30006\t🌩️\tCola na Minha\tprecisao\texact_scores_in_pool\t5\t0\n30007\t🏆\tÉ Campeão\tranking\tfirst_place_pools\t1\t0\n30008\t👑\tDinastia\tranking\tfirst_place_pools\t3\t0\n30009\t🌕\tIntocável\tranking\tfirst_place_margin\t20\t0\n30010\t🦅\t1/20\tranking\tfirst_place_large_pool\t20\t0\n30011\t🌋\tRei da Ultrapassagem\tranking\trank_jump\t5\t0\n30012\t🧊\tNinguém Me Tira\tranking\trank_hold_1st\t3\t0\n30013\t🦓\tSó Eu Acreditei\tzebra\tzebra_scores_career\t1\t0\n30014\t🔮\tSou do Contra\tzebra\tzebra_scores_career\t5\t0\n30015\t🌀\tNem Eu Acreditava\tzebra\tzebra_in_pool\t3\t0\n30016\t🎲\tFoi na Sorte\tzebra\tzebra_exact_score\t1\t0\n",
+  "stderr": "",
+  "execution_time_ms": 370
+}

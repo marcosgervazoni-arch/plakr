@@ -453,6 +453,30 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
   }
 
   logger.info({ gameId, scoreA, scoreB, poolsUpdated: pools.length }, "[Scoring] Game processed");
+
+  // 🏅 Badges: calcular e atribuir conquistas para todos os participantes afetados
+  // Executado de forma assíncrona para não bloquear o scoring
+  // Coleta todos os userId dos membros de todos os bolões processados
+  const allMemberUserIds: number[] = [];
+  for (const pool of pools) {
+    if (pool.status !== "active") continue;
+    const poolMembersForBadge = await getPoolMembers(pool.id);
+    for (const { member } of poolMembersForBadge) {
+      if (!allMemberUserIds.includes(member.userId)) {
+        allMemberUserIds.push(member.userId);
+      }
+    }
+  }
+  if (allMemberUserIds.length > 0) {
+    const { calculateAndAssignBadges } = await import("./badges");
+    Promise.all(
+      allMemberUserIds.map((uid) =>
+        calculateAndAssignBadges(uid).catch((e: unknown) =>
+          logger.warn({ userId: uid, err: e }, "[Badges] Erro ao calcular badges (não crítico)")
+        )
+      )
+    ).catch(() => {});
+  }
 }
 
 // ─── WORKER ───────────────────────────────────────────────────────────────────

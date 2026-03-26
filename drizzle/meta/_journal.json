@@ -127,6 +127,20 @@
       "when": 1774482638147,
       "tag": "0017_warm_namora",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1774494608237,
+      "tag": "0018_new_exodus",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1774495286323,
+      "tag": "0019_elite_maria_hill",
+      "breakpoints": true
     }
   ]
 }

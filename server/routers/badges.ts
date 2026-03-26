@@ -3,14 +3,47 @@ import { z } from "zod";
 import { createAdminLog } from "../db";
 import logger from "../logger";
 
+const CRITERION_TYPES = [
+  // Precisão
+  "exact_scores_career",
+  "exact_scores_in_pool",
+  // Ranking
+  "first_place_pools",
+  "first_place_margin",
+  "first_place_large_pool",
+  "rank_jump",
+  "rank_hold_1st",
+  // Zebra
+  "zebra_scores_career",
+  "zebra_in_pool",
+  "zebra_exact_score",
+  // Comunidade
+  "first_bet",
+  "all_bets_in_pool",
+  "created_pool",
+  "pool_members_via_invite",
+  "organized_pools",
+  "early_bet",
+  "participated_pools",
+  // Exclusivo
+  "manual",
+  "early_user",
+  // Legados
+  "top3_pools",
+  "accuracy_in_pool",
+  "complete_pool_no_blank",
+  "consecutive_correct",
+  "referrals_count",
+] as const;
+
 export const badgesRouter = router({
   // ─── ADMIN: listar todos os badges ───────────────────────────────────────
   list: adminProcedure.query(async () => {
     const db = await (await import("../../server/db")).getDb();
     if (!db) throw new Error("DB not available");
     const { badges } = await import("../../drizzle/schema");
-    const { desc } = await import("drizzle-orm");
-    return db.select().from(badges).orderBy(desc(badges.createdAt));
+    const { asc } = await import("drizzle-orm");
+    return db.select().from(badges).orderBy(asc(badges.category), asc(badges.id));
   }),
 
   // ─── ADMIN: criar badge ───────────────────────────────────────────────────
@@ -18,19 +51,14 @@ export const badgesRouter = router({
     .input(
       z.object({
         name: z.string().min(1).max(100),
+        emoji: z.string().max(8).optional(),
+        category: z.string().max(64).optional(),
         description: z.string().min(1).max(500),
-        iconUrl: z.string().url(),
-        criterionType: z.enum([
-          "accuracy_rate",
-          "exact_score_career",
-          "zebra_correct",
-          "top3_pools",
-          "first_place_pools",
-          "complete_pool_no_blank",
-          "consecutive_correct",
-        ]),
-        criterionValue: z.number().int().positive(),
+        iconUrl: z.string().url().optional(),
+        criterionType: z.enum(CRITERION_TYPES),
+        criterionValue: z.number().int().min(0),
         isRetroactive: z.boolean().default(true),
+        isManual: z.boolean().default(false),
         isActive: z.boolean().default(true),
       })
     )
@@ -41,19 +69,21 @@ export const badgesRouter = router({
 
       const [result] = await db.insert(badges).values({
         name: input.name,
+        emoji: input.emoji,
+        category: input.category,
         description: input.description,
         iconUrl: input.iconUrl,
         criterionType: input.criterionType,
         criterionValue: input.criterionValue,
         isRetroactive: input.isRetroactive,
+        isManual: input.isManual,
         isActive: input.isActive,
       });
 
       const badgeId = result.insertId;
       await createAdminLog(ctx.user.id, "badges.create", "badge", badgeId, { name: input.name });
 
-      // Se retroativo, disparar atribuição em background para todos os usuários
-      if (input.isRetroactive) {
+      if (input.isRetroactive && !input.isManual) {
         const { assignBadgeRetroactively } = await import("../badges");
         assignBadgeRetroactively(badgeId).catch((e: unknown) =>
           logger.error({ err: e }, "[Badges] Erro na atribuição retroativa")
@@ -69,21 +99,14 @@ export const badgesRouter = router({
       z.object({
         id: z.number(),
         name: z.string().min(1).max(100).optional(),
+        emoji: z.string().max(8).optional(),
+        category: z.string().max(64).optional(),
         description: z.string().min(1).max(500).optional(),
         iconUrl: z.string().url().optional(),
-        criterionType: z
-          .enum([
-            "accuracy_rate",
-            "exact_score_career",
-            "zebra_correct",
-            "top3_pools",
-            "first_place_pools",
-            "complete_pool_no_blank",
-            "consecutive_correct",
-          ])
-          .optional(),
-        criterionValue: z.number().int().positive().optional(),
+        criterionType: z.enum(CRITERION_TYPES).optional(),
+        criterionValue: z.number().int().min(0).optional(),
         isRetroactive: z.boolean().optional(),
+        isManual: z.boolean().optional(),
         isActive: z.boolean().optional(),
       })
     )
@@ -111,11 +134,35 @@ export const badgesRouter = router({
       const { badges, userBadges } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
 
-      // Remove atribuições antes de deletar o badge
       await db.delete(userBadges).where(eq(userBadges.badgeId, input.id));
       await db.delete(badges).where(eq(badges.id, input.id));
       await createAdminLog(ctx.user.id, "badges.delete", "badge", input.id, {});
       return { success: true };
+    }),
+
+  // ─── ADMIN: atribuir badge manualmente a um usuário ───────────────────────
+  assignManual: adminProcedure
+    .input(z.object({ userId: z.number(), badgeId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const { assignBadgeManually } = await import("../badges");
+      const result = await assignBadgeManually(input.userId, input.badgeId);
+      await createAdminLog(ctx.user.id, "badges.assignManual", "user_badge", input.userId, {
+        badgeId: input.badgeId,
+        alreadyHad: result.alreadyHad,
+      });
+      return result;
+    }),
+
+  // ─── ADMIN: revogar badge de um usuário ──────────────────────────────────
+  revoke: adminProcedure
+    .input(z.object({ userId: z.number(), badgeId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const { revokeBadge } = await import("../badges");
+      const success = await revokeBadge(input.userId, input.badgeId);
+      await createAdminLog(ctx.user.id, "badges.revoke", "user_badge", input.userId, {
+        badgeId: input.badgeId,
+      });
+      return { success };
     }),
 
   // ─── ADMIN: upload de ícone SVG ───────────────────────────────────────────
@@ -144,29 +191,26 @@ export const badgesRouter = router({
   myProgress: protectedProcedure.query(async ({ ctx }) => {
     const db = await (await import("../../server/db")).getDb();
     if (!db) throw new Error("DB not available");
-    const { badges, userBadges, bets, games, poolMemberStats, referrals, users } = await import("../../drizzle/schema");
+    const { badges, userBadges, bets, games, poolMemberStats, referrals, users } =
+      await import("../../drizzle/schema");
     const { eq, and, sql, desc } = await import("drizzle-orm");
     const userId = ctx.user.id;
 
-    // 1. Todos os badges ativos
     const allBadges = await db.select().from(badges).where(eq(badges.isActive, true));
 
-    // 2. Badges conquistados pelo usuário (com data)
     const earned = await db
       .select({ badgeId: userBadges.badgeId, earnedAt: userBadges.earnedAt })
       .from(userBadges)
       .where(eq(userBadges.userId, userId));
     const earnedMap = new Map(earned.map((e) => [e.badgeId, e.earnedAt]));
 
-    // 3. Calcular progresso atual por critério
-    // 3a. Placares exatos na carreira
+    // Calcular progresso por critério
     const [exactRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(bets)
       .where(and(eq(bets.userId, userId), eq(bets.resultType, "exact")));
     const exactScoresCareer = Number(exactRow?.count ?? 0);
 
-    // 3b. Zebras acertadas
     const [zebraRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(bets)
@@ -180,110 +224,30 @@ export const badgesRouter = router({
       );
     const zebraScoresCareer = Number(zebraRow?.count ?? 0);
 
-    // 3c. Top 3 em bolões
-    const [top3Row] = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(poolMemberStats)
-      .where(
-        and(
-          eq(poolMemberStats.userId, userId),
-          sql`${poolMemberStats.rankPosition} <= 3`,
-          sql`${poolMemberStats.rankPosition} IS NOT NULL`
-        )
-      );
-    const top3Pools = Number(top3Row?.count ?? 0);
-
-    // 3d. 1º lugar em bolões
     const [firstRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(poolMemberStats)
       .where(and(eq(poolMemberStats.userId, userId), eq(poolMemberStats.rankPosition, 1)));
     const firstPlacePools = Number(firstRow?.count ?? 0);
 
-    // 3e. Convites aceitos
+    const [totalBetsRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(bets)
+      .where(eq(bets.userId, userId));
+    const totalBets = Number(totalBetsRow?.count ?? 0);
+
+    const [poolsRow] = await db
+      .select({ count: sql<number>`COUNT(DISTINCT ${bets.poolId})` })
+      .from(bets)
+      .where(eq(bets.userId, userId));
+    const participatedPools = Number(poolsRow?.count ?? 0);
+
     const [refRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(referrals)
       .where(and(eq(referrals.inviterId, userId), sql`${referrals.registeredAt} IS NOT NULL`));
     const referralsCount = Number(refRow?.count ?? 0);
 
-    // 3f. Sequência máxima de acertos consecutivos
-    const betRows = await db
-      .select({ resultType: bets.resultType, matchDate: games.matchDate })
-      .from(bets)
-      .innerJoin(games, eq(bets.gameId, games.id))
-      .where(and(eq(bets.userId, userId), sql`${games.status} = 'finished'`))
-      .orderBy(desc(games.matchDate));
-    let maxStreak = 0;
-    let currentStreak = 0;
-    for (const bet of betRows) {
-      if (bet.resultType === "exact" || bet.resultType === "correct_result") {
-        currentStreak++;
-        maxStreak = Math.max(maxStreak, currentStreak);
-      } else {
-        currentStreak = 0;
-      }
-    }
-    const consecutiveCorrect = maxStreak;
-
-    // 3g. Bolões completos sem branco (aproximação: totalBets >= 5 e nenhum pendente)
-    const statsRows = await db
-      .select({ totalBets: poolMemberStats.totalBets, poolId: poolMemberStats.poolId })
-      .from(poolMemberStats)
-      .where(and(eq(poolMemberStats.userId, userId), sql`${poolMemberStats.totalBets} >= 5`));
-    const { pools } = await import("../../drizzle/schema");
-    const completedNoBlanks = await Promise.all(
-      statsRows.map(async (s) => {
-        const [poolRow] = await db
-          .select({ tournamentId: pools.tournamentId })
-          .from(pools)
-          .where(eq(pools.id, s.poolId))
-          .limit(1);
-        if (!poolRow) return false;
-        const [pendingRow] = await db
-          .select({ count: sql<number>`COUNT(*)` })
-          .from(bets)
-          .innerJoin(games, eq(bets.gameId, games.id))
-          .where(
-            and(
-              eq(bets.userId, userId),
-              eq(games.tournamentId, poolRow.tournamentId),
-              eq(bets.resultType, "pending")
-            )
-          );
-        return Number(pendingRow?.count ?? 0) === 0;
-      })
-    );
-    const completePoolNoBlank = completedNoBlanks.filter(Boolean).length;
-
-    // 3h. Taxa de acerto máxima em um bolão (mín. 10 jogos)
-    const allStats = await db
-      .select({
-        totalBets: poolMemberStats.totalBets,
-        exactScoreCount: poolMemberStats.exactScoreCount,
-        correctResultCount: poolMemberStats.correctResultCount,
-      })
-      .from(poolMemberStats)
-      .where(and(eq(poolMemberStats.userId, userId), sql`${poolMemberStats.totalBets} >= 10`));
-    const accuracyInPool = allStats.reduce((max, s) => {
-      const total = Number(s.totalBets);
-      const correct = Number(s.exactScoreCount) + Number(s.correctResultCount);
-      const rate = total > 0 ? Math.round((correct / total) * 100) : 0;
-      return Math.max(max, rate);
-    }, 0);
-
-    const progressMap: Record<string, number> = {
-      exact_scores_career: exactScoresCareer,
-      zebra_scores_career: zebraScoresCareer,
-      top3_pools: top3Pools,
-      first_place_pools: firstPlacePools,
-      referrals_count: referralsCount,
-      consecutive_correct: consecutiveCorrect,
-      complete_pool_no_blank: completePoolNoBlank,
-      accuracy_in_pool: accuracyInPool,
-    };
-
-    // 4. Estatísticas da plataforma (% de usuários com cada badge)
     const [totalUsersRow] = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
     const totalUsers = Number(totalUsersRow?.count ?? 1);
 
@@ -296,7 +260,17 @@ export const badgesRouter = router({
       .groupBy(userBadges.badgeId);
     const platformStatsMap = new Map(platformStats.map((s) => [s.badgeId, Number(s.holders)]));
 
-    // 5. Montar resposta
+    const progressMap: Record<string, number> = {
+      exact_scores_career: exactScoresCareer,
+      exact_scores_in_pool: exactScoresCareer, // aproximação
+      zebra_scores_career: zebraScoresCareer,
+      first_place_pools: firstPlacePools,
+      first_bet: totalBets,
+      participated_pools: participatedPools,
+      referrals_count: referralsCount,
+      early_user: userId,
+    };
+
     const badgesWithProgress = allBadges.map((badge) => {
       const isEarned = earnedMap.has(badge.id);
       const currentProgress = progressMap[badge.criterionType] ?? 0;
@@ -305,22 +279,26 @@ export const badgesRouter = router({
       return {
         id: badge.id,
         name: badge.name,
+        emoji: badge.emoji,
+        category: badge.category,
         description: badge.description,
         iconUrl: badge.iconUrl,
         criterionType: badge.criterionType,
         criterionValue: badge.criterionValue,
+        isManual: badge.isManual,
         earned: isEarned,
         earnedAt: earnedMap.get(badge.id) ?? null,
         currentProgress,
         progressPercent: isEarned
           ? 100
-          : Math.min(99, Math.round((currentProgress / badge.criterionValue) * 100)),
+          : badge.criterionValue > 0
+          ? Math.min(99, Math.round((currentProgress / badge.criterionValue) * 100))
+          : 0,
         platformPercent,
         holders,
       };
     });
 
-    // 6. Histórico de conquistas (ordenado por data)
     const timeline = badgesWithProgress
       .filter((b) => b.earned && b.earnedAt)
       .sort((a, b) => new Date(b.earnedAt!).getTime() - new Date(a.earnedAt!).getTime());
@@ -343,13 +321,8 @@ export const badgesRouter = router({
       const { badges, userBadges } = await import("../../drizzle/schema");
       const { eq, and } = await import("drizzle-orm");
 
-      // Todos os badges ativos
-      const allBadges = await db
-        .select()
-        .from(badges)
-        .where(eq(badges.isActive, true));
+      const allBadges = await db.select().from(badges).where(eq(badges.isActive, true));
 
-      // Badges conquistados pelo usuário
       const earned = await db
         .select({ badgeId: userBadges.badgeId, earnedAt: userBadges.earnedAt })
         .from(userBadges)
@@ -365,36 +338,37 @@ export const badgesRouter = router({
       }));
     }),
 
-  // ─── [A1] Badges recém-desbloqueados não notificados (para trackBadgeUnlocked) ─
-  // Retorna badges conquistados com notified=false e os marca como notificados.
-  // O frontend chama isso ao entrar no perfil e dispara o evento de analytics.
-  getNewlyUnlocked: protectedProcedure
-    .mutation(async ({ ctx }) => {
-      const db = await (await import("../../server/db")).getDb();
-      if (!db) return [];
-      const { badges, userBadges } = await import("../../drizzle/schema");
-      const { eq, and } = await import("drizzle-orm");
+  // ─── Badges recém-desbloqueados não notificados ──────────────────────────
+  getNewlyUnlocked: protectedProcedure.mutation(async ({ ctx }) => {
+    const db = await (await import("../../server/db")).getDb();
+    if (!db) return [];
+    const { badges, userBadges } = await import("../../drizzle/schema");
+    const { eq, and } = await import("drizzle-orm");
 
-      // Buscar badges não notificados do usuário
-      const unnotified = await db
-        .select({
-          badgeId: userBadges.badgeId,
-          earnedAt: userBadges.earnedAt,
-          name: badges.name,
-        })
-        .from(userBadges)
-        .innerJoin(badges, eq(userBadges.badgeId, badges.id))
-        .where(and(eq(userBadges.userId, ctx.user.id), eq(userBadges.notified, false)));
+    const unnotified = await db
+      .select({
+        badgeId: userBadges.badgeId,
+        earnedAt: userBadges.earnedAt,
+        name: badges.name,
+        emoji: badges.emoji,
+      })
+      .from(userBadges)
+      .innerJoin(badges, eq(userBadges.badgeId, badges.id))
+      .where(and(eq(userBadges.userId, ctx.user.id), eq(userBadges.notified, false)));
 
-      if (unnotified.length === 0) return [];
+    if (unnotified.length === 0) return [];
 
-      // Marcar como notificados
-      await db
-        .update(userBadges)
-        .set({ notified: true })
-        .where(and(eq(userBadges.userId, ctx.user.id), eq(userBadges.notified, false)));
+    await db
+      .update(userBadges)
+      .set({ notified: true })
+      .where(and(eq(userBadges.userId, ctx.user.id), eq(userBadges.notified, false)));
 
-      logger.info({ userId: ctx.user.id, count: unnotified.length }, "[Badges] Marked as notified");
-      return unnotified.map((b) => ({ badgeId: b.badgeId, name: b.name, earnedAt: b.earnedAt }));
-    }),
+    logger.info({ userId: ctx.user.id, count: unnotified.length }, "[Badges] Marked as notified");
+    return unnotified.map((b) => ({
+      badgeId: b.badgeId,
+      name: b.name,
+      emoji: b.emoji,
+      earnedAt: b.earnedAt,
+    }));
+  }),
 });

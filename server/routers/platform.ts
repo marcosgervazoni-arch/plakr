@@ -80,6 +80,7 @@ export const platformRouter = router({
       pushEnabled: z.boolean().optional(),
       adsEnabled: z.boolean().optional(),
       restrictedInviteMessage: z.string().max(500).optional().nullable(),
+      cobaiaPoolId: z.number().int().positive().optional().nullable(),
     }))
     .mutation(async ({ input, ctx }) => {
       await updatePlatformSettings(input, ctx.user.id);

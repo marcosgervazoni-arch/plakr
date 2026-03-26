@@ -66,6 +66,41 @@ export async function runArchivalJob() {
       // Anonimizar e arquivar (soft delete — muda status para "archived")
       await db.update(pools).set({ status: "archived" }).where(eq(pools.id, pool.id));
 
+      // ━━ Badge Cobaia: se este é o bolão de lançamento configurado, atribuir badge a todos os participantes
+      if (settings?.cobaiaPoolId && settings.cobaiaPoolId === pool.id) {
+        try {
+          const { assignBadgeManually } = await import("./badges");
+          const { badges, poolMembers } = await import("../drizzle/schema");
+          const { eq: eqB } = await import("drizzle-orm");
+
+          // Buscar o badge Cobaia pelo criterionType = 'manual' e nome
+          const [cobaiaB] = await db
+            .select()
+            .from(badges)
+            .where(eqB(badges.criterionType, "manual"))
+            .then((rows) => rows.filter((b) => b.name.toLowerCase().includes("cobaia")));
+
+          if (cobaiaB) {
+            const poolParticipants = await db
+              .select({ userId: poolMembers.userId })
+              .from(poolMembers)
+              .where(eqB(poolMembers.poolId, pool.id));
+
+            let cobaiaCount = 0;
+            for (const { userId } of poolParticipants) {
+              const result = await assignBadgeManually(userId, cobaiaB.id);
+              if (result.success && !result.alreadyHad) cobaiaCount++;
+            }
+            logger.info(
+              { poolId: pool.id, badgeId: cobaiaB.id, assigned: cobaiaCount },
+              "[Archival] Badge Cobaia atribuído aos participantes do bolão de lançamento"
+            );
+          }
+        } catch (badgeErr) {
+          logger.error({ err: badgeErr }, "[Archival] Erro ao atribuir badge Cobaia");
+        }
+      }
+
       logger.info({ poolId: pool.id, poolName: pool.name }, `[Archival] Archived pool ${pool.id}`);
     } catch (err) {
       logger.error({ poolId: pool.id, err }, `[Archival] Failed to archive pool ${pool.id}`);

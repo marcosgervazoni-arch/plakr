@@ -30,6 +30,7 @@ export default function AdminSettings() {
   const utils = trpc.useUtils();
 
   const [restrictedInviteMessage, setRestrictedInviteMessage] = useState("");
+  const [cobaiaPoolId, setCobaiaPoolId] = useState<string>("");
 
   const [form, setForm] = useState({
     // Limites do plano gratuito
@@ -88,6 +89,7 @@ export default function AdminSettings() {
         pushEnabled: (settings as any).pushEnabled ?? false,
       });
       setRestrictedInviteMessage((settings as any).restrictedInviteMessage ?? "");
+      setCobaiaPoolId((settings as any).cobaiaPoolId?.toString() ?? "");
     }
   }, [settings]);
 
@@ -108,6 +110,7 @@ export default function AdminSettings() {
       ...form,
       ...pushForm,
       restrictedInviteMessage: restrictedInviteMessage.trim() || null,
+      cobaiaPoolId: cobaiaPoolId.trim() ? parseInt(cobaiaPoolId.trim(), 10) : null,
     });
   };
 
@@ -517,6 +520,70 @@ export default function AdminSettings() {
                   maxLength={500}
                 />
                 <p className="text-xs text-muted-foreground text-right">{restrictedInviteMessage.length}/500</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── Badges Exclusivos ── */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                  <span className="text-lg">🧪</span>
+                </div>
+                <div>
+                  <CardTitle className="text-base">Badges Exclusivos</CardTitle>
+                  <CardDescription className="text-xs mt-0.5">Configure a atribuição automática dos badges de lançamento</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Chegou Cedo */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🏆</span>
+                  <Label className="text-sm font-semibold">Chegou Cedo</Label>
+                  <Badge variant="outline" className="text-xs">Automático</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Atribuído automaticamente aos primeiros 100 usuários cadastrados na plataforma (userId ≤ 100).
+                  Nenhuma configuração necessária — o critério é definido no badge cadastrado em{" "}
+                  <a href="/admin/badges" className="text-primary hover:underline">Badges</a>.
+                </p>
+              </div>
+
+              <Separator />
+
+              {/* Cobaia */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🧪</span>
+                  <Label className="text-sm font-semibold">Cobaia</Label>
+                  <Badge variant="outline" className="text-xs">Configurável</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Atribuído a todos os participantes do primeiro bolão válido após o lançamento oficial da plataforma.
+                  Informe o <strong>ID do bolão</strong> abaixo. Quando o bolão for finalizado, todos os participantes receberão o badge automaticamente.
+                </p>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="ID do bolão (ex: 42)"
+                    value={cobaiaPoolId}
+                    onChange={(e) => setCobaiaPoolId(e.target.value)}
+                    className="max-w-[200px]"
+                  />
+                  {cobaiaPoolId && (
+                    <span className="text-xs text-muted-foreground">
+                      Bolão #{cobaiaPoolId} configurado como bolão Cobaia
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground/60">
+                  A atribuição ocorre automaticamente quando o bolão é arquivado/finalizado.
+                  Salve as configurações para ativar.
+                </p>
               </div>
             </CardContent>
           </Card>

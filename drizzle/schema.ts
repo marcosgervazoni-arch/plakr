@@ -62,6 +62,7 @@ export const platformSettings = mysqlTable("platform_settings", {
   pushEnabled: boolean("pushEnabled").default(false).notNull(),
   adsEnabled: boolean("adsEnabled").default(true).notNull(),
   restrictedInviteMessage: text("restrictedInviteMessage"), // mensagem exibida ao participante quando convite é restrito ao organizador
+  cobaiaPoolId: int("cobaiaPoolId"), // ID do primeiro bolão válido após lançamento — participantes ganham o badge Cobaia
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").references(() => users.id),
 });
@@ -545,11 +546,14 @@ export type BadgeCriterionType = typeof BADGE_CRITERION_TYPES[number];
 export const badges = mysqlTable("badges", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
+  emoji: varchar("emoji", { length: 8 }),             // Emoji do badge
+  category: varchar("category", { length: 64 }),      // precisao | ranking | zebra | comunidade | exclusivo
   description: text("description").notNull(),
-  iconUrl: text("iconUrl"),                          // URL S3 do SVG
+  iconUrl: text("iconUrl"),                           // URL S3 do SVG (opcional)
   criterionType: varchar("criterionType", { length: 64 }).notNull(), // BadgeCriterionType
-  criterionValue: int("criterionValue").notNull(),   // Valor mínimo para o critério
+  criterionValue: int("criterionValue").notNull(),    // Valor mínimo para o critério
   isRetroactive: boolean("isRetroactive").default(true).notNull(),
+  isManual: boolean("isManual").default(false).notNull(), // Atribuição manual pelo admin
   isActive: boolean("isActive").default(true).notNull(),
   createdBy: int("createdBy").references(() => users.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

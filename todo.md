@@ -1195,3 +1195,33 @@
 - [x] AdminSubscriptions.tsx: sub.ownerName — linkado para /profile/:ownerId (ownerId adicionado no backend)
 - [x] NotificationBell.tsx: ao clicar no card, navega para actionUrl quando disponível
 - [ ] Dashboard.tsx: user.name do próprio usuário — linkar para /profile/:userId (próprio perfil) — pendente (parte da feature de posição no ranking)
+
+## Feature — Posição no ranking nos cards do Dashboard (26/03/2026)
+- [x] Backend: enriquecer getMyPools com rank do usuário em cada bolão (posição + total de membros) — já implementado
+- [x] Frontend Dashboard: exibir "Xº lugar de Y" no card de cada bolão ativo — já implementado
+- [x] Frontend Dashboard: badge de pódio 🥇🥈🥉 quando usuário está no top-3 — já implementado
+
+## Sistema de Badges/Conquistas — Sprint 26/03/2026
+
+### Fase 1 — Schema e Banco
+- [x] Schema: adicionar campos `emoji` (varchar 8), `category` (varchar 64), `isManual` (boolean) na tabela `badges`
+- [x] Migração SQL: aplicar novos campos no banco
+- [x] Seed: inserir 25 badges aprovados (5 categorias) com nomes definitivos
+- [x] Seed: Chegou Cedo (automático, primeiros 100 usuários), Cobaia (manual admin)
+
+### Fase 2 — Backend
+- [x] badges.ts: adicionar critérios novos: first_bet, all_bets_in_pool, created_pool, pool_members_via_invite, organized_pools, early_bet, participated_pools, zebra_exact_score, zebra_in_pool, first_place_margin, first_place_large_pool, rank_jump, rank_hold_1st, early_user
+- [x] badges.ts: lógica de `isManual` (skip cálculo automático — só admin atribui)
+- [x] badges.ts: lógica de `early_user` (userId <= 100 no momento do cadastro)
+- [x] scoring.ts: chamar calculateAndAssignBadges após processGameScoring
+
+### Fase 3 — Frontend
+- [x] PublicProfile.tsx: seção de badges com emoji + nome + data de conquista
+- [x] PublicProfile.tsx: badges bloqueados exibidos em cinza com progresso
+- [x] Dashboard.tsx: badge de conquista recente (toast ao desbloquear)
+- [x] AdminBadges.tsx: painel de gestão de badges (listar, criar, editar, atribuir manualmente)
+- [x] AdminLayout.tsx: adicionar link "Badges" no grupo Configurações
+
+### Fase 4 — Testes
+- [x] badges.test.ts: 43 testes cobrindo todos os critérios e 25 badges aprovados
+- [x] Checkpoint final

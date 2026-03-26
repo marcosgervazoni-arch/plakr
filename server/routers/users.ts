@@ -353,10 +353,14 @@ export const usersRouter = router({
           return allBadges.map((b) => ({
             id: b.id,
             name: b.name,
+            emoji: b.emoji,
+            category: b.category,
             description: b.description,
             iconUrl: b.iconUrl,
             criterionType: b.criterionType,
             criterionValue: b.criterionValue,
+            isManual: b.isManual,
+            earned: earnedMap.has(b.id),
             earnedAt: earnedMap.get(b.id) ?? null,
           }));
         })(),
