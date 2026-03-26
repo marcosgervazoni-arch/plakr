@@ -22,6 +22,7 @@ import Suspended from "./pages/Suspended";
 import BetHistory from "./pages/BetHistory";
 import PoolRules from "./pages/PoolRules";
 import PoolBracket from "./pages/PoolBracket";
+import PoolRetrospectiva from "./pages/PoolRetrospectiva";
 import MyProfile from "./pages/MyProfile";
 import Conquistas from "./pages/Conquistas";
 
@@ -77,6 +78,7 @@ function Router() {
       <Route path="/pool/:slug/history" component={BetHistory} />
       <Route path="/pool/:slug/rules" component={PoolRules} />
       <Route path="/pool/:slug/bracket" component={PoolBracket} />
+      <Route path="/pool/:slug/retrospectiva" component={PoolRetrospectiva} />
       <Route path="/my-profile" component={MyProfile} />
       <Route path="/conquistas" component={Conquistas} />
       <Route path="/notifications" component={Notifications} />

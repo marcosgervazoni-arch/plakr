@@ -1274,3 +1274,46 @@
 - [x] Frontend: ao concluir ou pular, chamar users.completeTour para persistir no banco
 - [x] Testes Vitest: 192/192 passando
 - [x] Checkpoint final
+
+## Feature — Retrospectiva do Bolão + Cards de Compartilhamento
+
+### CTO — Schema e Infraestrutura
+- [ ] Schema: adicionar status `awaiting_conclusion` e `concluded` no enum de pools
+- [ ] Schema: tabela `pool_retrospectives` (dados agregados do bolão para geração dos slides)
+- [ ] Schema: tabela `user_share_cards` (URLs PNG gerados por usuário por bolão)
+- [ ] Schema: campo `awaitingConclusionSince` (timestamp) na tabela pools
+- [ ] Migração SQL: aplicar todos os campos no banco
+- [ ] Instalar `sharp` para geração de imagem PNG no servidor
+
+### Fullstack — Geração de Imagem
+- [ ] `server/retrospective.ts`: serviço de geração SVG→PNG (5 slides + card pódio + card participante)
+- [ ] Slide 1: Capa (nome, campeonato, período, participantes)
+- [ ] Slide 2: Seus números (palpites, % acerto, exatos, zebras)
+- [ ] Slide 3: Seu melhor momento (dinâmico: palpite, subida ranking, badge)
+- [ ] Slide 4: Posição final (ranking, pontuação, badge conquistado)
+- [ ] Slide 5: Encerramento (frase IA + CTA "Cadastre-se e faça o seu bolão")
+- [ ] Template card pódio (1º/2º/3º — visual celebratório)
+- [ ] Template card participante (demais posições — visual básico)
+- [ ] Upload PNGs para S3 e salvar URLs em `user_share_cards`
+
+### Fullstack — Backend/tRPC
+- [ ] `pools.concludePool`: organizador confirma encerramento → gera retrospectiva + cards + notifica todos
+- [ ] Bloqueio de edição para bolões `concluded` (só superadmin pode alterar)
+- [ ] `archival.ts`: adaptar cron para agir sobre `concluded` (não mais `finished`)
+- [ ] `archival.ts`: cron de auto-conclusão — bolões `awaiting_conclusion` há 3 dias são concluídos automaticamente (lembrete no dia 2)
+- [ ] `scoring.ts`: ao apurar último jogo, mover bolão para `awaiting_conclusion` e notificar organizador
+- [ ] Router `retrospective`: procedures `getRetrospective`, `getShareCard`, `regenerateCard` (superadmin)
+- [ ] Log de auditoria para conclusão manual e automática de bolão
+
+### Frontend
+- [ ] Banner na tela do bolão (status `awaiting_conclusion`): "Todos os jogos foram apurados. Confirma o encerramento do bolão para gerarmos o ranking final?"
+- [ ] Modal de confirmação antes de executar `concludePool`
+- [ ] Página `/bolao/:slug/retrospectiva` — slides estilo Spotify Wrapped com navegação
+- [ ] Botão "Compartilhar" em cada slide (Web Share API + fallback copiar link)
+- [ ] Botão "Baixar imagem" — download do PNG do slide atual
+- [ ] Página `/bolao/:slug/card` — card do participante com botão de compartilhamento
+- [ ] Notificação in-app ao receber retrospectiva com link direto
+
+### QA
+- [ ] Testes Vitest: concludePool, auto-conclusão, geração de retrospectiva
+- [ ] Checkpoint final

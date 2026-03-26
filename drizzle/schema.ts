@@ -216,10 +216,13 @@ export const pools = mysqlTable("pools", {
   invitePermission: mysqlEnum("invitePermission", ["organizer_only", "all_members"])
     .default("organizer_only")
     .notNull(),
-  status: mysqlEnum("status", ["active", "finished", "archived", "deleted"])
+  status: mysqlEnum("status", ["active", "finished", "awaiting_conclusion", "concluded", "archived", "deleted"])
     .default("active")
     .notNull(),
   finishedAt: timestamp("finishedAt"),
+  awaitingConclusionSince: timestamp("awaitingConclusionSince"), // quando todos os jogos foram apurados — prazo de 3 dias para o organizador confirmar
+  concludedAt: timestamp("concludedAt"),                        // quando o organizador (ou sistema) confirmou o encerramento
+  concludedBy: int("concludedBy").references(() => users.id),   // quem confirmou (null = automático)
   scheduledDeleteAt: timestamp("scheduledDeleteAt"),
   ownerId: int("ownerId")
     .notNull()
@@ -377,6 +380,8 @@ export const notifications = mysqlTable("notifications", {
     "pool_invite",
     "plan_expired",
     "plan_expiring",
+    "pool_concluded",
+    "badge_unlocked",
   ]).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
@@ -620,6 +625,60 @@ export const poolFinalPositions = mysqlTable(
 );
 export type PoolFinalPosition = typeof poolFinalPositions.$inferSelect;
 export type InsertPoolFinalPosition = typeof poolFinalPositions.$inferInsert;
+
+// ─── RETROSPECTIVA DO BOLÃO ──────────────────────────────────────────────────
+// Dados agregados do bolão para geração dos slides da retrospectiva.
+// Gerada uma vez ao concluir o bolão; imutável após geração.
+export const poolRetrospectives = mysqlTable("pool_retrospectives", {
+  id: int("id").autoincrement().primaryKey(),
+  poolId: int("poolId").notNull().references(() => pools.id, { onDelete: "cascade" }),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  // Dados do bolão (snapshot)
+  poolName: varchar("poolName", { length: 255 }).notNull(),
+  tournamentName: varchar("tournamentName", { length: 255 }),
+  poolStartDate: timestamp("poolStartDate"),
+  poolEndDate: timestamp("poolEndDate"),
+  totalParticipants: int("totalParticipants").default(0).notNull(),
+  // Dados do usuário no bolão
+  totalBets: int("totalBets").default(0).notNull(),
+  exactScoreCount: int("exactScoreCount").default(0).notNull(),
+  correctResultCount: int("correctResultCount").default(0).notNull(),
+  zebraCount: int("zebraCount").default(0).notNull(),
+  totalPoints: int("totalPoints").default(0).notNull(),
+  finalPosition: int("finalPosition").notNull(),
+  accuracyPct: int("accuracyPct").default(0).notNull(), // % de acerto (0-100)
+  // Melhor momento (dinâmico — pode ser palpite, subida no ranking ou badge)
+  bestMomentType: mysqlEnum("bestMomentType", ["exact_score", "rank_jump", "badge", "zebra"]).default("exact_score"),
+  bestMomentData: json("bestMomentData").$type<Record<string, unknown>>(), // dados específicos do momento
+  // Badge conquistado no bolão (se houver)
+  badgeEarnedId: int("badgeEarnedId").references(() => badges.id),
+  // Frase de encerramento gerada por IA
+  closingPhrase: text("closingPhrase"),
+  generatedAt: timestamp("generatedAt").defaultNow().notNull(),
+});
+
+export type PoolRetrospective = typeof poolRetrospectives.$inferSelect;
+export type InsertPoolRetrospective = typeof poolRetrospectives.$inferInsert;
+
+// ─── CARDS DE COMPARTILHAMENTO ────────────────────────────────────────────────
+// URLs dos PNGs gerados para cada participante ao concluir um bolão.
+export const userShareCards = mysqlTable(
+  "user_share_cards",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    poolId: int("poolId").notNull().references(() => pools.id, { onDelete: "cascade" }),
+    userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    cardType: mysqlEnum("cardType", ["podium", "participant"]).notNull(), // pódio (1-3) ou participante
+    position: int("position").notNull(),
+    imageUrl: text("imageUrl").notNull(),  // URL S3 do PNG
+    imageKey: varchar("imageKey", { length: 255 }).notNull(), // chave S3
+    generatedAt: timestamp("generatedAt").defaultNow().notNull(),
+  },
+  (t) => [unique("user_share_card_unique").on(t.poolId, t.userId)]
+);
+
+export type UserShareCard = typeof userShareCards.$inferSelect;
+export type InsertUserShareCard = typeof userShareCards.$inferInsert;
 
 // ─── EXPORTS DE TIPOS ADICIONAIS ────────────────────────────────────────────
 export type InsertUserPlan = typeof userPlans.$inferInsert;

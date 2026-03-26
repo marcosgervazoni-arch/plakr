@@ -55,7 +55,7 @@ type Pool = {
   id: number;
   name: string;
   slug: string;
-  status: "active" | "finished" | "archived" | "deleted";
+  status: "active" | "finished" | "awaiting_conclusion" | "concluded" | "archived" | "deleted";
   accessType: "public" | "private_link";
   plan: "free" | "pro";
   logoUrl: string | null;

@@ -1,0 +1,1 @@
+ALTER TABLE `notifications` MODIFY COLUMN `type` enum('game_reminder','ranking_update','result_available','system','ad','pool_closing','pool_invite','plan_expired','plan_expiring','pool_concluded','badge_unlocked') NOT NULL;

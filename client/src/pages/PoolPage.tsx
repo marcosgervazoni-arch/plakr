@@ -32,6 +32,7 @@ import {
   ArrowLeft,
   Calendar,
   Check,
+  CheckCircle2,
   ChevronDown,
   Copy,
   Crown,
@@ -41,6 +42,7 @@ import {
   Medal,
   MoreHorizontal,
   Settings,
+  Sparkles,
   Trophy,
   Users,
 } from "lucide-react";
@@ -495,6 +497,16 @@ export default function PoolPage() {
               </p>
             </div>
           </div>
+
+          {/* ── Banner: Aguardando confirmação de encerramento ── */}
+          {pool.status === "awaiting_conclusion" && isOrganizer && (
+            <ConclusionBanner poolId={pool.id} poolName={pool.name} />
+          )}
+
+          {/* ── Banner: Retrospectiva disponível (bolão concluído) ── */}
+          {pool.status === "concluded" && (
+            <RetrospectiveBanner poolId={pool.id} poolSlug={pool.slug} />
+          )}
 
           {/* Invite banner — organizador vê o banner completo; participante vê botão discreto de compartilhar (apenas se invitePermission === all_members) */}
           {pool.inviteToken && (
@@ -1287,6 +1299,90 @@ function ParticipantShareButton({ inviteToken, poolName }: { inviteToken: string
       >
         <Copy className="w-3 h-3" />
         Convidar amigos
+      </Button>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────────
+ * ConclusionBanner — exibido para o organizador quando o bolão aguarda confirmação
+ * ────────────────────────────────────────────────────────────────────────────────── */
+function ConclusionBanner({ poolId, poolName }: { poolId: number; poolName: string }) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const utils = trpc.useUtils();
+  const conclude = trpc.pools.concludePool.useMutation({
+    onSuccess: () => {
+      toast.success("Bolão encerrado!", {
+        description: "O ranking final foi gerado. As retrospectivas estão sendo preparadas para todos os participantes.",
+      });
+      utils.pools.getBySlug.invalidate();
+    },
+    onError: (err) => toast.error("Erro ao encerrar", { description: err.message }),
+  });
+
+  return (
+    <>
+      <div className="mx-4 mt-3 px-4 py-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+        <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-amber-300">Todos os jogos foram apurados</p>
+          <p className="text-xs text-amber-400/80 mt-0.5">
+            Confirma o encerramento do bolão para gerarmos o ranking final?
+          </p>
+        </div>
+        <Button
+          size="sm"
+          className="h-7 text-xs bg-amber-500 hover:bg-amber-600 text-black font-semibold shrink-0"
+          onClick={() => setShowConfirm(true)}
+          disabled={conclude.isPending}
+        >
+          {conclude.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirmar"}
+        </Button>
+      </div>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Encerrar bolão "{poolName}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Após a confirmação, nenhuma informação do bolão poderá ser alterada. O ranking final será gerado e as retrospectivas serão enviadas para todos os participantes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-amber-500 hover:bg-amber-600 text-black"
+              onClick={() => conclude.mutate({ poolId })}
+            >
+              Confirmar encerramento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────────
+ * RetrospectiveBanner — exibido para todos os participantes quando o bolão está concluído
+ * ────────────────────────────────────────────────────────────────────────────────── */
+function RetrospectiveBanner({ poolId, poolSlug }: { poolId: number; poolSlug: string }) {
+  const [, navigate] = useLocation();
+  return (
+    <div className="mx-4 mt-3 px-4 py-3.5 rounded-xl bg-primary/10 border border-primary/30 flex items-center gap-3">
+      <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-primary">Bolão encerrado</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Sua retrospectiva está pronta. Veja como foi a sua jornada!
+        </p>
+      </div>
+      <Button
+        size="sm"
+        className="h-7 text-xs shrink-0"
+        onClick={() => navigate(`/pool/${poolSlug}/retrospectiva`)}
+      >
+        Ver retrospectiva
       </Button>
     </div>
   );

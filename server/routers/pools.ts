@@ -923,6 +923,61 @@ export const poolsRouter = router({
       return getPoolScoringRules(input.poolId);
     }),
 
+  // ── Confirmar encerramento do bolão (organizador ou admin) ──────────────
+  concludePool: protectedProcedure
+    .input(z.object({ poolId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const pool = await getPoolById(input.poolId);
+      if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      const isOrganizer = member?.role === "organizer" || pool.ownerId === ctx.user.id;
+      const isAdmin = ctx.user.role === "admin";
+      if (!isOrganizer && !isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+
+      if (pool.status !== "awaiting_conclusion" && !isAdmin) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "O bolão não está aguardando confirmação de encerramento.",
+        });
+      }
+
+      const { concludePool: doConclude } = await import("../archival");
+      await doConclude(input.poolId, ctx.user.id, isAdmin ? "admin" : "organizer");
+
+      await createAdminLog(ctx.user.id, "pool.conclude", "pool", input.poolId, {
+        source: isAdmin ? "admin" : "organizer",
+      });
+
+      return { success: true };
+    }),
+
+  // ── Buscar retrospectiva do usuário no bolão ───────────────────────────
+  getRetrospective: protectedProcedure
+    .input(z.object({ poolId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const db = await (await import("../db")).getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { poolRetrospectives, userShareCards } = await import("../../drizzle/schema");
+      const { eq, and } = await import("drizzle-orm");
+
+      const [retro] = await db
+        .select()
+        .from(poolRetrospectives)
+        .where(and(eq(poolRetrospectives.poolId, input.poolId), eq(poolRetrospectives.userId, ctx.user.id)))
+        .limit(1);
+
+      if (!retro) return null;
+
+      const [card] = await db
+        .select()
+        .from(userShareCards)
+        .where(and(eq(userShareCards.poolId, input.poolId), eq(userShareCards.userId, ctx.user.id)))
+        .limit(1);
+
+      return { ...retro, shareCard: card ?? null };
+    }),
+
   getBracket: protectedProcedure
     .input(z.object({ poolId: z.number() }))
     .query(async ({ input, ctx }) => {

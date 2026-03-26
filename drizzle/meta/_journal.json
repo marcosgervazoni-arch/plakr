@@ -155,6 +155,20 @@
       "when": 1774518235086,
       "tag": "0021_outstanding_gunslinger",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1774521395077,
+      "tag": "0022_lying_valkyrie",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1774521801690,
+      "tag": "0023_grey_trauma",
+      "breakpoints": true
     }
   ]
 }
