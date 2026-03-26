@@ -1390,3 +1390,8 @@
 - [x] Backend: myPools exclui bolões archived (não aparecem no Dashboard)
 - [x] Frontend: PoolRetrospectiva exibe tela "Retrospectiva arquivada" com mensagem clara
 - [x] QA: 205 testes passando + checkpoint final
+
+## Sprint — Card de Posição em Destaque (26/03/2026) ✅
+- [x] Dashboard: ampliar preview do card de posição com banner informativo + botões Compartilhar e Baixar diretos
+- [x] PoolPage: exibir card de posição com banner destacado após encerramento (junto ao RetrospectiveBanner)
+- [x] QA: 205 testes passando + checkpoint final

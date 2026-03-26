@@ -36,12 +36,15 @@ import {
   ChevronDown,
   Copy,
   Crown,
+  Download,
+  Info,
   Loader2,
   Lock,
   LogOut,
   Medal,
   MoreHorizontal,
   Settings,
+  Share2,
   Sparkles,
   Trophy,
   Users,
@@ -506,6 +509,11 @@ export default function PoolPage() {
           {/* ── Banner: Retrospectiva disponível (bolão concluído) ── */}
           {pool.status === "concluded" && (
             <RetrospectiveBanner poolId={pool.id} poolSlug={pool.slug} />
+          )}
+
+          {/* ── Card de posição em destaque (bolão concluído) ── */}
+          {pool.status === "concluded" && (
+            <ShareCardPoolBanner poolId={pool.id} poolSlug={pool.slug} poolName={pool.name} />
           )}
 
           {/* Invite banner — organizador vê o banner completo; participante vê botão discreto de compartilhar (apenas se invitePermission === all_members) */}
@@ -1414,6 +1422,130 @@ function RetrospectiveBanner({ poolId, poolSlug }: { poolId: number; poolSlug: s
             <Sparkles className="w-3.5 h-3.5" />
             Ver agora
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────────────────────────
+ * ShareCardPoolBanner — card de posição em destaque na PoolPage após encerramento
+ * Busca o shareCard do participante via getRetrospective e exibe com botões de
+ * compartilhamento e download direto, sem precisar navegar pelos slides.
+ * ────────────────────────────────────────────────────────────────────────────────── */
+function ShareCardPoolBanner({ poolId, poolSlug, poolName }: { poolId: number; poolSlug: string; poolName: string }) {
+  const { data: retro } = trpc.pools.getRetrospective.useQuery(
+    { poolId },
+    { staleTime: 5 * 60 * 1000 }
+  );
+
+  const shareCard = retro?.shareCard;
+  const finalPosition = retro?.finalPosition ?? null;
+  const totalMembers = retro?.totalParticipants ?? 0;
+
+  if (!shareCard?.imageUrl) return null;
+
+  const posEmoji = finalPosition === 1 ? "🥇" : finalPosition === 2 ? "🥈" : finalPosition === 3 ? "🥉" : "🏅";
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(shareCard.imageUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `apostai-${poolName.replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Card salvo!");
+    } catch {
+      toast.error("Não foi possível baixar o card.");
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (navigator.canShare) {
+        const res = await fetch(shareCard.imageUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `apostai-${poolName.replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `Meu card — ${poolName}`,
+            text: finalPosition
+              ? `Terminei em ${finalPosition}º lugar de ${totalMembers}! #ApostAI`
+              : `Confira meu card no ApostAI! #ApostAI`,
+          });
+          return;
+        }
+      }
+      if (navigator.share) {
+        await navigator.share({
+          title: `Meu card — ${poolName}`,
+          text: finalPosition
+            ? `Terminei em ${finalPosition}º lugar de ${totalMembers}! #ApostAI`
+            : `Confira meu card no ApostAI! #ApostAI`,
+          url: `${window.location.origin}/pool/${poolSlug}/retrospectiva`,
+        });
+      } else {
+        await navigator.clipboard.writeText(`${window.location.origin}/pool/${poolSlug}/retrospectiva`);
+        toast.success("Link copiado!");
+      }
+    } catch {
+      // usuário cancelou
+    }
+  };
+
+  return (
+    <div className="mx-4 mt-3 rounded-xl overflow-hidden border border-primary/30 shadow-lg shadow-primary/10">
+      {/* Banner informativo */}
+      <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border-b border-primary/15">
+        <Info className="w-3.5 h-3.5 text-primary shrink-0" />
+        <p className="text-xs text-primary font-medium">
+          Seu card de posição está pronto! Compartilhe com seus amigos.
+        </p>
+      </div>
+      {/* Conteúdo principal */}
+      <div className="flex items-center gap-4 px-4 py-4 bg-gradient-to-br from-primary/8 via-primary/4 to-transparent">
+        {/* Card PNG em destaque */}
+        <div className="relative shrink-0">
+          <div className="absolute -inset-1 rounded-xl bg-primary/25 blur-md opacity-50 pointer-events-none" />
+          <div className="relative w-16 h-[90px] rounded-xl overflow-hidden border-2 border-primary/40 shadow-lg shadow-primary/20">
+            <img src={shareCard.imageUrl} alt="Card de posição" className="w-full h-full object-cover" />
+          </div>
+        </div>
+        {/* Informações e ações */}
+        <div className="flex-1 min-w-0 space-y-2.5">
+          {finalPosition ? (
+            <div>
+              <p className="text-sm font-bold text-foreground">
+                {posEmoji} {finalPosition}º lugar de {totalMembers}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Resultado final do bolão</p>
+            </div>
+          ) : (
+            <p className="text-sm font-semibold text-foreground">Sua posição final</p>
+          )}
+          {/* Botões de ação */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Compartilhar
+            </button>
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted border border-border text-xs font-medium hover:bg-muted/80 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Salvar
+            </button>
+          </div>
         </div>
       </div>
     </div>

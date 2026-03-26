@@ -25,7 +25,11 @@ import {
   Radar,
   Sparkles,
   Clock,
+  Download,
+  Share2,
+  Info,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link, useLocation } from "wouter";
@@ -50,6 +54,149 @@ import {
   PolarRadiusAxis,
   Radar as RechartsRadar,
 } from "recharts";
+
+// ─── COMPONENTE: Card de posição expandido no Dashboard ─────────────────────
+function ShareCardDashboardItem({
+  pool,
+  hasRetrospective,
+  shareCardUrl,
+  finalPosition,
+  totalMembers,
+  onNavigate,
+}: {
+  pool: any;
+  hasRetrospective: boolean;
+  shareCardUrl: string | null;
+  finalPosition: number | null;
+  totalMembers: number;
+  onNavigate: (path: string) => void;
+}) {
+  const posEmoji = finalPosition === 1 ? "🥇" : finalPosition === 2 ? "🥈" : finalPosition === 3 ? "🥉" : "🏅";
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!shareCardUrl) return;
+    try {
+      const res = await fetch(shareCardUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `apostai-${pool.name.replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Card salvo!");
+    } catch {
+      toast.error("Não foi possível baixar o card.");
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!shareCardUrl) return;
+    try {
+      if (navigator.canShare) {
+        const res = await fetch(shareCardUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `apostai-${pool.name.replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `Meu card — ${pool.name}`,
+            text: `Terminei em ${finalPosition}º lugar de ${totalMembers}! #ApostAI`,
+          });
+          return;
+        }
+      }
+      if (navigator.share) {
+        await navigator.share({
+          title: `Meu card — ${pool.name}`,
+          text: `Terminei em ${finalPosition}º lugar de ${totalMembers}! #ApostAI`,
+          url: `${window.location.origin}/pool/${pool.slug}/retrospectiva`,
+        });
+      } else {
+        await navigator.clipboard.writeText(`${window.location.origin}/pool/${pool.slug}/retrospectiva`);
+        toast.success("Link copiado!");
+      }
+    } catch {
+      // usuário cancelou
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-primary/25 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent overflow-hidden">
+      {/* Banner informativo */}
+      <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 border-b border-primary/15">
+        <Info className="w-3.5 h-3.5 text-primary shrink-0" />
+        <p className="text-xs text-primary font-medium">
+          Seu card de posição está pronto! Compartilhe com seus amigos.
+        </p>
+      </div>
+      {/* Conteúdo principal */}
+      <div className="flex items-center gap-4 px-4 py-3">
+        {/* Card PNG em destaque */}
+        {shareCardUrl ? (
+          <div
+            className="relative shrink-0 cursor-pointer group/card"
+            onClick={() => onNavigate(`/pool/${pool.slug}/retrospectiva`)}
+          >
+            <div className="absolute -inset-1 rounded-xl bg-primary/30 blur-md opacity-0 group-hover/card:opacity-60 transition-opacity" />
+            <div className="relative w-16 h-[90px] rounded-xl overflow-hidden border-2 border-primary/40 shadow-lg shadow-primary/20">
+              <img src={shareCardUrl} alt="Card de posição" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        ) : (
+          <div className="w-16 h-[90px] rounded-xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center shrink-0">
+            <Sparkles className="w-6 h-6 text-primary" />
+          </div>
+        )}
+        {/* Informações e ações */}
+        <div className="flex-1 min-w-0 space-y-2">
+          <div>
+            <p className="font-semibold text-sm truncate">{pool.name}</p>
+            {hasRetrospective && finalPosition ? (
+              <p className="text-sm font-bold text-primary mt-0.5">
+                {posEmoji} {finalPosition}º lugar de {totalMembers}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-0.5">Bolão encerrado</p>
+            )}
+          </div>
+          {/* Botões de ação */}
+          <div className="flex flex-wrap gap-2">
+            {shareCardUrl && (
+              <>
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  Compartilhar
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted border border-border text-xs font-medium hover:bg-muted/80 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Salvar
+                </button>
+              </>
+            )}
+            {hasRetrospective && (
+              <button
+                onClick={() => onNavigate(`/pool/${pool.slug}/retrospectiva`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-transparent border border-primary/30 text-xs text-primary hover:bg-primary/10 transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Ver retrospectiva
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -314,54 +461,21 @@ export default function Dashboard() {
 
               {/* Seção de retrospectivas — bolões concluídos */}
               {concludedPools.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-center gap-2 mb-2">
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
                     <Sparkles className="w-3.5 h-3.5 text-primary" />
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Retrospectivas</h4>
                   </div>
                   {concludedPools.map(({ pool, hasRetrospective, shareCardUrl, finalPosition, totalMembers }: { pool: any; hasRetrospective: boolean; shareCardUrl: string | null; finalPosition: number | null; totalMembers: number }) => (
-                    <div
+                    <ShareCardDashboardItem
                       key={pool.id}
-                      className="group rounded-xl border border-primary/20 bg-gradient-to-r from-primary/8 via-primary/5 to-primary/8 hover:border-primary/40 hover:from-primary/12 transition-all cursor-pointer"
-                      onClick={() => navigate(`/pool/${pool.slug}${hasRetrospective ? "/retrospectiva" : ""}`)}
-                    >
-                      <div className="flex items-center gap-3 px-4 py-3">
-                        {/* Card preview ou ícone */}
-                        <div className="relative shrink-0">
-                          {shareCardUrl ? (
-                            <div className="w-10 h-14 rounded-lg overflow-hidden border-2 border-primary/30 shadow-md shadow-primary/20">
-                              <img src={shareCardUrl} alt="Card" className="w-full h-full object-cover" />
-                            </div>
-                          ) : (
-                            <div className="w-10 h-14 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                              <Sparkles className="w-4 h-4 text-primary" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-semibold text-sm truncate">{pool.name}</p>
-                          </div>
-                          {hasRetrospective && finalPosition ? (
-                            <p className="text-xs text-primary font-semibold mt-0.5">
-                              {finalPosition === 1 ? "🥇" : finalPosition === 2 ? "🥈" : finalPosition === 3 ? "🥉" : "🏅"} {finalPosition}º lugar de {totalMembers}
-                            </p>
-                          ) : hasRetrospective ? (
-                            <p className="text-xs text-primary mt-0.5">Retrospectiva pronta</p>
-                          ) : (
-                            <p className="text-xs text-muted-foreground mt-0.5">Bolão encerrado</p>
-                          )}
-                        </div>
-                        {hasRetrospective ? (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/25 text-xs font-semibold text-primary shrink-0">
-                            <Sparkles className="w-3 h-3" />
-                            Ver
-                          </div>
-                        ) : (
-                          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                        )}
-                      </div>
-                    </div>
+                      pool={pool}
+                      hasRetrospective={hasRetrospective}
+                      shareCardUrl={shareCardUrl}
+                      finalPosition={finalPosition}
+                      totalMembers={totalMembers}
+                      onNavigate={(path) => navigate(path)}
+                    />
                   ))}
                 </div>
               )}
