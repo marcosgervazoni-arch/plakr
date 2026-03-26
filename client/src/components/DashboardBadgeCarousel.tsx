@@ -3,7 +3,8 @@
  * Usa BadgeCard universal para visual consistente.
  * - Se há badges conquistados: mostra todos (conquistados primeiro, depois inativos)
  * - Se não há nenhum: mostra os primeiros 5 da plataforma como "inativos" com cadeado
- * Carrossel de 5 em 5 com navegação por setas.
+ * Grid de 5 colunas com badges md — preenche o espaço do card uniformemente.
+ * Barra de progresso reforça a gamificação.
  */
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -39,8 +40,12 @@ export default function DashboardBadgeCarousel({ badges }: DashboardBadgeCarouse
     ? sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
     : displayBadges;
 
+  // Progresso: quantos badges conquistados do total
+  const totalBadges = badges.length;
+  const progressPercent = totalBadges > 0 ? Math.round((earned.length / totalBadges) * 100) : 0;
+
   return (
-    <div className="bg-card border border-border/30 rounded-xl p-4 space-y-3">
+    <div className="bg-card border border-border/30 rounded-xl p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -85,27 +90,59 @@ export default function DashboardBadgeCarousel({ badges }: DashboardBadgeCarouse
         )}
       </div>
 
-      {/* Grid de badges usando BadgeCard universal */}
-      <div className="flex flex-wrap gap-3">
+      {/* Grid de 5 colunas — preenche uniformemente a largura do card */}
+      <div className="grid grid-cols-5 gap-2 justify-items-center">
         {paginated.map((badge) => (
-          <BadgeCard key={badge.id} badge={badge} size="sm" />
+          <BadgeCard key={badge.id} badge={badge} size="md" />
         ))}
+        {/* Preenche slots vazios para manter o grid alinhado */}
+        {paginated.length < PAGE_SIZE &&
+          Array.from({ length: PAGE_SIZE - paginated.length }).map((_, i) => (
+            <div key={`empty-${i}`} className="w-14 h-14" />
+          ))}
       </div>
 
-      {/* Rodapé */}
-      <div className="flex items-center justify-between">
-        {hasEarned && unearned.length > 0 ? (
-          <p className="text-xs text-muted-foreground/50">
-            {unearned.length} badge{unearned.length !== 1 ? "s" : ""} ainda não conquistado{unearned.length !== 1 ? "s" : ""}
-          </p>
-        ) : (
-          <span />
+      {/* Barra de progresso + rodapé */}
+      <div className="space-y-2">
+        {/* Barra de progresso — só exibe quando há badges conquistados */}
+        {hasEarned && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+                {earned.length} / {totalBadges} badges
+              </span>
+              <span className="text-[10px] text-primary/70 tabular-nums font-medium">
+                {progressPercent}%
+              </span>
+            </div>
+            <div className="h-1 w-full bg-border/40 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary/60 rounded-full transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
         )}
-        <Link href="/conquistas">
-          <span className="text-xs text-primary hover:underline cursor-pointer">
-            Ver todas →
-          </span>
-        </Link>
+
+        {/* Rodapé */}
+        <div className="flex items-center justify-between">
+          {hasEarned && unearned.length > 0 ? (
+            <p className="text-xs text-muted-foreground/50">
+              {unearned.length} ainda não conquistado{unearned.length !== 1 ? "s" : ""}
+            </p>
+          ) : !hasEarned ? (
+            <p className="text-xs text-muted-foreground/50">
+              {totalBadges} badge{totalBadges !== 1 ? "s" : ""} disponíve{totalBadges !== 1 ? "is" : "l"}
+            </p>
+          ) : (
+            <span />
+          )}
+          <Link href="/conquistas">
+            <span className="text-xs text-primary hover:underline cursor-pointer">
+              Ver todas →
+            </span>
+          </Link>
+        </div>
       </div>
     </div>
   );

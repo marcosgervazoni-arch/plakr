@@ -1483,3 +1483,6 @@
 - [x] Notificação com título "🏅 Badge desbloqueado", descrição, link /profile/me, prioridade high
 - [x] Sino de notificações (polling 30s) exibe badges conquistados automaticamente
 - [x] TypeScript sem erros (tsc --noEmit exit 0)
+
+## Redesign Card de Conquistas — Sprint 26/03/2026
+- [x] DashboardBadgeCarousel: aumentar badges de sm para md, grid 5 colunas, barra de progresso, espaçamento melhorado
