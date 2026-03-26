@@ -5,7 +5,8 @@
  * - Tooltip com nome, descrição, raridade e data de conquista
  * - Raridade define cor do anel e fundo
  */
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Lock, Star } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -133,7 +134,7 @@ export function BadgeCard({ badge, size = "md", showStar = false }: BadgeCardPro
   };
 
   return (
-    <Tooltip>
+    <TooltipPrimitive.Root>
       <TooltipTrigger asChild>
         <div
           className={`relative flex flex-col items-center gap-1.5 cursor-default transition-all duration-200 group ${
@@ -259,7 +260,7 @@ export function BadgeCard({ badge, size = "md", showStar = false }: BadgeCardPro
           <p className="text-xs text-muted-foreground/50 italic">Ainda não conquistado</p>
         ) : null}
       </TooltipContent>
-    </Tooltip>
+    </TooltipPrimitive.Root>
   );
 }
 

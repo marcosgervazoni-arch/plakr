@@ -1508,3 +1508,7 @@
 - [x] BUGFIX: Filtrar bolões com status=deleted em todas as queries de badges (exact_scores_career, exact_scores_in_pool, zebra_scores_career, zebra_in_pool, zebra_exact_score, first_bet, all_bets_in_pool)
 - [x] BUGFIX: Revogar badge "Chute Certo" do usuário 1 — será revogado automaticamente pelo recalculateAll
 - [x] BUGFIX: recalculateAll agora revoga badges não-manuais cujo critério não é mais atendido
+
+## Bug: Tooltip no Card de Conquistas — Sprint 26/03/2026
+- [x] Diagnosticar por que o tooltip não dispara no DashboardBadgeCarousel — causa: TooltipProvider aninhado (shadcn Tooltip cria Provider interno que conflita com o global)
+- [x] Corrigir tooltip: BadgeCard agora usa TooltipPrimitive.Root diretamente, sem Provider aninhado
