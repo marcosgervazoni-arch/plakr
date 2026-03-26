@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE platform_settings SET \n  stripePriceIdPro = 'price_1TFMnDPT1hcFZLKGqNMDHfpg',\n  stripePriceIdProAnnual = 'price_1TFMnDPT1hcFZLKG6EITylxP',\n  stripePriceIdUnlimited = 'price_1TFMnEPT1hcFZLKGd6XsiR4H',\n  stripePriceIdUnlimitedAnnual = 'price_1TFMnEPT1hcFZLKGdlvhlgXv'\nWHERE id = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute UPDATE platform_settings SET \n  stripePriceIdPro = 'price_1TFMnDPT1hcFZLKGqNMDHfpg',\n  stripePriceIdProAnnual = 'price_1TFMnDPT1hcFZLKG6EITylxP',\n  stripePriceIdUnlimited = 'price_1TFMnEPT1hcFZLKGd6XsiR4H',\n  stripePriceIdUnlimitedAnnual = 'price_1TFMnEPT1hcFZLKGdlvhlgXv'\nWHERE id = 1;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 349
+}
