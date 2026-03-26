@@ -256,16 +256,11 @@ export default function AppShell({ children }: AppShellProps) {
                 </div>
               )}
 
-              {/* Ações rápidas: Criar e Entrar */}
-              <div className="px-3 pt-1.5 pb-0.5 flex gap-1.5">
-                <Link href="/create-pool" onClick={() => setSidebarOpen(false)} className="block flex-1" data-tour="create-pool">
+              {/* Ação rápida: Criar */}
+              <div className="px-3 pt-1.5 pb-0.5">
+                <Link href="/create-pool" onClick={() => setSidebarOpen(false)} className="block" data-tour="create-pool">
                   <button className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20">
-                    <Plus className="w-3 h-3" /> Criar
-                  </button>
-                </Link>
-                <Link href="/enter-pool" onClick={() => setSidebarOpen(false)} className="block flex-1" data-tour="enter-pool">
-                  <button className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border border-border/30">
-                    <span className="text-[10px]">🔑</span> Entrar
+                    <Plus className="w-3 h-3" /> Criar bolão
                   </button>
                 </Link>
               </div>

@@ -60,17 +60,6 @@ export function OnboardingTour() {
             },
           },
           {
-            // Passo 3 — Entrar por código
-            element: "[data-tour='enter-pool']",
-            popover: {
-              title: "🔑 Entre por código",
-              description:
-                "Recebeu um convite? Cole o código aqui e entre direto no bolão do seu grupo.",
-              side: "bottom",
-              align: "start",
-            },
-          },
-          {
             // Passo 4 — Sino de notificações
             element: "[data-tour='notifications']",
             popover: {
