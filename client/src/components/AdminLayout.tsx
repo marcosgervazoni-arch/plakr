@@ -151,7 +151,7 @@ function NavContent({ activeSection }: { activeSection: AdminSection }) {
           </div>
           <div>
             <p className="font-bold font-display text-sm">Super Admin</p>
-            <p className="text-xs text-muted-foreground">ApostAI</p>
+            <p className="text-xs text-muted-foreground">Plakr!</p>
           </div>
         </div>
       </div>

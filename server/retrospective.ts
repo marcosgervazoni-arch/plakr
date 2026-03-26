@@ -292,11 +292,11 @@ async function generateClosingPhrase(params: {
         {
           role: "system",
           content:
-            "Você é o copywriter do ApostAI, uma plataforma de bolões esportivos brasileira. Escreva frases curtas, animadas e com personalidade — como um amigo que está comemorando junto. Use linguagem informal, brasileira. Máximo 2 frases. Sem emojis no texto.",
+            "Você é o copywriter do Plakr!, uma plataforma de bolões esportivos brasileira. Escreva frases curtas, animadas e com personalidade — como um amigo que está comemorando junto. Use linguagem informal, brasileira. Máximo 2 frases. Sem emojis no texto.",
         },
         {
           role: "user",
-          content: `Escreva uma frase de encerramento para ${params.userName} que ficou em ${params.finalPosition}º lugar de ${params.totalParticipants} participantes, fez ${params.totalPoints} pontos, acertou ${params.exactScoreCount} placares exatos e ${params.zebraCount} zebras.${params.badgeEarnedName ? ` Conquistou o badge "${params.badgeEarnedName}".` : ""} A frase deve terminar incentivando outras pessoas a se cadastrarem no ApostAI para fazer o seu próprio bolão.`,
+          content: `Escreva uma frase de encerramento para ${params.userName} que ficou em ${params.finalPosition}º lugar de ${params.totalParticipants} participantes, fez ${params.totalPoints} pontos, acertou ${params.exactScoreCount} placares exatos e ${params.zebraCount} zebras.${params.badgeEarnedName ? ` Conquistou o badge "${params.badgeEarnedName}".` : ""} A frase deve terminar incentivando outras pessoas a se cadastrarem no Plakr! para fazer o seu próprio bolão.`,
         },
       ],
     });
@@ -308,9 +308,9 @@ async function generateClosingPhrase(params: {
 }
 
 function defaultClosingPhrase(position: number): string {
-  if (position === 1) return "Você mandou muito bem! Agora convida os amigos para fazer o seu próprio bolão no ApostAI.";
-  if (position <= 3) return "Pódio conquistado! Chama mais gente para o próximo bolão no ApostAI.";
-  return "Foi uma boa batalha! Convida seus amigos para fazer o bolão de vocês no ApostAI.";
+  if (position === 1) return "Você mandou muito bem! Agora convida os amigos para fazer o seu próprio bolão no Plakr!.";
+  if (position <= 3) return "Pódio conquistado! Chama mais gente para o próximo bolão no Plakr!.";
+  return "Foi uma boa batalha! Convida seus amigos para fazer o bolão de vocês no Plakr!.";
 }
 
 // ─── PALETA DE CORES ──────────────────────────────────────────────────────────
@@ -386,7 +386,7 @@ function slide1(d: RetrospectiveData): string {
 <rect width="1080" height="1920" fill="url(#bg)"/>
 <circle cx="540" cy="700" r="500" fill="url(#glow)"/>
 <circle cx="540" cy="700" r="300" fill="none" stroke="${C.brand}" stroke-width="2" stroke-opacity="0.3"/>
-<text x="540" y="200" font-family="Arial,sans-serif" font-size="48" font-weight="bold" fill="${C.brand}" text-anchor="middle">ApostAI</text>
+<text x="540" y="200" font-family="Arial,sans-serif" font-size="48" font-weight="bold" fill="${C.brand}" text-anchor="middle">Plakr!</text>
 <text x="540" y="560" font-family="Arial,sans-serif" font-size="36" fill="${C.muted}" text-anchor="middle">Retrospectiva do Bolão</text>
 <text x="540" y="680" font-family="Arial,sans-serif" font-size="72" font-weight="bold" fill="${C.text}" text-anchor="middle">${x(d.poolName)}</text>
 ${d.tournamentName ? `<text x="540" y="780" font-family="Arial,sans-serif" font-size="40" fill="${C.brandLight}" text-anchor="middle">${x(d.tournamentName)}</text>` : ""}
@@ -396,7 +396,7 @@ ${period ? `<text x="540" y="860" font-family="Arial,sans-serif" font-size="32" 
 <text x="540" y="1120" font-family="Arial,sans-serif" font-size="64" font-weight="bold" fill="${C.brand}" text-anchor="middle">${d.totalParticipants}</text>
 <text x="540" y="1350" font-family="Arial,sans-serif" font-size="36" fill="${C.muted}" text-anchor="middle">a retrospectiva de</text>
 <text x="540" y="1430" font-family="Arial,sans-serif" font-size="56" font-weight="bold" fill="${C.text}" text-anchor="middle">${x(d.userName)}</text>
-<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">apostai.com.br</text>
+<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">plakr.com.br</text>
 </svg>`;
 }
 
@@ -427,7 +427,7 @@ function slide2(d: RetrospectiveData): string {
 <rect x="100" y="1160" width="880" height="160" rx="20" fill="${C.bgCard}"/>
 <text x="200" y="1230" font-family="Arial,sans-serif" font-size="36" fill="${C.muted}">Total de pontos</text>
 <text x="880" y="1250" font-family="Arial,sans-serif" font-size="80" font-weight="bold" fill="${C.text}" text-anchor="end">${d.totalPoints}</text>
-<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">apostai.com.br</text>
+<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">plakr.com.br</text>
 </svg>`;
 }
 
@@ -466,7 +466,7 @@ function slide3(d: RetrospectiveData): string {
 <text x="540" y="600" font-family="Arial,sans-serif" font-size="44" fill="${color}" text-anchor="middle" font-weight="bold">${x(title)}</text>
 <text x="540" y="850" font-family="Arial,sans-serif" font-size="160" font-weight="bold" fill="${color}" text-anchor="middle">${x(value)}</text>
 <text x="540" y="1000" font-family="Arial,sans-serif" font-size="40" fill="${C.text}" text-anchor="middle">${x(detail)}</text>
-<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">apostai.com.br</text>
+<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">plakr.com.br</text>
 </svg>`;
 }
 
@@ -502,7 +502,7 @@ ${d.badgeEarnedName ? `
 <text x="540" y="1510" font-family="Arial,sans-serif" font-size="64" text-anchor="middle">${x(d.badgeEarnedEmoji ?? "🏅")}</text>
 <text x="540" y="1580" font-family="Arial,sans-serif" font-size="36" fill="${C.brandLight}" text-anchor="middle">${x(d.badgeEarnedName)}</text>
 ` : ""}
-<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">apostai.com.br</text>
+<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">plakr.com.br</text>
 </svg>`;
 }
 
@@ -521,11 +521,11 @@ function slide5(d: RetrospectiveData): string {
 </defs>
 <rect width="1080" height="1920" fill="url(#bg)"/>
 <circle cx="540" cy="960" r="600" fill="url(#glow)"/>
-<text x="540" y="200" font-family="Arial,sans-serif" font-size="56" font-weight="bold" fill="${C.brand}" text-anchor="middle">ApostAI</text>
+<text x="540" y="200" font-family="Arial,sans-serif" font-size="56" font-weight="bold" fill="${C.brand}" text-anchor="middle">Plakr!</text>
 ${lines.map((line, i) => `<text x="540" y="${700 + i * 80}" font-family="Arial,sans-serif" font-size="44" fill="${C.text}" text-anchor="middle">${x(line)}</text>`).join("\n")}
 <rect x="140" y="1300" width="800" height="120" rx="60" fill="${C.brand}"/>
-<text x="540" y="1375" font-family="Arial,sans-serif" font-size="36" font-weight="bold" fill="${C.white}" text-anchor="middle">Crie o seu bolão em apostai.com.br</text>
-<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">apostai.com.br</text>
+<text x="540" y="1375" font-family="Arial,sans-serif" font-size="36" font-weight="bold" fill="${C.white}" text-anchor="middle">Crie o seu bolão em plakr.com.br</text>
+<text x="540" y="1860" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">plakr.com.br</text>
 </svg>`;
 }
 
@@ -549,7 +549,7 @@ function podiumCard(d: RetrospectiveData): string {
 <rect width="1080" height="1080" fill="url(#bg)"/>
 <circle cx="540" cy="540" r="500" fill="url(#glow)"/>
 <rect x="20" y="20" width="1040" height="1040" rx="32" fill="none" stroke="${posColor}" stroke-width="4" stroke-opacity="0.6"/>
-<text x="540" y="100" font-family="Arial,sans-serif" font-size="36" font-weight="bold" fill="${C.brand}" text-anchor="middle">ApostAI</text>
+<text x="540" y="100" font-family="Arial,sans-serif" font-size="36" font-weight="bold" fill="${C.brand}" text-anchor="middle">Plakr!</text>
 <text x="540" y="340" font-family="Arial,sans-serif" font-size="160" text-anchor="middle">${posEmoji}</text>
 <text x="540" y="500" font-family="Arial,sans-serif" font-size="64" font-weight="bold" fill="${C.text}" text-anchor="middle">${x(d.userName)}</text>
 <text x="540" y="580" font-family="Arial,sans-serif" font-size="40" fill="${posColor}" text-anchor="middle">${d.finalPosition}º lugar · ${d.totalPoints} pts</text>
@@ -563,7 +563,7 @@ function podiumCard(d: RetrospectiveData): string {
 <rect x="720" y="720" width="260" height="120" rx="16" fill="${C.bgCard}"/>
 <text x="850" y="770" font-family="Arial,sans-serif" font-size="24" fill="${C.muted}" text-anchor="middle">acerto</text>
 <text x="850" y="820" font-family="Arial,sans-serif" font-size="52" font-weight="bold" fill="${C.green}" text-anchor="middle">${d.accuracyPct}%</text>
-<text x="540" y="1020" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">apostai.com.br · Crie o seu bolão</text>
+<text x="540" y="1020" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">plakr.com.br · Crie o seu bolão</text>
 </svg>`;
 }
 
@@ -577,7 +577,7 @@ function participantCard(d: RetrospectiveData): string {
 </defs>
 <rect width="1080" height="1080" fill="url(#bg)"/>
 <rect x="20" y="20" width="1040" height="1040" rx="32" fill="none" stroke="${C.brand}" stroke-width="2" stroke-opacity="0.4"/>
-<text x="540" y="100" font-family="Arial,sans-serif" font-size="36" font-weight="bold" fill="${C.brand}" text-anchor="middle">ApostAI</text>
+<text x="540" y="100" font-family="Arial,sans-serif" font-size="36" font-weight="bold" fill="${C.brand}" text-anchor="middle">Plakr!</text>
 <text x="540" y="320" font-family="Arial,sans-serif" font-size="72" font-weight="bold" fill="${C.text}" text-anchor="middle">${x(d.userName)}</text>
 <text x="540" y="420" font-family="Arial,sans-serif" font-size="44" fill="${C.brand}" text-anchor="middle">${d.finalPosition}º de ${d.totalParticipants} · ${d.totalPoints} pts</text>
 <text x="540" y="500" font-family="Arial,sans-serif" font-size="36" fill="${C.muted}" text-anchor="middle">${x(d.poolName)}</text>
@@ -591,8 +591,8 @@ function participantCard(d: RetrospectiveData): string {
 <text x="850" y="630" font-family="Arial,sans-serif" font-size="24" fill="${C.muted}" text-anchor="middle">acerto</text>
 <text x="850" y="680" font-family="Arial,sans-serif" font-size="52" font-weight="bold" fill="${C.green}" text-anchor="middle">${d.accuracyPct}%</text>
 <rect x="140" y="820" width="800" height="100" rx="50" fill="${C.brand}"/>
-<text x="540" y="882" font-family="Arial,sans-serif" font-size="32" font-weight="bold" fill="${C.white}" text-anchor="middle">Crie o seu bolão em apostai.com.br</text>
-<text x="540" y="1020" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">apostai.com.br</text>
+<text x="540" y="882" font-family="Arial,sans-serif" font-size="32" font-weight="bold" fill="${C.white}" text-anchor="middle">Crie o seu bolão em plakr.com.br</text>
+<text x="540" y="1020" font-family="Arial,sans-serif" font-size="28" fill="${C.muted}" text-anchor="middle">plakr.com.br</text>
 </svg>`;
 }
 

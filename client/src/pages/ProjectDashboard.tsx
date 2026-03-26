@@ -1,5 +1,5 @@
 /**
- * Dashboard de Acompanhamento do Projeto — ApostAI
+ * Dashboard de Acompanhamento do Projeto — Plakr!
  * Visível para gestores e investidores. Atualizado em 21/03/2026.
  */
 
@@ -32,7 +32,7 @@ import {
 // ─── TIMELINE ─────────────────────────────────────────────────────────────────
 
 const LAST_UPDATE = "21 de março de 2026 — Fases 1–5 concluídas. Plataforma completa, 40 testes passando.";
-const APP_URL = "https://apostai-bolao-djv8mgeh.manus.space";
+const APP_URL = "https://plakr.manus.space";
 
 // ─── PHASE DATA ───────────────────────────────────────────────────────────────
 
@@ -136,7 +136,7 @@ const TECH_STACK = [
   { label: "Jobs Assíncronos", value: "BullMQ + Redis (fallback síncrono ativo)" },
   { label: "Armazenamento", value: "S3 (Manus Storage) via CDN" },
   { label: "Pagamentos", value: "Stripe (checkout + webhooks ativos)" },
-  { label: "Hospedagem", value: "Manus Hosting — apostai-bolao-djv8mgeh.manus.space" },
+  { label: "Hospedagem", value: "Manus Hosting — plakr.manus.space" },
 ];
 
 // ─── METRICS ─────────────────────────────────────────────────────────────────
@@ -227,7 +227,7 @@ export default function ProjectDashboard() {
               <Trophy className="w-4 h-4 text-white" />
             </div>
             <div>
-              <span className="font-bold text-base">ApostAI</span>
+              <span className="font-bold text-base">Plakr!</span>
               <span className="text-muted-foreground text-sm ml-2">— Dashboard de Acompanhamento</span>
             </div>
           </div>
@@ -442,7 +442,7 @@ export default function ProjectDashboard() {
         {/* ─── FOOTER ───────────────────────────────────────────────────────── */}
         <div className="text-center text-xs text-muted-foreground py-4 border-t border-border/30 space-y-1">
           <p>
-            <span className="font-medium text-foreground/60">ApostAI</span> — Dashboard de Acompanhamento do Projeto
+            <span className="font-medium text-foreground/60">Plakr!</span> — Dashboard de Acompanhamento do Projeto
           </p>
           <p>Última atualização: {LAST_UPDATE} · Desenvolvido por Manus AI · <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:underline">{APP_URL}</a></p>
         </div>

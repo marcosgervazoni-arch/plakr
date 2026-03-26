@@ -1,5 +1,5 @@
 /**
- * ApostAI — Serviço de E-mail
+ * Plakr! — Serviço de E-mail
  * Usa a Manus Notification API (BUILT_IN_FORGE_API_URL) para envio de e-mails.
  * Templates HTML responsivos para: boas-vindas, lembrete de palpite,
  * resultado disponível, expiração de plano Pro e convite de bolão.
@@ -68,7 +68,7 @@ function baseTemplate(title: string, content: string): string {
           <tr>
             <td style="background:#0d0d0d;border-radius:0 0 16px 16px;padding:20px 32px;border-top:1px solid #1f1f1f;">
               <p style="margin:0;font-size:12px;color:${MUTED};text-align:center;">
-                Você está recebendo este e-mail porque tem uma conta no ApostAI.<br/>
+                Você está recebendo este e-mail porque tem uma conta no Plakr!.<br/>
                 <a href="${ENV.appBaseUrl}" style="color:${BRAND};text-decoration:none;">Acessar plataforma</a>
                 &nbsp;·&nbsp;
                 <a href="${ENV.appBaseUrl}/settings/notifications" style="color:${MUTED};text-decoration:none;">Gerenciar notificações</a>
@@ -91,10 +91,10 @@ function ctaButton(text: string, url: string): string {
 // ─── Template: Boas-vindas ────────────────────────────────────────────────────
 export function templateWelcome(name: string): { subject: string; html: string } {
   return {
-    subject: "Bem-vindo ao ApostAI! 🏆",
-    html: baseTemplate("Bem-vindo ao ApostAI", `
+    subject: "Bem-vindo ao Plakr!! 🏆",
+    html: baseTemplate("Bem-vindo ao Plakr!", `
       <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${TEXT};">Olá, ${esc(name)}! 👋</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Sua conta no ApostAI foi criada com sucesso. Agora você pode participar de bolões esportivos, fazer seus palpites e disputar o ranking com amigos.</p>
+      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Sua conta no Plakr! foi criada com sucesso. Agora você pode participar de bolões esportivos, fazer seus palpites e disputar o ranking com amigos.</p>
       <div style="background:#0d0d0d;border-radius:12px;padding:20px;margin-bottom:24px;">
         <p style="margin:0 0 12px;font-weight:600;color:${TEXT};">O que você pode fazer:</p>
         <p style="margin:0 0 8px;color:${MUTED};">✅ Entrar em bolões via link de convite ou código</p>

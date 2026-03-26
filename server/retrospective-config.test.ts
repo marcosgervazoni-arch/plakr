@@ -16,7 +16,7 @@ function createAdminContext(): TrpcContext {
   const user: AuthenticatedUser = {
     id: 1,
     openId: "admin-openid",
-    email: "admin@apostai.com",
+    email: "admin@plakr.com",
     name: "Admin User",
     loginMethod: "manus",
     role: "admin",
@@ -35,7 +35,7 @@ function createUserContext(): TrpcContext {
   const user: AuthenticatedUser = {
     id: 2,
     openId: "user-openid",
-    email: "user@apostai.com",
+    email: "user@plakr.com",
     name: "Regular User",
     loginMethod: "manus",
     role: "user",
@@ -126,7 +126,7 @@ describe("pools.updateRetrospectiveConfig", () => {
     try {
       await caller.pools.updateRetrospectiveConfig({
         closingCtaText: "Crie seu bolão →",
-        closingCtaUrl: "https://apostai.com",
+        closingCtaUrl: "https://plakr.com",
         autoCloseDays: 3,
       });
     } catch (err: any) {

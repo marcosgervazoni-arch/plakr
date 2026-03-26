@@ -154,7 +154,7 @@ function PushPreview({ title, content, emoji }: { title: string; content: string
         <div className="w-5 h-5 rounded bg-brand/30 flex items-center justify-center">
           <Bell className="h-3 w-3 text-brand" />
         </div>
-        <p className="text-xs font-semibold text-white">ApostAI</p>
+        <p className="text-xs font-semibold text-white">Plakr!</p>
         <p className="text-xs text-zinc-400 ml-auto">agora</p>
       </div>
       <p className="text-xs font-semibold text-white pl-7">{displayTitle}</p>
@@ -196,7 +196,7 @@ function EmailPreview({
         )}
       </div>
       <div className="px-4 py-2 border-t border-border/30">
-        <p className="text-xs text-zinc-600">ApostAI • Você recebeu esta mensagem pois é usuário da plataforma.</p>
+        <p className="text-xs text-zinc-600">Plakr! • Você recebeu esta mensagem pois é usuário da plataforma.</p>
       </div>
     </div>
   );

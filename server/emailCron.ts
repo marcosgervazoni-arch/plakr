@@ -1,5 +1,5 @@
 /**
- * ApostAI — Cron Jobs de E-mail
+ * Plakr! — Cron Jobs de E-mail
  * Gerencia o envio periódico de e-mails:
  * - Processamento da fila a cada 5 minutos
  * - Lembretes de palpite a cada 15 minutos

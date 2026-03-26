@@ -1,5 +1,5 @@
 /**
- * ApostAI — Router de Autenticação
+ * Plakr! — Router de Autenticação
  * [T1] Modularizado a partir de server/routers.ts
  */
 import { COOKIE_NAME } from "@shared/const";

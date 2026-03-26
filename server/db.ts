@@ -456,7 +456,7 @@ export async function getPoolRanking(poolId: number) {
       )
     )
     .where(and(eq(poolMembers.poolId, poolId), eq(poolMembers.isBlocked, false)))
-    // Desempate conforme SISTEMA-PONTUACAO-APOSTAI.md §8:
+    // Desempate conforme SISTEMA-PONTUACAO-PLAKR.md §8:
     // 1. Total de pontos (maior primeiro; NULL = 0 — vai para o fim)
     // 2. Placares exatos (maior primeiro)
     // 3. Resultados corretos (maior primeiro)

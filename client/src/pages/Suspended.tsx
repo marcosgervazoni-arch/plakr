@@ -53,7 +53,7 @@ export default function Suspended() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <a href="mailto:suporte@apostai.com.br">
+          <a href="mailto:suporte@plakr.com.br">
             <Button variant="outline" className="gap-2 w-full sm:w-auto">
               <Mail className="w-4 h-4" /> Contatar suporte
             </Button>

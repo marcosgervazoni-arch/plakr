@@ -155,7 +155,7 @@ export default function AdminSettings() {
             </div>
             <div>
               <h1 className="text-2xl font-bold font-display">Configurações</h1>
-              <p className="text-muted-foreground text-sm mt-0.5">Parâmetros globais da plataforma ApostAI</p>
+              <p className="text-muted-foreground text-sm mt-0.5">Parâmetros globais da plataforma Plakr!</p>
             </div>
           </div>
           <Button
@@ -203,7 +203,7 @@ export default function AdminSettings() {
                   )}
                 </div>
                 <CardDescription className="text-sm">
-                  Insira o <strong>Price ID</strong> do produto "ApostAI Pro" criado no seu Stripe Dashboard.
+                  Insira o <strong>Price ID</strong> do produto "Plakr! Pro" criado no seu Stripe Dashboard.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -243,7 +243,7 @@ export default function AdminSettings() {
                         dashboard.stripe.com/products <ExternalLink className="h-3 w-3" />
                       </a>
                     </li>
-                    <li>Clique em <strong>Add product</strong> e crie o produto "ApostAI Pro"</li>
+                    <li>Clique em <strong>Add product</strong> e crie o produto "Plakr! Pro"</li>
                     <li>Defina o preço recorrente mensal (ex: R$&nbsp;29,90)</li>
                     <li>Copie o <strong>Price ID</strong> (começa com <code className="bg-surface px-1 rounded text-xs">price_</code>)</li>
                     <li>Cole no campo acima e clique em <strong>Salvar</strong></li>
@@ -403,7 +403,7 @@ export default function AdminSettings() {
                   <Label>E-mail de contato VAPID</Label>
                   <Input
                     type="email"
-                    placeholder="suporte@apostai.com.br"
+                    placeholder="suporte@plakr.com.br"
                     value={pushForm.vapidEmail}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setPushForm((p) => ({ ...p, vapidEmail: e.target.value }))

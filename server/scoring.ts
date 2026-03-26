@@ -1,6 +1,6 @@
 /**
- * Motor de Pontuação Assíncrono — ApostAI
- * Implementa os 7 critérios acumuláveis conforme SISTEMA-PONTUACAO-APOSTAI.md v1.0
+ * Motor de Pontuação Assíncrono — Plakr!
+ * Implementa os 7 critérios acumuláveis conforme SISTEMA-PONTUACAO-PLAKR.md v1.0
  * Usa BullMQ para processar cálculo de pontos após registro de resultados.
  * Fallback: se Redis não estiver disponível, executa de forma síncrona.
  */
@@ -108,7 +108,7 @@ export interface ZebraContext {
   /**
    * Fração (0–1) de apostadores que apostou no lado PERDEDOR.
    * Calculado como: (total - apostas_no_vencedor) / total
-   * Conforme SISTEMA-PONTUACAO-APOSTAI.md §3.5
+   * Conforme SISTEMA-PONTUACAO-PLAKR.md §3.5
    */
   losingRatio: number;
 }
@@ -121,7 +121,7 @@ function getSide(scoreA: number, scoreB: number): "A" | "B" | "draw" {
 
 // ─── ENGINE PRINCIPAL ─────────────────────────────────────────────────────────
 //
-// Implementa os 7 critérios conforme SISTEMA-PONTUACAO-APOSTAI.md:
+// Implementa os 7 critérios conforme SISTEMA-PONTUACAO-PLAKR.md:
 //
 //  Critérios INDEPENDENTES do resultado:
 //    4. Diferença de gols  — |predA-predB| == |actA-actB|
@@ -193,7 +193,7 @@ export function calculateBetScore(
       breakdown.pointsTotalGoals = rules.totalGoalsPoints;
     }
 
-    // Critério 6: Goleada (diff >= landslideMinDiff no resultado real E no palpite, conforme SISTEMA-PONTUACAO-APOSTAI.md §3.4)
+    // Critério 6: Goleada (diff >= landslideMinDiff no resultado real E no palpite, conforme SISTEMA-PONTUACAO-PLAKR.md §3.4)
     const minDiff = rules.landslideMinDiff;
     if (
       Math.abs(actualA - actualB) >= minDiff &&
@@ -232,7 +232,7 @@ export function calculateBetScore(
 // Deve ser chamado ANTES de processar os palpites individuais.
 // Calcula a fração (0–1) dos apostadores que apostou no lado PERDEDOR.
 //
-// Conforme SISTEMA-PONTUACAO-APOSTAI.md §3.5:
+// Conforme SISTEMA-PONTUACAO-PLAKR.md §3.5:
 //   ratio_perdedor = (total_apostas - apostas_no_vencedor) / total_apostas
 //   é_zebra = ratio_perdedor >= zebraThreshold / 100
 
@@ -292,7 +292,7 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
 
     const rulesRow = await getPoolScoringRules(pool.id);
 
-    // Valores padrão conforme SISTEMA-PONTUACAO-APOSTAI.md
+    // Valores padrão conforme SISTEMA-PONTUACAO-PLAKR.md
     const rules: ScoringRules = {
       exactScorePoints:    rulesRow?.exactScorePoints    ?? 10,
       correctResultPoints: rulesRow?.correctResultPoints ?? 5,

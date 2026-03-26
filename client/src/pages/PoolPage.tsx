@@ -1281,7 +1281,7 @@ function ParticipantShareButton({ inviteToken, poolName }: { inviteToken: string
   const analytics = useAnalytics();
 
   const handleShare = async () => {
-    const shareText = `🏆 Participe do bolão "${poolName}" no ApostAI! Faça seus palpites e dispute o ranking.`;
+    const shareText = `🏆 Participe do bolão "${poolName}" no Plakr!! Faça seus palpites e dispute o ranking.`;
     // Usa Web Share API se disponível (mobile), senão copia para clipboard
     if (navigator.share) {
       try {
@@ -1455,7 +1455,7 @@ function ShareCardPoolBanner({ poolId, poolSlug, poolName }: { poolId: number; p
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `apostai-${poolName.replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.download = `plakr-${poolName.replace(/\s+/g, "-").toLowerCase()}.png`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Card salvo!");
@@ -1470,14 +1470,14 @@ function ShareCardPoolBanner({ poolId, poolSlug, poolName }: { poolId: number; p
       if (navigator.canShare) {
         const res = await fetch(shareCard.imageUrl);
         const blob = await res.blob();
-        const file = new File([blob], `apostai-${poolName.replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
+        const file = new File([blob], `plakr-${poolName.replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
             title: `Meu card — ${poolName}`,
             text: finalPosition
-              ? `Terminei em ${finalPosition}º lugar de ${totalMembers}! #ApostAI`
-              : `Confira meu card no ApostAI! #ApostAI`,
+              ? `Terminei em ${finalPosition}º lugar de ${totalMembers}! #Plakr!`
+              : `Confira meu card no Plakr!! #Plakr!`,
           });
           return;
         }
@@ -1486,8 +1486,8 @@ function ShareCardPoolBanner({ poolId, poolSlug, poolName }: { poolId: number; p
         await navigator.share({
           title: `Meu card — ${poolName}`,
           text: finalPosition
-            ? `Terminei em ${finalPosition}º lugar de ${totalMembers}! #ApostAI`
-            : `Confira meu card no ApostAI! #ApostAI`,
+            ? `Terminei em ${finalPosition}º lugar de ${totalMembers}! #Plakr!`
+            : `Confira meu card no Plakr!! #Plakr!`,
           url: `${window.location.origin}/pool/${poolSlug}/retrospectiva`,
         });
       } else {

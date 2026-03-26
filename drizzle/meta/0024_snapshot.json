@@ -3140,7 +3140,7 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false,
-          "default": "'Crie seu bolão no ApostAI →'"
+          "default": "'Crie seu bolão no Plakr! →'"
         },
         "closingCtaUrl": {
           "name": "closingCtaUrl",

@@ -13,8 +13,8 @@ import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useAnalytics } from "@/hooks/useAnalytics";
 
-const STORAGE_KEY = "apostai_ref_code";
-const STORAGE_EXPIRY_KEY = "apostai_ref_expiry";
+const STORAGE_KEY = "plakr_ref_code";
+const STORAGE_EXPIRY_KEY = "plakr_ref_expiry";
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
 const NEW_USER_THRESHOLD_MS = 60_000; // 60 segundos
 

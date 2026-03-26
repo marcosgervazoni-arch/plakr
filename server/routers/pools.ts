@@ -1,5 +1,5 @@
 /**
- * ApostAI — Router de Bolões
+ * Plakr! — Router de Bolões
  * [T1] Modularizado a partir de server/routers.ts
  */
 import { TRPCError } from "@trpc/server";

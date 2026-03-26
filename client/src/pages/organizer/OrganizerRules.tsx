@@ -1,6 +1,6 @@
 /**
  * O6 — Regras de Pontuação
- * Todos os 7 critérios configuráveis conforme SISTEMA-PONTUACAO-APOSTAI.md
+ * Todos os 7 critérios configuráveis conforme SISTEMA-PONTUACAO-PLAKR.md
  * Inclui landslideMinDiff e zebraThreshold como campos personalizáveis.
  * Somente leitura para free / editável para Pro.
  * Bloqueado após início do bolão.

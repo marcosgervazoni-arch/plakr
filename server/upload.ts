@@ -1,5 +1,5 @@
 /**
- * File upload route for ApostAI
+ * File upload route for Plakr!
  * POST /api/upload — accepts base64-encoded files, uploads to S3, returns URL
  * Supports: images (5MB), videos (50MB), audio (16MB), documents (16MB)
  */

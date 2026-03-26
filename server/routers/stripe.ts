@@ -1,5 +1,5 @@
 /**
- * ApostAI — Router Stripe
+ * Plakr! — Router Stripe
  * [T1] Modularizado a partir de server/routers.ts
  */
 import { TRPCError } from "@trpc/server";

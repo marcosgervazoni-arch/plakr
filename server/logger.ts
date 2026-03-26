@@ -10,7 +10,7 @@ const isDev = process.env.NODE_ENV !== "production";
 export const logger = pino(
   {
     level: process.env.LOG_LEVEL ?? (isDev ? "debug" : "info"),
-    base: { service: "apostai" },
+    base: { service: "plakr" },
     timestamp: pino.stdTimeFunctions.isoTime,
   },
   isDev

@@ -1,5 +1,5 @@
 /**
- * ApostAI — Serviço de Web Push (VAPID)
+ * Plakr! — Serviço de Web Push (VAPID)
  *
  * As VAPID keys são geradas e gerenciadas pelo superadmin diretamente no painel
  * de configurações da plataforma (AdminSettings → Notificações Push).
@@ -65,7 +65,7 @@ async function initWebPush(): Promise<boolean> {
     return false;
   }
   webpush.setVapidDetails(
-    `mailto:${cfg.vapidEmail ?? "suporte@apostai.com.br"}`,
+    `mailto:${cfg.vapidEmail ?? "suporte@plakr.com.br"}`,
     cfg.vapidPublicKey,
     cfg.vapidPrivateKey
   );

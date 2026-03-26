@@ -252,8 +252,8 @@ function SlidePreview({ slot, backgroundUrl }: { slot: SlotConfig; backgroundUrl
         return (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-3 text-white text-center">
             <div className="text-xl">🎯</div>
-            <p className="text-xs font-bold leading-tight">Crie seu bolão no ApostAI</p>
-            <p className="text-xs opacity-60">apostai.com</p>
+            <p className="text-xs font-bold leading-tight">Crie seu bolão no Plakr!</p>
+            <p className="text-xs opacity-60">plakr.com</p>
           </div>
         );
       case "cardPodium":
@@ -310,7 +310,7 @@ export default function AdminRetrospectivas() {
   const [configLoaded, setConfigLoaded] = useState(false);
 
   if (config && !configLoaded) {
-    setCtaText(config.closingCtaText ?? "Crie seu bolão no ApostAI →");
+    setCtaText(config.closingCtaText ?? "Crie seu bolão no Plakr! →");
     setCtaUrl(config.closingCtaUrl ?? "");
     setAutoCloseDays(String(config.autoCloseDays ?? 3));
     setConfigLoaded(true);
@@ -456,7 +456,7 @@ export default function AdminRetrospectivas() {
                         value={ctaText}
                         onChange={(e) => setCtaText(e.target.value)}
                         maxLength={128}
-                        placeholder="Crie seu bolão no ApostAI →"
+                        placeholder="Crie seu bolão no Plakr! →"
                         className="h-9"
                       />
                     </div>
@@ -465,7 +465,7 @@ export default function AdminRetrospectivas() {
                       <Input
                         value={ctaUrl}
                         onChange={(e) => setCtaUrl(e.target.value)}
-                        placeholder="https://apostai.com"
+                        placeholder="https://plakr.com"
                         className="h-9"
                       />
                     </div>

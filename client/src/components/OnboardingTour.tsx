@@ -31,7 +31,7 @@ export function OnboardingTour() {
         doneBtnText: "Entendido! 🎉",
         // Botão Pular em todos os passos
         showButtons: ["next", "previous", "close"],
-        popoverClass: "apostai-tour-popover",
+        popoverClass: "plakr-tour-popover",
         onDestroyStarted: () => {
           // Chamado ao pular (X) ou concluir
           markTourComplete();
@@ -41,7 +41,7 @@ export function OnboardingTour() {
           {
             // Passo 1 — Boas-vindas (sem elemento, centrado)
             popover: {
-              title: "👋 Bem-vindo ao ApostAI!",
+              title: "👋 Bem-vindo ao Plakr!!",
               description:
                 "Vamos te mostrar os principais recursos da plataforma em menos de 1 minuto. Você pode pular a qualquer momento clicando no ✕.",
               side: "over",

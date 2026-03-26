@@ -1395,3 +1395,12 @@
 - [x] Dashboard: ampliar preview do card de posição com banner informativo + botões Compartilhar e Baixar diretos
 - [x] PoolPage: exibir card de posição com banner destacado após encerramento (junto ao RetrospectiveBanner)
 - [x] QA: 205 testes passando + checkpoint final
+
+## Sprint — Rebranding ApostAI → Plakr! (26/03/2026) ✅
+- [x] Substituição em massa no código frontend (18 arquivos): ApostAI → Plakr!, apostai → plakr
+- [x] Substituição em massa no código backend (28 arquivos): ApostAI → Plakr!, apostai → plakr
+- [x] Atualizar package.json, index.html, env.ts, products.ts
+- [x] VITE_APP_TITLE: gerenciado pelo painel Manus (não editável via código)
+- [x] SQL: UPDATE retrospective_config SET closingCtaText = 'Crie seu bolão no Plakr! →'
+- [x] Atualizar skill orchestrator-agent/SKILL.md
+- [x] QA: 205 testes passando + TypeScript sem erros + servidor sem erros + checkpoint final

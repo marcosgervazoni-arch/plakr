@@ -47,7 +47,7 @@
 }
 
 :root {
-  /* ApostAI — Dark theme as default */
+  /* Plakr! — Dark theme as default */
   --radius: 0.5rem;
   /* Brand */
   --primary: oklch(0.78 0.16 75);
@@ -90,7 +90,7 @@
 }
 
 .dark {
-  /* Same as :root — ApostAI is dark-first */
+  /* Same as :root — Plakr! is dark-first */
   --primary: oklch(0.78 0.16 75);
   --primary-foreground: oklch(0.13 0.02 264);
   --brand: oklch(0.78 0.16 75);
@@ -202,8 +202,8 @@
   }
 }
 
-/* ─── Driver.js — Tour Guiado (tema ApostAI dark) ─────────────────────────── */
-.apostai-tour-popover.driver-popover {
+/* ─── Driver.js — Tour Guiado (tema Plakr! dark) ─────────────────────────── */
+.plakr-tour-popover.driver-popover {
   background: oklch(0.18 0.02 250);
   border: 1px solid oklch(0.30 0.03 250);
   border-radius: 14px;
@@ -213,7 +213,7 @@
   font-family: 'Inter', sans-serif;
 }
 
-.apostai-tour-popover .driver-popover-title {
+.plakr-tour-popover .driver-popover-title {
   font-size: 15px;
   font-weight: 700;
   color: oklch(0.95 0.01 250);
@@ -222,29 +222,29 @@
   letter-spacing: -0.01em;
 }
 
-.apostai-tour-popover .driver-popover-description {
+.plakr-tour-popover .driver-popover-description {
   font-size: 13px;
   color: oklch(0.65 0.02 250);
   line-height: 1.6;
   margin-bottom: 0;
 }
 
-.apostai-tour-popover .driver-popover-progress-text {
+.plakr-tour-popover .driver-popover-progress-text {
   font-size: 11px;
   color: oklch(0.50 0.02 250);
   font-weight: 500;
 }
 
-.apostai-tour-popover .driver-popover-footer {
+.plakr-tour-popover .driver-popover-footer {
   margin-top: 16px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.apostai-tour-popover .driver-popover-prev-btn,
-.apostai-tour-popover .driver-popover-next-btn,
-.apostai-tour-popover .driver-popover-done-btn {
+.plakr-tour-popover .driver-popover-prev-btn,
+.plakr-tour-popover .driver-popover-next-btn,
+.plakr-tour-popover .driver-popover-done-btn {
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
@@ -255,29 +255,29 @@
   outline: none;
 }
 
-.apostai-tour-popover .driver-popover-next-btn,
-.apostai-tour-popover .driver-popover-done-btn {
+.plakr-tour-popover .driver-popover-next-btn,
+.plakr-tour-popover .driver-popover-done-btn {
   background: oklch(0.78 0.16 75);
   color: oklch(0.15 0.02 75);
 }
 
-.apostai-tour-popover .driver-popover-next-btn:hover,
-.apostai-tour-popover .driver-popover-done-btn:hover {
+.plakr-tour-popover .driver-popover-next-btn:hover,
+.plakr-tour-popover .driver-popover-done-btn:hover {
   background: oklch(0.85 0.16 75);
 }
 
-.apostai-tour-popover .driver-popover-prev-btn {
+.plakr-tour-popover .driver-popover-prev-btn {
   background: oklch(0.25 0.02 250);
   color: oklch(0.70 0.02 250);
   border: 1px solid oklch(0.32 0.03 250);
 }
 
-.apostai-tour-popover .driver-popover-prev-btn:hover {
+.plakr-tour-popover .driver-popover-prev-btn:hover {
   background: oklch(0.30 0.02 250);
   color: oklch(0.85 0.01 250);
 }
 
-.apostai-tour-popover .driver-popover-close-btn {
+.plakr-tour-popover .driver-popover-close-btn {
   color: oklch(0.50 0.02 250);
   font-size: 16px;
   background: transparent;
@@ -291,12 +291,12 @@
   right: 12px;
 }
 
-.apostai-tour-popover .driver-popover-close-btn:hover {
+.plakr-tour-popover .driver-popover-close-btn:hover {
   background: oklch(0.28 0.02 250);
   color: oklch(0.85 0.01 250);
 }
 
-.apostai-tour-popover .driver-popover-arrow {
+.plakr-tour-popover .driver-popover-arrow {
   border-color: oklch(0.30 0.03 250);
 }
 

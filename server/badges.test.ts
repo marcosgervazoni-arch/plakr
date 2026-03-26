@@ -1,5 +1,5 @@
 /**
- * badges.test.ts — Testes do motor de badges ApostAI
+ * badges.test.ts — Testes do motor de badges Plakr!
  *
  * Cobre:
  *   - checkCriterion: todos os critérios suportados

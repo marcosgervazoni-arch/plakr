@@ -1,6 +1,6 @@
 /**
- * Testes do sistema de pontuação ApostAI
- * Baseados no documento SISTEMA-PONTUACAO-APOSTAI.md v1.0
+ * Testes do sistema de pontuação Plakr!
+ * Baseados no documento SISTEMA-PONTUACAO-PLAKR.md v1.0
  *
  * Configuração padrão (valores do documento):
  *   Placar Exato:       10 pts

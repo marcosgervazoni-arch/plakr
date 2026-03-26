@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE retrospective_config SET closingCtaText = 'Crie seu bolão no Plakr! →' WHERE closingCtaText = 'Crie seu bolão no ApostAI →' OR closingCtaText LIKE '%ApostAI%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute UPDATE retrospective_config SET closingCtaText = 'Crie seu bolão no Plakr! →' WHERE closingCtaText = 'Crie seu bolão no ApostAI →' OR closingCtaText LIKE '%ApostAI%';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 436
+}

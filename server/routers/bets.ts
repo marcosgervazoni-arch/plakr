@@ -1,5 +1,5 @@
 /**
- * ApostAI — Router de Palpites (Bets)
+ * Plakr! — Router de Palpites (Bets)
  * [T1] Modularizado a partir de server/routers.ts
  * [T3] myBets com paginação cursor-based
  */

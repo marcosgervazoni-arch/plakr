@@ -1,5 +1,5 @@
 /**
- * ApostAI — Router de Templates de Notificação (Admin)
+ * Plakr! — Router de Templates de Notificação (Admin)
  * [T1] Modularizado a partir de server/routers.ts
  */
 import { TRPCError } from "@trpc/server";

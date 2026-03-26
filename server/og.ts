@@ -54,7 +54,7 @@ function buildOgHtml({
   <meta property="og:description" content="${d}" />
   <meta property="og:image" content="${i}" />
   <meta property="og:url" content="${u}" />
-  <meta property="og:site_name" content="ApostAI" />
+  <meta property="og:site_name" content="Plakr!" />
   <meta property="og:locale" content="pt_BR" />
 
   <!-- Twitter / X Card -->
@@ -93,7 +93,7 @@ export function registerOgRoutes(app: Express): void {
 
       if (!pool || pool.status !== "active") {
         const html = buildOgHtml({
-          title: "Convite para Bolão — ApostAI",
+          title: "Convite para Bolão — Plakr!",
           description: "Você foi convidado para participar de um bolão de apostas esportivas!",
           imageUrl: fallbackImage,
           pageUrl,
@@ -110,7 +110,7 @@ export function registerOgRoutes(app: Express): void {
         // não crítico
       }
 
-      const title = `${pool.name} — ApostAI`;
+      const title = `${pool.name} — Plakr!`;
       const description = pool.description
         ? pool.description
         : tournamentName
@@ -124,7 +124,7 @@ export function registerOgRoutes(app: Express): void {
     } catch {
       // Em caso de erro de banco, retorna fallback genérico
       const html = buildOgHtml({
-        title: "Convite para Bolão — ApostAI",
+        title: "Convite para Bolão — Plakr!",
         description: "Você foi convidado para participar de um bolão de apostas esportivas!",
         imageUrl: fallbackImage,
         pageUrl,

@@ -47,5 +47,5 @@ export const ENV = {
   // Base URL used in e-mails and invite links.
   // Update APP_BASE_URL in Settings → Secrets when you configure a custom domain.
   // Falls back to the default Manus domain until then.
-  appBaseUrl: process.env.APP_BASE_URL ?? "https://apostai-bolao-djv8mgeh.manus.space",
+  appBaseUrl: process.env.APP_BASE_URL ?? "https://plakr.manus.space",
 };

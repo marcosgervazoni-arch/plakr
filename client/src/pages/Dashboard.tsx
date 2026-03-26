@@ -82,7 +82,7 @@ function ShareCardDashboardItem({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `apostai-${pool.name.replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.download = `plakr-${pool.name.replace(/\s+/g, "-").toLowerCase()}.png`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Card salvo!");
@@ -98,12 +98,12 @@ function ShareCardDashboardItem({
       if (navigator.canShare) {
         const res = await fetch(shareCardUrl);
         const blob = await res.blob();
-        const file = new File([blob], `apostai-${pool.name.replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
+        const file = new File([blob], `plakr-${pool.name.replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
             title: `Meu card — ${pool.name}`,
-            text: `Terminei em ${finalPosition}º lugar de ${totalMembers}! #ApostAI`,
+            text: `Terminei em ${finalPosition}º lugar de ${totalMembers}! #Plakr!`,
           });
           return;
         }
@@ -111,7 +111,7 @@ function ShareCardDashboardItem({
       if (navigator.share) {
         await navigator.share({
           title: `Meu card — ${pool.name}`,
-          text: `Terminei em ${finalPosition}º lugar de ${totalMembers}! #ApostAI`,
+          text: `Terminei em ${finalPosition}º lugar de ${totalMembers}! #Plakr!`,
           url: `${window.location.origin}/pool/${pool.slug}/retrospectiva`,
         });
       } else {
@@ -252,7 +252,7 @@ export default function Dashboard() {
             <Trophy className="w-7 h-7 text-primary" />
           </div>
           <div>
-            <h1 className="font-bold text-xl mb-1">ApostAI</h1>
+            <h1 className="font-bold text-xl mb-1">Plakr!</h1>
             <p className="text-sm text-muted-foreground">Faça login para acessar seus bolões.</p>
           </div>
           <a href={getLoginUrl()}>
@@ -732,7 +732,7 @@ function WelcomeCard({
       {/* Mensagem de boas-vindas */}
       <div className="space-y-1.5">
         <h2 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
-          Bem-vindo ao ApostAI, {firstName}!
+          Bem-vindo ao Plakr!, {firstName}!
         </h2>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
           Aqui você cria bolões esportivos, faz palpites e compete com amigos em tempo real.

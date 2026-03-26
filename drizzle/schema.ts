@@ -703,7 +703,7 @@ export const retrospectiveConfig = mysqlTable("retrospective_config", {
   cardParticipantKey: varchar("cardParticipantKey", { length: 255 }),
   // Configurações de comportamento
   autoCloseDays: int("autoCloseDays").default(3).notNull(), // dias para auto-conclusão
-  closingCtaText: varchar("closingCtaText", { length: 128 }).default("Crie seu bolão no ApostAI →"),
+  closingCtaText: varchar("closingCtaText", { length: 128 }).default("Crie seu bolão no Plakr! →"),
   closingCtaUrl: text("closingCtaUrl"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

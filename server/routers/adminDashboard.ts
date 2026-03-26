@@ -1,5 +1,5 @@
 /**
- * ApostAI — Admin Dashboard Router
+ * Plakr! — Admin Dashboard Router
  * Procedures exclusivas do Super Admin para inteligência de negócio,
  * saúde do sistema, assinaturas e gestão avançada.
  */

@@ -1,5 +1,5 @@
 /**
- * ApostAI — Router Principal (Composição)
+ * Plakr! — Router Principal (Composição)
  * [T1] Todos os routers de domínio foram modularizados em server/routers/*.ts
  * Este arquivo apenas compõe o appRouter final.
  */

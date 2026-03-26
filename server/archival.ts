@@ -1,5 +1,5 @@
 /**
- * Serviço de Arquivamento Automático — ApostAI
+ * Serviço de Arquivamento Automático — Plakr!
  *
  * Ciclo de vida do bolão:
  *   active → finished → awaiting_conclusion → concluded → archived

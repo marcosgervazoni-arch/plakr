@@ -1,5 +1,5 @@
 /**
- * ApostAI — Router de Notificações
+ * Plakr! — Router de Notificações
  * [T1] Modularizado a partir de server/routers.ts
  */
 import { TRPCError } from "@trpc/server";

@@ -261,7 +261,7 @@ function Slide4({ retro }: { retro: Retrospective }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `apostai-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.download = `plakr-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Card salvo!");
@@ -277,7 +277,7 @@ function Slide4({ retro }: { retro: Retrospective }) {
         try {
           const response = await fetch(retro.shareCard.imageUrl);
           const blob = await response.blob();
-          const file = new File([blob], `apostai-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
+          const file = new File([blob], `plakr-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
@@ -362,7 +362,7 @@ function Slide4({ retro }: { retro: Retrospective }) {
 
 function Slide5({ retro }: { retro: Retrospective }) {
   const phrase = retro.closingPhrase ?? "Você foi longe neste bolão. Que tal desafiar mais amigos no próximo?";
-  const ctaText = retro.templates.closingCtaText ?? "Crie seu bolão no ApostAI →";
+  const ctaText = retro.templates.closingCtaText ?? "Crie seu bolão no Plakr! →";
   const ctaUrl = retro.templates.closingCtaUrl ?? `${window.location.origin}/cadastro`;
 
   return (
@@ -384,7 +384,7 @@ function Slide5({ retro }: { retro: Retrospective }) {
         >
           {ctaText}
         </a>
-        <p className="text-xs text-white/40">apostai.com.br</p>
+        <p className="text-xs text-white/40">plakr.com.br</p>
       </div>
     </div>
   );
@@ -458,12 +458,12 @@ export default function PoolRetrospectiva() {
         try {
           const response = await fetch(retro.shareCard.imageUrl);
           const blob = await response.blob();
-          const file = new File([blob], `apostai-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
+          const file = new File([blob], `plakr-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`, { type: "image/png" });
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
               title: `Minha retrospectiva — ${retro.poolName}`,
-              text: `Terminei em ${retro.finalPosition}º lugar com ${retro.totalPoints} pontos! Veja minha jornada no ApostAI.`,
+              text: `Terminei em ${retro.finalPosition}º lugar com ${retro.totalPoints} pontos! Veja minha jornada no Plakr!.`,
             });
             return;
           }
@@ -475,7 +475,7 @@ export default function PoolRetrospectiva() {
       if (navigator.share) {
         await navigator.share({
           title: `Minha retrospectiva no bolão "${retro?.poolName}"`,
-          text: `Terminei em ${retro?.finalPosition}º lugar com ${retro?.totalPoints} pontos! Veja minha jornada no ApostAI.`,
+          text: `Terminei em ${retro?.finalPosition}º lugar com ${retro?.totalPoints} pontos! Veja minha jornada no Plakr!.`,
           url: window.location.href,
         });
       } else {
@@ -500,7 +500,7 @@ export default function PoolRetrospectiva() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `apostai-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.download = `plakr-${(retro.poolName ?? "bolao").replace(/\s+/g, "-").toLowerCase()}.png`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Card salvo!");

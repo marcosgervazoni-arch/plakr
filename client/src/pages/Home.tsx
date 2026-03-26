@@ -99,7 +99,7 @@ export default function Home() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
               <Trophy className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-xl tracking-tight">ApostAI</span>
+            <span className="font-bold text-xl tracking-tight">Plakr!</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Funcionalidades</a>
@@ -321,10 +321,10 @@ export default function Home() {
             <div className="w-6 h-6 rounded bg-brand-600 flex items-center justify-center">
               <Trophy className="w-3 h-3 text-white" />
             </div>
-            <span className="font-semibold text-sm">ApostAI</span>
+            <span className="font-semibold text-sm">Plakr!</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} ApostAI. Plataforma de bolões esportivos.
+            © {new Date().getFullYear()} Plakr!. Plataforma de bolões esportivos.
           </p>
         </div>
       </footer>

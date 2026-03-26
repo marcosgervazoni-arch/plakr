@@ -1,5 +1,5 @@
 /**
- * Hook para gerenciar Web Push Notifications no ApostAI.
+ * Hook para gerenciar Web Push Notifications no Plakr!.
  *
  * Fluxo:
  * 1. Verifica se o browser suporta Push API

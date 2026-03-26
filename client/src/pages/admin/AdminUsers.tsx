@@ -177,7 +177,7 @@ export default function AdminUsers() {
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
-              a.download = `usuarios-apostai-${new Date().toISOString().slice(0,10)}.csv`;
+              a.download = `usuarios-plakr-${new Date().toISOString().slice(0,10)}.csv`;
               a.click();
               URL.revokeObjectURL(url);
             }}

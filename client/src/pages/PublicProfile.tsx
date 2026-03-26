@@ -300,7 +300,7 @@ export default function PublicProfile() {
             <div className="relative space-y-1">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Sparkles className="w-5 h-5 text-primary" />
-                <span className="text-xs font-semibold text-primary uppercase tracking-widest">ApostAI</span>
+                <span className="text-xs font-semibold text-primary uppercase tracking-widest">Plakr!</span>
               </div>
               <h2 className="text-xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>
                 Crie seu próprio bolão

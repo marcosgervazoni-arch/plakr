@@ -16,7 +16,7 @@ function createAuthContext(role: "user" | "admin" = "user"): {
   const user: AuthenticatedUser = {
     id: 1,
     openId: "test-user-openid",
-    email: "test@apostai.com",
+    email: "test@plakr.com",
     name: "Test User",
     loginMethod: "manus",
     role,
@@ -82,7 +82,7 @@ describe("auth.me", () => {
     const caller = appRouter.createCaller(ctx);
     const result = await caller.auth.me();
     expect(result).not.toBeNull();
-    expect(result?.email).toBe("test@apostai.com");
+    expect(result?.email).toBe("test@plakr.com");
   });
 
   it("returns null when unauthenticated", async () => {

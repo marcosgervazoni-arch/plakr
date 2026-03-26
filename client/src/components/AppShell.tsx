@@ -124,7 +124,7 @@ export default function AppShell({ children }: AppShellProps) {
               className="font-bold text-base"
               style={{ fontFamily: "'Syne', sans-serif" }}
             >
-              ApostAI
+              Plakr!
             </span>
           </div>
         </Link>
@@ -363,7 +363,7 @@ export default function AppShell({ children }: AppShellProps) {
             className="font-bold text-sm truncate"
             style={{ fontFamily: "'Syne', sans-serif" }}
           >
-            ApostAI
+            Plakr!
           </span>
         </Link>
 
