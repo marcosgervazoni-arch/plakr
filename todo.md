@@ -1495,3 +1495,9 @@
 ## Perfil Público — Gráfico Radar — Sprint 26/03/2026
 - [x] PublicProfile: adicionar gráfico radar "Perfil de Apostador" (Placar Exato, Resultado, Dif. Gols, Goleada, Zebra) igual ao Dashboard
 - [x] Backend: adicionar radarData ao getPublicProfile (zebraCount, landslideCount, goalDiffCount) e incluir no retorno
+
+## Tooltips em Badges — Sprint 26/03/2026
+- [x] BadgeCard: tooltip com descrição + raridade já existia — confirmado funcionando
+- [x] DashboardBadgeCarousel: usa BadgeCard — tooltip já funciona
+- [x] Página de Conquistas: usa BadgeCard — tooltip já funciona
+- [x] Admin de Badges: já tinha tooltip próprio

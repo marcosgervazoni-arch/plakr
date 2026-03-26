@@ -410,6 +410,7 @@ export const usersRouter = router({
             category: b.category,
             description: b.description,
             iconUrl: b.iconUrl,
+            rarity: b.rarity ?? "common",
             criterionType: b.criterionType,
             criterionValue: b.criterionValue,
             isManual: b.isManual,
