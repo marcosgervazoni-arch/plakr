@@ -28,6 +28,9 @@ import {
   Download,
   Share2,
   Info,
+  Medal,
+  Percent,
+  ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
@@ -317,25 +320,45 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Global stats in JetBrains Mono */}
+              {/* Global stats in JetBrains Mono — métricas relevantes */}
               <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/30">
+                {/* Aproveitamento */}
                 <div className="text-center">
-                  <p className="font-mono font-bold text-2xl text-primary leading-none">
-                    {stats?.totalPoints ?? 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">Pontos</p>
+                  <div className="flex items-center justify-center gap-0.5">
+                    <p className="font-mono font-bold text-2xl text-primary leading-none">
+                      {stats?.accuracy ?? 0}
+                    </p>
+                    <span className="font-mono font-bold text-sm text-primary/70 leading-none mt-1">%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Aproveit.</p>
                 </div>
+                {/* Melhor posição */}
                 <div className="text-center border-x border-border/30">
-                  <p className="font-mono font-bold text-2xl text-green-400 leading-none">
-                    {stats?.exactScores ?? 0}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">Exatos</p>
+                  {stats?.bestPosition != null ? (
+                    <div className="flex items-center justify-center gap-1">
+                      {stats.bestPosition === 1 && <Crown className="w-4 h-4 text-yellow-400" />}
+                      {stats.bestPosition === 2 && <Medal className="w-4 h-4 text-slate-300" />}
+                      {stats.bestPosition === 3 && <Medal className="w-4 h-4 text-amber-600" />}
+                      <p className={`font-mono font-bold text-2xl leading-none ${
+                        stats.bestPosition === 1 ? "text-yellow-400" :
+                        stats.bestPosition === 2 ? "text-slate-300" :
+                        stats.bestPosition === 3 ? "text-amber-600" :
+                        "text-foreground"
+                      }`}>
+                        {stats.bestPosition}º
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="font-mono font-bold text-2xl text-muted-foreground/40 leading-none">—</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">Melhor pos.</p>
                 </div>
+                {/* Total de palpites */}
                 <div className="text-center">
                   <p className="font-mono font-bold text-2xl text-foreground leading-none">
-                    {stats?.poolsCount ?? activePools.length}
+                    {stats?.totalBets ?? 0}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Bolões</p>
+                  <p className="text-xs text-muted-foreground mt-1">Palpites</p>
                 </div>
               </div>
             </div>

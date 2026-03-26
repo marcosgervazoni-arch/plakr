@@ -111,7 +111,7 @@ export const usersRouter = router({
 
   myStats: protectedProcedure.query(async ({ ctx }) => {
     const db = await (await import("../db")).getDb();
-    if (!db) return { totalPoints: 0, exactScores: 0, poolsCount: 0, totalBets: 0, pointsHistory: [], radarData: [] };
+    if (!db) return { totalPoints: 0, exactScores: 0, poolsCount: 0, totalBets: 0, accuracy: 0, bestPosition: null as number | null, pointsHistory: [], radarData: [] };
     const { sql, eq, and } = await import("drizzle-orm");
     const { poolMemberStats, bets, games, pools: poolsT } = await import("../../drizzle/schema");
     const statsRows = await db
@@ -145,11 +145,26 @@ export const usersRouter = router({
       { subject: "Goleada", value: Math.min(100, Math.round((Number(stats.landslideCount) / tb) * 200)), fullMark: 100 },
       { subject: "Dif. Gols", value: Math.min(100, Math.round((Number(stats.goalDiffCount) / tb) * 150)), fullMark: 100 },
     ];
+    // Melhor posição final em bolões concluídos
+    const { poolFinalPositions } = await import("../../drizzle/schema");
+    const { min } = await import("drizzle-orm");
+    const bestPosRow = await db
+      .select({ bestPos: min(poolFinalPositions.position) })
+      .from(poolFinalPositions)
+      .where(eq(poolFinalPositions.userId, ctx.user.id));
+    const bestPosition = bestPosRow[0]?.bestPos ? Number(bestPosRow[0].bestPos) : null;
+    // Aproveitamento: (exatos + resultados certos) / total de palpites * 100
+    const totalCorrect = Number(stats.exactScores) + Number(stats.correctResults);
+    const accuracy = Number(stats.totalBets) > 0
+      ? Math.round((totalCorrect / Number(stats.totalBets)) * 100)
+      : 0;
     return {
       totalPoints: Number(stats.totalPoints),
       exactScores: Number(stats.exactScores),
       poolsCount: Number(stats.poolsCount),
       totalBets: Number(stats.totalBets),
+      accuracy,
+      bestPosition,
       pointsHistory: history.map((h) => ({
         label: new Date(h.matchDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
         points: Number(h.pointsEarned ?? 0),

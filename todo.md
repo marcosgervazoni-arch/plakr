@@ -1445,3 +1445,10 @@
   - [x] Limites configuráveis: freeMaxPools=3 permite 3º bolão; freeMaxPools=1 bloqueia 2º
   - [x] freeMaxParticipants=10 bloqueia 11º participante via joinByToken
 - [x] QA: 251 testes passando (era 205) + TypeScript sem erros + checkpoint final
+
+## Redesign Card de Perfil (26/03/2026) ✅
+- [x] Substituir métricas irrelevantes (Pontos/Exatos/Bolões) por métricas competitivas
+- [x] Adicionar `accuracy` (aproveitamento %) e `bestPosition` (melhor posição final) ao `myStats` no users.ts
+- [x] Card: Aproveitamento % (dourado) | Melhor Posição com coroa/medalha | Total de Palpites
+- [x] Ícones contextuais: Crown para 1º lugar, Medal para 2º/3º com cores dourado/prata/bronze
+- [x] Exibe "—" quando usuário ainda não concluiu nenhum bolão (bestPosition null)
