@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
+import { useAuth } from "@/_core/hooks/useAuth";
 import {
   Trophy, Users, ArrowRight, CheckCircle, Crown, Target,
   BarChart3, Award, Settings, Globe, Share2,
@@ -201,6 +202,7 @@ function CustomOrDefault({ customCode, children }: { customCode: string | null |
 
 export default function Home() {
   const { data: config } = trpc.landingPage.getConfig.useQuery();
+  const { user, loading: authLoading } = useAuth();
   const loginUrl = getLoginUrl("/dashboard");
 
   const heroHeadline = config?.heroHeadline ?? "Faça seu bolão com a galera";
@@ -264,12 +266,23 @@ export default function Home() {
             <a href="#diferencial" className="hover:text-white transition-colors" title="Campeonato personalizado — exclusivo Plakr! Pro">Campeonato personalizado</a>
             <a href="#planos" className="hover:text-white transition-colors" title="Planos Plakr! — Gratuito e Pro">Planos</a>
           </div>
-          <a href={loginUrl} aria-label="Criar bolão grátis no Plakr!">
-            <Button size="sm" className="font-semibold"
-              style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-              {heroCtaPrimaryText}
-            </Button>
-          </a>
+          {!authLoading && (
+            user ? (
+              <a href="/dashboard" aria-label="Ir para o dashboard do Plakr!">
+                <Button size="sm" className="font-semibold"
+                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+                  Entrar
+                </Button>
+              </a>
+            ) : (
+              <a href={loginUrl} aria-label="Criar bolão grátis no Plakr!">
+                <Button size="sm" className="font-semibold"
+                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+                  {heroCtaPrimaryText}
+                </Button>
+              </a>
+            )
+          )}
         </div>
       </nav>
 

@@ -1566,3 +1566,6 @@
 - [x] Home.tsx: aria-hidden="true" em ícones decorativos
 - [x] Home.tsx: title descritivo nos links de navegação
 - [x] badges.test.ts: ne adicionado ao mock do drizzle-orm (251/251 testes passando)
+
+## Ajuste UX — Botão do Cabeçalho da Landing Page — Sprint 26/03/2026
+- [x] Home.tsx: botão do navbar exibe "Criar bolão grátis" para visitantes e "Entrar" (→ /dashboard) para usuários logados
