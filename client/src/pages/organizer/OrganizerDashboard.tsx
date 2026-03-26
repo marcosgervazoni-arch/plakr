@@ -278,7 +278,12 @@ export default function OrganizerDashboard() {
                     <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
                       {m.userName?.[0]?.toUpperCase() ?? "?"}
                     </div>
-                    <span className="text-sm flex-1 truncate">{m.userName ?? "Usuário"}</span>
+                    <a
+                      href={`/profile/${m.userId}`}
+                      className="text-sm flex-1 truncate hover:text-primary transition-colors"
+                    >
+                      {m.userName ?? "Usuário"}
+                    </a>
                     <Badge variant="outline" className="text-xs text-yellow-400 border-yellow-400/30">
                       Inativo
                     </Badge>
@@ -318,7 +323,12 @@ export default function OrganizerDashboard() {
                     <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                       {r.userName?.[0]?.toUpperCase() ?? "?"}
                     </div>
-                    <span className="text-sm flex-1 truncate">{r.userName ?? "Usuário"}</span>
+                    <a
+                      href={`/profile/${r.userId}`}
+                      className="text-sm flex-1 truncate hover:text-primary transition-colors"
+                    >
+                      {r.userName ?? "Usuário"}
+                    </a>
                     <span
                       className="font-bold text-sm text-primary shrink-0"
 

@@ -1460,3 +1460,13 @@
 - [x] Tooltips nas 3 métricas do Perfil Público com mesma semântica
 - [x] Ícones de coroa/medalha no Perfil Público conforme posição final (1º=coroa dourada, 2º=prata, 3º=bronze)
 - [x] TypeScript sem erros (tsc --noEmit exit 0)
+
+## Nomes de Usuários Clicáveis (26/03/2026) ✅
+- [x] Ranking do bolão (PoolPage.tsx): já tinha link — confirmado
+- [x] Lista de membros (PoolPage.tsx): já tinha link — confirmado
+- [x] OrganizerMembers.tsx: já tinha link + menu contextual — confirmado
+- [x] OrganizerDashboard.tsx: top 5 e membros inativos — links adicionados
+- [x] AdminUsers.tsx: já tinha link (nome + painel lateral) — confirmado
+- [x] AdminPools.tsx: já tinha link nos organizadores — confirmado
+- [x] AdminSubscriptions.tsx: já tinha link nos donos — confirmado
+- [x] TypeScript sem erros reais (tsc --noEmit exit 0)
