@@ -1426,3 +1426,22 @@
 - [x] AdminBadges, Conquistas, Notifications, PoolRules, MyProfile, PublicProfile, PoolRetrospectiva: corrigidos
 - [x] AdminDashboard, AdminTournamentDetail, AdminIntegrations, AdminReferrals: corrigidos
 - [x] QA: 205 testes passando + zero amber/orange fora do ComponentShowcase + checkpoint final
+
+## Sprint C — Testes de Isolamento Multi-Tenant (26/03/2026) ✅
+- [x] isolation-cross-tenant.test.ts: 39 testes cobrindo 16 procedures sem cobertura anterior
+  - [x] pools.closePool: não-membro/participante não pode encerrar bolão alheio
+  - [x] pools.concludePool: apenas organizador/admin confirma encerramento; PRECONDITION_FAILED para status inválido
+  - [x] pools.getBracket: não-membro bloqueado em bolão privado; público e admin liberados
+  - [x] pools.leave: não-membro recebe NOT_FOUND; organizador bloqueado sem transferência
+  - [x] pools.getMemberProfile: não-membro bloqueado em bolão privado; admin liberado
+  - [x] pools.getAccessStats: qualquer membro acessa; não-membro bloqueado
+  - [x] pools.sendInviteEmail: apenas organizador; participante/não-membro bloqueados
+  - [x] pools.broadcastToMembers: apenas organizador Pro; free e não-membro bloqueados
+  - [x] pools.adminList/adminUpdatePool/adminCreate: usuário comum → FORBIDDEN
+  - [x] pools.adminGetRetrospectives/adminReprocessRetrospective/updateRetrospectiveConfig/uploadRetrospectiveTemplate: usuário comum → FORBIDDEN
+  - [x] 7 testes de usuário anônimo → UNAUTHORIZED em todas as procedures protegidas
+- [x] plan-limits.test.ts: 7 novos testes adicionados (total 20)
+  - [x] joinPublic: limite 50 participantes free; Pro sem limite; alreadyMember bypass
+  - [x] Limites configuráveis: freeMaxPools=3 permite 3º bolão; freeMaxPools=1 bloqueia 2º
+  - [x] freeMaxParticipants=10 bloqueia 11º participante via joinByToken
+- [x] QA: 251 testes passando (era 205) + TypeScript sem erros + checkpoint final

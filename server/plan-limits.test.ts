@@ -25,6 +25,7 @@ vi.mock("./db", async (importOriginal) => {
     getPlatformSettings: vi.fn(),
     getPoolById: vi.fn(),
     getPoolByInviteToken: vi.fn(),
+    getPoolBySlug: vi.fn(),
     getPoolMember: vi.fn(),
     getPoolMemberCount: vi.fn(),
     countPoolMembers: vi.fn(),
@@ -42,6 +43,7 @@ import {
   getPlatformSettings,
   getPoolById,
   getPoolByInviteToken,
+  getPoolBySlug,
   getPoolMember,
   countPoolMembers,
 } from "./db";
@@ -356,5 +358,147 @@ describe("[INVITE-PERM] Permissão de convite em bolões privados", () => {
     const caller = appRouter.createCaller(makeCtx({ id: 99 }));
     const result = await caller.pools.joinByToken({ token: "tok-private" });
     expect(result).toMatchObject({ poolId: 30, alreadyMember: false });
+  });
+});
+
+// ─── TESTES: LIMITE DE PARTICIPANTES VIA joinPublic ──────────────────────────
+describe("[SUG-3] Limite de participantes — joinPublic em bolão free", () => {
+  const publicFreePool = {
+    id: 40,
+    plan: "free",
+    name: "Bolão Público Free",
+    ownerId: 1,
+    tournamentId: 1,
+    slug: "bolao-publico-free",
+    accessType: "public" as const,
+    status: "active" as const,
+    inviteToken: "tok-pub",
+    inviteCode: "PUB1234",
+    invitePermission: "organizer_only" as const,
+    isArchived: false,
+    description: null,
+    logoUrl: null,
+    finishedAt: null,
+    awaitingConclusionSince: null,
+    concludedAt: null,
+    concludedBy: null,
+    scheduledDeleteAt: null,
+    stripeSubscriptionId: null,
+    planExpiresAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const publicProPool = { ...publicFreePool, id: 41, plan: "pro" as const };
+
+  it("joinPublic em bolão free com 50 participantes rejeita o 51º → FORBIDDEN", async () => {
+    vi.mocked(getPoolBySlug).mockResolvedValue(publicFreePool as any);
+    vi.mocked(getPoolMember).mockResolvedValue(null as any);
+    vi.mocked(getPlatformSettings).mockResolvedValue(defaultSettings as any);
+    vi.mocked(countPoolMembers).mockResolvedValue(50);
+
+    const caller = appRouter.createCaller(makeCtx({ id: 99 }));
+    await expect(
+      caller.pools.joinPublic({ slug: "bolao-publico-free" })
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: expect.stringContaining("50"),
+    });
+  });
+
+  it("joinPublic em bolão free com 49 participantes aceita o 50º → sucesso", async () => {
+    vi.mocked(getPoolBySlug).mockResolvedValue(publicFreePool as any);
+    vi.mocked(getPoolMember).mockResolvedValue(null as any);
+    vi.mocked(getPlatformSettings).mockResolvedValue(defaultSettings as any);
+    vi.mocked(countPoolMembers).mockResolvedValue(49);
+
+    const caller = appRouter.createCaller(makeCtx({ id: 99 }));
+    const result = await caller.pools.joinPublic({ slug: "bolao-publico-free" });
+    expect(result).toMatchObject({ poolId: 40, alreadyMember: false });
+  });
+
+  it("joinPublic em bolão Pro com 200 participantes aceita o 201º → sem limite", async () => {
+    vi.mocked(getPoolBySlug).mockResolvedValue(publicProPool as any);
+    vi.mocked(getPoolMember).mockResolvedValue(null as any);
+    vi.mocked(getPlatformSettings).mockResolvedValue(defaultSettings as any);
+    vi.mocked(countPoolMembers).mockResolvedValue(200);
+
+    const caller = appRouter.createCaller(makeCtx({ id: 99 }));
+    const result = await caller.pools.joinPublic({ slug: "bolao-publico-free" });
+    expect(result).toMatchObject({ poolId: 41, alreadyMember: false });
+  });
+
+  it("joinPublic retorna alreadyMember=true se usuário já é membro → sem verificar limite", async () => {
+    vi.mocked(getPoolBySlug).mockResolvedValue(publicFreePool as any);
+    vi.mocked(getPoolMember).mockResolvedValue({
+      userId: 99, poolId: 40, role: "participant", joinedAt: new Date(),
+    } as any);
+    vi.mocked(countPoolMembers).mockResolvedValue(50);
+
+    const caller = appRouter.createCaller(makeCtx({ id: 99 }));
+    const result = await caller.pools.joinPublic({ slug: "bolao-publico-free" });
+    expect(result).toMatchObject({ poolId: 40, alreadyMember: true });
+  });
+});
+
+// ─── TESTES: LIMITE CONFIGURÁVEL VIA PLATAFORMA ──────────────────────────────
+describe("[SUG-3] Limite configurável via platform settings", () => {
+  it("freeMaxPools=3 permite criar o 3º bolão free", async () => {
+    vi.mocked(countActivePoolsByOwner).mockResolvedValue(2);
+    vi.mocked(getUserPlan).mockResolvedValue(null);
+    vi.mocked(getPlatformSettings).mockResolvedValue({
+      ...defaultSettings,
+      freeMaxPools: 3,
+    } as any);
+
+    const caller = appRouter.createCaller(makeCtx());
+    const result = await caller.pools.create({
+      name: "Terceiro Bolão",
+      tournamentId: 1,
+      accessType: "public",
+    });
+    expect(result).toHaveProperty("poolId");
+  });
+
+  it("freeMaxPools=1 bloqueia o 2º bolão free", async () => {
+    vi.mocked(countActivePoolsByOwner).mockResolvedValue(1);
+    vi.mocked(getUserPlan).mockResolvedValue(null);
+    vi.mocked(getPlatformSettings).mockResolvedValue({
+      ...defaultSettings,
+      freeMaxPools: 1,
+    } as any);
+
+    const caller = appRouter.createCaller(makeCtx());
+    await expect(
+      caller.pools.create({
+        name: "Segundo Bolão",
+        tournamentId: 1,
+        accessType: "public",
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("freeMaxParticipants=10 bloqueia o 11º participante via joinByToken", async () => {
+    const smallPool = {
+      id: 50, plan: "free", name: "Bolão Pequeno", ownerId: 1, tournamentId: 1,
+      slug: "bolao-pequeno", accessType: "private_link" as const, status: "active" as const,
+      inviteToken: "tok-small", inviteCode: "SMALL001", invitePermission: "organizer_only" as const,
+      isArchived: false, description: null, logoUrl: null, finishedAt: null,
+      awaitingConclusionSince: null, concludedAt: null, concludedBy: null,
+      scheduledDeleteAt: null, stripeSubscriptionId: null, planExpiresAt: null,
+      createdAt: new Date(), updatedAt: new Date(),
+    };
+    vi.mocked(getPoolByInviteToken).mockResolvedValue(smallPool as any);
+    vi.mocked(getPoolMember).mockResolvedValue(null as any);
+    vi.mocked(getPlatformSettings).mockResolvedValue({
+      ...defaultSettings,
+      freeMaxParticipants: 10,
+    } as any);
+    vi.mocked(countPoolMembers).mockResolvedValue(10);
+
+    const caller = appRouter.createCaller(makeCtx({ id: 99 }));
+    await expect(
+      caller.pools.joinByToken({ token: "tok-small" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
   });
 });
