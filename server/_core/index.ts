@@ -5,6 +5,7 @@ import { startEmailCrons } from "../emailCron";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
 import { registerOgRoutes } from "../og";
+import { registerApiDocs } from "../api-docs";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -93,6 +94,9 @@ async function startServer() {
 
   // Open Graph SSR — must be before Vite/static so bots get OG HTML
   registerOgRoutes(app);
+
+  // API Documentation (Swagger UI)
+  registerApiDocs(app);
 
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {

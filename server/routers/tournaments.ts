@@ -2,7 +2,6 @@
  * Plakr! — Router de Torneios/Campeonatos
  * [T1] Modularizado a partir de server/routers.ts
  */
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   calculateBetScore,
@@ -32,6 +31,7 @@ import {
   updateTournament,
 } from "../db";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
 // Helper local: monta ScoringRules a partir das regras do bolão + defaults da plataforma
 function buildEffectiveRules(
@@ -61,7 +61,7 @@ export const tournamentsRouter = router({
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
       const t = await getTournamentById(input.id);
-      if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!t) throw Err.notFound("Recurso");
       const phases = await getTournamentPhases(input.id);
       const teamList = await getTeamsByTournament(input.id);
       const gameList = await getGamesByTournament(input.id);
@@ -87,11 +87,11 @@ export const tournamentsRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       if (ctx.user.role !== "admin") {
-        if (!input.poolId) throw new TRPCError({ code: "BAD_REQUEST", message: "Informe o bolão ao qual o campeonato pertence." });
+        if (!input.poolId) throw Err.badRequest("Informe o bolão ao qual o campeonato pertence.");
         const member = await getPoolMember(input.poolId, ctx.user.id);
-        if (!member || member.role !== "organizer") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador do bolão pode criar campeonatos personalizados." });
+        if (!member || member.role !== "organizer") throw Err.forbidden("Apenas o organizador do bolão pode criar campeonatos personalizados.");
         const pool = await getPoolById(input.poolId);
-        if (!pool || pool.plan !== "pro") throw new TRPCError({ code: "FORBIDDEN", message: "Campeonatos personalizados são exclusivos do Plano Pro." });
+        if (!pool || pool.plan !== "pro") throw PoolErr.proOnly("Campeonatos personalizados");
       }
       const id = await createTournament({ ...input, createdBy: ctx.user.id });
       if (ctx.user.role === "admin") await createAdminLog(ctx.user.id, "create_tournament", "tournament", id);
@@ -157,11 +157,11 @@ export const tournamentsRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       if (ctx.user.role !== "admin") {
-        if (!input.poolId) throw new TRPCError({ code: "BAD_REQUEST", message: "Informe o bolão ao qual o jogo pertence." });
+        if (!input.poolId) throw Err.badRequest("Informe o bolão ao qual o jogo pertence.");
         const member = await getPoolMember(input.poolId, ctx.user.id);
-        if (!member || member.role !== "organizer") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador do bolão pode adicionar jogos." });
+        if (!member || member.role !== "organizer") throw PoolErr.organizerOnly();
         const pool = await getPoolById(input.poolId);
-        if (!pool || pool.plan !== "pro") throw new TRPCError({ code: "FORBIDDEN", message: "Adição de jogos é exclusiva do Plano Pro." });
+        if (!pool || pool.plan !== "pro") throw PoolErr.proOnly("Adição de jogos");
       }
       const { poolId: _poolId, ...gameData } = input;
       const id = await createGame({
@@ -180,7 +180,7 @@ export const tournamentsRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const game = await getGameById(input.gameId);
-      if (!game) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!game) throw Err.notFound("Recurso");
       await updateGameResult(input.gameId, input.scoreA, input.scoreB, false);
       await createAdminLog(ctx.user.id, "set_result", "game", input.gameId, {
         scoreA: input.scoreA, scoreB: input.scoreB,
@@ -236,11 +236,11 @@ export const tournamentsRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       if (ctx.user.role !== "admin") {
-        if (!input.poolId) throw new TRPCError({ code: "BAD_REQUEST", message: "Informe o bolão ao qual o time pertence." });
+        if (!input.poolId) throw Err.badRequest("Informe o bolão ao qual o time pertence.");
         const member = await getPoolMember(input.poolId, ctx.user.id);
-        if (!member || member.role !== "organizer") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador do bolão pode adicionar times." });
+        if (!member || member.role !== "organizer") throw Err.forbidden("Apenas o organizador do bolão pode adicionar times.");
         const pool = await getPoolById(input.poolId);
-        if (!pool || pool.plan !== "pro") throw new TRPCError({ code: "FORBIDDEN", message: "Adição de times é exclusiva do Plano Pro." });
+        if (!pool || pool.plan !== "pro") throw TournamentErr.proOnly("Adição de times");
       }
       const { poolId: _poolId, ...teamData } = input;
       const id = await createTeam(teamData);
@@ -251,7 +251,7 @@ export const tournamentsRouter = router({
     .input(z.object({ tournamentId: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { pools: poolsT, poolMembers } = await import("../../drizzle/schema");
       const { eq, and, sql } = await import("drizzle-orm");
       const pools = await db.select({ id: poolsT.id }).from(poolsT)
@@ -272,7 +272,7 @@ export const tournamentsRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const {
         tournaments, pools: poolsT, poolMembers, games: gamesT, teams: teamsT,
         tournamentPhases, sheetsSyncLog, bets, poolMemberStats, poolScoringRules,
@@ -280,10 +280,10 @@ export const tournamentsRouter = router({
       } = await import("../../drizzle/schema");
       const { eq, inArray } = await import("drizzle-orm");
       const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, input.id)).limit(1);
-      if (!tournament) throw new TRPCError({ code: "NOT_FOUND", message: "Campeonato não encontrado." });
+      if (!tournament) throw TournamentErr.notFound();
       const isAdmin = ctx.user.role === "admin";
       const isCreator = tournament.createdBy === ctx.user.id;
-      if (!isAdmin && !isCreator) throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o criador ou um administrador pode excluir este campeonato." });
+      if (!isAdmin && !isCreator) throw TournamentErr.notOwned();
       const linkedPools = await db.select({ id: poolsT.id, ownerId: poolsT.ownerId, name: poolsT.name })
         .from(poolsT).where(eq(poolsT.tournamentId, input.id));
       if (linkedPools.length > 0) {
@@ -323,11 +323,11 @@ export const tournamentsRouter = router({
     .input(z.object({ gameId: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { games: gamesT } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
       const [game] = await db.select().from(gamesT).where(eq(gamesT.id, input.gameId)).limit(1);
-      if (!game) throw new TRPCError({ code: "NOT_FOUND", message: "Jogo não encontrado." });
+      if (!game) throw Err.notFound("Jogo");
       await db.delete(gamesT).where(eq(gamesT.id, input.gameId));
       await createAdminLog(ctx.user.id, "delete_game", "game", input.gameId, { teamAName: game.teamAName, teamBName: game.teamBName });
       return { success: true };
@@ -337,11 +337,11 @@ export const tournamentsRouter = router({
     .input(z.object({ teamId: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { teams: teamsT } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
       const [team] = await db.select().from(teamsT).where(eq(teamsT.id, input.teamId)).limit(1);
-      if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Time não encontrado." });
+      if (!team) throw Err.notFound("Time");
       await db.delete(teamsT).where(eq(teamsT.id, input.teamId));
       await createAdminLog(ctx.user.id, "delete_team", "team", input.teamId, { name: team.name });
       return { success: true };
@@ -362,7 +362,7 @@ export const tournamentsRouter = router({
         csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
       }
       const response = await fetch(csvUrl);
-      if (!response.ok) throw new TRPCError({ code: "BAD_REQUEST", message: "Não foi possível acessar a planilha. Verifique se ela é pública." });
+      if (!response.ok) throw Err.badRequest("Não foi possível acessar a planilha. Verifique se ela é pública.");
       const csvData = await response.text();
       const lines = csvData.trim().split("\n").slice(1);
       let imported = 0;
@@ -402,7 +402,7 @@ export const tournamentsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
       const { tournamentPhases } = await import("../../drizzle/schema");
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      if (!db) throw Err.dbUnavailable();
       const [phase] = await db.insert(tournamentPhases).values({
         tournamentId: input.tournamentId,
         key: input.key,
@@ -430,7 +430,7 @@ export const tournamentsRouter = router({
       const db = await (await import("../db")).getDb();
       const { tournamentPhases } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      if (!db) throw Err.dbUnavailable();
       const updates: Record<string, unknown> = { updatedAt: new Date() };
       if (input.label !== undefined) updates.label = input.label;
       if (input.order !== undefined) updates.order = input.order;
@@ -448,7 +448,7 @@ export const tournamentsRouter = router({
       const db = await (await import("../db")).getDb();
       const { tournamentPhases } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      if (!db) throw Err.dbUnavailable();
       await db.delete(tournamentPhases).where(eq(tournamentPhases.id, input.phaseId));
       await createAdminLog(ctx.user.id, "delete_phase", "tournament_phase", input.phaseId, {});
       return { ok: true };
@@ -468,7 +468,7 @@ export const tournamentsRouter = router({
       const db = await (await import("../db")).getDb();
       const { games } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      if (!db) throw Err.dbUnavailable();
       const { gameId, ...updates } = input;
       const cleanUpdates: Record<string, unknown> = { updatedAt: new Date() };
       if (updates.teamAName !== undefined) cleanUpdates.teamAName = updates.teamAName;
@@ -498,7 +498,7 @@ export const tournamentsRouter = router({
       const db = await (await import("../db")).getDb();
       const { games } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      if (!db) throw Err.dbUnavailable();
       let updated = 0;
       for (const upd of input.updates) {
         const { gameId, ...fields } = upd;
@@ -525,7 +525,7 @@ export const tournamentsRouter = router({
       const db = await (await import("../db")).getDb();
       const { games } = await import("../../drizzle/schema");
       const { eq, and, isNotNull } = await import("drizzle-orm");
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
+      if (!db) throw Err.dbUnavailable();
       const finishedGames = await db.select().from(games)
         .where(and(eq(games.tournamentId, input.tournamentId), eq(games.phase, input.currentPhase), isNotNull(games.scoreA)));
       const teamSet = new Set<string>();

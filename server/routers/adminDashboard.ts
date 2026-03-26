@@ -7,11 +7,12 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { createAdminLog, getPlatformSettings, upsertUserPlan } from "../db";
+import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
 // ─── MIDDLEWARE ADMIN ─────────────────────────────────────────────────────────
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a administradores." });
+    throw Err.adminOnly();
   }
   return next({ ctx });
 });
@@ -405,12 +406,12 @@ export const adminDashboardRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { pools: poolsT } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
 
       const [pool] = await db.select().from(poolsT).where(eq(poolsT.id, input.poolId)).limit(1);
-      if (!pool) throw new TRPCError({ code: "NOT_FOUND", message: "Bolão não encontrado." });
+      if (!pool) throw PoolErr.notFound();
 
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + input.durationDays);
@@ -437,7 +438,7 @@ export const adminDashboardRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { pools: poolsT } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
 

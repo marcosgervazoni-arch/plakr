@@ -10,6 +10,7 @@ import {
   updatePlatformSettings,
 } from "../db";
 import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
 export const platformRouter = router({
   // Dashboard global: métricas agregadas da plataforma
@@ -129,7 +130,7 @@ export const platformRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { notificationTemplates } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
       await db.update(notificationTemplates)
@@ -158,7 +159,7 @@ export const platformRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { notificationTemplates } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
       await db.update(notificationTemplates)

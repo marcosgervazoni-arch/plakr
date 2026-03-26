@@ -13,6 +13,7 @@ import {
   upsertBet,
 } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
+import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
 export const betsRouter = router({
   // [T3] paginação cursor-based adicionada
@@ -24,7 +25,7 @@ export const betsRouter = router({
     }))
     .query(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
-      if (!member) throw new TRPCError({ code: "FORBIDDEN" });
+      if (!member) throw Err.forbidden();
 
       const db = await (await import("../db")).getDb();
       if (!db) return { items: [], nextCursor: undefined, hasMore: false };
@@ -67,17 +68,17 @@ export const betsRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
-      if (!member || member.isBlocked) throw new TRPCError({ code: "FORBIDDEN" });
+      if (!member || member.isBlocked) throw Err.forbidden();
 
       const game = await getGameById(input.gameId);
-      if (!game) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!game) throw Err.notFound("Recurso");
       // [S9] Validar que o jogo pertence ao torneio do bolão
       const pool = await getPoolById(input.poolId);
       if (!pool || game.tournamentId !== pool.tournamentId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Este jogo não pertence ao torneio deste bolão." });
+        throw PoolErr.gameNotInPool();
       }
       if (game.status === "finished" || game.status === "live") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Jogo já iniciado ou encerrado." });
+        throw PoolErr.gameStarted();
       }
 
       // Verificar prazo
@@ -85,7 +86,7 @@ export const betsRouter = router({
       const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
       const deadline = new Date(game.matchDate.getTime() - deadlineMinutes * 60 * 1000);
       if (new Date() > deadline) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Prazo para palpites encerrado." });
+        throw Err.badRequest("Prazo para palpites encerrado.");
       }
 
       await upsertBet({

@@ -5,6 +5,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { adminProcedure, router } from "../_core/trpc";
+import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
 export const notificationTemplatesRouter = router({
   list: adminProcedure.query(async () => {
@@ -26,7 +27,7 @@ export const notificationTemplatesRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { notificationTemplates } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
       await db.update(notificationTemplates)
@@ -50,7 +51,7 @@ export const notificationTemplatesRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { notificationTemplates } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
       await db.update(notificationTemplates)

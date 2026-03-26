@@ -32,6 +32,7 @@ const errorLogger = t.middleware(async ({ path, type, next }) => {
 });
 
 export const router = t.router;
+export const mergeRouters = t.mergeRouters;
 export const publicProcedure = t.procedure.use(errorLogger);
 
 const requireUser = t.middleware(async opts => {

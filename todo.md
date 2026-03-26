@@ -1413,11 +1413,11 @@
 - [x] Adicionar rota /showcase e link no AdminLayout (grupo Configurações)
 - [x] QA: 205 testes passando + TypeScript sem erros + checkpoint final
 
-## Sprint B — API Design (26/03/2026)
-- [ ] Padronizar mensagens de erro tRPC: criar helpers em server/errors.ts
-- [ ] Quebrar pools.ts em sub-routers: pools-core, pools-members, pools-bets, pools-admin, pools-retrospective
-- [ ] Criar documentação OpenAPI: endpoint /api/docs com Swagger UI
-- [ ] QA: 205 testes passando + TypeScript sem erros + checkpoint final
+## Sprint B — API Design (26/03/2026) ✅
+- [x] Padronizar mensagens de erro tRPC: criar helpers em server/errors.ts (Err, PoolErr, TournamentErr, UserErr)
+- [x] Quebrar pools.ts em 6 sub-routers: pools-core, pools-members, pools-games, pools-communication, pools-admin, pools-retrospective
+- [x] Criar documentação OpenAPI: endpoint /api/docs com Swagger UI (37 paths, 12 tags) + /api/docs.json
+- [x] QA: 205 testes passando + TypeScript sem erros + checkpoint final
 
 ## Sprint — Identidade Visual Plakr! (26/03/2026) ✅
 - [x] Sincronizar index.css com paleta oficial OKLCH exatos: dourado #FFB800, verde #00FF88, vermelho #FF3B3B, azul #00C2FF, backgrounds #0B0F1A / #121826

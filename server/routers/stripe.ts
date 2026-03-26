@@ -6,6 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { getPoolById, getPoolMember, getPlatformSettings, getUserPlan } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
+import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
 export const stripeRouter = router({
   // Criar sessão de checkout para ativar o Plano Pro num bolão
@@ -16,13 +17,13 @@ export const stripeRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const pool = await getPoolById(input.poolId);
-      if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!pool) throw Err.notFound("Recurso");
       const member = await getPoolMember(input.poolId, ctx.user.id);
       if (!member || member.role !== "organizer") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador pode assinar o Plano Pro." });
+        throw PoolErr.organizerOnly();
       }
       if (pool.plan === "pro") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Este bolão já possui o Plano Pro." });
+        throw PoolErr.alreadyPro();
       }
 
       const Stripe = (await import("stripe")).default;
@@ -34,10 +35,7 @@ export const stripeRouter = router({
       const platformConfig = await getPlatformSettings();
       const priceId = platformConfig?.stripePriceIdPro || process.env.STRIPE_PRO_PRICE_ID;
       if (!priceId) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Price ID do Plano Pro não configurado. Acesse Admin → Configurações e insira o Price ID do Stripe.",
-        });
+        throw Err.internal("Price ID do Plano Pro não configurado. Acesse Admin → Configurações e insira o Price ID do Stripe.");
       }
 
       const session = await stripe.checkout.sessions.create({
@@ -74,10 +72,7 @@ export const stripeRouter = router({
     .mutation(async ({ input, ctx }) => {
       const plan = await getUserPlan(ctx.user.id);
       if (!plan?.stripeCustomerId) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Nenhuma assinatura ativa encontrada.",
-        });
+        throw Err.notFound("Nenhuma assinatura ativa encontrada.");
       }
 
       const Stripe = (await import("stripe")).default;

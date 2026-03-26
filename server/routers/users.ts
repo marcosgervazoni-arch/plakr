@@ -17,6 +17,7 @@ import {
   updateUserRole,
 } from "../db";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
 export const usersRouter = router({
   me: protectedProcedure.query(async ({ ctx }) => {
@@ -287,7 +288,7 @@ export const usersRouter = router({
   demoteFromAdmin: adminProcedure
     .input(z.object({ userId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode se rebaixar." });
+      if (input.userId === ctx.user.id) throw Err.badRequest("Você não pode se rebaixar.");
       await updateUserRole(input.userId, "user");
       await createAdminLog(ctx.user.id, "demote_admin", "user", input.userId);
       return { success: true };
@@ -296,7 +297,7 @@ export const usersRouter = router({
   removeUser: adminProcedure
     .input(z.object({ userId: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      if (input.userId === ctx.user.id) throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode remover a si mesmo." });
+      if (input.userId === ctx.user.id) throw Err.badRequest("Você não pode remover a si mesmo.");
       await anonymizeUser(input.userId);
       await createAdminLog(ctx.user.id, "remove_user", "user", input.userId);
       return { success: true };
@@ -319,7 +320,7 @@ export const usersRouter = router({
     .input(z.object({ userId: z.number() }))
     .query(async ({ input }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { eq, sql, desc, and } = await import("drizzle-orm");
       const { users: usersT, poolMembers, poolMemberStats, pools: poolsT, userPlans, badges: badgesT, userBadges, poolFinalPositions } = await import("../../drizzle/schema");
       const userRows = await db.select({
@@ -330,7 +331,7 @@ export const usersRouter = router({
         whatsappLink: usersT.whatsappLink,
         telegramLink: usersT.telegramLink,
       }).from(usersT).where(eq(usersT.id, input.userId)).limit(1);
-      if (!userRows.length) throw new TRPCError({ code: "NOT_FOUND", message: "Usuário não encontrado." });
+      if (!userRows.length) throw UserErr.notFound();
       const user = userRows[0];
       const planRows = await db.select().from(userPlans).where(eq(userPlans.userId, input.userId)).limit(1);
       const plan = planRows[0] ?? null;
@@ -497,7 +498,7 @@ export const usersRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      if (!db) throw Err.internal();
       const { eq } = await import("drizzle-orm");
       const { users: usersT } = await import("../../drizzle/schema");
       const updateData: Record<string, unknown> = {};
@@ -510,7 +511,7 @@ export const usersRouter = router({
   // ─── PROGRAMA DE CONVITES (MEMBER-GET-MEMBER) ─────────────────────────────
   getMyInviteCode: protectedProcedure.query(async ({ ctx }) => {
     const db = await (await import("../db")).getDb();
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    if (!db) throw Err.internal();
     const { eq, and, isNull } = await import("drizzle-orm");
     const { referrals } = await import("../../drizzle/schema");
     const existing = await db
@@ -534,7 +535,7 @@ export const usersRouter = router({
 
   getMyReferralStats: protectedProcedure.query(async ({ ctx }) => {
     const db = await (await import("../db")).getDb();
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    if (!db) throw Err.internal();
     const { eq, and, isNotNull } = await import("drizzle-orm");
     const { referrals, users: usersT } = await import("../../drizzle/schema");
     const accepted = await db
@@ -616,7 +617,7 @@ export const usersRouter = router({
   // ─── Tour guiado: marca como visto para não exibir novamente ───────────────
   completeTour: protectedProcedure.mutation(async ({ ctx }) => {
     const db = await (await import("../db")).getDb();
-    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    if (!db) throw Err.internal();
     const { eq } = await import("drizzle-orm");
     const { users } = await import("../../drizzle/schema");
     await db
