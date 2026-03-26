@@ -71,6 +71,9 @@ export const platformRouter = router({
       gaMeasurementId: z.string().optional(),
       fbPixelId: z.string().optional(),
       stripePriceIdPro: z.string().optional(),
+      stripePriceIdProAnnual: z.string().optional(),
+      stripePriceIdUnlimited: z.string().optional(),
+      stripePriceIdUnlimitedAnnual: z.string().optional(),
       stripeMonthlyPrice: z.number().optional(),
       // VAPID / Push
       vapidPublicKey: z.string().optional(),

@@ -49,6 +49,9 @@ export default function AdminSettings() {
     defaultZebraThreshold: 75,
     // Stripe
     stripePriceIdPro: "",
+    stripePriceIdProAnnual: "",
+    stripePriceIdUnlimited: "",
+    stripePriceIdUnlimitedAnnual: "",
     stripeMonthlyPrice: 2990,
   });
 
@@ -80,6 +83,9 @@ export default function AdminSettings() {
         defaultLandslideMinDiff: (settings as any).defaultLandslideMinDiff ?? 4,
         defaultZebraThreshold: (settings as any).defaultZebraThreshold ?? 75,
         stripePriceIdPro: settings.stripePriceIdPro ?? "",
+        stripePriceIdProAnnual: (settings as any).stripePriceIdProAnnual ?? "",
+        stripePriceIdUnlimited: (settings as any).stripePriceIdUnlimited ?? "",
+        stripePriceIdUnlimitedAnnual: (settings as any).stripePriceIdUnlimitedAnnual ?? "",
         stripeMonthlyPrice: settings.stripeMonthlyPrice ?? 2990,
       });
       setPushForm({
@@ -129,7 +135,8 @@ export default function AdminSettings() {
       setForm((f) => ({ ...f, [key]: e.target.value })),
   });
 
-  const stripeConfigured = form.stripePriceIdPro.startsWith("price_");
+  const stripeConfigured = form.stripePriceIdPro.startsWith("price_") &&
+    form.stripePriceIdUnlimited.startsWith("price_");
   // S10: vapidPrivateKey nunca é retornada pelo backend por segurança.
   // pushConfigured verifica apenas vapidPublicKey para detectar se keys já existem no banco.
   const pushConfigured = pushForm.vapidPublicKey.length > 10;
@@ -190,7 +197,7 @@ export default function AdminSettings() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-brand" />
-                    <CardTitle className="text-base">Stripe — Plano Pro</CardTitle>
+                    <CardTitle className="text-base">Stripe — Price IDs dos Planos</CardTitle>
                   </div>
                   {stripeConfigured ? (
                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
@@ -198,44 +205,94 @@ export default function AdminSettings() {
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 gap-1">
-                      <XCircle className="h-3 w-3" /> Aguardando Price ID
+                      <XCircle className="h-3 w-3" /> Aguardando Price IDs
                     </Badge>
                   )}
                 </div>
                 <CardDescription className="text-sm">
-                  Insira o <strong>Price ID</strong> do produto "Plakr! Pro" criado no seu Stripe Dashboard.
+                  Insira os <strong>Price IDs</strong> dos produtos criados no seu Stripe Dashboard.
+                  Cada plano e modalidade de cobrança precisa de um Price ID separado.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-5">
+
+                {/* Pro */}
+                <div>
+                  <p className="text-xs font-semibold text-brand uppercase tracking-wider mb-3">Plano Pro — R$ 39,90/mês · R$ 399/ano</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">
+                        Pro Mensal
+                        <span className="text-red-400 ml-1">*</span>
+                      </Label>
+                      <Input
+                        {...strField("stripePriceIdPro")}
+                        placeholder="price_xxxxxxxxxxxxxxxxxxxxxxxx"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">Assinatura recorrente mensal</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Pro Anual</Label>
+                      <Input
+                        {...strField("stripePriceIdProAnnual")}
+                        placeholder="price_xxxxxxxxxxxxxxxxxxxxxxxx"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">Assinatura recorrente anual</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Unlimited */}
+                <div>
+                  <p className="text-xs font-semibold text-brand uppercase tracking-wider mb-3">Plano Ilimitado — R$ 89,90/mês · R$ 899/ano</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">
+                        Ilimitado Mensal
+                        <span className="text-red-400 ml-1">*</span>
+                      </Label>
+                      <Input
+                        {...strField("stripePriceIdUnlimited")}
+                        placeholder="price_xxxxxxxxxxxxxxxxxxxxxxxx"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">Assinatura recorrente mensal</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Ilimitado Anual</Label>
+                      <Input
+                        {...strField("stripePriceIdUnlimitedAnnual")}
+                        placeholder="price_xxxxxxxxxxxxxxxxxxxxxxxx"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">Assinatura recorrente anual</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Preço exibido na UI */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">
-                      Price ID do Plano Pro
-                      <span className="text-red-400 ml-1">*</span>
-                    </Label>
-                    <Input
-                      {...strField("stripePriceIdPro")}
-                      placeholder="price_xxxxxxxxxxxxxxxxxxxxxxxx"
-                      className="font-mono text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Formato: <code className="bg-surface px-1 rounded">price_</code> seguido de 24 caracteres
-                    </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">Preço Mensal (em centavos)</Label>
+                    <Label className="text-sm font-medium">Preço Mensal Pro (em centavos)</Label>
                     <Input
                       {...numField("stripeMonthlyPrice")}
-                      placeholder="2990"
+                      placeholder="3990"
                       className="font-mono"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Exibido na tela de upgrade. Ex: 2990 = R$&nbsp;29,90/mês
+                      Exibido na tela de upgrade. Ex: 3990 = R$&nbsp;39,90/mês
                     </p>
                   </div>
                 </div>
+
                 <div className="rounded-lg border border-border/50 bg-surface/50 p-4 space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Como obter o Price ID</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Como obter os Price IDs</p>
                   <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                     <li>
                       Acesse{" "}
@@ -243,10 +300,10 @@ export default function AdminSettings() {
                         dashboard.stripe.com/products <ExternalLink className="h-3 w-3" />
                       </a>
                     </li>
-                    <li>Clique em <strong>Add product</strong> e crie o produto "Plakr! Pro"</li>
-                    <li>Defina o preço recorrente mensal (ex: R$&nbsp;29,90)</li>
-                    <li>Copie o <strong>Price ID</strong> (começa com <code className="bg-surface px-1 rounded text-xs">price_</code>)</li>
-                    <li>Cole no campo acima e clique em <strong>Salvar</strong></li>
+                    <li>Crie os produtos <strong>Plakr! Pro</strong> e <strong>Plakr! Ilimitado</strong></li>
+                    <li>Para cada produto, adicione 2 preços: mensal e anual</li>
+                    <li>Copie cada <strong>Price ID</strong> (começa com <code className="bg-surface px-1 rounded text-xs">price_</code>)</li>
+                    <li>Cole nos campos acima e clique em <strong>Salvar</strong></li>
                   </ol>
                   <p className="text-xs text-muted-foreground pt-1">
                     💡 Para testes, use o{" "}
