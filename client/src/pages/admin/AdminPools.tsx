@@ -101,7 +101,7 @@ function PoolMembersList({ poolId }: { poolId: number }) {
                   <AvatarFallback className="text-xs">{name.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{name}</p>
+                  <a href={`/profile/${userId}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium truncate hover:text-primary transition-colors block">{name}</a>
                 </div>
                 {role === "organizer" ? (
                   <Badge variant="outline" className="text-xs h-4 px-1 border-yellow-400/30 text-yellow-400">

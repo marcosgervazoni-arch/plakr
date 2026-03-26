@@ -200,7 +200,7 @@ export default function OrganizerMembers() {
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium text-sm truncate">{memberUser.name ?? "Usuário"}</span>
+                            <a href={`/profile/${memberUser.id}`} className="font-medium text-sm truncate hover:text-primary transition-colors">{memberUser.name ?? "Usuário"}</a>
                             {isOrg && (
                               <Badge className="text-xs py-0 px-1.5 bg-primary/10 text-primary border-primary/20">
                                 Organizador
@@ -246,7 +246,7 @@ export default function OrganizerMembers() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem className="gap-2 text-sm">
+                            <DropdownMenuItem className="gap-2 text-sm" onClick={() => window.open(`/profile/${memberUser.id}`, '_blank')}>
                               <ExternalLink className="w-3.5 h-3.5" /> Ver perfil
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />

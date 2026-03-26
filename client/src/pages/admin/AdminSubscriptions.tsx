@@ -211,7 +211,7 @@ export default function AdminSubscriptions() {
                         <StatusBadge status={sub.status} />
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-muted-foreground">{sub.ownerName}</span>
+                        <a href={`/profile/${sub.ownerId}`} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary transition-colors">{sub.ownerName}</a>
                         {sub.planExpiresAt && (
                           <span className="text-xs text-muted-foreground">
                             Expira: {format(new Date(sub.planExpiresAt), "dd/MM/yyyy", { locale: ptBR })}

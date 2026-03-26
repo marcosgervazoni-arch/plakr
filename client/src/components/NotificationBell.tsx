@@ -76,7 +76,10 @@ export default function NotificationBell() {
                 className={`px-4 py-3 border-b border-border/30 last:border-0 cursor-pointer hover:bg-muted/30 transition-colors ${
                   !n.isRead ? "bg-brand-500/5" : ""
                 }`}
-                onClick={() => !n.isRead && markRead.mutate({ id: n.id })}
+                onClick={() => {
+                  if (!n.isRead) markRead.mutate({ id: n.id });
+                  if (n.actionUrl) window.location.href = n.actionUrl;
+                }}
               >
                 <div className="flex items-start gap-2">
                   {!n.isRead && (

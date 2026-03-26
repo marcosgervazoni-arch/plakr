@@ -213,6 +213,7 @@ export const adminDashboardRouter = router({
         id: p.id,
         name: p.name,
         slug: p.slug,
+        ownerId: p.ownerId,
         ownerName: ownerMap[p.ownerId] ?? `#${p.ownerId}`,
         planExpiresAt: p.planExpiresAt,
         stripeSubscriptionId: p.stripeSubscriptionId,

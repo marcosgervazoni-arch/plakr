@@ -1175,3 +1175,23 @@
 - [x] Corrigir todos os links que apontam para /pool/:slug/player/:userId no frontend (PoolPage ranking + membros, PublicProfile botão removido)
 - [x] Verificar se há referências no backend (actionUrl de notificações, etc.) — nenhuma encontrada
 - [x] Corrigir timeout intermitente do teste FIX-6 (testTimeout global 15000ms no vitest.config.ts)
+
+## Feature — Links de perfil em notificações + posição no ranking no Dashboard (26/03/2026)
+- [ ] Regra permanente: toda menção a usuário na plataforma deve linkar para /profile/:userId
+- [ ] NotificationBell: nomes de usuários nos cards de notificação linkados para /profile/:userId
+- [ ] Dashboard: exibir posição atual no ranking ("Xº lugar") no card de cada bolão ativo
+- [ ] Backend: procedure dashboard.getMyPoolsWithRank (ou enriquecer getMyPools com rank do usuário)
+
+## Regra — Linkagem de perfil público em todas as menções de usuário (26/03/2026)
+**Regra permanente:** toda menção a um usuário na plataforma deve linkar para /profile/:userId
+
+### Pontos identificados na varredura:
+- [x] PoolPage.tsx: rankUser.name no ranking — já linkado
+- [x] PoolPage.tsx: memberUser.name na lista de membros — já linkado
+- [x] OrganizerMembers.tsx: memberUser.name no card de membro — linkado + item "Ver perfil" corrigido
+- [x] OrganizerMembers.tsx: removeTarget/transferTarget.name em dialogs destrutivos — texto simples, ok
+- [x] AdminUsers.tsx: u.name na lista e selectedUser.name no sheet — linkados para /profile/:userId
+- [x] AdminPools.tsx: name (membro do bolão) na lista de membros — linkado para /profile/:userId
+- [x] AdminSubscriptions.tsx: sub.ownerName — linkado para /profile/:ownerId (ownerId adicionado no backend)
+- [x] NotificationBell.tsx: ao clicar no card, navega para actionUrl quando disponível
+- [ ] Dashboard.tsx: user.name do próprio usuário — linkar para /profile/:userId (próprio perfil) — pendente (parte da feature de posição no ranking)

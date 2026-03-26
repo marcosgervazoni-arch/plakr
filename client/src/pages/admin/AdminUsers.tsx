@@ -241,7 +241,7 @@ export default function AdminUsers() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-sm truncate">{u.name ?? "Sem nome"}</span>
+                      <a href={`/profile/${u.id}`} target="_blank" rel="noopener noreferrer" className="font-medium text-sm truncate hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>{u.name ?? "Sem nome"}</a>
                       {u.role === "admin" && (
                         <Badge variant="outline" className="text-xs border-brand/30 text-brand">
                           <Shield className="h-2.5 w-2.5 mr-1" />Admin
@@ -288,7 +288,7 @@ export default function AdminUsers() {
                     <User className="h-5 w-5 text-brand" />
                   </div>
                   <div>
-                    <SheetTitle className="text-base">{selectedUser.name ?? "Sem nome"}</SheetTitle>
+                    <SheetTitle className="text-base"><a href={`/profile/${selectedUser.id}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">{selectedUser.name ?? "Sem nome"}</a></SheetTitle>
                     <p className="text-xs text-muted-foreground">{selectedUser.email ?? "Sem e-mail"}</p>
                   </div>
                 </div>
