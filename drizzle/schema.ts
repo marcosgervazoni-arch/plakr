@@ -745,7 +745,16 @@ export const landingPageConfig = mysqlTable("landing_page_config", {
   ctaFinalPrimaryText: varchar("ctaFinalPrimaryText", { length: 64 }).default("Criar bolão grátis").notNull(),
   ctaFinalSecondaryText: varchar("ctaFinalSecondaryText", { length: 64 }).default("Criar campeonato personalizado").notNull(),
   ctaFinalSecondaryEnabled: boolean("ctaFinalSecondaryEnabled").default(true).notNull(),
-  // ── Metadados ─────────────────────────────────────────────────────────────
+  // ── Código customizado por seção (prioridade sobre conteúdo padrão) ─────────────────────
+  heroCustomCode: text("heroCustomCode"),
+  credibilityCustomCode: text("credibilityCustomCode"),
+  howItWorksCustomCode: text("howItWorksCustomCode"),
+  differentialCustomCode: text("differentialCustomCode"),
+  featuresCustomCode: text("featuresCustomCode"),
+  plansCustomCode: text("plansCustomCode"),
+  faqCustomCode: text("faqCustomCode"),
+  ctaFinalCustomCode: text("ctaFinalCustomCode"),
+  // ── Metadados ──────────────────────────────────────────────────────────────────────────────
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 export type LandingPageConfig = typeof landingPageConfig.$inferSelect;

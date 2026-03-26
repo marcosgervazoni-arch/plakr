@@ -2,9 +2,9 @@
  * Plakr! — Landing Page (Home)
  * Redesign completo: foco em bolão com a galera + Copa 2026 + campeonato personalizado como diferencial Pro.
  * Seções controladas via painel Super Admin (landingPage.getConfig).
+ * customCode por seção: quando preenchido, tem prioridade total sobre o conteúdo padrão.
  */
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { trpc } from "@/lib/trpc";
@@ -189,6 +189,14 @@ function MockCustomTournamentCard() {
   );
 }
 
+// ─── Helper: renderiza customCode ou conteúdo padrão ─────────────────────────
+function CustomOrDefault({ customCode, children }: { customCode: string | null | undefined; children: React.ReactNode }) {
+  if (customCode && customCode.trim()) {
+    return <div dangerouslySetInnerHTML={{ __html: customCode }} />;
+  }
+  return <>{children}</>;
+}
+
 // ─── Landing Page Principal ───────────────────────────────────────────────────
 
 export default function Home() {
@@ -266,355 +274,371 @@ export default function Home() {
       </nav>
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full opacity-10"
-            style={{ background: "radial-gradient(ellipse, #FFB800 0%, transparent 70%)" }} />
-        </div>
-        <div className="max-w-6xl mx-auto px-4 pt-20 pb-16 relative">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="flex-1 text-center lg:text-left">
-              {heroBadgeEnabled && (
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
-                  style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.3)", color: "#FFB800" }}>
-                  <Trophy size={12} />
-                  {heroBadgeText}
-                </div>
-              )}
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
-                {heroHeadline}{" "}
-              </h1>
-              <p className="text-lg leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0" style={{ color: "#9CA3AF" }}>
-                {heroSubheadline}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                <a href={loginUrl}>
-                  <Button size="lg" className="w-full sm:w-auto font-bold text-base px-8 py-3"
-                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                    {heroCtaPrimaryText}
-                    <ArrowRight size={16} className="ml-2" />
-                  </Button>
-                </a>
-                {heroCtaSecondaryEnabled && (
+      <CustomOrDefault customCode={config?.heroCustomCode}>
+        <section className="relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full opacity-10"
+              style={{ background: "radial-gradient(ellipse, #FFB800 0%, transparent 70%)" }} />
+          </div>
+          <div className="max-w-6xl mx-auto px-4 pt-20 pb-16 relative">
+            <div className="flex flex-col lg:flex-row items-center gap-12">
+              <div className="flex-1 text-center lg:text-left">
+                {heroBadgeEnabled && (
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6"
+                    style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.3)", color: "#FFB800" }}>
+                    <Trophy size={12} />
+                    {heroBadgeText}
+                  </div>
+                )}
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
+                  {heroHeadline}
+                </h1>
+                <p className="text-lg leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0" style={{ color: "#9CA3AF" }}>
+                  {heroSubheadline}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                   <a href={loginUrl}>
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto font-semibold text-sm px-6 py-3"
-                      style={{ borderColor: "rgba(255,184,0,0.3)", color: "#FFB800", background: "transparent" }}>
-                      {heroCtaSecondaryText}
+                    <Button size="lg" className="w-full sm:w-auto font-bold text-base px-8 py-3"
+                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+                      {heroCtaPrimaryText}
+                      <ArrowRight size={16} className="ml-2" />
                     </Button>
                   </a>
-                )}
+                  {heroCtaSecondaryEnabled && (
+                    <a href={loginUrl}>
+                      <Button size="lg" variant="outline" className="w-full sm:w-auto font-semibold text-sm px-6 py-3"
+                        style={{ borderColor: "rgba(255,184,0,0.3)", color: "#FFB800", background: "transparent" }}>
+                        {heroCtaSecondaryText}
+                      </Button>
+                    </a>
+                  )}
+                </div>
+                <p className="text-xs mt-4" style={{ color: "#6B7280" }}>
+                  Gratuito para começar · Sem cartão de crédito · Pronto em 2 minutos
+                </p>
               </div>
-              <p className="text-xs mt-4" style={{ color: "#6B7280" }}>
-                Gratuito para começar · Sem cartão de crédito · Pronto em 2 minutos
-              </p>
+              <div className="flex-1 w-full max-w-md lg:max-w-none">
+                <MockRankingCard />
+              </div>
             </div>
-            <div className="flex-1 w-full max-w-md lg:max-w-none">
-              <MockRankingCard />
-            </div>
-          </div>
 
-          {heroCountdownEnabled && (
-            <div className="mt-16 text-center">
-              <p className="text-sm mb-4 uppercase tracking-widest font-semibold" style={{ color: "#6B7280" }}>
-                Copa do Mundo 2026 começa em
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                <CountdownUnit value={countdown.days} label="dias" />
-                <span className="text-2xl font-bold pb-4" style={{ color: "#FFB800" }}>:</span>
-                <CountdownUnit value={countdown.hours} label="horas" />
-                <span className="text-2xl font-bold pb-4" style={{ color: "#FFB800" }}>:</span>
-                <CountdownUnit value={countdown.minutes} label="min" />
-                <span className="text-2xl font-bold pb-4" style={{ color: "#FFB800" }}>:</span>
-                <CountdownUnit value={countdown.seconds} label="seg" />
+            {heroCountdownEnabled && (
+              <div className="mt-16 text-center">
+                <p className="text-sm mb-4 uppercase tracking-widest font-semibold" style={{ color: "#6B7280" }}>
+                  Copa do Mundo 2026 começa em
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <CountdownUnit value={countdown.days} label="dias" />
+                  <span className="text-2xl font-bold pb-4" style={{ color: "#FFB800" }}>:</span>
+                  <CountdownUnit value={countdown.hours} label="horas" />
+                  <span className="text-2xl font-bold pb-4" style={{ color: "#FFB800" }}>:</span>
+                  <CountdownUnit value={countdown.minutes} label="min" />
+                  <span className="text-2xl font-bold pb-4" style={{ color: "#FFB800" }}>:</span>
+                  <CountdownUnit value={countdown.seconds} label="seg" />
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </section>
+            )}
+          </div>
+        </section>
+      </CustomOrDefault>
 
       {/* ── CREDIBILIDADE ──────────────────────────────────────────────────── */}
       {(config?.sectionCredibilityEnabled ?? true) && (
-        <section className="py-12 border-y" style={{ borderColor: "rgba(255,255,255,0.06)", background: "#0D1120" }}>
-          <div className="max-w-6xl mx-auto px-4">
-            <p className="text-center text-sm uppercase tracking-widest mb-8 font-semibold" style={{ color: "#6B7280" }}>
-              Campeonatos disponíveis gratuitamente
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {[
-                { emoji: "🏆", name: "Copa do Mundo FIFA 2026" },
-                { emoji: "🇧🇷", name: "Brasileirão Série A" },
-                { emoji: "⭐", name: "Champions League" },
-                { emoji: "🏅", name: "Copa do Brasil" },
-                { emoji: "🌎", name: "Copa América" },
-                { emoji: "➕", name: "Crie o seu próprio →" },
-              ].map((item) => {
-                const isCustom = item.name.includes("Crie");
-                return (
-                  <div key={item.name} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm"
-                    style={{
-                      background: isCustom ? "rgba(255,184,0,0.1)" : "rgba(255,255,255,0.04)",
-                      border: isCustom ? "1px solid rgba(255,184,0,0.3)" : "1px solid rgba(255,255,255,0.06)",
-                      color: isCustom ? "#FFB800" : "#D1D5DB",
-                      fontWeight: isCustom ? 600 : 400,
-                    }}>
-                    <span>{item.emoji}</span>
-                    <span>{item.name}</span>
-                  </div>
-                );
-              })}
+        <CustomOrDefault customCode={config?.credibilityCustomCode}>
+          <section className="py-12 border-y" style={{ borderColor: "rgba(255,255,255,0.06)", background: "#0D1120" }}>
+            <div className="max-w-6xl mx-auto px-4">
+              <p className="text-center text-sm uppercase tracking-widest mb-8 font-semibold" style={{ color: "#6B7280" }}>
+                Campeonatos disponíveis gratuitamente
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {[
+                  { emoji: "🏆", name: "Copa do Mundo FIFA 2026" },
+                  { emoji: "🇧🇷", name: "Brasileirão Série A" },
+                  { emoji: "⭐", name: "Champions League" },
+                  { emoji: "🏅", name: "Copa do Brasil" },
+                  { emoji: "🌎", name: "Copa América" },
+                  { emoji: "➕", name: "Crie o seu próprio →" },
+                ].map((item) => {
+                  const isCustom = item.name.includes("Crie");
+                  return (
+                    <div key={item.name} className="flex items-center gap-2 px-4 py-2 rounded-full text-sm"
+                      style={{
+                        background: isCustom ? "rgba(255,184,0,0.1)" : "rgba(255,255,255,0.04)",
+                        border: isCustom ? "1px solid rgba(255,184,0,0.3)" : "1px solid rgba(255,255,255,0.06)",
+                        color: isCustom ? "#FFB800" : "#D1D5DB",
+                        fontWeight: isCustom ? 600 : 400,
+                      }}>
+                      <span>{item.emoji}</span>
+                      <span>{item.name}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </CustomOrDefault>
       )}
 
       {/* ── COMO FUNCIONA ──────────────────────────────────────────────────── */}
       {(config?.sectionHowItWorksEnabled ?? true) && (
-        <section id="como-funciona" className="py-20">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="text-center mb-14">
-              <h2 className="text-3xl md:text-4xl font-black mb-4">
-                Seu bolão pronto em{" "}
-                <span style={{ color: "#FFB800" }}>2 minutos</span>
-              </h2>
-              <p className="text-lg" style={{ color: "#9CA3AF" }}>
-                Você é o organizador. A galera só precisa do link.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className="space-y-8">
-                <StepCard number="1" title="Crie o bolão"
-                  description="Escolha o campeonato, dê um nome ao bolão e defina se é público ou privado. Leva menos de 1 minuto." />
-                <StepCard number="2" title="Convide a galera"
-                  description="Compartilhe o link ou o código de 6 dígitos. Quem receber entra direto, sem burocracia." />
-                <StepCard number="3" title="Faça seus palpites"
-                  description="Cada participante palpita nos jogos antes do prazo. O sistema calcula os pontos automaticamente." />
-                <StepCard number="4" title="Acompanhe o ranking"
-                  description="O ranking atualiza em tempo real conforme os resultados saem. Quem acertar mais, vence." />
+        <CustomOrDefault customCode={config?.howItWorksCustomCode}>
+          <section id="como-funciona" className="py-20">
+            <div className="max-w-6xl mx-auto px-4">
+              <div className="text-center mb-14">
+                <h2 className="text-3xl md:text-4xl font-black mb-4">
+                  Seu bolão pronto em{" "}
+                  <span style={{ color: "#FFB800" }}>2 minutos</span>
+                </h2>
+                <p className="text-lg" style={{ color: "#9CA3AF" }}>
+                  Você é o organizador. A galera só precisa do link.
+                </p>
               </div>
-              <MockBetCard />
+              <div className="grid md:grid-cols-2 gap-12 items-center">
+                <div className="space-y-8">
+                  <StepCard number="1" title="Crie o bolão"
+                    description="Escolha o campeonato, dê um nome ao bolão e defina se é público ou privado. Leva menos de 1 minuto." />
+                  <StepCard number="2" title="Convide a galera"
+                    description="Compartilhe o link ou o código de 6 dígitos. Quem receber entra direto, sem burocracia." />
+                  <StepCard number="3" title="Faça seus palpites"
+                    description="Cada participante palpita nos jogos antes do prazo. O sistema calcula os pontos automaticamente." />
+                  <StepCard number="4" title="Acompanhe o ranking"
+                    description="O ranking atualiza em tempo real conforme os resultados saem. Quem acertar mais, vence." />
+                </div>
+                <MockBetCard />
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </CustomOrDefault>
       )}
 
       {/* ── DIFERENCIAL PRO ────────────────────────────────────────────────── */}
       {(config?.sectionDifferentialEnabled ?? true) && (
-        <section id="diferencial" className="py-20" style={{ background: "#0D1120" }}>
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <MockCustomTournamentCard />
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4"
-                  style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.3)", color: "#FFB800" }}>
-                  <Crown size={12} />
-                  Exclusivo Pro
+        <CustomOrDefault customCode={config?.differentialCustomCode}>
+          <section id="diferencial" className="py-20" style={{ background: "#0D1120" }}>
+            <div className="max-w-6xl mx-auto px-4">
+              <div className="grid md:grid-cols-2 gap-12 items-center">
+                <MockCustomTournamentCard />
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4"
+                    style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.3)", color: "#FFB800" }}>
+                    <Crown size={12} />
+                    Exclusivo Pro
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
+                    {differentialHeadline}
+                  </h2>
+                  <p className="text-base leading-relaxed mb-6" style={{ color: "#9CA3AF" }}>
+                    {differentialBody}
+                  </p>
+                  <ul className="space-y-3 mb-8">
+                    {[
+                      "Crie times e defina grupos",
+                      "Configure fases: grupos, oitavas, quartas, semi e final",
+                      "Insira os resultados você mesmo",
+                      "Participantes ilimitados",
+                      "Regras de pontuação customizáveis",
+                    ].map((item) => (
+                      <li key={item} className="flex items-center gap-3 text-sm">
+                        <CheckCircle size={16} style={{ color: "#00FF88", flexShrink: 0 }} />
+                        <span style={{ color: "#D1D5DB" }}>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <a href={loginUrl}>
+                    <Button className="font-bold"
+                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+                      Criar campeonato personalizado
+                      <Crown size={14} className="ml-2" />
+                    </Button>
+                  </a>
                 </div>
-                <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
-                  {differentialHeadline}
-                </h2>
-                <p className="text-base leading-relaxed mb-6" style={{ color: "#9CA3AF" }}>
-                  {differentialBody}
-                </p>
-                <ul className="space-y-3 mb-8">
-                  {[
-                    "Crie times e defina grupos",
-                    "Configure fases: grupos, oitavas, quartas, semi e final",
-                    "Insira os resultados você mesmo",
-                    "Participantes ilimitados",
-                    "Regras de pontuação customizáveis",
-                  ].map((item) => (
-                    <li key={item} className="flex items-center gap-3 text-sm">
-                      <CheckCircle size={16} style={{ color: "#00FF88", flexShrink: 0 }} />
-                      <span style={{ color: "#D1D5DB" }}>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a href={loginUrl}>
-                  <Button className="font-bold"
-                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                    Criar campeonato personalizado
-                    <Crown size={14} className="ml-2" />
-                  </Button>
-                </a>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </CustomOrDefault>
       )}
 
       {/* ── FEATURES ───────────────────────────────────────────────────────── */}
       {(config?.sectionFeaturesEnabled ?? true) && (
-        <section className="py-20">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="text-center mb-14">
-              <h2 className="text-3xl md:text-4xl font-black mb-4">
-                Tudo que você precisa para um{" "}
-                <span style={{ color: "#FFB800" }}>bolão épico</span>
-              </h2>
-              <p className="text-lg" style={{ color: "#9CA3AF" }}>
-                Funcionalidades pensadas para organizadores e participantes.
-              </p>
+        <CustomOrDefault customCode={config?.featuresCustomCode}>
+          <section className="py-20">
+            <div className="max-w-6xl mx-auto px-4">
+              <div className="text-center mb-14">
+                <h2 className="text-3xl md:text-4xl font-black mb-4">
+                  Tudo que você precisa para um{" "}
+                  <span style={{ color: "#FFB800" }}>bolão épico</span>
+                </h2>
+                <p className="text-lg" style={{ color: "#9CA3AF" }}>
+                  Funcionalidades pensadas para organizadores e participantes.
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <FeatureCard icon={Trophy} title="Ranking em tempo real"
+                  description="Pontuação calculada automaticamente após cada resultado. Acompanhe a disputa jogo a jogo." highlight />
+                <FeatureCard icon={Target} title="Palpites com prazo"
+                  description="O sistema bloqueia palpites automaticamente quando o jogo começa. Sem trapaça." />
+                <FeatureCard icon={Users} title="Convite fácil"
+                  description="Link direto ou código de 6 dígitos. A galera entra em segundos, sem precisar criar conta antes." />
+                <FeatureCard icon={BarChart3} title="Estatísticas detalhadas"
+                  description="Aproveitamento, placares exatos, zebras acertadas, goleadas. Perfil completo de cada apostador." />
+                <FeatureCard icon={Award} title="Conquistas e badges"
+                  description="Sistema de gamificação com badges por desempenho. Quem acerta mais, sobe de nível." />
+                <FeatureCard icon={Share2} title="Retrospectiva do bolão"
+                  description="Ao final do campeonato, cada participante recebe um card para compartilhar com seu resultado." />
+                <FeatureCard icon={Settings} title="Regras customizáveis"
+                  description="No Pro, você define quantos pontos vale cada tipo de acerto. Deixe o bolão do seu jeito." />
+                <FeatureCard icon={Globe} title="Campeonatos globais"
+                  description="Copa do Mundo, Brasileirão, Champions e muito mais. Sempre atualizados pela plataforma." />
+                <FeatureCard icon={Crown} title="Campeonato personalizado"
+                  description="Crie seu próprio torneio com times, fases e resultados. Exclusivo do plano Pro." highlight />
+              </div>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <FeatureCard icon={Trophy} title="Ranking em tempo real"
-                description="Pontuação calculada automaticamente após cada resultado. Acompanhe a disputa jogo a jogo." highlight />
-              <FeatureCard icon={Target} title="Palpites com prazo"
-                description="O sistema bloqueia palpites automaticamente quando o jogo começa. Sem trapaça." />
-              <FeatureCard icon={Users} title="Convite fácil"
-                description="Link direto ou código de 6 dígitos. A galera entra em segundos, sem precisar criar conta antes." />
-              <FeatureCard icon={BarChart3} title="Estatísticas detalhadas"
-                description="Aproveitamento, placares exatos, zebras acertadas, goleadas. Perfil completo de cada apostador." />
-              <FeatureCard icon={Award} title="Conquistas e badges"
-                description="Sistema de gamificação com badges por desempenho. Quem acerta mais, sobe de nível." />
-              <FeatureCard icon={Share2} title="Retrospectiva do bolão"
-                description="Ao final do campeonato, cada participante recebe um card para compartilhar com seu resultado." />
-              <FeatureCard icon={Settings} title="Regras customizáveis"
-                description="No Pro, você define quantos pontos vale cada tipo de acerto. Deixe o bolão do seu jeito." />
-              <FeatureCard icon={Globe} title="Campeonatos globais"
-                description="Copa do Mundo, Brasileirão, Champions e muito mais. Sempre atualizados pela plataforma." />
-              <FeatureCard icon={Crown} title="Campeonato personalizado"
-                description="Crie seu próprio torneio com times, fases e resultados. Exclusivo do plano Pro." highlight />
-            </div>
-          </div>
-        </section>
+          </section>
+        </CustomOrDefault>
       )}
 
       {/* ── PLANOS ─────────────────────────────────────────────────────────── */}
       {(config?.sectionPlansEnabled ?? true) && (
-        <section id="planos" className="py-20" style={{ background: "#0D1120" }}>
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="text-center mb-14">
-              <h2 className="text-3xl md:text-4xl font-black mb-4">
-                Comece grátis.{" "}
-                <span style={{ color: "#FFB800" }}>Evolua quando quiser.</span>
-              </h2>
-              <p className="text-lg" style={{ color: "#9CA3AF" }}>
-                O plano gratuito já é completo para a maioria dos bolões. O Pro é para quem quer mais.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="rounded-2xl p-8" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-white mb-1">Gratuito</h3>
-                  <div className="text-4xl font-black text-white">R$ 0</div>
-                  <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Para sempre</p>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {freeFeatures.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm">
-                      <CheckCircle size={14} style={{ color: "#00FF88", flexShrink: 0 }} />
-                      <span style={{ color: "#D1D5DB" }}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a href={loginUrl} className="block">
-                  <Button className="w-full font-bold" variant="outline"
-                    style={{ borderColor: "rgba(255,255,255,0.15)", color: "white", background: "rgba(255,255,255,0.04)" }}>
-                    Criar bolão grátis
-                  </Button>
-                </a>
+        <CustomOrDefault customCode={config?.plansCustomCode}>
+          <section id="planos" className="py-20" style={{ background: "#0D1120" }}>
+            <div className="max-w-4xl mx-auto px-4">
+              <div className="text-center mb-14">
+                <h2 className="text-3xl md:text-4xl font-black mb-4">
+                  Comece grátis.{" "}
+                  <span style={{ color: "#FFB800" }}>Evolua quando quiser.</span>
+                </h2>
+                <p className="text-lg" style={{ color: "#9CA3AF" }}>
+                  O plano gratuito já é completo para a maioria dos bolões. O Pro é para quem quer mais.
+                </p>
               </div>
-              <div className="rounded-2xl p-8 relative overflow-hidden"
-                style={{ background: "#121826", border: "2px solid #FFB800", boxShadow: "0 0 40px rgba(255,184,0,0.1)" }}>
-                <div className="absolute top-4 right-4">
-                  <span className="px-2 py-1 rounded-full text-xs font-bold"
-                    style={{ background: "rgba(255,184,0,0.15)", color: "#FFB800" }}>
-                    MAIS POPULAR
-                  </span>
-                </div>
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-white mb-1">
-                    Pro <span style={{ color: "#FFB800" }}>por bolão</span>
-                  </h3>
-                  <div className="flex items-baseline gap-1">
-                    <div className="text-4xl font-black text-white">R$ 29</div>
-                    <span style={{ color: "#6B7280" }}>/mês por bolão</span>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="rounded-2xl p-8" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="mb-6">
+                    <h3 className="text-xl font-bold text-white mb-1">Gratuito</h3>
+                    <div className="text-4xl font-black text-white">R$ 0</div>
+                    <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Para sempre</p>
                   </div>
-                  <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Cancele quando quiser</p>
+                  <ul className="space-y-3 mb-8">
+                    {freeFeatures.map((f) => (
+                      <li key={f} className="flex items-center gap-3 text-sm">
+                        <CheckCircle size={14} style={{ color: "#00FF88", flexShrink: 0 }} />
+                        <span style={{ color: "#D1D5DB" }}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <a href={loginUrl} className="block">
+                    <Button className="w-full font-bold" variant="outline"
+                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "white", background: "rgba(255,255,255,0.04)" }}>
+                      Criar bolão grátis
+                    </Button>
+                  </a>
                 </div>
-                <ul className="space-y-3 mb-8">
-                  {proFeatures.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm">
-                      <CheckCircle size={14} style={{ color: "#FFB800", flexShrink: 0 }} />
-                      <span style={{ color: "#D1D5DB" }}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a href={loginUrl} className="block">
-                  <Button className="w-full font-bold"
-                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                    Começar com Pro
-                    <Crown size={14} className="ml-2" />
-                  </Button>
-                </a>
+                <div className="rounded-2xl p-8 relative overflow-hidden"
+                  style={{ background: "#121826", border: "2px solid #FFB800", boxShadow: "0 0 40px rgba(255,184,0,0.1)" }}>
+                  <div className="absolute top-4 right-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-bold"
+                      style={{ background: "rgba(255,184,0,0.15)", color: "#FFB800" }}>
+                      MAIS POPULAR
+                    </span>
+                  </div>
+                  <div className="mb-6">
+                    <h3 className="text-xl font-bold text-white mb-1">
+                      Pro <span style={{ color: "#FFB800" }}>por bolão</span>
+                    </h3>
+                    <div className="flex items-baseline gap-1">
+                      <div className="text-4xl font-black text-white">R$ 29</div>
+                      <span style={{ color: "#6B7280" }}>/mês por bolão</span>
+                    </div>
+                    <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Cancele quando quiser</p>
+                  </div>
+                  <ul className="space-y-3 mb-8">
+                    {proFeatures.map((f) => (
+                      <li key={f} className="flex items-center gap-3 text-sm">
+                        <CheckCircle size={14} style={{ color: "#FFB800", flexShrink: 0 }} />
+                        <span style={{ color: "#D1D5DB" }}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <a href={loginUrl} className="block">
+                    <Button className="w-full font-bold"
+                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+                      Começar com Pro
+                      <Crown size={14} className="ml-2" />
+                    </Button>
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </CustomOrDefault>
       )}
 
       {/* ── FAQ ────────────────────────────────────────────────────────────── */}
       {(config?.sectionFaqEnabled ?? true) && (
-        <section className="py-20">
-          <div className="max-w-3xl mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-black mb-4">
-                Perguntas{" "}
-                <span style={{ color: "#FFB800" }}>frequentes</span>
-              </h2>
+        <CustomOrDefault customCode={config?.faqCustomCode}>
+          <section className="py-20">
+            <div className="max-w-3xl mx-auto px-4">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-black mb-4">
+                  Perguntas{" "}
+                  <span style={{ color: "#FFB800" }}>frequentes</span>
+                </h2>
+              </div>
+              <Accordion type="single" collapsible className="space-y-3">
+                {faqs.map((faq, i) => (
+                  <AccordionItem key={i} value={`faq-${i}`} className="rounded-xl overflow-hidden"
+                    style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <AccordionTrigger className="px-6 py-4 text-left font-semibold text-white hover:no-underline hover:text-white [&>svg]:text-yellow-400">
+                      {faq.q}
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-4 text-sm leading-relaxed" style={{ color: "#9CA3AF" }}>
+                      {faq.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </div>
-            <Accordion type="single" collapsible className="space-y-3">
-              {faqs.map((faq, i) => (
-                <AccordionItem key={i} value={`faq-${i}`} className="rounded-xl overflow-hidden"
-                  style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <AccordionTrigger className="px-6 py-4 text-left font-semibold text-white hover:no-underline hover:text-white [&>svg]:text-yellow-400">
-                    {faq.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 pb-4 text-sm leading-relaxed" style={{ color: "#9CA3AF" }}>
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-        </section>
+          </section>
+        </CustomOrDefault>
       )}
 
       {/* ── CTA FINAL ──────────────────────────────────────────────────────── */}
       {(config?.sectionCtaFinalEnabled ?? true) && (
-        <section className="py-24 relative overflow-hidden" style={{ background: "#0D1120" }}>
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-10"
-              style={{ background: "radial-gradient(ellipse, #FFB800 0%, transparent 70%)" }} />
-          </div>
-          <div className="max-w-3xl mx-auto px-4 text-center relative">
-            <div className="text-5xl mb-6">🏆</div>
-            <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
-              {ctaFinalHeadline}
-            </h2>
-            <p className="text-lg mb-10" style={{ color: "#9CA3AF" }}>
-              Gratuito para começar. Sem cartão de crédito. Pronto em 2 minutos.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href={loginUrl}>
-                <Button size="lg" className="font-bold text-base px-8 py-3"
-                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                  {ctaFinalPrimaryText}
-                  <ArrowRight size={16} className="ml-2" />
-                </Button>
-              </a>
-              {ctaFinalSecondaryEnabled && (
+        <CustomOrDefault customCode={config?.ctaFinalCustomCode}>
+          <section className="py-24 relative overflow-hidden" style={{ background: "#0D1120" }}>
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-10"
+                style={{ background: "radial-gradient(ellipse, #FFB800 0%, transparent 70%)" }} />
+            </div>
+            <div className="max-w-3xl mx-auto px-4 text-center relative">
+              <div className="text-5xl mb-6">🏆</div>
+              <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
+                {ctaFinalHeadline}
+              </h2>
+              <p className="text-lg mb-10" style={{ color: "#9CA3AF" }}>
+                Gratuito para começar. Sem cartão de crédito. Pronto em 2 minutos.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <a href={loginUrl}>
-                  <Button size="lg" variant="outline" className="font-semibold text-sm px-6 py-3"
-                    style={{ borderColor: "rgba(255,184,0,0.3)", color: "#FFB800", background: "transparent" }}>
-                    {ctaFinalSecondaryText}
-                    <Crown size={14} className="ml-2" />
+                  <Button size="lg" className="font-bold text-base px-8 py-3"
+                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+                    {ctaFinalPrimaryText}
+                    <ArrowRight size={16} className="ml-2" />
                   </Button>
                 </a>
-              )}
+                {ctaFinalSecondaryEnabled && (
+                  <a href={loginUrl}>
+                    <Button size="lg" variant="outline" className="font-semibold text-sm px-6 py-3"
+                      style={{ borderColor: "rgba(255,184,0,0.3)", color: "#FFB800", background: "transparent" }}>
+                      {ctaFinalSecondaryText}
+                      <Crown size={14} className="ml-2" />
+                    </Button>
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </CustomOrDefault>
       )}
 
       {/* ── FOOTER ─────────────────────────────────────────────────────────── */}

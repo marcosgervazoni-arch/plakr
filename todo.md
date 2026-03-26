@@ -1542,3 +1542,10 @@
 - [x] Configurações gerais: badge Copa 2026, data do contador, CTAs
 - [x] Proteção de rota: AdminLayout já garante acesso apenas a admins
 - [x] Botão "Visualizar" abre a landing page em nova aba
+
+## Admin Landing Page: Código Customizado + Acordeão — Sprint 26/03/2026
+- [x] Backend: adicionar colunas customCode por seção na tabela landing_page_config (8 colunas adicionadas via migração 0026)
+- [x] Backend: migração SQL aplicada e procedure updateConfig atualizado para aceitar customCode
+- [x] Frontend (Home.tsx): wrapper CustomOrDefault em todas as 8 seções — customCode tem prioridade total via dangerouslySetInnerHTML
+- [x] Admin (AdminLandingPage.tsx): reorganizado em acordeão com 8 seções — toggle + editor + campo CustomCodeField colapsável
+- [x] Admin: badges Ativo/Inativo + badge Código no header de cada item do acordeão

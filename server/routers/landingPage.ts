@@ -29,6 +29,15 @@ const landingPageConfigSchema = z.object({
   ctaFinalPrimaryText: z.string().max(64).optional(),
   ctaFinalSecondaryText: z.string().max(64).optional(),
   ctaFinalSecondaryEnabled: z.boolean().optional(),
+  // Custom code per section (overrides default content when set)
+  heroCustomCode: z.string().nullable().optional(),
+  credibilityCustomCode: z.string().nullable().optional(),
+  howItWorksCustomCode: z.string().nullable().optional(),
+  differentialCustomCode: z.string().nullable().optional(),
+  featuresCustomCode: z.string().nullable().optional(),
+  plansCustomCode: z.string().nullable().optional(),
+  faqCustomCode: z.string().nullable().optional(),
+  ctaFinalCustomCode: z.string().nullable().optional(),
 });
 
 export const landingPageRouter = router({
