@@ -1,0 +1,28 @@
+{
+  "query": "SELECT b.id, b.userId, b.poolId, b.gameId, b.predictedScoreA, b.predictedScoreB, \n  b.pointsEarned, b.resultType, b.createdAt, b.updatedAt,\n  u.name as user_name,\n  g.scoreA as real_A, g.scoreB as real_B, g.status as game_status,\n  g.matchDate, p.name as pool_name\nFROM bets b\nJOIN users u ON u.id = b.userId\nJOIN games g ON g.id = b.gameId\nJOIN pools p ON p.id = b.poolId\nWHERE b.id = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT b.id, b.userId, b.poolId, b.gameId, b.predictedScoreA, b.predictedScoreB, \n  b.pointsEarned, b.resultType, b.createdAt, b.updatedAt,\n  u.name as user_name,\n  g.scoreA as real_A, g.scoreB as real_B, g.status as game_status,\n  g.matchDate, p.name as pool_name\nFROM bets b\nJOIN users u ON u.id = b.userId\nJOIN games g ON g.id = b.gameId\nJOIN pools p ON p.id = b.poolId\nWHERE b.id = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "poolId": "30001",
+      "gameId": "1",
+      "predictedScoreA": "1",
+      "predictedScoreB": "3",
+      "pointsEarned": "23",
+      "resultType": "exact",
+      "createdAt": "2026-03-23 04:29:22",
+      "updatedAt": "2026-03-23 04:29:43",
+      "user_name": "Marcos Gervazoni",
+      "real_A": "1",
+      "real_B": "3",
+      "game_status": "finished",
+      "matchDate": "2026-06-11 19:00:00",
+      "pool_name": "Bolão da Copa Teste 2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tpoolId\tgameId\tpredictedScoreA\tpredictedScoreB\tpointsEarned\tresultType\tcreatedAt\tupdatedAt\tuser_name\treal_A\treal_B\tgame_status\tmatchDate\tpool_name\n1\t1\t30001\t1\t1\t3\t23\texact\t2026-03-23 04:29:22\t2026-03-23 04:29:43\tMarcos Gervazoni\t1\t3\tfinished\t2026-06-11 19:00:00\tBolão da Copa Teste 2\n",
+  "stderr": "",
+  "execution_time_ms": 367
+}

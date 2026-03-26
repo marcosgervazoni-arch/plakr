@@ -1,0 +1,22 @@
+{
+  "query": "SELECT b.id, b.predictedScoreA, b.predictedScoreB, b.pointsEarned, b.resultType,\n  g.scoreA as real_A, g.scoreB as real_B, g.status as game_status,\n  g.matchDate, p.name as pool_name\nFROM bets b\nJOIN games g ON g.id = b.gameId\nJOIN pools p ON p.id = b.poolId\nWHERE b.userId = 1\nORDER BY b.updatedAt DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT b.id, b.predictedScoreA, b.predictedScoreB, b.pointsEarned, b.resultType,\n  g.scoreA as real_A, g.scoreB as real_B, g.status as game_status,\n  g.matchDate, p.name as pool_name\nFROM bets b\nJOIN games g ON g.id = b.gameId\nJOIN pools p ON p.id = b.poolId\nWHERE b.userId = 1\nORDER BY b.updatedAt DESC\nLIMIT 20;",
+  "rows": [
+    {
+      "id": "1",
+      "predictedScoreA": "1",
+      "predictedScoreB": "3",
+      "pointsEarned": "23",
+      "resultType": "exact",
+      "real_A": "1",
+      "real_B": "3",
+      "game_status": "finished",
+      "matchDate": "2026-06-11 19:00:00",
+      "pool_name": "Bolão da Copa Teste 2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tpredictedScoreA\tpredictedScoreB\tpointsEarned\tresultType\treal_A\treal_B\tgame_status\tmatchDate\tpool_name\n1\t1\t3\t23\texact\t1\t3\tfinished\t2026-06-11 19:00:00\tBolão da Copa Teste 2\n",
+  "stderr": "",
+  "execution_time_ms": 351
+}

@@ -1501,3 +1501,10 @@
 - [x] DashboardBadgeCarousel: usa BadgeCard — tooltip já funciona
 - [x] Página de Conquistas: usa BadgeCard — tooltip já funciona
 - [x] Admin de Badges: já tinha tooltip próprio
+
+## Bug: Lógica de Atribuição de Badges — Sprint 26/03/2026
+- [x] Investigar critério do badge "Chute Certo" no banco (criterionType, criterionValue)
+- [x] Auditar a engine de recálculo de badges para todos os criterionTypes
+- [x] BUGFIX: Filtrar bolões com status=deleted em todas as queries de badges (exact_scores_career, exact_scores_in_pool, zebra_scores_career, zebra_in_pool, zebra_exact_score, first_bet, all_bets_in_pool)
+- [x] BUGFIX: Revogar badge "Chute Certo" do usuário 1 — será revogado automaticamente pelo recalculateAll
+- [x] BUGFIX: recalculateAll agora revoga badges não-manuais cujo critério não é mais atendido

@@ -1,0 +1,16 @@
+{
+  "query": "SELECT u.id, u.name, \n  COALESCE(SUM(pms.exactScoreCount), 0) as total_exact_scores,\n  COALESCE(SUM(pms.totalBets), 0) as total_bets\nFROM users u\nLEFT JOIN pool_member_stats pms ON pms.userId = u.id\nWHERE u.id = (SELECT id FROM users ORDER BY createdAt ASC LIMIT 1)\nGROUP BY u.id, u.name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT u.id, u.name, \n  COALESCE(SUM(pms.exactScoreCount), 0) as total_exact_scores,\n  COALESCE(SUM(pms.totalBets), 0) as total_bets\nFROM users u\nLEFT JOIN pool_member_stats pms ON pms.userId = u.id\nWHERE u.id = (SELECT id FROM users ORDER BY createdAt ASC LIMIT 1)\nGROUP BY u.id, u.name;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Marcos Gervazoni",
+      "total_exact_scores": "1",
+      "total_bets": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttotal_exact_scores\ttotal_bets\n1\tMarcos Gervazoni\t1\t1\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

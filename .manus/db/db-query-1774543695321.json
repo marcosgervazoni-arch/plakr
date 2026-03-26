@@ -1,0 +1,19 @@
+{
+  "query": "-- Verificar membros do pool 30001\nSELECT pm.userId, pm.role, pm.joinedAt, u.name\nFROM pool_members pm\nJOIN users u ON u.id = pm.userId\nWHERE pm.poolId = 30001;\n\n-- Verificar o pool 30001\nSELECT id, name, ownerId, status, createdAt FROM pools WHERE id = 30001;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Verificar membros do pool 30001\nSELECT pm.userId, pm.role, pm.joinedAt, u.name\nFROM pool_members pm\nJOIN users u ON u.id = pm.userId\nWHERE pm.poolId = 30001;\n\n-- Verificar o pool 30001\nSELECT id, name, ownerId, status, createdAt FROM pools WHERE id = 30001;",
+  "rows": [
+    {
+      "userId": "1",
+      "role": "organizer",
+      "joinedAt": "2026-03-23 04:27:31",
+      "name": "Marcos Gervazoni"
+    }
+  ],
+  "messages": [
+    "id\tname\townerId\tstatus\tcreatedAt",
+    "30001\tBolão da Copa Teste 2\t1\tdeleted\t2026-03-23 04:27:31"
+  ],
+  "stdout": "userId\trole\tjoinedAt\tname\n1\torganizer\t2026-03-23 04:27:31\tMarcos Gervazoni\nid\tname\townerId\tstatus\tcreatedAt\n30001\tBolão da Copa Teste 2\t1\tdeleted\t2026-03-23 04:27:31\n",
+  "stderr": "",
+  "execution_time_ms": 408
+}

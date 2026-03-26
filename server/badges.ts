@@ -63,7 +63,7 @@ export async function checkCriterion(
   const db = await getDb();
   if (!db) return false;
 
-  const { eq, and, sql, desc } = await import("drizzle-orm");
+  const { eq, and, sql, desc, ne } = await import("drizzle-orm");
   const { bets, games, poolMemberStats, poolMembers, pools, referrals, users } =
     await import("../drizzle/schema");
 
@@ -71,22 +71,33 @@ export async function checkCriterion(
     // ── PRECISÃO ──────────────────────────────────────────────────────────────
 
     case "exact_scores_career": {
+      // Exclui palpites de bolões excluídos (status = 'deleted')
       const [row] = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(bets)
-        .where(and(eq(bets.userId, userId), eq(bets.resultType, "exact")));
+        .innerJoin(pools, eq(bets.poolId, pools.id))
+        .where(and(
+          eq(bets.userId, userId),
+          eq(bets.resultType, "exact"),
+          ne(pools.status, "deleted")
+        ));
       return Number(row?.count ?? 0) >= criterionValue;
     }
 
     case "exact_scores_in_pool": {
-      // Verifica se o usuário tem >= N placares exatos em algum bolão específico
+      // Verifica se o usuário tem >= N placares exatos em algum bolão específico (não excluído)
       const rows = await db
         .select({
           poolId: bets.poolId,
           count: sql<number>`COUNT(*)`,
         })
         .from(bets)
-        .where(and(eq(bets.userId, userId), eq(bets.resultType, "exact")))
+        .innerJoin(pools, eq(bets.poolId, pools.id))
+        .where(and(
+          eq(bets.userId, userId),
+          eq(bets.resultType, "exact"),
+          ne(pools.status, "deleted")
+        ))
         .groupBy(bets.poolId);
       return rows.some((r) => Number(r.count) >= criterionValue);
     }
@@ -159,22 +170,25 @@ export async function checkCriterion(
     // ── ZEBRA ─────────────────────────────────────────────────────────────────
 
     case "zebra_scores_career": {
+      // Exclui palpites de bolões excluídos
       const [row] = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(bets)
         .innerJoin(games, eq(bets.gameId, games.id))
+        .innerJoin(pools, eq(bets.poolId, pools.id))
         .where(
           and(
             eq(bets.userId, userId),
             eq(games.isZebraResult, true),
-            sql`${bets.resultType} IN ('exact', 'correct_result')`
+            sql`${bets.resultType} IN ('exact', 'correct_result')`,
+            ne(pools.status, "deleted")
           )
         );
       return Number(row?.count ?? 0) >= criterionValue;
     }
 
     case "zebra_in_pool": {
-      // >= N zebras acertadas no mesmo bolão
+      // >= N zebras acertadas no mesmo bolão (não excluído)
       const rows = await db
         .select({
           poolId: bets.poolId,
@@ -182,11 +196,13 @@ export async function checkCriterion(
         })
         .from(bets)
         .innerJoin(games, eq(bets.gameId, games.id))
+        .innerJoin(pools, eq(bets.poolId, pools.id))
         .where(
           and(
             eq(bets.userId, userId),
             eq(games.isZebraResult, true),
-            sql`${bets.resultType} IN ('exact', 'correct_result')`
+            sql`${bets.resultType} IN ('exact', 'correct_result')`,
+            ne(pools.status, "deleted")
           )
         )
         .groupBy(bets.poolId);
@@ -194,38 +210,43 @@ export async function checkCriterion(
     }
 
     case "zebra_exact_score": {
-      // Acertar placar exato de uma zebra
+      // Acertar placar exato de uma zebra (em bolão não excluído)
       const [row] = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(bets)
         .innerJoin(games, eq(bets.gameId, games.id))
+        .innerJoin(pools, eq(bets.poolId, pools.id))
         .where(
           and(
             eq(bets.userId, userId),
             eq(games.isZebraResult, true),
-            eq(bets.resultType, "exact")
+            eq(bets.resultType, "exact"),
+            ne(pools.status, "deleted")
           )
         );
       return Number(row?.count ?? 0) >= criterionValue;
     }
 
-    // ── COMUNIDADE ────────────────────────────────────────────────────────────
+    // ── COMUNIDADE ──────────────────────────────────────────────────────────────
 
     case "first_bet": {
+      // Conta apenas palpites em bolões não excluídos
       const [row] = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(bets)
-        .where(eq(bets.userId, userId));
+        .innerJoin(pools, eq(bets.poolId, pools.id))
+        .where(and(eq(bets.userId, userId), ne(pools.status, "deleted")));
       return Number(row?.count ?? 0) >= 1;
     }
 
     case "all_bets_in_pool": {
-      // Palpitou em todos os jogos de pelo menos 1 bolão
+      // Palpitou em todos os jogos de pelo menos 1 bolão (não excluído)
       // Verifica bolões onde o usuário é membro e compara totalBets com total de jogos do torneio
       const memberPools = await db
         .select({ poolId: poolMembers.poolId })
         .from(poolMembers)
-        .where(eq(poolMembers.userId, userId));
+        .innerJoin(pools, eq(poolMembers.poolId, pools.id))
+        .where(and(eq(poolMembers.userId, userId), ne(pools.status, "deleted")));
 
       for (const mp of memberPools) {
         const [poolRow] = await db
@@ -500,6 +521,20 @@ export async function calculateAndAssignBadges(
   const earnedIds = new Set(earned.map((e) => e.badgeId));
 
   const newlyEarned: { badgeId: number; name: string; emoji: string | null }[] = [];
+
+  // ── REVOGAR badges não-manuais que o usuário não deveria mais ter ──────────
+  // Isso garante que badges atribuídos indevidamente (ex: via bolão excluído)
+  // sejam removidos quando o recalculateAll for executado.
+  for (const earnedId of Array.from(earnedIds)) {
+    const badge = allBadges.find((b) => b.id === earnedId);
+    if (!badge) continue; // badge inativo ou não encontrado, não revogar aqui
+    const stillQualifies = await checkCriterion(userId, badge.criterionType, badge.criterionValue);
+    if (!stillQualifies) {
+      await db.delete(userBadges).where(and(eq(userBadges.userId, userId), eq(userBadges.badgeId, earnedId)));
+      earnedIds.delete(earnedId);
+      logger.info({ userId, badgeId: earnedId, name: badge.name }, "[Badges] Badge revogado (critério não atendido mais)");
+    }
+  }
 
   for (const badge of allBadges) {
     if (earnedIds.has(badge.id)) continue;

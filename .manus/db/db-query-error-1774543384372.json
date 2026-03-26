@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, name, criterion_type, criterion_value, rarity, description, is_active FROM badges WHERE name LIKE '%Chute%' OR name LIKE '%chute%' OR criterion_type LIKE '%exact%' OR criterion_type LIKE '%score%' LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, name, criterion_type, criterion_value, rarity, description, is_active FROM badges WHERE name LIKE '%Chute%' OR name LIKE '%chute%' OR criterion_type LIKE '%exact%' OR criterion_type LIKE '%score%' LIMIT 20;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'criterion_type' in 'where clause'"
+  ]
+}

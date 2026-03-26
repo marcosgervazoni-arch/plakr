@@ -1,0 +1,8 @@
+{
+  "query": "SELECT b.id, b.homeScore, b.awayScore, b.pointsEarned, b.isExactScore,\n  g.homeScore as real_home, g.awayScore as real_away, g.status as game_status,\n  g.matchDate, p.name as pool_name\nFROM bets b\nJOIN games g ON g.id = b.gameId\nJOIN pools p ON p.id = b.poolId\nWHERE b.userId = 1\nORDER BY b.updatedAt DESC\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT b.id, b.homeScore, b.awayScore, b.pointsEarned, b.isExactScore,\n  g.homeScore as real_home, g.awayScore as real_away, g.status as game_status,\n  g.matchDate, p.name as pool_name\nFROM bets b\nJOIN games g ON g.id = b.gameId\nJOIN pools p ON p.id = b.poolId\nWHERE b.userId = 1\nORDER BY b.updatedAt DESC\nLIMIT 20;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'b.homescore' in 'field list'"
+  ]
+}

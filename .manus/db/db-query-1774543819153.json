@@ -1,0 +1,22 @@
+{
+  "query": "-- Ver pool_member_stats do usuário 1 em todos os bolões\nSELECT pms.poolId, pms.userId, pms.totalPoints, pms.exactScoreCount, pms.totalBets,\n  p.name as pool_name, p.status as pool_status\nFROM pool_member_stats pms\nJOIN pools p ON p.id = pms.poolId\nWHERE pms.userId = 1;\n\n-- Ver como o scoring funciona: verificar se há algum trigger ou procedure\n-- que atualiza pool_member_stats de um bolão baseado em palpites de outro\nSELECT b.poolId, COUNT(*) as bets_count, SUM(b.pointsEarned) as total_points\nFROM bets b\nWHERE b.userId = 1\nGROUP BY b.poolId;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Ver pool_member_stats do usuário 1 em todos os bolões\nSELECT pms.poolId, pms.userId, pms.totalPoints, pms.exactScoreCount, pms.totalBets,\n  p.name as pool_name, p.status as pool_status\nFROM pool_member_stats pms\nJOIN pools p ON p.id = pms.poolId\nWHERE pms.userId = 1;\n\n-- Ver como o scoring funciona: verificar se há algum trigger ou procedure\n-- que atualiza pool_member_stats de um bolão baseado em palpites de outro\nSELECT b.poolId, COUNT(*) as bets_count, SUM(b.pointsEarned) as total_points\nFROM bets b\nWHERE b.userId = 1\nGROUP BY b.poolId;",
+  "rows": [
+    {
+      "poolId": "30001",
+      "userId": "1",
+      "totalPoints": "23",
+      "exactScoreCount": "1",
+      "totalBets": "1",
+      "pool_name": "Bolão da Copa Teste 2",
+      "pool_status": "deleted"
+    }
+  ],
+  "messages": [
+    "poolId\tbets_count\ttotal_points",
+    "30001\t1\t23"
+  ],
+  "stdout": "poolId\tuserId\ttotalPoints\texactScoreCount\ttotalBets\tpool_name\tpool_status\n30001\t1\t23\t1\t1\tBolão da Copa Teste 2\tdeleted\npoolId\tbets_count\ttotal_points\n30001\t1\t23\n",
+  "stderr": "",
+  "execution_time_ms": 403
+}

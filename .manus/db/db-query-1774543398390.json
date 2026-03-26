@@ -1,0 +1,91 @@
+{
+  "query": "SELECT id, name, criterionType, criterionValue, rarity, description, isActive FROM badges WHERE name LIKE '%Chute%' OR name LIKE '%chute%' OR criterionType LIKE '%exact%' OR criterionType LIKE '%score%' LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, name, criterionType, criterionValue, rarity, description, isActive FROM badges WHERE name LIKE '%Chute%' OR name LIKE '%chute%' OR criterionType LIKE '%exact%' OR criterionType LIKE '%score%' LIMIT 20;",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Chute Certo",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "1",
+      "rarity": "common",
+      "description": "Acertou o placar exato de um jogo. Não foi sorte... ou foi?",
+      "isActive": "1"
+    },
+    {
+      "id": "30002",
+      "name": "Manja Muito",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "10",
+      "rarity": "uncommon",
+      "description": "Dez placares exatos na carreira. Definitivamente sabe o que está fazendo.",
+      "isActive": "1"
+    },
+    {
+      "id": "30003",
+      "name": "Profeta",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "50",
+      "rarity": "rare",
+      "description": "Cinquenta placares exatos. Alguém avisa o Nostradamus.",
+      "isActive": "1"
+    },
+    {
+      "id": "30004",
+      "name": "Mafioso das Apostas",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "100",
+      "rarity": "epic",
+      "description": "Cem placares exatos. Manda currículo pro VAR.",
+      "isActive": "1"
+    },
+    {
+      "id": "30005",
+      "name": "Fiz de Novo",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "2",
+      "rarity": "uncommon",
+      "description": "Dois placares exatos no mesmo bolão. Coincidência? Duas vezes não é.",
+      "isActive": "1"
+    },
+    {
+      "id": "30006",
+      "name": "Cola na Minha",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "5",
+      "rarity": "rare",
+      "description": "Cinco placares exatos no mesmo bolão. Todo mundo quer sentar do seu lado.",
+      "isActive": "1"
+    },
+    {
+      "id": "30013",
+      "name": "Só Eu Acreditei",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "1",
+      "rarity": "uncommon",
+      "description": "Acertou uma zebra. Todo mundo duvidou, você não.",
+      "isActive": "1"
+    },
+    {
+      "id": "30014",
+      "name": "Sou do Contra",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "5",
+      "rarity": "rare",
+      "description": "Cinco zebras acertadas na carreira. Bola de cristal Tupperware.",
+      "isActive": "1"
+    },
+    {
+      "id": "30016",
+      "name": "Foi na Sorte",
+      "criterionType": "zebra_exact_score",
+      "criterionValue": "1",
+      "rarity": "epic",
+      "description": "Acertou o placar exato de uma zebra. Não foi na sorte, mas pode dizer que foi.",
+      "isActive": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcriterionType\tcriterionValue\trarity\tdescription\tisActive\n30001\tChute Certo\texact_scores_career\t1\tcommon\tAcertou o placar exato de um jogo. Não foi sorte... ou foi?\t1\n30002\tManja Muito\texact_scores_career\t10\tuncommon\tDez placares exatos na carreira. Definitivamente sabe o que está fazendo.\t1\n30003\tProfeta\texact_scores_career\t50\trare\tCinquenta placares exatos. Alguém avisa o Nostradamus.\t1\n30004\tMafioso das Apostas\texact_scores_career\t100\tepic\tCem placares exatos. Manda currículo pro VAR.\t1\n30005\tFiz de Novo\texact_scores_in_pool\t2\tuncommon\tDois placares exatos no mesmo bolão. Coincidência? Duas vezes não é.\t1\n30006\tCola na Minha\texact_scores_in_pool\t5\trare\tCinco placares exatos no mesmo bolão. Todo mundo quer sentar do seu lado.\t1\n30013\tSó Eu Acreditei\tzebra_scores_career\t1\tuncommon\tAcertou uma zebra. Todo mundo duvidou, você não.\t1\n30014\tSou do Contra\tzebra_scores_career\t5\trare\tCinco zebras acertadas na carreira. Bola de cristal Tupperware.\t1\n30016\tFoi na Sorte\tzebra_exact_score\t1\tepic\tAcertou o placar exato de uma zebra. Não foi na sorte, mas pode dizer que foi.\t1\n",
+  "stderr": "",
+  "execution_time_ms": 367
+}

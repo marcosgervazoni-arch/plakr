@@ -1,0 +1,63 @@
+{
+  "query": "-- Quais bolões têm o jogo id=1?\nSELECT p.id as pool_id, p.name as pool_name, p.status, p.tournamentId,\n  g.id as game_id, g.scoreA, g.scoreB, g.status as game_status\nFROM pools p\nJOIN games g ON g.tournamentId = p.tournamentId\nWHERE g.id = 1;\n\n-- Todos os palpites no jogo id=1 (de qualquer bolão)\nSELECT b.id, b.userId, b.poolId, b.gameId, b.predictedScoreA, b.predictedScoreB, \n  b.resultType, b.pointsEarned, p.name as pool_name, p.status as pool_status\nFROM bets b\nJOIN pools p ON p.id = b.poolId\nWHERE b.gameId = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Quais bolões têm o jogo id=1?\nSELECT p.id as pool_id, p.name as pool_name, p.status, p.tournamentId,\n  g.id as game_id, g.scoreA, g.scoreB, g.status as game_status\nFROM pools p\nJOIN games g ON g.tournamentId = p.tournamentId\nWHERE g.id = 1;\n\n-- Todos os palpites no jogo id=1 (de qualquer bolão)\nSELECT b.id, b.userId, b.poolId, b.gameId, b.predictedScoreA, b.predictedScoreB, \n  b.resultType, b.pointsEarned, p.name as pool_name, p.status as pool_status\nFROM bets b\nJOIN pools p ON p.id = b.poolId\nWHERE b.gameId = 1;",
+  "rows": [
+    {
+      "pool_id": "30001",
+      "pool_name": "Bolão da Copa Teste 2",
+      "status": "deleted",
+      "tournamentId": "2",
+      "game_id": "1",
+      "scoreA": "1",
+      "scoreB": "3",
+      "game_status": "finished"
+    },
+    {
+      "pool_id": "90001",
+      "pool_name": "Bolão para teste de uso",
+      "status": "active",
+      "tournamentId": "2",
+      "game_id": "1",
+      "scoreA": "1",
+      "scoreB": "3",
+      "game_status": "finished"
+    },
+    {
+      "pool_id": "120001",
+      "pool_name": "Teste 123",
+      "status": "active",
+      "tournamentId": "2",
+      "game_id": "1",
+      "scoreA": "1",
+      "scoreB": "3",
+      "game_status": "finished"
+    },
+    {
+      "pool_id": "150008",
+      "pool_name": "it59945089 Pool A",
+      "status": "active",
+      "tournamentId": "2",
+      "game_id": "1",
+      "scoreA": "1",
+      "scoreB": "3",
+      "game_status": "finished"
+    },
+    {
+      "pool_id": "150009",
+      "pool_name": "it59945089 Pool B",
+      "status": "active",
+      "tournamentId": "2",
+      "game_id": "1",
+      "scoreA": "1",
+      "scoreB": "3",
+      "game_status": "finished"
+    }
+  ],
+  "messages": [
+    "id\tuserId\tpoolId\tgameId\tpredictedScoreA\tpredictedScoreB\tresultType\tpointsEarned\tpool_name\tpool_status",
+    "1\t1\t30001\t1\t1\t3\texact\t23\tBolão da Copa Teste 2\tdeleted"
+  ],
+  "stdout": "pool_id\tpool_name\tstatus\ttournamentId\tgame_id\tscoreA\tscoreB\tgame_status\n30001\tBolão da Copa Teste 2\tdeleted\t2\t1\t1\t3\tfinished\n90001\tBolão para teste de uso\tactive\t2\t1\t1\t3\tfinished\n120001\tTeste 123\tactive\t2\t1\t1\t3\tfinished\n150008\tit59945089 Pool A\tactive\t2\t1\t1\t3\tfinished\n150009\tit59945089 Pool B\tactive\t2\t1\t1\t3\tfinished\nid\tuserId\tpoolId\tgameId\tpredictedScoreA\tpredictedScoreB\tresultType\tpointsEarned\tpool_name\tpool_status\n1\t1\t30001\t1\t1\t3\texact\t23\tBolão da Copa Teste 2\tdeleted\n",
+  "stderr": "",
+  "execution_time_ms": 397
+}
