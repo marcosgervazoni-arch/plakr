@@ -13,6 +13,7 @@ import {
   ClipboardList,
   CreditCard,
   FileSpreadsheet,
+  Film,
   Globe,
   Layers,
   Megaphone,
@@ -42,7 +43,8 @@ export type AdminSection =
   | "system"
   | "import-logs"
   | "integrations"
-  | "badges";
+  | "badges"
+  | "retrospectivas";
 
 interface NavItem {
   id: AdminSection;
@@ -75,6 +77,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "tournaments", label: "Campeonatos", icon: Trophy, path: "/admin/tournaments" },
       { id: "pools", label: "Bolões", icon: BookOpen, path: "/admin/pools" },
       { id: "game-results", label: "Resultados", icon: ClipboardList, path: "/admin/game-results" },
+      { id: "retrospectivas", label: "Retrospectivas", icon: Film, path: "/admin/retrospectivas" },
     ],
   },
   {

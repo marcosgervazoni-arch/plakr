@@ -1317,3 +1317,13 @@
 ### QA
 - [ ] Testes Vitest: concludePool, auto-conclusão, geração de retrospectiva
 - [ ] Checkpoint final
+
+## Sprint — Retrospectiva v2 (Sugestões 1 e 2)
+
+- [ ] Backend: procedure `adminGetRetrospectives` — listar retrospectivas com status, contagem, erros
+- [ ] Backend: procedure `adminReprocessRetrospective` — reprocessar geração de cards para um bolão
+- [ ] Frontend: página Admin → Retrospectivas com tabela de bolões concluídos, status de geração e botão reprocessar
+- [ ] Frontend: preview do card PNG no Slide 3 (Melhor Momento) e Slide 4 (Posição Final)
+- [ ] Frontend: botão "Compartilhar este card" contextual nos slides que exibem o card
+- [ ] Testes Vitest: cobrir adminGetRetrospectives e adminReprocessRetrospective
+- [ ] Checkpoint final

@@ -406,13 +406,7 @@ function Slide3({ retro }: { retro: Retrospective }) {
         <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">{content.description}</p>
       </div>
       {retro.shareCard?.imageUrl && (
-        <div className="mt-2 rounded-xl overflow-hidden border border-border/40 w-full max-w-[200px] mx-auto">
-          <img
-            src={retro.shareCard.imageUrl}
-            alt="Card de compartilhamento"
-            className="w-full object-cover"
-          />
-        </div>
+        <ShareCardPreview imageUrl={retro.shareCard.imageUrl} poolName={retro.poolName} />
       )}
     </div>
   );
@@ -449,6 +443,9 @@ function Slide4({ retro, isPodium }: { retro: Retrospective; isPodium: boolean }
           <p className="text-xs text-amber-400 font-medium">🏆 Você ficou no pódio!</p>
         </div>
       )}
+      {retro.shareCard?.imageUrl && (
+        <ShareCardPreview imageUrl={retro.shareCard.imageUrl} poolName={retro.poolName} />
+      )}
     </div>
   );
 }
@@ -480,6 +477,82 @@ function Slide5({ retro }: { retro: Retrospective }) {
         </a>
       </div>
       <p className="text-xs text-muted-foreground/60">apostai.com.br</p>
+    </div>
+  );
+}
+
+// ─── SHARE CARD PREVIEW ───────────────────────────────────────────────────────
+
+function ShareCardPreview({ imageUrl, poolName }: { imageUrl: string; poolName: string }) {
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Minha retrospectiva — ${poolName}`,
+          text: `Veja minha jornada no bolão "${poolName}" no ApostAI!`,
+          url: window.location.href,
+        });
+      } else {
+        window.open(imageUrl, "_blank");
+      }
+    } catch {
+      // usuário cancelou
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `apostai-${poolName.replace(/\s+/g, "-").toLowerCase()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silencioso
+    }
+  };
+
+  return (
+    <div className="w-full space-y-3 mt-1">
+      {/* Label */}
+      <p className="text-xs text-muted-foreground text-center">
+        Seu card para compartilhar
+      </p>
+
+      {/* Moldura estilo celular */}
+      <div className="relative mx-auto w-fit">
+        {/* Reflexo/brilho decorativo */}
+        <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary/30 via-transparent to-transparent blur-sm opacity-60 pointer-events-none" />
+        <div className="relative rounded-xl overflow-hidden border-2 border-border/60 shadow-xl shadow-black/40 max-w-[220px] mx-auto">
+          <img
+            src={imageUrl}
+            alt="Card de compartilhamento"
+            className="w-full object-cover block"
+            loading="lazy"
+          />
+        </div>
+      </div>
+
+      {/* Botões contextuais */}
+      <div className="flex gap-2 justify-center">
+        <button
+          onClick={handleDownload}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card border border-border/60 text-xs text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Salvar
+        </button>
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/30 text-xs text-primary hover:bg-primary/20 transition-colors font-medium"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+          Compartilhar
+        </button>
+      </div>
     </div>
   );
 }

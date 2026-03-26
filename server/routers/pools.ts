@@ -978,6 +978,126 @@ export const poolsRouter = router({
       return { ...retro, shareCard: card ?? null };
     }),
 
+  // ── Admin: listar retrospectivas de todos os bolões concluídos ────────────────────────
+  adminGetRetrospectives: adminProcedure
+    .input(z.object({
+      page: z.number().default(1),
+      limit: z.number().default(20),
+      search: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await (await import("../db")).getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { pools, poolRetrospectives, userShareCards, users } = await import("../../drizzle/schema");
+      const { eq, and, like, desc, count, sql } = await import("drizzle-orm");
+
+      const offset = (input.page - 1) * input.limit;
+
+      // Buscar bolões concluídos
+      const whereClause = input.search
+        ? and(eq(pools.status, "concluded"), like(pools.name, `%${input.search}%`))
+        : eq(pools.status, "concluded");
+
+      const poolList = await db
+        .select({
+          id: pools.id,
+          name: pools.name,
+          slug: pools.slug,
+          concludedAt: pools.concludedAt,
+          concludedBy: pools.concludedBy,
+          ownerId: pools.ownerId,
+        })
+        .from(pools)
+        .where(whereClause)
+        .orderBy(desc(pools.concludedAt))
+        .limit(input.limit)
+        .offset(offset);
+
+      // Para cada bolão, contar retrospectivas e cards gerados
+      const enriched = await Promise.all(poolList.map(async (pool) => {
+        const [retroCount] = await db
+          .select({ count: count() })
+          .from(poolRetrospectives)
+          .where(eq(poolRetrospectives.poolId, pool.id));
+
+        const [cardCount] = await db
+          .select({ count: count() })
+          .from(userShareCards)
+          .where(eq(userShareCards.poolId, pool.id));
+
+        // Contar participantes do bolão (via poolRetrospectives como proxy)
+        const totalExpected = retroCount?.count ?? 0;
+        const totalCards = cardCount?.count ?? 0;
+
+        // Buscar nome do organizador
+        let ownerName = "Desconhecido";
+        if (pool.ownerId) {
+          const [owner] = await db
+            .select({ name: users.name })
+            .from(users)
+            .where(eq(users.id, pool.ownerId))
+            .limit(1);
+          if (owner) ownerName = owner.name ?? "Desconhecido";
+        }
+
+        const status = totalExpected === 0
+          ? "pending"
+          : totalCards >= totalExpected
+          ? "complete"
+          : "partial";
+
+        return {
+          ...pool,
+          ownerName,
+          totalRetrospectives: totalExpected,
+          totalCards,
+          status,
+        };
+      }));
+
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(pools)
+        .where(whereClause);
+
+      return {
+        items: enriched,
+        total,
+        page: input.page,
+        totalPages: Math.ceil(total / input.limit),
+      };
+    }),
+
+  // ── Admin: reprocessar geração de retrospectiva para um bolão ────────────────────────
+  adminReprocessRetrospective: adminProcedure
+    .input(z.object({ poolId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const pool = await getPoolById(input.poolId);
+      if (!pool) throw new TRPCError({ code: "NOT_FOUND" });
+      if (pool.status !== "concluded") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Apenas bolões concluídos podem ter retrospectiva reprocessada.",
+        });
+      }
+
+      // Reprocessar retrospectiva para todos os membros do bolão
+      const { generateAndUploadRetrospective } = await import("../retrospective");
+      const db2 = await (await import("../db")).getDb();
+      if (!db2) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { poolMembers } = await import("../../drizzle/schema");
+      const { eq: eq2 } = await import("drizzle-orm");
+      const members = await db2
+        .select({ userId: poolMembers.userId })
+        .from(poolMembers)
+        .where(eq2(poolMembers.poolId, input.poolId));
+      await Promise.all(members.map((m) => generateAndUploadRetrospective(input.poolId, m.userId)));
+
+      await createAdminLog(ctx.user.id, "pool.reprocessRetrospective", "pool", input.poolId, {});
+
+      return { success: true };
+    }),
+
   getBracket: protectedProcedure
     .input(z.object({ poolId: z.number() }))
     .query(async ({ input, ctx }) => {

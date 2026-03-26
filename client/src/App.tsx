@@ -55,6 +55,7 @@ import AdminGameResults from "./pages/admin/AdminGameResults";
 import AdminSystemHealth from "./pages/admin/AdminSystemHealth";
 import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminImportLogs from "./pages/admin/AdminImportLogs";
+import AdminRetrospectivas from "./pages/admin/AdminRetrospectivas";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useReferralCapture } from "./hooks/useReferralCapture";
 
@@ -116,6 +117,7 @@ function Router() {
       <Route path="/admin/system" component={AdminSystemHealth} />
       <Route path="/admin/referrals" component={AdminReferrals} />
       <Route path="/admin/import-logs" component={AdminImportLogs} />
+      <Route path="/admin/retrospectivas" component={AdminRetrospectivas} />
       {/* Legacy admin panel */}
       <Route path="/admin-legacy" component={AdminPanel} />
 
