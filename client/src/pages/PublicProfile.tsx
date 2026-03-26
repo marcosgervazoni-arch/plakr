@@ -234,11 +234,7 @@ export default function PublicProfile() {
                       #{pool.rankPosition ?? pool.rank} · {pool.totalPoints ?? 0} pts
                     </p>
                   </div>
-                  <Link href={`/pool/${pool.poolSlug ?? pool.slug}/player/${resolvedId}`}>
-                    <Button variant="ghost" size="sm" className="gap-1.5 text-xs shrink-0">
-                      Ver desempenho <ExternalLink className="w-3 h-3" />
-                    </Button>
-                  </Link>
+
                 </div>
               ))}
             </div>

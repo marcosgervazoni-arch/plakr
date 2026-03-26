@@ -1169,3 +1169,9 @@
 - [x] Push ao chegar ao 1º lugar: mensagem especial diferenciada
 - [x] Push ao entrar no 2º/3º lugar: mensagem de pódio
 - [x] Não enviar push se o usuário já estava naquela posição (evitar spam) — respeitado via preferências do canal pushRankingUpdate
+
+## Remoção — Página /pool/:slug/player/:userId (26/03/2026)
+- [x] Substituir PlayerProfile.tsx por redirecionamento para /profile/:userId
+- [x] Corrigir todos os links que apontam para /pool/:slug/player/:userId no frontend (PoolPage ranking + membros, PublicProfile botão removido)
+- [x] Verificar se há referências no backend (actionUrl de notificações, etc.) — nenhuma encontrada
+- [x] Corrigir timeout intermitente do teste FIX-6 (testTimeout global 15000ms no vitest.config.ts)

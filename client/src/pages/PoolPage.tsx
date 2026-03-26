@@ -771,7 +771,7 @@ export default function PoolPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                   <a
-                                    href={`/pool/${slug}/player/${rankUser.id}`}
+                                    href={`/profile/${rankUser.id}`}
                                     className={`text-sm font-semibold truncate hover:text-primary transition-colors ${
                                       isMe ? "text-primary" : idx === 0 && !allZero ? "text-yellow-400" : ""
                                     }`}
@@ -887,7 +887,7 @@ export default function PoolPage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <a
-                        href={`/pool/${slug}/player/${memberUser.id}`}
+                        href={`/profile/${memberUser.id}`}
                         className="text-sm font-medium hover:text-primary transition-colors truncate block"
                       >
                         {memberUser.name}
