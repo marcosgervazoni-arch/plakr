@@ -36,9 +36,9 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function GrantProModal({
-  poolId, poolName, open, onClose,
+  userId, poolName, open, onClose,
 }: {
-  poolId: number; poolName: string; open: boolean; onClose: () => void;
+  userId: number; poolName: string; open: boolean; onClose: () => void;
 }) {
   const [days, setDays] = useState(30);
   const [reason, setReason] = useState("");
@@ -46,7 +46,7 @@ function GrantProModal({
 
   const grantMutation = trpc.adminDashboard.grantPoolPro.useMutation({
     onSuccess: () => {
-      toast.success(`Plano Pro concedido! Bolão "${poolName}" tem Pro por ${days} dias.`);
+      toast.success(`Plano Pro concedido ao dono do bolão "${poolName}" por ${days} dias.`);
       utils.adminDashboard.getSubscriptionStats.invalidate();
       onClose();
     },
@@ -81,7 +81,7 @@ function GrantProModal({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => grantMutation.mutate({ poolId, durationDays: days, reason })} disabled={grantMutation.isPending}>
+          <Button onClick={() => grantMutation.mutate({ userId, durationDays: days, reason })} disabled={grantMutation.isPending}>
             {grantMutation.isPending ? "Concedendo..." : "Conceder Pro"}
           </Button>
         </DialogFooter>
@@ -93,8 +93,8 @@ function GrantProModal({
 export default function AdminSubscriptions() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "expiring_soon" | "expired">("all");
-  const [grantModal, setGrantModal] = useState<{ poolId: number; poolName: string } | null>(null);
-  const [revokeTarget, setRevokeTarget] = useState<{ poolId: number; poolName: string } | null>(null);
+  const [grantModal, setGrantModal] = useState<{ userId: number; userName: string } | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<{ userId: number; userName: string } | null>(null);
   const utils = trpc.useUtils();
 
   const { data, isLoading } = trpc.adminDashboard.getSubscriptionStats.useQuery();
@@ -108,7 +108,7 @@ export default function AdminSubscriptions() {
   });
 
   const filtered = (data?.subscriptions ?? []).filter((s) => {
-    const matchSearch = !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.ownerName.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || s.userName.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "all" || s.status === filter;
     return matchSearch && matchFilter;
   });
@@ -207,11 +207,11 @@ export default function AdminSubscriptions() {
                   <div key={sub.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/20 transition-colors">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm truncate">{sub.name}</span>
+                        <span className="font-medium text-sm truncate">{sub.userName}</span>
                         <StatusBadge status={sub.status} />
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
-                        <a href={`/profile/${sub.ownerId}`} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary transition-colors">{sub.ownerName}</a>
+                        <a href={`/profile/${sub.userId}`} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary transition-colors">ID: {sub.userId}</a>
                         {sub.planExpiresAt && (
                           <span className="text-xs text-muted-foreground">
                             Expira: {format(new Date(sub.planExpiresAt), "dd/MM/yyyy", { locale: ptBR })}
@@ -225,7 +225,7 @@ export default function AdminSubscriptions() {
                           <ExternalLink className="h-3.5 w-3.5 mr-1" />Stripe
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-brand hover:text-brand" onClick={() => setGrantModal({ poolId: sub.id, poolName: sub.name })}>
+                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-brand hover:text-brand" onClick={() => setGrantModal({ userId: sub.userId, userName: sub.userName })}>
                         <Gift className="h-3.5 w-3.5 mr-1" />Estender
                       </Button>
                       {sub.status !== "expired" && (
@@ -233,7 +233,7 @@ export default function AdminSubscriptions() {
                           variant="ghost"
                           size="sm"
                           className="h-7 px-2 text-xs text-red-400 hover:text-red-400"
-                          onClick={() => setRevokeTarget({ poolId: sub.id, poolName: sub.name })}
+                          onClick={() => setRevokeTarget({ userId: sub.userId, userName: sub.userName })}
                           disabled={revokeMutation.isPending}
                         >
                           <XCircle className="h-3.5 w-3.5 mr-1" />Revogar
@@ -254,7 +254,7 @@ export default function AdminSubscriptions() {
       </div>
 
       {grantModal && (
-        <GrantProModal poolId={grantModal.poolId} poolName={grantModal.poolName} open={true} onClose={() => setGrantModal(null)} />
+        <GrantProModal userId={grantModal.userId} poolName={grantModal.userName} open={true} onClose={() => setGrantModal(null)} />
       )}
 
       {/* AlertDialog de confirmação para revogar Pro */}
@@ -263,7 +263,7 @@ export default function AdminSubscriptions() {
           <AlertDialogHeader>
             <AlertDialogTitle>Revogar plano Pro?</AlertDialogTitle>
             <AlertDialogDescription>
-              O bolão <strong>&ldquo;{revokeTarget?.poolName}&rdquo;</strong> perderá imediatamente o acesso
+              O usuário <strong>&ldquo;{revokeTarget?.userName}&rdquo;</strong> perderá imediatamente o acesso
               a todos os recursos Pro. Esta ação não pode ser desfeita automaticamente.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -272,7 +272,7 @@ export default function AdminSubscriptions() {
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 text-white"
               onClick={() => {
-                if (revokeTarget) revokeMutation.mutate({ poolId: revokeTarget.poolId });
+                if (revokeTarget) revokeMutation.mutate({ userId: revokeTarget.userId });
                 setRevokeTarget(null);
               }}
             >

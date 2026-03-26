@@ -178,11 +178,7 @@ export default function JoinPool() {
               {preview.tournament && (
                 <p className="text-sm text-muted-foreground mt-0.5">{preview.tournament.name}</p>
               )}
-              {preview.plan === "pro" && (
-                <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2.5 py-0.5 rounded-full mt-1.5">
-                  <Crown className="w-3 h-3" /> Plano Pro
-                </span>
-              )}
+
             </div>
           </div>
 

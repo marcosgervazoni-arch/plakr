@@ -36,6 +36,7 @@ import {
 import { useParams } from "wouter";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useUserPlan } from "@/hooks/useUserPlan";
 
 type AccessType = "public" | "private_link";
 
@@ -45,7 +46,6 @@ export default function OrganizerAccess() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [regenConfirm, setRegenConfirm] = useState<boolean>(false);
   const utils = trpc.useUtils();
-
   const { data: poolData, refetch } = trpc.pools.getBySlug.useQuery(
     { slug: slug ?? "" },
     { enabled: !!slug }
@@ -96,8 +96,8 @@ export default function OrganizerAccess() {
     updateMutation.mutate({ poolId: pool.id, accessType });
   };
 
-  const isPro = pool?.plan === "pro";
-  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
+  const { isPro, isProExpired } = useUserPlan();
+  void isProExpired; // usado no OrganizerLayout
   const accessType = (pool?.accessType ?? "private_link") as AccessType;
   const inviteLink = pool?.inviteToken
     ? `${window.location.origin}/join/${pool.inviteToken}`
@@ -309,7 +309,7 @@ export default function OrganizerAccess() {
                 Total no período: <strong>{accessStats.daily.reduce((s, d) => s + d.count, 0)} ingressos</strong>
               </p>
             </div>
-          ) : pool?.plan !== "pro" ? (
+          ) : !isPro ? (
             <div className="bg-card border border-border/30 rounded-xl p-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-muted-foreground" />

@@ -55,7 +55,10 @@ export const platformSettings = mysqlTable("platform_settings", {
   fbPixelId: varchar("fbPixelId", { length: 64 }),
   adNetworkScripts: json("adNetworkScripts").$type<Record<string, string>>(),
   stripePriceIdPro: varchar("stripePriceIdPro", { length: 128 }),
-  stripeMonthlyPrice: int("stripeMonthlyPrice").default(2990),
+  stripePriceIdProAnnual: varchar("stripePriceIdProAnnual", { length: 128 }),
+  stripePriceIdUnlimited: varchar("stripePriceIdUnlimited", { length: 128 }),
+  stripePriceIdUnlimitedAnnual: varchar("stripePriceIdUnlimitedAnnual", { length: 128 }),
+  stripeMonthlyPrice: int("stripeMonthlyPrice").default(3990),
   // VAPID keys para Web Push — gerenciadas pelo superadmin no painel
   vapidPublicKey: text("vapidPublicKey"),
   vapidPrivateKey: text("vapidPrivateKey"),
@@ -230,9 +233,6 @@ export const pools = mysqlTable("pools", {
   tournamentId: int("tournamentId")
     .notNull()
     .references(() => tournaments.id),
-  plan: mysqlEnum("plan", ["free", "pro"]).default("free").notNull(),
-  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 128 }),
-  planExpiresAt: timestamp("planExpiresAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

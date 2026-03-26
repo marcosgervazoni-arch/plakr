@@ -153,6 +153,57 @@ export async function upsertUserPlan(data: InsertUserPlan) {
   await db.insert(userPlans).values(data).onDuplicateKeyUpdate({ set: data });
 }
 
+/**
+ * Retorna o tier ativo do plano do usuário.
+ * Considera expirado se planExpiresAt < agora.
+ */
+export async function getUserPlanTier(userId: number): Promise<"free" | "pro" | "unlimited"> {
+  const plan = await getUserPlan(userId);
+  if (!plan || !plan.isActive) return "free";
+  if (plan.planExpiresAt && plan.planExpiresAt < new Date()) return "free";
+  return (plan.plan as "free" | "pro" | "unlimited") ?? "free";
+}
+
+/**
+ * Verifica se o usuário pode criar mais bolões com base no seu tier.
+ * Retorna { allowed: true } ou { allowed: false, reason, limit }
+ */
+export async function canCreatePool(userId: number): Promise<{ allowed: boolean; reason?: string; limit?: number }> {
+  const { PLAN_LIMITS } = await import("../shared/plans");
+  const tier = await getUserPlanTier(userId);
+  const limits = PLAN_LIMITS[tier];
+  if (limits.maxPools === Infinity) return { allowed: true };
+  const activeCount = await countActivePoolsByOwner(userId);
+  if (activeCount >= limits.maxPools) {
+    return {
+      allowed: false,
+      reason: `Você atingiu o limite de ${limits.maxPools} bolões ativos do plano ${tier === "free" ? "Gratuito" : "Pro"}. Faça upgrade para criar mais bolões.`,
+      limit: limits.maxPools,
+    };
+  }
+  return { allowed: true };
+}
+
+/**
+ * Verifica se o organizador do bolão pode adicionar mais participantes.
+ * Retorna { allowed: true } ou { allowed: false, reason, limit }
+ */
+export async function canAddMember(poolId: number, ownerId: number): Promise<{ allowed: boolean; reason?: string; limit?: number }> {
+  const { PLAN_LIMITS } = await import("../shared/plans");
+  const tier = await getUserPlanTier(ownerId);
+  const limits = PLAN_LIMITS[tier];
+  if (limits.maxMembersPerPool === Infinity) return { allowed: true };
+  const memberCount = await countPoolMembers(poolId);
+  if (memberCount >= limits.maxMembersPerPool) {
+    return {
+      allowed: false,
+      reason: `Este bolão atingiu o limite de ${limits.maxMembersPerPool} participantes do plano ${tier === "free" ? "Gratuito" : "Pro"}. Faça upgrade para adicionar mais participantes.`,
+      limit: limits.maxMembersPerPool,
+    };
+  }
+  return { allowed: true };
+}
+
 // ─── TOURNAMENTS ──────────────────────────────────────────────────────────────
 
 export async function getGlobalTournaments(): Promise<Tournament[]> {
@@ -789,7 +840,7 @@ export async function getPoolsByTournament(tournamentId: number) {
   const db = await getDb();
   if (!db) return [];
   return db
-    .select({ id: pools.id, slug: pools.slug, plan: pools.plan, ownerId: pools.ownerId })
+    .select({ id: pools.id, slug: pools.slug, ownerId: pools.ownerId })
     .from(pools)
     .where(and(eq(pools.tournamentId, tournamentId), eq(pools.status, "active")));
 }

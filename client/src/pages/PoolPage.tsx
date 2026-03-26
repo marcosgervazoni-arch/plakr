@@ -348,11 +348,7 @@ export default function PoolPage() {
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {pool.plan === "pro" && (
-              <Badge className="bg-primary/10 text-primary border-primary/20 text-xs gap-1 py-0">
-                <Crown className="w-2.5 h-2.5" /> Pro
-              </Badge>
-            )}
+
             <NotificationBell />
             {/* Menu de ações */}
             <DropdownMenu>

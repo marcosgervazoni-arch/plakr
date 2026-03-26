@@ -46,10 +46,10 @@ export const poolsCoreRouter = router({
       const settings = await getPlatformSettings();
       const freeMax = settings?.freeMaxPools ?? 2;
       const activeCount = await countActivePoolsByOwner(ctx.user.id);
-      const userPlan = await getUserPlan(ctx.user.id);
-      const isPro = userPlan?.plan === "pro" && userPlan.isActive;
-      if (!isPro && activeCount >= freeMax) {
-        throw Err.forbidden(`Limite de ${freeMax} bolões ativos no plano gratuito. Faça upgrade para o Plano Pro.`);
+      const { canCreatePool } = await import("../db");
+      const canCreate = await canCreatePool(ctx.user.id);
+      if (!canCreate.allowed) {
+        throw Err.forbidden(canCreate.reason ?? `Limite de ${freeMax} bolões ativos no plano gratuito. Faça upgrade para criar mais bolões.`);
       }
       const slug = `${input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${nanoid(6)}`;
       const inviteToken = nanoid(32);
@@ -133,7 +133,6 @@ export const poolsCoreRouter = router({
           slug: r.pool.slug,
           name: r.pool.name,
           logoUrl: r.pool.logoUrl,
-          plan: r.pool.plan,
           accessType: r.pool.accessType,
           description: r.pool.description ?? null,
           tournamentName: r.tournamentName ?? null,
@@ -164,7 +163,6 @@ export const poolsCoreRouter = router({
         tournament: tournament ? { name: tournament.name } : null,
         memberCount,
         ownerName: owner?.name ?? null,
-        plan: pool.plan,
       };
     }),
 
@@ -180,8 +178,10 @@ export const poolsCoreRouter = router({
       const settings = await getPlatformSettings();
       const freeMax = settings?.freeMaxParticipants ?? 50;
       const memberCount = await countPoolMembers(pool.id);
-      if (pool.plan === "free" && memberCount >= freeMax) {
-        throw Err.forbidden(`Este bolão atingiu o limite de ${freeMax} participantes do plano gratuito.`);
+      const { canAddMember } = await import("../db");
+      const canAdd = await canAddMember(pool.id, pool.ownerId);
+      if (!canAdd.allowed) {
+        throw Err.forbidden(canAdd.reason ?? `Este bolão atingiu o limite de participantes do plano gratuito.`);
       }
       await addPoolMember(pool.id, ctx.user.id, "participant");
       await createNotification({
@@ -211,8 +211,10 @@ export const poolsCoreRouter = router({
       const settings = await getPlatformSettings();
       const freeMax = settings?.freeMaxParticipants ?? 50;
       const memberCount = await countPoolMembers(pool.id);
-      if (pool.plan === "free" && memberCount >= freeMax) {
-        throw Err.forbidden(`Este bolão atingiu o limite de ${freeMax} participantes.`);
+      const { canAddMember: canAddMemberPublic } = await import("../db");
+      const canAddPublic = await canAddMemberPublic(pool.id, pool.ownerId);
+      if (!canAddPublic.allowed) {
+        throw Err.forbidden(canAddPublic.reason ?? `Este bolão atingiu o limite de participantes.`);
       }
       await addPoolMember(pool.id, ctx.user.id, "participant");
       await createNotification({

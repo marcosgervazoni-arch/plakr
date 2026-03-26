@@ -1,3 +1,4 @@
+import { useUserPlan } from "@/hooks/useUserPlan";
 /**
  * O6 — Regras de Pontuação
  * Todos os 7 critérios configuráveis conforme SISTEMA-PONTUACAO-PLAKR.md
@@ -269,8 +270,7 @@ export default function OrganizerRules() {
   const pool = poolData?.pool;
   const rules = poolData?.rules;
 
-  const isPro = pool?.plan === "pro";
-  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
+  const { isPro, isProExpired } = useUserPlan();
 
   // Verificar se o primeiro jogo já começou (bloquear regras)
   const firstGame = poolData?.games?.[0];

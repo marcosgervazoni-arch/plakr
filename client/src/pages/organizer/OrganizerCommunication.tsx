@@ -1,3 +1,4 @@
+import { useUserPlan } from "@/hooks/useUserPlan";
 /**
  * OrganizerCommunication — Comunicação com membros do bolão (Pro)
  * Permite ao organizador enviar mensagens in-app para todos os participantes.
@@ -24,8 +25,7 @@ export default function OrganizerCommunication() {
   const pool = poolData?.pool;
   const memberCount = poolData?.memberCount ?? 0;
 
-  const isPro = pool?.plan === "pro";
-  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
+  const { isPro, isProExpired } = useUserPlan();
 
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");

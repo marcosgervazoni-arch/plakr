@@ -1,3 +1,4 @@
+import { useUserPlan } from "@/hooks/useUserPlan";
 /**
  * O5 — Identidade Visual
  * Especificação: formulário de nome, subtítulo e logo com preview em tempo real.
@@ -55,8 +56,7 @@ export default function OrganizerIdentity() {
     });
   };
 
-  const isPro = pool?.plan === "pro";
-  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
+  const { isPro, isProExpired } = useUserPlan();
   const memberCount = poolData?.memberCount ?? 0;
 
   return (

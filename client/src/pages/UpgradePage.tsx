@@ -1,7 +1,7 @@
 /**
- * Upgrade Pro — /upgrade
- * Página de pricing independente para upgrade do plano do usuário.
- * Exibe comparação Free vs Pro, CTA de checkout e FAQ.
+ * Upgrade — /upgrade
+ * Página de pricing: Free | Pro (R$ 39,90/mês) | Ilimitado (R$ 89,90/mês)
+ * Modelo: Pro por Conta — o plano é do usuário, não do bolão.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -30,53 +31,66 @@ import { toast } from "sonner";
 
 const FREE_FEATURES = [
   { label: "Até 2 bolões simultâneos", included: true },
-  { label: "Até 50 participantes por bolão", included: true },
+  { label: "Até 30 participantes por bolão", included: true },
   { label: "Campeonatos globais da plataforma", included: true },
   { label: "Regras de pontuação padrão", included: true },
   { label: "Campeonatos personalizados", included: false },
-  { label: "Participantes ilimitados", included: false },
-  { label: "Bolões ilimitados", included: false },
+  { label: "Mais de 30 participantes", included: false },
+  { label: "Mais de 2 bolões simultâneos", included: false },
   { label: "Regras de pontuação customizáveis", included: false },
   { label: "Prazo de palpite configurável", included: false },
   { label: "Suporte prioritário", included: false },
 ];
 
 const PRO_FEATURES = [
-  { icon: Infinity, label: "Bolões ilimitados" },
-  { icon: Users, label: "Participantes ilimitados" },
-  { icon: Trophy, label: "Campeonatos personalizados" },
+  { icon: Trophy, label: "Até 10 bolões simultâneos" },
+  { icon: Users, label: "Até 200 participantes por bolão" },
+  { icon: Crown, label: "Campeonatos personalizados" },
   { icon: Settings, label: "Pontuação totalmente customizável" },
   { icon: Zap, label: "Prazo de palpite configurável" },
   { icon: Star, label: "Suporte prioritário" },
 ];
 
+const UNLIMITED_FEATURES = [
+  { icon: Infinity, label: "Bolões ilimitados" },
+  { icon: Users, label: "Participantes ilimitados" },
+  { icon: Crown, label: "Campeonatos personalizados" },
+  { icon: Settings, label: "Pontuação totalmente customizável" },
+  { icon: Zap, label: "Prazo de palpite configurável" },
+  { icon: Star, label: "Suporte prioritário" },
+  { icon: Sparkles, label: "API de resultados automática (em breve)" },
+];
+
 const FAQ = [
   {
     q: "O Plano Pro é por bolão ou por conta?",
-    a: "O Plano Pro é ativado por bolão. Cada bolão que você quiser com recursos Pro precisa de uma assinatura separada.",
+    a: "O Plano Pro é ativado por conta. Todos os bolões que você criar como organizador terão acesso aos recursos Pro automaticamente.",
+  },
+  {
+    q: "Qual a diferença entre Pro e Ilimitado?",
+    a: "O Pro permite até 10 bolões e 200 participantes por bolão. O Ilimitado remove todos os limites e inclui recursos avançados como a API de resultados automática (em breve).",
   },
   {
     q: "Posso cancelar a qualquer momento?",
-    a: "Sim. Você pode cancelar pelo portal de assinatura Stripe. O bolão continuará Pro até o fim do período pago.",
+    a: "Sim. Você pode cancelar pelo portal de assinatura Stripe. Seu plano continuará ativo até o fim do período pago.",
   },
   {
-    q: "O que acontece com meu bolão se eu cancelar?",
-    a: "O bolão voltará ao plano gratuito com as limitações correspondentes. Dados e palpites existentes são preservados.",
+    q: "O que acontece com meus bolões se eu cancelar?",
+    a: "Seus bolões voltarão ao plano gratuito com as limitações correspondentes. Todos os dados e palpites existentes são preservados.",
   },
   {
     q: "Posso testar antes de pagar?",
-    a: "Sim! Você pode criar bolões gratuitos e explorar a plataforma sem custo. O upgrade Pro é opcional.",
+    a: "Sim! Você pode criar bolões gratuitos e explorar a plataforma sem custo. O upgrade é opcional e pode ser feito a qualquer momento.",
   },
 ];
 
 export default function UpgradePage() {
   const analytics = useAnalytics();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const { data: userData } = trpc.users.me.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: myPools = [] } = trpc.users.myPools.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: myPlanData } = trpc.stripe.getMyPlan.useQuery(undefined, { enabled: isAuthenticated });
 
   const checkoutMutation = trpc.stripe.createCheckout.useMutation({
     onSuccess: ({ checkoutUrl }) => {
@@ -90,37 +104,40 @@ export default function UpgradePage() {
     },
   });
 
-  const isPro = userData?.plan?.plan === "pro" && userData?.plan?.isActive;
+  const portalMutation = trpc.stripe.createPortalSession.useMutation({
+    onSuccess: ({ portalUrl }) => {
+      if (portalUrl) window.open(portalUrl, "_blank");
+    },
+    onError: (err) => toast.error(err.message || "Erro ao abrir portal."),
+  });
 
-  // Pools where user is organizer and not yet Pro
-  const eligiblePools = (myPools as any[]).filter(
-    (item: any) => (item.member?.role ?? item.role) === "organizer" && (item.pool?.plan ?? item.plan) !== "pro"
-  );
+  const currentTier = myPlanData?.tier ?? "free";
 
-  const handleCheckout = (poolId: number, poolName?: string) => {
-    analytics.trackUpgradeClicked({ source: "upgrade_page", pool_slug: poolName });
-    checkoutMutation.mutate({ poolId, origin: window.location.origin });
+  const handleCheckout = (tier: "pro" | "unlimited") => {
+    analytics.trackUpgradeClicked({ source: "upgrade_page", pool_slug: tier });
+    checkoutMutation.mutate({ tier, origin: window.location.origin });
   };
 
   return (
     <AppShell>
-      <div className="max-w-4xl mx-auto px-4 py-8 lg:py-12 space-y-12">
+      <div className="max-w-5xl mx-auto px-4 py-8 lg:py-12 space-y-12">
 
         {/* ── Hero ── */}
         <div className="text-center space-y-3">
           <Badge className="bg-primary/10 text-primary border-primary/20 text-xs px-3 py-1">
-            <Crown className="w-3 h-3 mr-1.5" /> Plano Pro
+            <Crown className="w-3 h-3 mr-1.5" /> Escolha seu plano
           </Badge>
           <h1 className="font-bold text-3xl lg:text-4xl" style={{ fontFamily: "'Syne', sans-serif" }}>
-            Leve seu bolão ao próximo nível
+            Leve seus bolões ao próximo nível
           </h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Desbloqueie recursos avançados para organizar bolões profissionais com campeonatos personalizados, participantes ilimitados e muito mais.
+            Desbloqueie recursos avançados para organizar bolões profissionais. O plano é da sua conta — todos os seus bolões ganham os benefícios automaticamente.
           </p>
         </div>
 
         {/* ── Pricing cards ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
           {/* Free */}
           <div className="bg-card border border-border/30 rounded-2xl p-6 space-y-5">
             <div>
@@ -144,8 +161,8 @@ export default function UpgradePage() {
               ))}
             </div>
             {isAuthenticated ? (
-              <Button variant="outline" className="w-full" disabled>
-                Plano atual
+              <Button variant="outline" className="w-full" disabled={currentTier === "free"}>
+                {currentTier === "free" ? "Plano atual" : "Plano básico"}
               </Button>
             ) : (
               <a href={getLoginUrl("/upgrade")}>
@@ -158,16 +175,16 @@ export default function UpgradePage() {
           <div className="bg-card border-2 border-primary/40 rounded-2xl p-6 space-y-5 relative overflow-hidden">
             <div className="absolute top-4 right-4">
               <Badge className="bg-primary text-primary-foreground text-xs">
-                <Crown className="w-3 h-3 mr-1" /> Recomendado
+                <Crown className="w-3 h-3 mr-1" /> Popular
               </Badge>
             </div>
             <div>
               <p className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>Pro</p>
               <div className="flex items-end gap-1 mt-1">
-                <span className="font-bold text-3xl text-primary" style={{ fontFamily: "'JetBrains Mono', monospace" }}>R$ 19,90</span>
-                <span className="text-muted-foreground text-sm mb-1">/bolão/mês</span>
+                <span className="font-bold text-3xl text-primary" style={{ fontFamily: "'JetBrains Mono', monospace" }}>R$ 39,90</span>
+                <span className="text-muted-foreground text-sm mb-1">/mês</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Por bolão ativo. Cancele quando quiser.</p>
+              <p className="text-xs text-muted-foreground mt-1">Por conta. Cancele quando quiser.</p>
             </div>
             <div className="space-y-2.5">
               {PRO_FEATURES.map(({ icon: Icon, label }) => (
@@ -181,46 +198,102 @@ export default function UpgradePage() {
             {!isAuthenticated ? (
               <a href={getLoginUrl("/upgrade")}>
                 <Button className="w-full gap-2">
-                  <Crown className="w-4 h-4" /> Entrar e fazer upgrade
+                  <Crown className="w-4 h-4" /> Assinar Pro
                 </Button>
               </a>
-            ) : isPro ? (
-              <Button className="w-full" disabled>
-                <Crown className="w-4 h-4 mr-2" /> Você já é Pro
-              </Button>
-            ) : eligiblePools.length === 0 ? (
+            ) : currentTier === "pro" ? (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground text-center">
-                  Crie um bolão como organizador para ativar o Pro.
-                </p>
-                <Link href="/create-pool">
-                  <Button className="w-full gap-2">
-                    <Trophy className="w-4 h-4" /> Criar bolão
-                  </Button>
-                </Link>
+                <Button className="w-full" disabled>
+                  <Crown className="w-4 h-4 mr-2" /> Plano atual
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full text-xs"
+                  onClick={() => portalMutation.mutate({ origin: window.location.origin })}
+                  disabled={portalMutation.isPending}
+                >
+                  {portalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                  Gerenciar assinatura
+                </Button>
+              </div>
+            ) : currentTier === "unlimited" ? (
+              <Button variant="outline" className="w-full" disabled>
+                Você tem Ilimitado
+              </Button>
+            ) : (
+              <Button
+                className="w-full gap-2"
+                onClick={() => handleCheckout("pro")}
+                disabled={checkoutMutation.isPending}
+              >
+                {checkoutMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Crown className="w-4 h-4" />
+                )}
+                Assinar Pro
+              </Button>
+            )}
+          </div>
+
+          {/* Unlimited */}
+          <div className="bg-card border-2 border-yellow-500/30 rounded-2xl p-6 space-y-5 relative overflow-hidden">
+            <div className="absolute top-4 right-4">
+              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                <Sparkles className="w-3 h-3 mr-1" /> Ilimitado
+              </Badge>
+            </div>
+            <div>
+              <p className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>Ilimitado</p>
+              <div className="flex items-end gap-1 mt-1">
+                <span className="font-bold text-3xl text-yellow-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>R$ 89,90</span>
+                <span className="text-muted-foreground text-sm mb-1">/mês</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Sem limites. Para quem leva a sério.</p>
+            </div>
+            <div className="space-y-2.5">
+              {UNLIMITED_FEATURES.map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-yellow-400 shrink-0" />
+                  <span className="text-sm">{label}</span>
+                </div>
+              ))}
+            </div>
+
+            {!isAuthenticated ? (
+              <a href={getLoginUrl("/upgrade")}>
+                <Button className="w-full gap-2 bg-yellow-500 hover:bg-yellow-400 text-black">
+                  <Sparkles className="w-4 h-4" /> Assinar Ilimitado
+                </Button>
+              </a>
+            ) : currentTier === "unlimited" ? (
+              <div className="space-y-2">
+                <Button className="w-full bg-yellow-500 hover:bg-yellow-400 text-black" disabled>
+                  <Sparkles className="w-4 h-4 mr-2" /> Plano atual
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full text-xs"
+                  onClick={() => portalMutation.mutate({ origin: window.location.origin })}
+                  disabled={portalMutation.isPending}
+                >
+                  {portalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                  Gerenciar assinatura
+                </Button>
               </div>
             ) : (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Selecione o bolão para ativar o Pro:</p>
-                {eligiblePools.map((item: any) => {
-                  const pool = item.pool ?? item;
-                  return (
-                    <Button
-                      key={pool.id}
-                      className="w-full gap-2 justify-start"
-                      onClick={() => handleCheckout(pool.id, pool.name)}
-                      disabled={checkoutMutation.isPending}
-                    >
-                      {checkoutMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Crown className="w-4 h-4" />
-                      )}
-                      {pool.name}
-                    </Button>
-                  );
-                })}
-              </div>
+              <Button
+                className="w-full gap-2 bg-yellow-500 hover:bg-yellow-400 text-black"
+                onClick={() => handleCheckout("unlimited")}
+                disabled={checkoutMutation.isPending}
+              >
+                {checkoutMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                Assinar Ilimitado
+              </Button>
             )}
           </div>
         </div>
@@ -239,22 +312,25 @@ export default function UpgradePage() {
                   <th className="text-left px-6 py-3 font-medium text-muted-foreground">Recurso</th>
                   <th className="text-center px-4 py-3 font-medium text-muted-foreground">Gratuito</th>
                   <th className="text-center px-4 py-3 font-medium text-primary">Pro</th>
+                  <th className="text-center px-4 py-3 font-medium text-yellow-400">Ilimitado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/20">
                 {[
-                  ["Bolões simultâneos", "2", "Ilimitado"],
-                  ["Participantes por bolão", "50", "Ilimitado"],
-                  ["Campeonatos globais", "✓", "✓"],
-                  ["Campeonatos personalizados", "—", "✓"],
-                  ["Regras de pontuação", "Padrão", "Customizável"],
-                  ["Prazo de palpite", "1h padrão", "Configurável"],
-                  ["Suporte", "Comunidade", "Prioritário"],
-                ].map(([feature, free, pro]) => (
+                  ["Bolões simultâneos", "2", "10", "Ilimitado"],
+                  ["Participantes por bolão", "30", "200", "Ilimitado"],
+                  ["Campeonatos globais", "✓", "✓", "✓"],
+                  ["Campeonatos personalizados", "—", "✓", "✓"],
+                  ["Regras de pontuação", "Padrão", "Customizável", "Customizável"],
+                  ["Prazo de palpite", "1h padrão", "Configurável", "Configurável"],
+                  ["API de resultados automática", "—", "—", "Em breve"],
+                  ["Suporte", "Comunidade", "Prioritário", "Prioritário"],
+                ].map(([feature, free, pro, unlimited]) => (
                   <tr key={feature} className="hover:bg-muted/20 transition-colors">
                     <td className="px-6 py-3 text-sm">{feature}</td>
                     <td className="px-4 py-3 text-center text-muted-foreground text-sm">{free}</td>
                     <td className="px-4 py-3 text-center text-primary font-medium text-sm">{pro}</td>
+                    <td className="px-4 py-3 text-center text-yellow-400 font-medium text-sm">{unlimited}</td>
                   </tr>
                 ))}
               </tbody>
@@ -306,10 +382,15 @@ export default function UpgradePage() {
                 <Crown className="w-4 h-4" /> Começar agora
               </Button>
             </a>
+          ) : currentTier === "free" ? (
+            <Button size="lg" className="gap-2" onClick={() => handleCheckout("pro")} disabled={checkoutMutation.isPending}>
+              {checkoutMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
+              Assinar Pro agora
+            </Button>
           ) : (
-            <Link href="/create-pool">
-              <Button size="lg" className="gap-2">
-                <Trophy className="w-4 h-4" /> Criar meu bolão Pro
+            <Link href="/dashboard">
+              <Button size="lg" variant="outline" className="gap-2">
+                <Trophy className="w-4 h-4" /> Ir para o dashboard
               </Button>
             </Link>
           )}

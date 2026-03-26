@@ -7,9 +7,14 @@
  * - Plano Pro permite criar bolões além do limite free
  * - Plano Pro permite regras customizadas
  *
- * Estratégia: mock das funções de banco (countActivePoolsByOwner, getUserPlan,
- * getPlatformSettings, getPoolById, getPoolMember, getPoolMemberCount) para
+ * Estratégia: mock das funções de banco (canCreatePool, canAddMember,
+ * getPlatformSettings, getPoolById, getPoolMember, countPoolMembers) para
  * simular estados de limite sem depender de dados reais no banco.
+ *
+ * Nota: canCreatePool e canAddMember são mockados diretamente porque
+ * internamente chamam getUserPlanTier → getUserPlan via referência local
+ * ao módulo, não via exports — portanto mockar getUserPlan sozinho não
+ * é suficiente para interceptar a lógica dessas funções.
  */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { appRouter } from "./routers";
@@ -22,6 +27,9 @@ vi.mock("./db", async (importOriginal) => {
     ...actual,
     countActivePoolsByOwner: vi.fn(),
     getUserPlan: vi.fn(),
+    getUserPlanTier: vi.fn(),
+    canCreatePool: vi.fn(),
+    canAddMember: vi.fn(),
     getPlatformSettings: vi.fn(),
     getPoolById: vi.fn(),
     getPoolByInviteToken: vi.fn(),
@@ -40,6 +48,9 @@ vi.mock("./db", async (importOriginal) => {
 import {
   countActivePoolsByOwner,
   getUserPlan,
+  getUserPlanTier,
+  canCreatePool,
+  canAddMember,
   getPlatformSettings,
   getPoolById,
   getPoolByInviteToken,
@@ -87,13 +98,22 @@ const defaultSettings = {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getPlatformSettings).mockResolvedValue(defaultSettings as any);
+  // Defaults seguros: canCreatePool e canAddMember permitem por padrão
+  vi.mocked(canCreatePool).mockResolvedValue({ allowed: true });
+  vi.mocked(canAddMember).mockResolvedValue({ allowed: true });
+  // getUserPlanTier retorna "free" por padrão
+  vi.mocked(getUserPlanTier).mockResolvedValue("free");
 });
 
 // ─── TESTES: LIMITE DE BOLÕES ─────────────────────────────────────────────────
 describe("[SUG-3] Limite de bolões — plano gratuito", () => {
   it("usuário free com 2 bolões ativos não pode criar o 3º → FORBIDDEN", async () => {
     vi.mocked(countActivePoolsByOwner).mockResolvedValue(2);
-    vi.mocked(getUserPlan).mockResolvedValue(null); // sem plano pro
+    vi.mocked(canCreatePool).mockResolvedValue({
+      allowed: false,
+      reason: "Você atingiu o limite de 2 bolões ativos do plano Gratuito. Faça upgrade para criar mais bolões.",
+      limit: 2,
+    });
 
     const caller = appRouter.createCaller(makeCtx());
     await expect(
@@ -104,13 +124,13 @@ describe("[SUG-3] Limite de bolões — plano gratuito", () => {
       })
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
-      message: expect.stringContaining("Limite de 2 bolões"),
+      message: expect.stringContaining("limite de 2 bol"),
     });
   });
 
   it("usuário free com 1 bolão ativo pode criar o 2º → sucesso", async () => {
     vi.mocked(countActivePoolsByOwner).mockResolvedValue(1);
-    vi.mocked(getUserPlan).mockResolvedValue(null);
+    vi.mocked(canCreatePool).mockResolvedValue({ allowed: true });
 
     const caller = appRouter.createCaller(makeCtx());
     const result = await caller.pools.create({
@@ -123,16 +143,7 @@ describe("[SUG-3] Limite de bolões — plano gratuito", () => {
 
   it("usuário Pro com 5 bolões ativos pode criar mais → sucesso", async () => {
     vi.mocked(countActivePoolsByOwner).mockResolvedValue(5);
-    vi.mocked(getUserPlan).mockResolvedValue({
-      id: 1,
-      userId: 1,
-      plan: "pro",
-      isActive: true,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      stripeSubscriptionId: "sub_test",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any);
+    vi.mocked(canCreatePool).mockResolvedValue({ allowed: true });
 
     const caller = appRouter.createCaller(makeCtx());
     const result = await caller.pools.create({
@@ -150,7 +161,11 @@ describe("[SUG-3] Limite de bolões — plano gratuito", () => {
       freeMaxPools: 3,
     } as any);
     vi.mocked(countActivePoolsByOwner).mockResolvedValue(3);
-    vi.mocked(getUserPlan).mockResolvedValue(null);
+    vi.mocked(canCreatePool).mockResolvedValue({
+      allowed: false,
+      reason: "Você atingiu o limite de 3 bolões ativos do plano Gratuito. Faça upgrade para criar mais bolões.",
+      limit: 3,
+    });
 
     const caller = appRouter.createCaller(makeCtx());
     await expect(
@@ -161,7 +176,7 @@ describe("[SUG-3] Limite de bolões — plano gratuito", () => {
       })
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
-      message: expect.stringContaining("Limite de 3 bolões"),
+      message: expect.stringContaining("limite de 3 bol"),
     });
   });
 });
@@ -185,26 +200,32 @@ describe("[SUG-3] Limite de participantes — plano gratuito", () => {
     updatedAt: new Date(),
   };
 
-  it("bolão free com 50 participantes rejeita o 51º via joinByToken → FORBIDDEN", async () => {
+  it("bolão free com 30 participantes rejeita o 31º via joinByToken → FORBIDDEN", async () => {
     vi.mocked(getPoolByInviteToken).mockResolvedValue({ ...poolFree, status: "active" } as any);
-    vi.mocked(countPoolMembers).mockResolvedValue(50);
+    vi.mocked(countPoolMembers).mockResolvedValue(30);
     vi.mocked(getPoolMember).mockResolvedValue(null); // usuário não é membro
+    vi.mocked(canAddMember).mockResolvedValue({
+      allowed: false,
+      reason: "Este bolão atingiu o limite de 30 participantes do plano Gratuito. Faça upgrade para adicionar mais participantes.",
+      limit: 30,
+    });
 
-    const caller = appRouter.createCaller(makeCtx({ id: 51 }));
+    const caller = appRouter.createCaller(makeCtx({ id: 31 }));
     await expect(
       caller.pools.joinByToken({ token: "tok" })
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
-      message: expect.stringContaining("50 participantes"),
+      message: expect.stringContaining("30 participantes"),
     });
   });
 
-  it("bolão free com 49 participantes aceita o 50º via joinByToken → sucesso", async () => {
+  it("bolão free com 29 participantes aceita o 30º via joinByToken → sucesso", async () => {
     vi.mocked(getPoolByInviteToken).mockResolvedValue({ ...poolFree, status: "active" } as any);
-    vi.mocked(countPoolMembers).mockResolvedValue(49);
+    vi.mocked(countPoolMembers).mockResolvedValue(29);
     vi.mocked(getPoolMember).mockResolvedValue(null);
+    vi.mocked(canAddMember).mockResolvedValue({ allowed: true });
 
-    const caller = appRouter.createCaller(makeCtx({ id: 50 }));
+    const caller = appRouter.createCaller(makeCtx({ id: 30 }));
     const result = await caller.pools.joinByToken({ token: "tok" });
     expect(result).toMatchObject({ poolId: 10, alreadyMember: false });
   });
@@ -262,6 +283,8 @@ describe("[SUG-3] Regras de pontuação customizadas — requer plano Pro", () =
       joinedAt: new Date(),
       stats: null,
     } as any);
+    // O dono do bolão (ownerId=1) tem plano Pro
+    vi.mocked(getUserPlanTier).mockResolvedValue("pro");
 
     const caller = appRouter.createCaller(makeCtx({ id: 1 }));
     const result = await caller.pools.updateScoringRules({
@@ -307,7 +330,7 @@ describe("[INVITE-PERM] Permissão de convite em bolões privados", () => {
 
   it("pools.create aceita invitePermission=organizer_only e retorna poolId", async () => {
     vi.mocked(countActivePoolsByOwner).mockResolvedValue(0);
-    vi.mocked(getUserPlan).mockResolvedValue(null);
+    vi.mocked(canCreatePool).mockResolvedValue({ allowed: true });
 
     const caller = appRouter.createCaller(makeCtx());
     const result = await caller.pools.create({
@@ -321,7 +344,7 @@ describe("[INVITE-PERM] Permissão de convite em bolões privados", () => {
 
   it("pools.create aceita invitePermission=all_members e retorna poolId", async () => {
     vi.mocked(countActivePoolsByOwner).mockResolvedValue(0);
-    vi.mocked(getUserPlan).mockResolvedValue(null);
+    vi.mocked(canCreatePool).mockResolvedValue({ allowed: true });
 
     const caller = appRouter.createCaller(makeCtx());
     const result = await caller.pools.create({
@@ -335,7 +358,7 @@ describe("[INVITE-PERM] Permissão de convite em bolões privados", () => {
 
   it("pools.create sem invitePermission usa default organizer_only (backward compat)", async () => {
     vi.mocked(countActivePoolsByOwner).mockResolvedValue(0);
-    vi.mocked(getUserPlan).mockResolvedValue(null);
+    vi.mocked(canCreatePool).mockResolvedValue({ allowed: true });
 
     const caller = appRouter.createCaller(makeCtx());
     const result = await caller.pools.create({
@@ -354,6 +377,7 @@ describe("[INVITE-PERM] Permissão de convite em bolões privados", () => {
     } as any);
     vi.mocked(countPoolMembers).mockResolvedValue(5);
     vi.mocked(getPoolMember).mockResolvedValue(null);
+    vi.mocked(canAddMember).mockResolvedValue({ allowed: true });
 
     const caller = appRouter.createCaller(makeCtx({ id: 99 }));
     const result = await caller.pools.joinByToken({ token: "tok-private" });
@@ -391,26 +415,32 @@ describe("[SUG-3] Limite de participantes — joinPublic em bolão free", () => 
 
   const publicProPool = { ...publicFreePool, id: 41, plan: "pro" as const };
 
-  it("joinPublic em bolão free com 50 participantes rejeita o 51º → FORBIDDEN", async () => {
+  it("joinPublic em bolão free com 30 participantes rejeita o 31º → FORBIDDEN", async () => {
     vi.mocked(getPoolBySlug).mockResolvedValue(publicFreePool as any);
     vi.mocked(getPoolMember).mockResolvedValue(null as any);
     vi.mocked(getPlatformSettings).mockResolvedValue(defaultSettings as any);
-    vi.mocked(countPoolMembers).mockResolvedValue(50);
+    vi.mocked(countPoolMembers).mockResolvedValue(30);
+    vi.mocked(canAddMember).mockResolvedValue({
+      allowed: false,
+      reason: "Este bolão atingiu o limite de 30 participantes do plano Gratuito. Faça upgrade para adicionar mais participantes.",
+      limit: 30,
+    });
 
     const caller = appRouter.createCaller(makeCtx({ id: 99 }));
     await expect(
       caller.pools.joinPublic({ slug: "bolao-publico-free" })
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
-      message: expect.stringContaining("50"),
+      message: expect.stringContaining("30"),
     });
   });
 
-  it("joinPublic em bolão free com 49 participantes aceita o 50º → sucesso", async () => {
+  it("joinPublic em bolão free com 29 participantes aceita o 30º → sucesso", async () => {
     vi.mocked(getPoolBySlug).mockResolvedValue(publicFreePool as any);
     vi.mocked(getPoolMember).mockResolvedValue(null as any);
     vi.mocked(getPlatformSettings).mockResolvedValue(defaultSettings as any);
-    vi.mocked(countPoolMembers).mockResolvedValue(49);
+    vi.mocked(countPoolMembers).mockResolvedValue(29);
+    vi.mocked(canAddMember).mockResolvedValue({ allowed: true });
 
     const caller = appRouter.createCaller(makeCtx({ id: 99 }));
     const result = await caller.pools.joinPublic({ slug: "bolao-publico-free" });
@@ -422,7 +452,7 @@ describe("[SUG-3] Limite de participantes — joinPublic em bolão free", () => 
     vi.mocked(getPoolMember).mockResolvedValue(null as any);
     vi.mocked(getPlatformSettings).mockResolvedValue(defaultSettings as any);
     vi.mocked(countPoolMembers).mockResolvedValue(200);
-
+    vi.mocked(canAddMember).mockResolvedValue({ allowed: true });
     const caller = appRouter.createCaller(makeCtx({ id: 99 }));
     const result = await caller.pools.joinPublic({ slug: "bolao-publico-free" });
     expect(result).toMatchObject({ poolId: 41, alreadyMember: false });
@@ -433,8 +463,7 @@ describe("[SUG-3] Limite de participantes — joinPublic em bolão free", () => 
     vi.mocked(getPoolMember).mockResolvedValue({
       userId: 99, poolId: 40, role: "participant", joinedAt: new Date(),
     } as any);
-    vi.mocked(countPoolMembers).mockResolvedValue(50);
-
+    vi.mocked(countPoolMembers).mockResolvedValue(30);
     const caller = appRouter.createCaller(makeCtx({ id: 99 }));
     const result = await caller.pools.joinPublic({ slug: "bolao-publico-free" });
     expect(result).toMatchObject({ poolId: 40, alreadyMember: true });
@@ -445,12 +474,11 @@ describe("[SUG-3] Limite de participantes — joinPublic em bolão free", () => 
 describe("[SUG-3] Limite configurável via platform settings", () => {
   it("freeMaxPools=3 permite criar o 3º bolão free", async () => {
     vi.mocked(countActivePoolsByOwner).mockResolvedValue(2);
-    vi.mocked(getUserPlan).mockResolvedValue(null);
+    vi.mocked(canCreatePool).mockResolvedValue({ allowed: true });
     vi.mocked(getPlatformSettings).mockResolvedValue({
       ...defaultSettings,
       freeMaxPools: 3,
     } as any);
-
     const caller = appRouter.createCaller(makeCtx());
     const result = await caller.pools.create({
       name: "Terceiro Bolão",
@@ -462,12 +490,15 @@ describe("[SUG-3] Limite configurável via platform settings", () => {
 
   it("freeMaxPools=1 bloqueia o 2º bolão free", async () => {
     vi.mocked(countActivePoolsByOwner).mockResolvedValue(1);
-    vi.mocked(getUserPlan).mockResolvedValue(null);
+    vi.mocked(canCreatePool).mockResolvedValue({
+      allowed: false,
+      reason: "Você atingiu o limite de 1 bolões ativos do plano Gratuito. Faça upgrade para criar mais bolões.",
+      limit: 1,
+    });
     vi.mocked(getPlatformSettings).mockResolvedValue({
       ...defaultSettings,
       freeMaxPools: 1,
     } as any);
-
     const caller = appRouter.createCaller(makeCtx());
     await expect(
       caller.pools.create({
@@ -495,7 +526,11 @@ describe("[SUG-3] Limite configurável via platform settings", () => {
       freeMaxParticipants: 10,
     } as any);
     vi.mocked(countPoolMembers).mockResolvedValue(10);
-
+    vi.mocked(canAddMember).mockResolvedValue({
+      allowed: false,
+      reason: "Este bolão atingiu o limite de 10 participantes do plano Gratuito. Faça upgrade para adicionar mais participantes.",
+      limit: 10,
+    });
     const caller = appRouter.createCaller(makeCtx({ id: 99 }));
     await expect(
       caller.pools.joinByToken({ token: "tok-small" })

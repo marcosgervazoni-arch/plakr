@@ -70,7 +70,9 @@ export const poolsGamesRouter = router({
       }
       const pool = await getPoolById(input.poolId);
       if (!pool) throw Err.notFound("Recurso");
-      if (pool.plan !== "pro" && ctx.user.role !== "admin") {
+      const { getUserPlanTier } = await import("../db");
+      const ownerTier = await getUserPlanTier(pool.ownerId);
+      if (ownerTier === "free" && ctx.user.role !== "admin") {
         throw PoolErr.proOnly("Registro de resultados pelo organizador");
       }
       const game = await getGameById(input.gameId);
@@ -157,7 +159,9 @@ export const poolsGamesRouter = router({
       }
       const pool = await getPoolById(poolId);
       if (!pool) throw Err.notFound("Recurso");
-      if (pool.plan !== "pro" && !isAdmin) {
+      const { getUserPlanTier } = await import("../db");
+      const ownerTier = await getUserPlanTier(pool.ownerId);
+      if (ownerTier === "free" && !isAdmin) {
         throw PoolErr.proOnly("Regras de pontuação customizadas");
       }
       await upsertPoolScoringRules(poolId, data, ctx.user.id);

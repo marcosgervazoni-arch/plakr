@@ -1,12 +1,13 @@
 /**
  * Webhook handler para eventos do Stripe.
  * Rota: POST /api/stripe/webhook
+ * Modelo: Pro por Conta — plano vinculado ao usuário, não ao bolão.
  * DEVE ser registrado ANTES do express.json() para que a verificação de assinatura funcione.
  */
 import { Express, Request, Response } from "express";
 import express from "express";
 import Stripe from "stripe";
-import { createAdminLog, createNotification, getPoolById, updatePool, upsertUserPlan, getUserPlan } from "./db";
+import { createAdminLog, createNotification, upsertUserPlan, getUserPlan } from "./db";
 import logger from "./logger";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
@@ -41,45 +42,48 @@ export function registerStripeWebhook(app: Express) {
 
       try {
         switch (event.type) {
-          // ─── Checkout concluído: ativar Plano Pro ──────────────────────────
+          // ─── Checkout concluído: ativar plano na conta do usuário ─────────
           case "checkout.session.completed": {
             const session = event.data.object as Stripe.Checkout.Session;
-            const poolId = session.metadata?.pool_id ? parseInt(session.metadata.pool_id) : null;
             const userId = session.metadata?.user_id ? parseInt(session.metadata.user_id) : null;
+            const tier = (session.metadata?.tier ?? "pro") as "pro" | "unlimited";
 
-            if (poolId && userId) {
-              // Atualizar bolão para plano Pro
-              await updatePool(poolId, {
-                plan: "pro",
-                stripeSubscriptionId: session.subscription as string ?? null,
-              });
-
-              // Registrar plano do usuário
+            if (userId) {
+              // Calcular expiração: mensal = 1 mês, anual = 1 ano
+              const billing = session.metadata?.billing ?? "monthly";
               const expiresAt = new Date();
-              expiresAt.setFullYear(expiresAt.getFullYear() + 1); // 1 ano por padrão
+              if (billing === "annual") {
+                expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+              } else {
+                expiresAt.setMonth(expiresAt.getMonth() + 1);
+              }
+
               await upsertUserPlan({
                 userId,
-                plan: "pro",
+                plan: tier,
                 stripeCustomerId: session.customer as string ?? null,
                 stripeSubscriptionId: session.subscription as string ?? null,
+                planStartAt: new Date(),
                 planExpiresAt: expiresAt,
+                isActive: true,
               });
 
-              // Notificar organizador
+              const tierLabel = tier === "unlimited" ? "Ilimitado" : "Pro";
               await createNotification({
                 userId,
                 type: "system",
-                title: "Plano Pro ativado!",
-                message: "Seu bolão foi atualizado para o Plano Pro. Aproveite todos os recursos avançados!",
+                title: `Plano ${tierLabel} ativado!`,
+                message: `Sua conta foi atualizada para o Plano ${tierLabel}. Aproveite todos os recursos avançados!`,
               });
 
-              // [LOG] Checkout Pro concluído (já existia)
-              await createAdminLog(userId, "stripe_checkout_completed", "pool", poolId, {
+              await createAdminLog(userId, "stripe_checkout_completed", "user", userId, {
                 sessionId: session.id,
                 subscriptionId: session.subscription,
+                tier,
+                billing,
               });
 
-              logger.info({ poolId, userId }, "[Webhook] Pro plan activated");
+              logger.info({ userId, tier }, "[Webhook] Plan activated");
             }
             break;
           }
@@ -87,42 +91,40 @@ export function registerStripeWebhook(app: Express) {
           // ─── Assinatura cancelada: rebaixar para gratuito ─────────────────
           case "customer.subscription.deleted": {
             const subscription = event.data.object as Stripe.Subscription;
-            const poolId = subscription.metadata?.pool_id
-              ? parseInt(subscription.metadata.pool_id)
-              : null;
             const userId = subscription.metadata?.user_id
               ? parseInt(subscription.metadata.user_id)
               : null;
 
-            if (poolId) {
-              await updatePool(poolId, {
+            if (userId) {
+              await upsertUserPlan({
+                userId,
                 plan: "free",
+                stripeCustomerId: subscription.customer as string ?? null,
                 stripeSubscriptionId: null,
+                planExpiresAt: new Date(),
+                isActive: false,
               });
 
-              if (userId) {
-                await createNotification({
-                  userId,
-                  type: "plan_expired",
-                  title: "Plano Pro cancelado",
-                  message:
-                    "Seu Plano Pro foi cancelado. O bolão continua ativo no plano gratuito com funcionalidades limitadas.",
-                });
+              await createNotification({
+                userId,
+                type: "plan_expired",
+                title: "Plano cancelado",
+                message:
+                  "Seu plano pago foi cancelado. Sua conta continua ativa no plano gratuito com funcionalidades limitadas.",
+              });
 
-                // [LOG F1] Assinatura Pro cancelada pelo Stripe
-                await createAdminLog(userId, "stripe_subscription_cancelled", "pool", poolId ?? undefined, {
-                  subscriptionId: subscription.id,
-                  canceledAt: new Date().toISOString(),
-                  reason: subscription.cancellation_details?.reason ?? "unknown",
-                }, poolId ?? undefined, { level: "warn" });
-              }
+              await createAdminLog(userId, "stripe_subscription_cancelled", "user", userId, {
+                subscriptionId: subscription.id,
+                canceledAt: new Date().toISOString(),
+                reason: subscription.cancellation_details?.reason ?? "unknown",
+              }, undefined, { level: "warn" });
 
-              logger.info({ poolId }, "[Webhook] Pro plan cancelled");
+              logger.info({ userId }, "[Webhook] Plan cancelled, downgraded to free");
             }
             break;
           }
 
-          // ─── Pagamento de fatura falhou: rebaixamento gracioso após 3 tentativas ─
+          // ─── Pagamento de fatura falhou ───────────────────────────────────
           case "invoice.payment_failed": {
             const invoice = event.data.object as Stripe.Invoice;
             const attemptCount = (invoice as unknown as { attempt_count?: number }).attempt_count ?? 1;
@@ -130,61 +132,63 @@ export function registerStripeWebhook(app: Express) {
             const subscription = subscriptionId
               ? await stripe.subscriptions.retrieve(subscriptionId)
               : null;
-            const poolId = subscription?.metadata?.pool_id
-              ? parseInt(subscription.metadata.pool_id)
-              : null;
             const userId = subscription?.metadata?.user_id
               ? parseInt(subscription.metadata.user_id)
               : null;
 
-            if (poolId && userId) {
+            if (userId) {
               if (attemptCount >= 3) {
                 // Após 3 tentativas: rebaixar para Free
-                await updatePool(poolId, { plan: "free", stripeSubscriptionId: null });
+                await upsertUserPlan({
+                  userId,
+                  plan: "free",
+                  stripeCustomerId: subscription?.customer as string ?? null,
+                  stripeSubscriptionId: null,
+                  planExpiresAt: new Date(),
+                  isActive: false,
+                });
+
                 await createNotification({
                   userId,
                   type: "plan_expired",
-                  title: "Plano Pro cancelado por falta de pagamento",
+                  title: "Plano cancelado por falta de pagamento",
                   message:
-                    "Após 3 tentativas sem sucesso, seu Plano Pro foi cancelado. O bolão continua ativo no plano gratuito. Atualize seu método de pagamento no painel do Stripe para reativar.",
+                    "Após 3 tentativas sem sucesso, seu plano pago foi cancelado. Sua conta continua ativa no plano gratuito. Atualize seu método de pagamento no painel do Stripe para reativar.",
                   priority: "high",
                 });
 
-                // [LOG F2] Pagamento falhou — 3ª tentativa → downgrade
-                await createAdminLog(userId, "stripe_payment_failed", "pool", poolId ?? undefined, {
+                await createAdminLog(userId, "stripe_payment_failed", "user", userId, {
                   attemptCount,
                   invoiceId: invoice.id,
                   subscriptionId,
                   action: "downgraded_to_free",
-                }, poolId ?? undefined, { level: "error" });
+                }, undefined, { level: "error" });
 
-                logger.warn({ poolId }, "[Webhook] Payment failed 3x, pool downgraded to free");
+                logger.warn({ userId }, "[Webhook] Payment failed 3x, downgraded to free");
               } else {
-                // Tentativas 1 e 2: apenas avisar, manter Pro
                 await createNotification({
                   userId,
                   type: "plan_expired",
                   title: `Pagamento falhou (tentativa ${attemptCount}/3)`,
                   message:
-                    `Não foi possível processar o pagamento do Plano Pro (tentativa ${attemptCount} de 3). Atualize seu método de pagamento para evitar o cancelamento.`,
+                    `Não foi possível processar o pagamento do seu plano (tentativa ${attemptCount} de 3). Atualize seu método de pagamento para evitar o cancelamento.`,
                   priority: "high",
                 });
 
-                // [LOG F2] Pagamento falhou — tentativa 1 ou 2
-                await createAdminLog(userId, "stripe_payment_failed", "pool", poolId ?? undefined, {
+                await createAdminLog(userId, "stripe_payment_failed", "user", userId, {
                   attemptCount,
                   invoiceId: invoice.id,
                   subscriptionId,
-                  action: "notified_keep_pro",
-                }, poolId ?? undefined, { level: "warn" });
+                  action: "notified_keep_plan",
+                }, undefined, { level: "warn" });
 
-                logger.warn({ poolId, attemptCount }, "[Webhook] Payment failed attempt");
+                logger.warn({ userId, attemptCount }, "[Webhook] Payment failed attempt");
               }
             }
             break;
           }
 
-          // ─── Assinatura renovada com sucesso ──────────────────────────
+          // ─── Assinatura renovada com sucesso ──────────────────────────────
           case "invoice.paid": {
             const invoicePaid = event.data.object as Stripe.Invoice;
             if (invoicePaid.billing_reason === "subscription_cycle") {
@@ -192,42 +196,42 @@ export function registerStripeWebhook(app: Express) {
               const sub = invSubId
                 ? await stripe.subscriptions.retrieve(invSubId)
                 : null;
-              const poolId = sub?.metadata?.pool_id
-                ? parseInt(sub.metadata.pool_id)
-                : null;
               const userId = sub?.metadata?.user_id
                 ? parseInt(sub.metadata.user_id)
                 : null;
+              const tier = (sub?.metadata?.tier ?? "pro") as "pro" | "unlimited";
 
-              if (poolId && userId && sub) {
+              if (userId && sub) {
                 const subData = sub as unknown as { current_period_end?: number };
                 const newExpiry = new Date((subData.current_period_end ?? 0) * 1000);
+
                 await upsertUserPlan({
                   userId,
-                  plan: "pro",
+                  plan: tier,
                   stripeCustomerId: invoicePaid.customer as string ?? null,
                   stripeSubscriptionId: invSubId ?? null,
                   planExpiresAt: newExpiry,
+                  isActive: true,
                 });
 
-                // Notificar organizador sobre renovação bem-sucedida
+                const tierLabel = tier === "unlimited" ? "Ilimitado" : "Pro";
                 const expiryFormatted = newExpiry.toLocaleDateString("pt-BR");
                 await createNotification({
                   userId,
                   type: "system",
-                  title: "Plano Pro renovado com sucesso!",
-                  message: `Seu Plano Pro foi renovado automaticamente e está ativo até ${expiryFormatted}. Obrigado pela confiança!`,
+                  title: `Plano ${tierLabel} renovado com sucesso!`,
+                  message: `Seu Plano ${tierLabel} foi renovado automaticamente e está ativo até ${expiryFormatted}. Obrigado pela confiança!`,
                   priority: "normal",
                 });
 
-                // [LOG F3] Renovação de assinatura bem-sucedida
-                await createAdminLog(userId, "stripe_subscription_renewed", "pool", poolId ?? undefined, {
+                await createAdminLog(userId, "stripe_subscription_renewed", "user", userId, {
                   subscriptionId: invSubId,
                   invoiceId: invoicePaid.id,
                   newExpiresAt: newExpiry.toISOString(),
-                }, poolId ?? undefined, { level: "info" });
+                  tier,
+                }, undefined, { level: "info" });
 
-                logger.info({ poolId, newExpiry }, "[Webhook] Subscription renewed");
+                logger.info({ userId, newExpiry, tier }, "[Webhook] Subscription renewed");
               }
             }
             break;

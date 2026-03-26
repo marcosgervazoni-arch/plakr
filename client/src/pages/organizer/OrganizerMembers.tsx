@@ -1,3 +1,4 @@
+import { useUserPlan } from "@/hooks/useUserPlan";
 /**
  * O3 — Gestão de Membros
  * Especificação: tabela com busca, filtros, ações por linha (remover, bloquear, transferir).
@@ -102,8 +103,7 @@ export default function OrganizerMembers() {
     return list;
   }, [members, search, filter]);
 
-  const isPro = pool?.plan === "pro";
-  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
+  const { isPro, isProExpired } = useUserPlan();
 
   const filterButtons: { id: FilterType; label: string }[] = [
     { id: "all", label: "Todos" },

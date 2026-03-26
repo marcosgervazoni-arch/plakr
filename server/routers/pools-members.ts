@@ -274,7 +274,9 @@ export const poolsMembersRouter = router({
       }
       const total = Object.values(bySource).reduce((a, b) => a + b, 0);
       const pool = await getPoolById(input.poolId);
-      const isPro = pool?.plan === "pro";
+      const { getUserPlanTier } = await import("../db");
+      const ownerTier = pool ? await getUserPlanTier(pool.ownerId) : "free";
+      const isPro = ownerTier !== "free";
       let daily: { date: string; count: number }[] = [];
       if (isPro) {
         const sevenDaysAgo = new Date();

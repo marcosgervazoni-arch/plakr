@@ -1,3 +1,4 @@
+import { useUserPlan } from "@/hooks/useUserPlan";
 /**
  * O2 — Dashboard do Bolão (Organizador)
  * Especificação: 4 cards de métricas, participantes inativos, ranking top 5, barra de plano.
@@ -140,8 +141,7 @@ export default function OrganizerDashboard() {
   const members = Array.isArray(membersData) ? membersData : (membersData?.items ?? []);
   const ranking = rankingData ?? [];
 
-  const isPro = pool?.plan === "pro";
-  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
+  const { isPro, isProExpired } = useUserPlan();
 
   // Next game with deadline
   const nextGame = useMemo(() => {

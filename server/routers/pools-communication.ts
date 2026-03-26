@@ -62,7 +62,9 @@ export const poolsCommunicationRouter = router({
       }
       const pool = await getPoolById(input.poolId);
       if (!pool) throw Err.notFound("Recurso");
-      if (pool.plan !== "pro" && ctx.user.role !== "admin") {
+      const { getUserPlanTier } = await import("../db");
+      const ownerTier = await getUserPlanTier(pool.ownerId);
+      if (ownerTier === "free" && ctx.user.role !== "admin") {
         throw PoolErr.proOnly("Comunicação com membros");
       }
       const db = await (await import("../db")).getDb();

@@ -47,7 +47,6 @@ type Pool = {
   slug: string;
   name: string;
   logoUrl?: string | null;
-  plan: string;
   accessType: "public" | "private_link";
   description?: string | null;
   tournamentName?: string | null;
@@ -273,7 +272,7 @@ export default function PublicPools() {
                         </h3>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <AccessBadge accessType={pool.accessType} />
-                          {pool.plan === "pro" && (
+                          {false && (
                             <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] py-0 px-1.5">
                               <Crown className="w-2.5 h-2.5 mr-0.5" /> Pro
                             </Badge>

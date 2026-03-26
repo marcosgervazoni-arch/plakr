@@ -32,6 +32,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useEffect, useState } from "react";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 
@@ -122,7 +123,7 @@ export default function PoolSettings() {
 
   const { pool, myRole } = data;
   const isOrganizer = myRole === "organizer" || user?.role === "admin";
-  const isPro = pool.plan === "pro";
+  const { isPro } = useUserPlan();
   const [, navigate] = useLocation();
 
   const deletePool = trpc.pools.delete.useMutation({

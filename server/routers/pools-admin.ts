@@ -20,8 +20,8 @@ export const poolsAdminRouter = router({
     .query(async ({ input }) => {
       const db = await (await import("../db")).getDb();
       if (!db) return [];
-      const { pools: poolsTable, poolMembers } = await import("../../drizzle/schema");
-      const { desc, sql } = await import("drizzle-orm");
+      const { pools: poolsTable, userPlans } = await import("../../drizzle/schema");
+      const { desc, sql, eq } = await import("drizzle-orm");
       const rows = await db
         .select({
           id: poolsTable.id,
@@ -29,20 +29,19 @@ export const poolsAdminRouter = router({
           slug: poolsTable.slug,
           status: poolsTable.status,
           accessType: poolsTable.accessType,
-          plan: poolsTable.plan,
           logoUrl: poolsTable.logoUrl,
           createdAt: poolsTable.createdAt,
           ownerId: poolsTable.ownerId,
           tournamentId: poolsTable.tournamentId,
           description: poolsTable.description,
-          planExpiresAt: poolsTable.planExpiresAt,
-          stripeSubscriptionId: poolsTable.stripeSubscriptionId,
           memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.\`poolId\` = pools.id AND pm.\`isBlocked\` = 0)`,
+          ownerPlan: userPlans.plan,
         })
         .from(poolsTable)
+        .leftJoin(userPlans, eq(userPlans.userId, poolsTable.ownerId))
         .orderBy(desc(poolsTable.createdAt))
         .limit(input.limit);
-      return rows.map(r => ({ ...r, memberCount: Number(r.memberCount) }));
+      return rows.map(r => ({ ...r, memberCount: Number(r.memberCount), ownerPlan: r.ownerPlan ?? "free" }));
     }),
 
   adminUpdatePool: adminProcedure

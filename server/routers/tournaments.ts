@@ -91,7 +91,9 @@ export const tournamentsRouter = router({
         const member = await getPoolMember(input.poolId, ctx.user.id);
         if (!member || member.role !== "organizer") throw Err.forbidden("Apenas o organizador do bolão pode criar campeonatos personalizados.");
         const pool = await getPoolById(input.poolId);
-        if (!pool || pool.plan !== "pro") throw PoolErr.proOnly("Campeonatos personalizados");
+        const { getUserPlanTier } = await import("../db");
+        const ownerTier = await getUserPlanTier(pool?.ownerId ?? ctx.user.id);
+        if (!pool || ownerTier === "free") throw PoolErr.proOnly("Campeonatos personalizados");
       }
       const id = await createTournament({ ...input, createdBy: ctx.user.id });
       if (ctx.user.role === "admin") await createAdminLog(ctx.user.id, "create_tournament", "tournament", id);
@@ -161,7 +163,9 @@ export const tournamentsRouter = router({
         const member = await getPoolMember(input.poolId, ctx.user.id);
         if (!member || member.role !== "organizer") throw PoolErr.organizerOnly();
         const pool = await getPoolById(input.poolId);
-        if (!pool || pool.plan !== "pro") throw PoolErr.proOnly("Adição de jogos");
+        const { getUserPlanTier: getTierForGames } = await import("../db");
+        const ownerTierGames = await getTierForGames(pool?.ownerId ?? ctx.user.id);
+        if (!pool || ownerTierGames === "free") throw PoolErr.proOnly("Adição de jogos");
       }
       const { poolId: _poolId, ...gameData } = input;
       const id = await createGame({
@@ -240,7 +244,9 @@ export const tournamentsRouter = router({
         const member = await getPoolMember(input.poolId, ctx.user.id);
         if (!member || member.role !== "organizer") throw Err.forbidden("Apenas o organizador do bolão pode adicionar times.");
         const pool = await getPoolById(input.poolId);
-        if (!pool || pool.plan !== "pro") throw TournamentErr.proOnly("Adição de times");
+        const { getUserPlanTier: getTierForTeams } = await import("../db");
+        const ownerTierTeams = await getTierForTeams(pool?.ownerId ?? ctx.user.id);
+        if (!pool || ownerTierTeams === "free") throw TournamentErr.proOnly("Adição de times");
       }
       const { poolId: _poolId, ...teamData } = input;
       const id = await createTeam(teamData);

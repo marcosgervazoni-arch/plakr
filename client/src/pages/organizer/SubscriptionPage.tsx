@@ -21,6 +21,7 @@ import { useEffect } from "react";
 import { useParams, useSearch } from "wouter";
 import { toast } from "sonner";
 import OrganizerLayout from "@/components/OrganizerLayout";
+import { useUserPlan } from "@/hooks/useUserPlan";
 
 const PRO_FEATURES = [
   {
@@ -72,13 +73,13 @@ export default function SubscriptionPage() {
   const { slug } = useParams<{ slug: string }>();
   const search = useSearch();
   const { isAuthenticated } = useAuth();
+  const { isPro, isUnlimited, tier } = useUserPlan();
 
   const { data: poolData } = trpc.pools.getBySlug.useQuery(
     { slug: slug ?? "" },
     { enabled: !!slug }
   );
   const pool = poolData;
-  const poolIdNum = pool?.pool?.id ?? 0;
 
   const checkoutMutation = trpc.stripe.createCheckout.useMutation({
     onSuccess: (data) => {
@@ -108,31 +109,27 @@ export default function SubscriptionPage() {
     const params = new URLSearchParams(search);
     if (params.get("checkout") === "success") {
       analytics.trackPurchase({ currency: "BRL" });
-      toast.success("Plano Pro ativado com sucesso! Bem-vindo ao Pro.");
+      toast.success("Plano ativado com sucesso! Bem-vindo ao Pro.");
     } else if (params.get("checkout") === "cancelled") {
       toast.info("Checkout cancelado. Você pode assinar a qualquer momento.");
     }
   }, [search]);
 
   const handleUpgrade = () => {
-    if (!poolIdNum) return;
     analytics.trackUpgradeClicked({ source: "organizer_subscription", pool_slug: slug ?? undefined });
     checkoutMutation.mutate({
-      poolId: poolIdNum,
+      tier: "pro",
       origin: window.location.origin,
     });
   };
 
   const handleManageSubscription = () => {
-    if (!poolIdNum) return;
     portalMutation.mutate({
-      poolId: poolIdNum,
       origin: window.location.origin,
     });
   };
 
-  const isPro = pool?.pool?.plan === "pro";
-  const isProExpired = isPro && !!pool?.pool?.planExpiresAt && new Date(pool.pool.planExpiresAt).getTime() < Date.now();
+  const isProExpired = false; // Gerenciado pelo Stripe — sem expiração local
 
   return (
     <OrganizerLayout

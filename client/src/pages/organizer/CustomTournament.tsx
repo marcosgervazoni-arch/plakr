@@ -1,3 +1,4 @@
+import { useUserPlan } from "@/hooks/useUserPlan";
 import OrganizerLayout from "@/components/OrganizerLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,8 +92,7 @@ export default function CustomTournament() {
   const createGameMutation = trpc.tournaments.addGame.useMutation();
   const updatePoolMutation = trpc.pools.update.useMutation();
 
-  const isPro = pool?.pool?.plan === "pro";
-  const isProExpired = isPro && !!pool?.pool?.planExpiresAt && new Date(pool.pool.planExpiresAt).getTime() < Date.now();
+  const { isPro, isProExpired } = useUserPlan();
 
   const steps = [
     { n: 1, label: "Informações", icon: Trophy },

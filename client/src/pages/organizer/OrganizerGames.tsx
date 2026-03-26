@@ -1,3 +1,4 @@
+import { useUserPlan } from "@/hooks/useUserPlan";
 /**
  * OrganizerGames — Gestão de jogos e registro de resultados (Pro)
  * Exibe todos os jogos do campeonato vinculado ao bolão.
@@ -56,8 +57,7 @@ export default function OrganizerGames() {
   const pool = poolData?.pool;
   const games: GameRow[] = (poolData?.games ?? []) as GameRow[];
 
-  const isPro = pool?.plan === "pro";
-  const isProExpired = isPro && !!pool?.planExpiresAt && new Date(pool.planExpiresAt).getTime() < Date.now();
+  const { isPro, isProExpired } = useUserPlan();
 
   // Dialog state
   const [editGame, setEditGame] = useState<GameRow | null>(null);

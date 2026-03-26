@@ -72,15 +72,14 @@ type Pool = {
   slug: string;
   status: "active" | "finished" | "awaiting_conclusion" | "concluded" | "archived" | "deleted";
   accessType: "public" | "private_link";
-  plan: "free" | "pro";
   logoUrl: string | null;
   createdAt: Date | string;
   ownerId: number;
+  ownerName?: string | null;
+  ownerPlan?: "free" | "pro" | "unlimited";
   tournamentId: number | null;
   description: string | null;
   memberCount: number;
-  planExpiresAt?: Date | string | null;
-  stripeSubscriptionId?: string | null;
 };
 
 function PoolMembersList({ poolId }: { poolId: number }) {
@@ -210,17 +209,15 @@ export default function AdminPools() {
   const [grantProDays, setGrantProDays] = useState("30");
   const grantPro = trpc.adminDashboard.grantPoolPro.useMutation({
     onSuccess: () => {
-      toast.success("Plano Pro concedido com sucesso!");
+      toast.success("Plano Pro concedido ao organizador!");
       refetch();
-      if (selectedPool) setSelectedPool({ ...selectedPool, plan: "pro" });
     },
     onError: (err: { message: string }) => toast.error("Erro ao conceder Pro", { description: err.message }),
   });
   const revokePro = trpc.adminDashboard.revokePoolPro.useMutation({
     onSuccess: () => {
-      toast.success("Plano Pro revogado.");
+      toast.success("Plano Pro revogado do organizador.");
       refetch();
-      if (selectedPool) setSelectedPool({ ...selectedPool, plan: "free", planExpiresAt: null });
     },
     onError: (err: { message: string }) => toast.error("Erro ao revogar Pro", { description: err.message }),
   });
@@ -522,9 +519,9 @@ export default function AdminPools() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-sm truncate">{p.name}</p>
-                      {p.plan === "pro" && (
+                      {p.ownerPlan && p.ownerPlan !== "free" && (
                         <Badge variant="outline" className="text-xs border-yellow-400/30 text-yellow-400">
-                          <Crown className="h-2.5 w-2.5 mr-1" />Pro
+                          <Crown className="h-2.5 w-2.5 mr-1" />{p.ownerPlan === "unlimited" ? "Ilimitado" : "Pro"}
                         </Badge>
                       )}
                       <Badge
@@ -607,7 +604,7 @@ export default function AdminPools() {
                   <p className="text-xs text-muted-foreground">Participantes</p>
                 </div>
                 <div className="text-center p-2 rounded-lg bg-muted/20">
-                  <p className="text-sm font-bold capitalize">{selectedPool.plan}</p>
+                  <p className="text-sm font-bold capitalize">{selectedPool.ownerPlan ?? "free"}</p>
                   <p className="text-xs text-muted-foreground">Plano</p>
                 </div>
                 <div className="text-center p-2 rounded-lg bg-muted/20">
@@ -696,12 +693,7 @@ export default function AdminPools() {
                 </div>
 
                 {/* Datas */}
-                {selectedPool.planExpiresAt && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 rounded-lg bg-muted/20">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    Plano Pro expira em {format(new Date(selectedPool.planExpiresAt), "dd/MM/yyyy", { locale: ptBR })}
-                  </div>
-                )}
+
 
                 {/* Botão Salvar */}
                 <Button
@@ -729,7 +721,7 @@ export default function AdminPools() {
                     <Crown className="h-4 w-4 text-yellow-400" />
                     Gestão de Plano
                   </h3>
-                  {selectedPool.plan === "free" ? (
+                  {(!selectedPool.ownerPlan || selectedPool.ownerPlan === "free") ? (
                     <div className="space-y-2">
                       <div className="flex gap-2">
                         <Select value={grantProDays} onValueChange={setGrantProDays}>
@@ -746,7 +738,7 @@ export default function AdminPools() {
                         <Button
                           className="bg-yellow-500 hover:bg-yellow-600 text-white gap-1 h-9"
                           disabled={grantPro.isPending}
-                          onClick={() => grantPro.mutate({ poolId: selectedPool.id, durationDays: parseInt(grantProDays) })}
+                          onClick={() => grantPro.mutate({ userId: selectedPool.ownerId, durationDays: parseInt(grantProDays) })}
                         >
                           {grantPro.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crown className="h-3.5 w-3.5" />}
                           Conceder Pro
@@ -758,18 +750,13 @@ export default function AdminPools() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-400/10 border border-yellow-400/20">
                         <Crown className="h-4 w-4 text-yellow-400" />
-                        <span className="text-xs text-yellow-400 font-medium">Plano Pro ativo</span>
-                        {selectedPool.planExpiresAt && (
-                          <span className="text-xs text-muted-foreground ml-auto">
-                            até {format(new Date(selectedPool.planExpiresAt), "dd/MM/yyyy", { locale: ptBR })}
-                          </span>
-                        )}
+                        <span className="text-xs text-yellow-400 font-medium">{selectedPool.ownerPlan === "unlimited" ? "Plano Ilimitado ativo" : "Plano Pro ativo"}</span>
                       </div>
                       <Button
                         variant="outline"
                         className="w-full border-yellow-400/30 text-yellow-500 hover:bg-yellow-400/10 gap-2 h-9"
                         disabled={revokePro.isPending}
-                        onClick={() => revokePro.mutate({ poolId: selectedPool.id })}
+                        onClick={() => revokePro.mutate({ userId: selectedPool.ownerId })}
                       >
                         {revokePro.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crown className="h-3.5 w-3.5" />}
                         Revogar Plano Pro

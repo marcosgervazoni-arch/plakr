@@ -23,7 +23,7 @@ export const platformRouter = router({
       db.select({ c: count() }).from(usersT),
       db.select({ c: count() }).from(poolsT),
       db.select({ c: count() }).from(poolsT).where(eq(poolsT.status, "active")),
-      db.select({ c: count() }).from(poolsT).where(eq(poolsT.plan, "pro")),
+      db.select({ c: count() }).from(plansT).where(eq(plansT.isActive, true)),
       db.select({ c: count() }).from(betsT),
       db.select({ c: count() }).from(tourT),
     ]);

@@ -101,7 +101,7 @@ export const adminDashboardRouter = router({
       db.select({ c: count() }).from(usersT),
       db.select({ c: count() }).from(poolsT).where(ne(poolsT.status, "deleted")),
       db.select({ c: count() }).from(poolsT).where(and(eq(poolsT.status, "active"), ne(poolsT.status, "deleted"))),
-      db.select({ c: count() }).from(poolsT).where(and(eq(poolsT.plan, "pro"), ne(poolsT.status, "deleted"))),
+      db.select({ c: count() }).from(plansT).where(and(eq(plansT.plan, "pro"), eq(plansT.isActive, true))),
       db.select({ c: count() }).from(betsT),
       db.select({ c: count() }).from(tourT),
       db.select({ c: count() }).from(usersT).where(gte(usersT.lastSignedIn, todayStart)),
@@ -138,71 +138,75 @@ export const adminDashboardRouter = router({
   getSubscriptionStats: adminProcedure.query(async () => {
     const db = await (await import("../db")).getDb();
     if (!db) return null;
-    const { pools: poolsT, users: usersT } = await import("../../drizzle/schema");
-    const { eq, ne, and, gte, lt, isNotNull, sql } = await import("drizzle-orm");
+    const { users: usersT, userPlans: userPlansT } = await import("../../drizzle/schema");
+    const { eq, and, gte, lt, isNotNull, sql } = await import("drizzle-orm");
 
     const settings = await getPlatformSettings();
-    const monthlyPrice = settings?.stripeMonthlyPrice ?? 2990;
+    const monthlyPrice = settings?.stripeMonthlyPrice ?? 3990;
+    const unlimitedPrice = 8990;
 
     const now = new Date();
     const sevenDaysFromNow = new Date(now);
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
     const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const sixtyDaysAgo = new Date(now);
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-    // Todos os bolões Pro (não deletados)
-    const proPools = await db.select({
-      id: poolsT.id,
-      name: poolsT.name,
-      slug: poolsT.slug,
-      ownerId: poolsT.ownerId,
-      planExpiresAt: poolsT.planExpiresAt,
-      stripeSubscriptionId: poolsT.stripeSubscriptionId,
-      createdAt: poolsT.createdAt,
-    }).from(poolsT).where(
-      and(eq(poolsT.plan, "pro"), ne(poolsT.status, "deleted"))
+    // Todos os planos Pro e Unlimited ativos
+    const proPlans = await db.select({
+      id: userPlansT.id,
+      userId: userPlansT.userId,
+      plan: userPlansT.plan,
+      stripeCustomerId: userPlansT.stripeCustomerId,
+      stripeSubscriptionId: userPlansT.stripeSubscriptionId,
+      planExpiresAt: userPlansT.planExpiresAt,
+      createdAt: userPlansT.createdAt,
+    }).from(userPlansT).where(
+      and(eq(userPlansT.isActive, true), isNotNull(userPlansT.stripeSubscriptionId))
     );
 
-    // Bolões que viraram Pro no último mês (novos)
-    const newThisMonth = proPools.filter(p =>
+    const proCount = proPlans.filter(p => p.plan === "pro").length;
+    const unlimitedCount = proPlans.filter(p => p.plan === "unlimited").length;
+
+    // Novos no último mês
+    const newThisMonth = proPlans.filter(p =>
       p.createdAt && p.createdAt >= thirtyDaysAgo
     ).length;
 
-    // Bolões Pro que expiraram no último mês (churn)
+    // Churn: planos que expiraram no último mês
     const churnedLastMonth = await db.select({ c: sql<number>`COUNT(*)` })
-      .from(poolsT)
+      .from(userPlansT)
       .where(and(
-        eq(poolsT.plan, "free"),
-        ne(poolsT.status, "deleted"),
-        isNotNull(poolsT.stripeSubscriptionId),
-        gte(poolsT.updatedAt, thirtyDaysAgo),
+        eq(userPlansT.isActive, false),
+        isNotNull(userPlansT.stripeSubscriptionId),
+        gte(userPlansT.updatedAt, thirtyDaysAgo),
       ));
     const churned = Number(churnedLastMonth[0]?.c ?? 0);
 
     // Vencendo em 7 dias
-    const expiringSoon = proPools.filter(p =>
+    const expiringSoon = proPlans.filter(p =>
       p.planExpiresAt && p.planExpiresAt <= sevenDaysFromNow && p.planExpiresAt > now
     );
 
-    // Buscar nomes dos donos
-    const ownerIds = Array.from(new Set(proPools.map(p => p.ownerId)));
-    let ownerMap: Record<number, string> = {};
-    if (ownerIds.length > 0) {
+    // Buscar nomes dos usuários
+    const userIds = Array.from(new Set(proPlans.map(p => p.userId)));
+    let userMap: Record<number, string> = {};
+    if (userIds.length > 0) {
       const { inArray } = await import("drizzle-orm");
       const owners = await db.select({ id: usersT.id, name: usersT.name, email: usersT.email })
-        .from(usersT).where(inArray(usersT.id, ownerIds));
-      ownerMap = Object.fromEntries(owners.map(o => [o.id, o.name ?? o.email ?? `#${o.id}`]));
+        .from(usersT).where(inArray(usersT.id, userIds));
+      userMap = Object.fromEntries(owners.map(o => [o.id, o.name ?? o.email ?? `#${o.id}`]));
     }
 
-    const mrrCents = proPools.length * monthlyPrice;
-    const ticketMedio = proPools.length > 0 ? monthlyPrice / 100 : 0;
-    const prevMonthPro = proPools.length - newThisMonth + churned;
-    const churnRate = prevMonthPro > 0 ? Math.round((churned / prevMonthPro) * 100) : 0;
+    const mrrCents = (proCount * monthlyPrice) + (unlimitedCount * unlimitedPrice);
+    const totalPaid = proCount + unlimitedCount;
+    const ticketMedio = totalPaid > 0 ? mrrCents / totalPaid / 100 : 0;
+    const prevMonthPaid = totalPaid - newThisMonth + churned;
+    const churnRate = prevMonthPaid > 0 ? Math.round((churned / prevMonthPaid) * 100) : 0;
 
     return {
-      totalPro: proPools.length,
+      totalPro: totalPaid,
+      proCount,
+      unlimitedCount,
       newThisMonth,
       churned,
       churnRate,
@@ -210,12 +214,11 @@ export const adminDashboardRouter = router({
       arrBrl: (mrrCents * 12) / 100,
       ticketMedio,
       expiringSoon: expiringSoon.length,
-      subscriptions: proPools.map(p => ({
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        ownerId: p.ownerId,
-        ownerName: ownerMap[p.ownerId] ?? `#${p.ownerId}`,
+      subscriptions: proPlans.map(p => ({
+        id: p.userId,
+        userId: p.userId,
+        userName: userMap[p.userId] ?? `#${p.userId}`,
+        plan: p.plan,
         planExpiresAt: p.planExpiresAt,
         stripeSubscriptionId: p.stripeSubscriptionId,
         status: !p.planExpiresAt
@@ -397,31 +400,44 @@ export const adminDashboardRouter = router({
       .from(usersT).where(eq(usersT.role, "admin"));
   }),
 
-  // ─── UPGRADE MANUAL DE PLANO DE BOLÃO ────────────────────────────────────────
+  // ─── UPGRADE MANUAL DE PLANO DE USUÁRIO ────────────────────────────────────────────
   grantPoolPro: adminProcedure
     .input(z.object({
-      poolId: z.number(),
+      userId: z.number(),
+      tier: z.enum(["pro", "unlimited"]).default("pro"),
       durationDays: z.number().min(1).max(365).default(30),
       reason: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
       if (!db) throw Err.internal();
-      const { pools: poolsT } = await import("../../drizzle/schema");
+      const { userPlans: plansT } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
-
-      const [pool] = await db.select().from(poolsT).where(eq(poolsT.id, input.poolId)).limit(1);
-      if (!pool) throw PoolErr.notFound();
 
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + input.durationDays);
 
-      await db.update(poolsT).set({
-        plan: "pro",
-        planExpiresAt: expiresAt,
-      }).where(eq(poolsT.id, input.poolId));
+      // Upsert: atualiza se já existe, cria se não
+      const [existing] = await db.select().from(plansT).where(eq(plansT.userId, input.userId)).limit(1);
+      if (existing) {
+        await db.update(plansT).set({
+          plan: input.tier,
+          isActive: true,
+          planStartAt: new Date(),
+          planExpiresAt: expiresAt,
+        }).where(eq(plansT.userId, input.userId));
+      } else {
+        await db.insert(plansT).values({
+          userId: input.userId,
+          plan: input.tier,
+          isActive: true,
+          planStartAt: new Date(),
+          planExpiresAt: expiresAt,
+        });
+      }
 
-      await createAdminLog(ctx.user.id, "admin_grant_pool_pro", "pool", input.poolId, {
+      await createAdminLog(ctx.user.id, "admin_grant_user_pro", "user", input.userId, {
+        tier: input.tier,
         durationDays: input.durationDays,
         expiresAt: expiresAt.toISOString(),
         reason: input.reason ?? "Concessão manual pelo admin",
@@ -429,25 +445,25 @@ export const adminDashboardRouter = router({
 
       return { success: true, expiresAt };
     }),
-
-  // ─── REVOGAR PLANO PRO DE BOLÃO ───────────────────────────────────────────────
+    // ─── REVOGAR PLANO PRO DE USUÁRIO ────────────────────────────────────────────
   revokePoolPro: adminProcedure
     .input(z.object({
-      poolId: z.number(),
+      userId: z.number(),
       reason: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
       if (!db) throw Err.internal();
-      const { pools: poolsT } = await import("../../drizzle/schema");
+      const { userPlans: plansT } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
 
-      await db.update(poolsT).set({
+      await db.update(plansT).set({
         plan: "free",
-        planExpiresAt: null,
-      }).where(eq(poolsT.id, input.poolId));
+        isActive: false,
+        planExpiresAt: new Date(),
+      }).where(eq(plansT.userId, input.userId));
 
-      await createAdminLog(ctx.user.id, "admin_revoke_pool_pro", "pool", input.poolId, {
+      await createAdminLog(ctx.user.id, "admin_revoke_user_pro", "user", input.userId, {
         reason: input.reason ?? "Revogação manual pelo admin",
       });
 
@@ -471,14 +487,15 @@ export const adminDashboardRouter = router({
 
     const alerts: { type: "warning" | "error" | "info"; message: string; action?: string; actionPath?: string }[] = [];
 
-    // Bolões Pro vencendo hoje
-    const [expiringToday] = await db.select({ c: count() }).from(poolsT).where(
-      and(eq(poolsT.plan, "pro"), ne(poolsT.status, "deleted"), lt(poolsT.planExpiresAt, todayEnd), gte(poolsT.planExpiresAt, now))
+    // Planos Pro vencendo hoje
+    const { userPlans: userPlansAlert } = await import("../../drizzle/schema");
+    const [expiringToday] = await db.select({ c: count() }).from(userPlansAlert).where(
+      and(eq(userPlansAlert.isActive, true), lt(userPlansAlert.planExpiresAt, todayEnd), gte(userPlansAlert.planExpiresAt, now))
     );
     if (Number(expiringToday?.c ?? 0) > 0) {
       alerts.push({
         type: "warning",
-        message: `${expiringToday.c} bolão(ões) Pro vencem hoje`,
+        message: `${expiringToday.c} plano(s) Pro vencem hoje`,
         action: "Ver assinaturas",
         actionPath: "/admin/subscriptions",
       });
