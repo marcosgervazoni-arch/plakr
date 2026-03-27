@@ -30,7 +30,7 @@ const landingPageConfigSchema = z.object({
   ctaFinalSecondaryText: z.string().max(64).optional(),
   ctaFinalSecondaryEnabled: z.boolean().optional(),
   // SEO & Open Graph
-  ogImageUrl: z.string().url().nullable().optional(),
+  ogImageUrl: z.union([z.string().url(), z.literal("")]).nullable().optional(),
   ogImageKey: z.string().nullable().optional(),
   // Custom code per section (overrides default content when set)
   heroCustomCode: z.string().nullable().optional(),

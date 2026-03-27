@@ -1666,3 +1666,8 @@
 ## ICE-001 — Preservar billing period da landing no /upgrade
 
 - [x] UpgradePage lê ?billing= da URL e pré-seleciona o toggle Mensal/Anual
+
+## Bug: ogImageUrl — Erro ao excluir imagem OG na Página de Vendas
+
+- [x] Corrigir validação z.string().url() para aceitar string vazia ou null no ogImageUrl
+- [x] Testar exclusão da OG Image no AdminLandingPage sem erro
