@@ -1,7 +1,8 @@
 /**
  * Upgrade — /upgrade
  * Página de pricing: Free | Pro | Ilimitado
- * Preços carregados dinamicamente do banco via trpc.platform.getSettings
+ * Preços carregados dinamicamente do banco via trpc.platform.getPublicPricing
+ * Toggle Mensal/Anual — billing period passado ao checkout
  * Modelo: Pro por Conta — o plano é do usuário, não do bolão.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -26,6 +27,7 @@ import {
   ChevronUp,
   Loader2,
   Sparkles,
+  CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -85,6 +87,10 @@ const FAQ = [
     a: "O Pro permite até 10 bolões e 200 participantes por bolão. O Ilimitado remove todos os limites e inclui recursos avançados como a API de resultados automática (em breve).",
   },
   {
+    q: "Qual a vantagem do plano anual?",
+    a: "O plano anual oferece um desconto significativo em relação ao mensal — equivale a pagar ~10 meses e ganhar 2. Você é cobrado uma vez por ano.",
+  },
+  {
     q: "Posso cancelar a qualquer momento?",
     a: "Sim. Você pode cancelar pelo portal de assinatura Stripe. Seu plano continuará ativo até o fim do período pago.",
   },
@@ -97,6 +103,58 @@ const FAQ = [
     a: "Sim! Você pode criar bolões gratuitos e explorar a plataforma sem custo. O upgrade é opcional e pode ser feito a qualquer momento.",
   },
 ];
+
+// ─── Toggle Mensal/Anual ──────────────────────────────────────────────────────
+
+type BillingPeriod = "monthly" | "annual";
+
+interface BillingToggleProps {
+  value: BillingPeriod;
+  onChange: (v: BillingPeriod) => void;
+  annualSavingLabel?: string;
+}
+
+function BillingToggle({ value, onChange, annualSavingLabel }: BillingToggleProps) {
+  return (
+    <div className="flex items-center justify-center gap-3">
+      <button
+        onClick={() => onChange("monthly")}
+        className={`text-sm font-medium transition-colors ${
+          value === "monthly" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        Mensal
+      </button>
+      <button
+        onClick={() => onChange(value === "monthly" ? "annual" : "monthly")}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+          value === "annual" ? "bg-primary" : "bg-muted"
+        }`}
+        role="switch"
+        aria-checked={value === "annual"}
+      >
+        <span
+          className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+            value === "annual" ? "translate-x-6" : "translate-x-1"
+          }`}
+        />
+      </button>
+      <button
+        onClick={() => onChange("annual")}
+        className={`text-sm font-medium transition-colors flex items-center gap-1.5 ${
+          value === "annual" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        Anual
+        {annualSavingLabel && (
+          <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-semibold">
+            {annualSavingLabel}
+          </span>
+        )}
+      </button>
+    </div>
+  );
+}
 
 // ─── Skeleton de preço ────────────────────────────────────────────────────────
 
@@ -111,6 +169,7 @@ export default function UpgradePage() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [billing, setBilling] = useState<BillingPeriod>("monthly");
 
   // Preços dinâmicos do banco (publicProcedure — sem auth necessária)
   const { data: pricing, isLoading: loadingPrices } =
@@ -147,9 +206,23 @@ export default function UpgradePage() {
   const unlimitedMonthlyPrice = pricing?.unlimitedMonthlyPrice ?? 8990;
   const unlimitedAnnualPrice = pricing?.unlimitedAnnualPrice ?? 89900;
 
+  // Preço exibido conforme billing selecionado
+  const proDisplayPrice = billing === "annual" ? proAnnualPrice : proMonthlyPrice;
+  const unlimitedDisplayPrice = billing === "annual" ? unlimitedAnnualPrice : unlimitedMonthlyPrice;
+
+  // Economia anual em % (arredondado)
+  const proSaving = proAnnualPrice > 0 && proMonthlyPrice > 0
+    ? Math.round((1 - proAnnualPrice / (proMonthlyPrice * 12)) * 100)
+    : 0;
+  const unlimitedSaving = unlimitedAnnualPrice > 0 && unlimitedMonthlyPrice > 0
+    ? Math.round((1 - unlimitedAnnualPrice / (unlimitedMonthlyPrice * 12)) * 100)
+    : 0;
+  const maxSaving = Math.max(proSaving, unlimitedSaving);
+  const annualSavingLabel = maxSaving > 0 ? `-${maxSaving}%` : undefined;
+
   const handleCheckout = (tier: "pro" | "unlimited") => {
     analytics.trackUpgradeClicked({ source: "upgrade_page", pool_slug: tier });
-    checkoutMutation.mutate({ tier, origin: window.location.origin });
+    checkoutMutation.mutate({ tier, billing, origin: window.location.origin });
   };
 
   return (
@@ -172,6 +245,21 @@ export default function UpgradePage() {
             O plano é da sua conta — todos os seus bolões ganham os benefícios
             automaticamente.
           </p>
+        </div>
+
+        {/* ── Toggle Mensal / Anual ── */}
+        <div className="flex flex-col items-center gap-2">
+          <BillingToggle
+            value={billing}
+            onChange={setBilling}
+            annualSavingLabel={annualSavingLabel}
+          />
+          {billing === "annual" && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <CalendarDays className="w-3 h-3" />
+              Cobrado uma vez por ano · Cancele quando quiser
+            </p>
+          )}
         </div>
 
         {/* ── Pricing cards ── */}
@@ -254,14 +342,20 @@ export default function UpgradePage() {
                     className="font-bold text-3xl text-primary"
                     style={{ fontFamily: "'JetBrains Mono', monospace" }}
                   >
-                    {formatPrice(proMonthlyPrice)}
+                    {formatPrice(proDisplayPrice)}
                   </span>
                   <span className="text-muted-foreground text-sm mb-1">
-                    /mês
+                    /{billing === "annual" ? "ano" : "mês"}
                   </span>
                 </div>
               )}
-              {!loadingPrices && proAnnualPrice > 0 && (
+              {!loadingPrices && billing === "annual" && proMonthlyPrice > 0 && (
+                <p className="text-xs text-green-400 mt-0.5 font-medium">
+                  Equivale a {formatPrice(Math.round(proAnnualPrice / 12))}/mês
+                  {proSaving > 0 && ` · ${proSaving}% de desconto`}
+                </p>
+              )}
+              {!loadingPrices && billing === "monthly" && proAnnualPrice > 0 && (
                 <p className="text-xs text-muted-foreground mt-0.5">
                   ou {formatPrice(proAnnualPrice)}/ano
                 </p>
@@ -319,7 +413,7 @@ export default function UpgradePage() {
                 ) : (
                   <Crown className="w-4 h-4" />
                 )}
-                Assinar Pro
+                Assinar Pro {billing === "annual" ? "Anual" : "Mensal"}
               </Button>
             )}
           </div>
@@ -346,14 +440,20 @@ export default function UpgradePage() {
                     className="font-bold text-3xl text-yellow-400"
                     style={{ fontFamily: "'JetBrains Mono', monospace" }}
                   >
-                    {formatPrice(unlimitedMonthlyPrice)}
+                    {formatPrice(unlimitedDisplayPrice)}
                   </span>
                   <span className="text-muted-foreground text-sm mb-1">
-                    /mês
+                    /{billing === "annual" ? "ano" : "mês"}
                   </span>
                 </div>
               )}
-              {!loadingPrices && unlimitedAnnualPrice > 0 && (
+              {!loadingPrices && billing === "annual" && unlimitedMonthlyPrice > 0 && (
+                <p className="text-xs text-green-400 mt-0.5 font-medium">
+                  Equivale a {formatPrice(Math.round(unlimitedAnnualPrice / 12))}/mês
+                  {unlimitedSaving > 0 && ` · ${unlimitedSaving}% de desconto`}
+                </p>
+              )}
+              {!loadingPrices && billing === "monthly" && unlimitedAnnualPrice > 0 && (
                 <p className="text-xs text-muted-foreground mt-0.5">
                   ou {formatPrice(unlimitedAnnualPrice)}/ano
                 </p>
@@ -410,7 +510,7 @@ export default function UpgradePage() {
                 ) : (
                   <Sparkles className="w-4 h-4" />
                 )}
-                Assinar Ilimitado
+                Assinar Ilimitado {billing === "annual" ? "Anual" : "Mensal"}
               </Button>
             )}
           </div>
@@ -543,7 +643,7 @@ export default function UpgradePage() {
               ) : (
                 <Crown className="w-4 h-4" />
               )}
-              Assinar Pro agora
+              Assinar Pro {billing === "annual" ? "Anual" : "Mensal"}
             </Button>
           ) : (
             <Link href="/dashboard">

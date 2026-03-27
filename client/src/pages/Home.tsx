@@ -5,6 +5,8 @@
  * customCode por seção: quando preenchido, tem prioridade total sobre o conteúdo padrão.
  */
 import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Sparkles, Infinity as InfinityIcon, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { trpc } from "@/lib/trpc";
@@ -184,6 +186,225 @@ function MockCustomTournamentCard() {
         <div className="flex items-center gap-2 text-xs" style={{ color: "#9CA3AF" }}>
           <Settings size={12} />
           <span>Regras customizadas · Fases configuradas · Resultados manuais</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Seção de Planos com Toggle Mensal/Anual ─────────────────────────────────
+
+type BillingPeriod = "monthly" | "annual";
+
+function LandingPricingSection({
+  user, upgradeLoginUrl, loginUrl, freeFeatures, proFeatures,
+}: {
+  user: { id: number } | null | undefined;
+  upgradeLoginUrl: string;
+  loginUrl: string;
+  freeFeatures: string[];
+  proFeatures: string[];
+}) {
+  const [billing, setBilling] = useState<BillingPeriod>("monthly");
+  const { data: pricing, isLoading } = trpc.platform.getPublicPricing.useQuery();
+
+  const proMonthly = pricing?.proMonthlyPrice ?? 3990;
+  const proAnnual = pricing?.proAnnualPrice ?? 39900;
+  const unlimitedMonthly = pricing?.unlimitedMonthlyPrice ?? 8990;
+  const unlimitedAnnual = pricing?.unlimitedAnnualPrice ?? 89900;
+
+  const fmt = (cents: number) =>
+    (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
+
+  const proDisplay = billing === "annual" ? proAnnual : proMonthly;
+  const unlimitedDisplay = billing === "annual" ? unlimitedAnnual : unlimitedMonthly;
+  const proSaving = proAnnual > 0 && proMonthly > 0
+    ? Math.round((1 - proAnnual / (proMonthly * 12)) * 100) : 0;
+  const unlimitedSaving = unlimitedAnnual > 0 && unlimitedMonthly > 0
+    ? Math.round((1 - unlimitedAnnual / (unlimitedMonthly * 12)) * 100) : 0;
+  const maxSaving = Math.max(proSaving, unlimitedSaving);
+
+  const unlimitedFeatures = [
+    "Tudo do plano Pro",
+    "Bolões ilimitados",
+    "Participantes ilimitados",
+    "API de resultados automática (em breve)",
+    "Suporte prioritário",
+  ];
+
+  return (
+    <div className="max-w-5xl mx-auto px-4">
+      <div className="text-center mb-10">
+        <h2 id="section-planos" className="text-3xl md:text-4xl font-black mb-4">
+          Comece grátis.{" "}
+          <span style={{ color: "#FFB800" }}>Evolua quando quiser.</span>
+        </h2>
+        <p className="text-lg" style={{ color: "#9CA3AF" }}>
+          O plano gratuito já é completo para a maioria dos bolões. O Pro é para quem quer mais.
+        </p>
+      </div>
+
+      {/* Toggle Mensal / Anual */}
+      <div className="flex flex-col items-center gap-2 mb-10">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setBilling("monthly")}
+            className="text-sm font-medium transition-colors"
+            style={{ color: billing === "monthly" ? "#F9FAFB" : "#6B7280" }}
+          >
+            Mensal
+          </button>
+          <button
+            onClick={() => setBilling(billing === "monthly" ? "annual" : "monthly")}
+            className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+            style={{ background: billing === "annual" ? "#FFB800" : "rgba(255,255,255,0.15)" }}
+            role="switch"
+            aria-checked={billing === "annual"}
+          >
+            <span
+              className="inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform"
+              style={{ transform: billing === "annual" ? "translateX(1.5rem)" : "translateX(0.25rem)" }}
+            />
+          </button>
+          <button
+            onClick={() => setBilling("annual")}
+            className="text-sm font-medium transition-colors flex items-center gap-1.5"
+            style={{ color: billing === "annual" ? "#F9FAFB" : "#6B7280" }}
+          >
+            Anual
+            {maxSaving > 0 && (
+              <span className="text-xs px-1.5 py-0.5 rounded-full font-semibold"
+                style={{ background: "rgba(0,255,136,0.15)", color: "#00FF88" }}>
+                -{maxSaving}%
+              </span>
+            )}
+          </button>
+        </div>
+        {billing === "annual" && (
+          <p className="text-xs flex items-center gap-1" style={{ color: "#6B7280" }}>
+            <CalendarDays size={12} />
+            Cobrado uma vez por ano · Cancele quando quiser
+          </p>
+        )}
+      </div>
+
+      {/* Cards */}
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Free */}
+        <div className="rounded-2xl p-8" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">Gratuito</h3>
+            <div className="text-4xl font-black text-white">R$ 0</div>
+            <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Para sempre</p>
+          </div>
+          <ul className="space-y-3 mb-8">
+            {freeFeatures.map((f) => (
+              <li key={f} className="flex items-center gap-3 text-sm">
+                <CheckCircle size={14} style={{ color: "#00FF88", flexShrink: 0 }} />
+                <span style={{ color: "#D1D5DB" }}>{f}</span>
+              </li>
+            ))}
+          </ul>
+          <a href={loginUrl} className="block">
+            <Button className="w-full font-bold" variant="outline"
+              style={{ borderColor: "rgba(255,255,255,0.15)", color: "white", background: "rgba(255,255,255,0.04)" }}>
+              Criar bolão grátis
+            </Button>
+          </a>
+        </div>
+
+        {/* Pro */}
+        <div className="rounded-2xl p-8 relative overflow-hidden"
+          style={{ background: "#121826", border: "2px solid #FFB800", boxShadow: "0 0 40px rgba(255,184,0,0.1)" }}>
+          <div className="absolute top-4 right-4">
+            <span className="px-2 py-1 rounded-full text-xs font-bold"
+              style={{ background: "rgba(255,184,0,0.15)", color: "#FFB800" }}>MAIS POPULAR</span>
+          </div>
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">Pro</h3>
+            {isLoading ? (
+              <Skeleton className="h-10 w-32 mt-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+            ) : (
+              <>
+                <div className="flex items-baseline gap-1">
+                  <div className="text-4xl font-black" style={{ color: "#FFB800" }}>{fmt(proDisplay)}</div>
+                  <span style={{ color: "#6B7280" }}>/{billing === "annual" ? "ano" : "mês"}</span>
+                </div>
+                {billing === "annual" && proSaving > 0 && (
+                  <p className="text-xs mt-0.5 font-medium" style={{ color: "#00FF88" }}>
+                    {fmt(Math.round(proAnnual / 12))}/mês · {proSaving}% de desconto
+                  </p>
+                )}
+                {billing === "monthly" && proAnnual > 0 && (
+                  <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>ou {fmt(proAnnual)}/ano</p>
+                )}
+              </>
+            )}
+            <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Por conta. Cancele quando quiser.</p>
+          </div>
+          <ul className="space-y-3 mb-8">
+            {proFeatures.map((f) => (
+              <li key={f} className="flex items-center gap-3 text-sm">
+                <CheckCircle size={14} style={{ color: "#FFB800", flexShrink: 0 }} />
+                <span style={{ color: "#D1D5DB" }}>{f}</span>
+              </li>
+            ))}
+          </ul>
+          <a href={user ? `/upgrade?billing=${billing}` : upgradeLoginUrl} className="block">
+            <Button className="w-full font-bold"
+              style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+              Começar com Pro
+              <Crown size={14} className="ml-2" />
+            </Button>
+          </a>
+        </div>
+
+        {/* Unlimited */}
+        <div className="rounded-2xl p-8 relative overflow-hidden"
+          style={{ background: "#121826", border: "2px solid rgba(234,179,8,0.4)", boxShadow: "0 0 30px rgba(234,179,8,0.06)" }}>
+          <div className="absolute top-4 right-4">
+            <span className="px-2 py-1 rounded-full text-xs font-bold"
+              style={{ background: "rgba(234,179,8,0.15)", color: "#EAB308" }}>
+              <span className="flex items-center gap-1"><Sparkles size={10} /> ILIMITADO</span>
+            </span>
+          </div>
+          <div className="mb-6">
+            <h3 className="text-xl font-bold text-white mb-1">Ilimitado</h3>
+            {isLoading ? (
+              <Skeleton className="h-10 w-32 mt-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+            ) : (
+              <>
+                <div className="flex items-baseline gap-1">
+                  <div className="text-4xl font-black" style={{ color: "#EAB308" }}>{fmt(unlimitedDisplay)}</div>
+                  <span style={{ color: "#6B7280" }}>/{billing === "annual" ? "ano" : "mês"}</span>
+                </div>
+                {billing === "annual" && unlimitedSaving > 0 && (
+                  <p className="text-xs mt-0.5 font-medium" style={{ color: "#00FF88" }}>
+                    {fmt(Math.round(unlimitedAnnual / 12))}/mês · {unlimitedSaving}% de desconto
+                  </p>
+                )}
+                {billing === "monthly" && unlimitedAnnual > 0 && (
+                  <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>ou {fmt(unlimitedAnnual)}/ano</p>
+                )}
+              </>
+            )}
+            <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Sem limites. Para quem leva a sério.</p>
+          </div>
+          <ul className="space-y-3 mb-8">
+            {unlimitedFeatures.map((f) => (
+              <li key={f} className="flex items-center gap-3 text-sm">
+                <CheckCircle size={14} style={{ color: "#EAB308", flexShrink: 0 }} />
+                <span style={{ color: "#D1D5DB" }}>{f}</span>
+              </li>
+            ))}
+          </ul>
+          <a href={user ? `/upgrade?billing=${billing}` : upgradeLoginUrl} className="block">
+            <Button className="w-full font-bold"
+              style={{ background: "linear-gradient(135deg, #EAB308, #CA8A04)", color: "#0B0F1A", border: "none" }}>
+              Começar com Ilimitado
+              <Sparkles size={14} className="ml-2" />
+            </Button>
+          </a>
         </div>
       </div>
     </div>
@@ -515,74 +736,13 @@ export default function Home() {
       {(config?.sectionPlansEnabled ?? true) && (
         <CustomOrDefault customCode={config?.plansCustomCode}>
           <section id="planos" className="py-20" style={{ background: "#0D1120" }} aria-labelledby="section-planos">
-            <div className="max-w-4xl mx-auto px-4">
-              <div className="text-center mb-14">
-                <h2 id="section-planos" className="text-3xl md:text-4xl font-black mb-4">
-                  Comece grátis.{" "}
-                  <span style={{ color: "#FFB800" }}>Evolua quando quiser.</span>
-                </h2>
-                <p className="text-lg" style={{ color: "#9CA3AF" }}>
-                  O plano gratuito já é completo para a maioria dos bolões. O Pro é para quem quer mais.
-                </p>
-              </div>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="rounded-2xl p-8" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="mb-6">
-                    <h3 className="text-xl font-bold text-white mb-1">Gratuito</h3>
-                    <div className="text-4xl font-black text-white">R$ 0</div>
-                    <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Para sempre</p>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {freeFeatures.map((f) => (
-                      <li key={f} className="flex items-center gap-3 text-sm">
-                        <CheckCircle size={14} style={{ color: "#00FF88", flexShrink: 0 }} />
-                        <span style={{ color: "#D1D5DB" }}>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <a href={loginUrl} className="block">
-                    <Button className="w-full font-bold" variant="outline"
-                      style={{ borderColor: "rgba(255,255,255,0.15)", color: "white", background: "rgba(255,255,255,0.04)" }}>
-                      Criar bolão grátis
-                    </Button>
-                  </a>
-                </div>
-                <div className="rounded-2xl p-8 relative overflow-hidden"
-                  style={{ background: "#121826", border: "2px solid #FFB800", boxShadow: "0 0 40px rgba(255,184,0,0.1)" }}>
-                  <div className="absolute top-4 right-4">
-                    <span className="px-2 py-1 rounded-full text-xs font-bold"
-                      style={{ background: "rgba(255,184,0,0.15)", color: "#FFB800" }}>
-                      MAIS POPULAR
-                    </span>
-                  </div>
-                  <div className="mb-6">
-                    <h3 className="text-xl font-bold text-white mb-1">
-                      Pro <span style={{ color: "#FFB800" }}>por bolão</span>
-                    </h3>
-                    <div className="flex items-baseline gap-1">
-                      <div className="text-4xl font-black text-white">R$ 29</div>
-                      <span style={{ color: "#6B7280" }}>/mês por bolão</span>
-                    </div>
-                    <p className="text-sm mt-1" style={{ color: "#6B7280" }}>Cancele quando quiser</p>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {proFeatures.map((f) => (
-                      <li key={f} className="flex items-center gap-3 text-sm">
-                        <CheckCircle size={14} style={{ color: "#FFB800", flexShrink: 0 }} />
-                        <span style={{ color: "#D1D5DB" }}>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <a href={user ? "/upgrade" : upgradeLoginUrl} className="block">
-                    <Button className="w-full font-bold"
-                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                      Começar com Pro
-                      <Crown size={14} className="ml-2" />
-                    </Button>
-                  </a>
-                </div>
-              </div>
-            </div>
+            <LandingPricingSection
+              user={user}
+              upgradeLoginUrl={upgradeLoginUrl}
+              loginUrl={loginUrl}
+              freeFeatures={freeFeatures}
+              proFeatures={proFeatures}
+            />
           </section>
         </CustomOrDefault>
       )}

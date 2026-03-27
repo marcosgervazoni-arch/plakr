@@ -20,6 +20,7 @@ import {
   Target,
   Users,
   XCircle,
+  ChevronRight,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";

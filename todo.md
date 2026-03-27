@@ -1654,3 +1654,11 @@
 - [x] Buscar preços via trpc.platform.getPublicPricing no UpgradePage
 - [x] Remover valores fixos de preço do código do UpgradePage
 - [x] Exibir skeleton/loading enquanto os preços carregam
+
+## Toggle Mensal/Anual — UpgradePage e Landing Page
+
+- [x] Adicionar toggle Mensal/Anual no UpgradePage com troca dinâmica de preços
+- [x] Checkout usa priceId correto conforme billing period selecionado
+- [x] Revisar cards de plano no UpgradePage (Gratuito, Pro, Ilimitado presentes)
+- [x] Replicar toggle na landing page de vendas (Home.tsx) — 3 cards + toggle Mensal/Anual
+- [x] Registrar ideias de UX no backlog (docs/backlog/pricing-ux.md — 6 ideias ICE-001 a ICE-006)
