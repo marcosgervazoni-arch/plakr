@@ -111,8 +111,10 @@ export const tournamentsRouter = router({
       for (const line of lines) {
         const parts = line.split(",").map((p) => p.trim());
         if (parts.length < 4) continue;
-        const [teamAName, teamBName, matchDateStr, , phase, venue] = parts;
+        const [teamAName, teamBName, matchDateStr, , phase, venue, roundNumberRaw] = parts;
         if (!teamAName || !teamBName || !matchDateStr) continue;
+        const parsedRound = roundNumberRaw ? parseInt(roundNumberRaw.replace(/"/g, ""), 10) : undefined;
+        const roundNumber = parsedRound && parsedRound > 0 ? parsedRound : undefined;
         try {
           await createGame({
             tournamentId: input.tournamentId,
@@ -121,6 +123,7 @@ export const tournamentsRouter = router({
             matchDate: new Date(matchDateStr.replace(/"/g, "")),
             phase: (phase ?? "Fase de Grupos").replace(/"/g, ""),
             venue: venue?.replace(/"/g, "") || undefined,
+            roundNumber,
           });
           imported++;
         } catch (err) {
@@ -156,6 +159,7 @@ export const tournamentsRouter = router({
       matchNumber: z.number().optional(),
       poolId: z.number().optional(),
       phase: z.string().optional(),
+      roundNumber: z.number().int().positive().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       if (ctx.user.role !== "admin") {
@@ -376,8 +380,10 @@ export const tournamentsRouter = router({
       for (const line of lines) {
         const parts = line.split(",").map((p) => p.trim().replace(/^"|"$/g, ""));
         if (parts.length < 3) { skipped++; continue; }
-        const [teamAName, teamBName, matchDateStr, , phase] = parts;
+        const [teamAName, teamBName, matchDateStr, , phase, , roundNumberRaw] = parts;
         if (!teamAName || !teamBName || !matchDateStr) { skipped++; continue; }
+        const parsedRound = roundNumberRaw ? parseInt(roundNumberRaw, 10) : undefined;
+        const roundNumber = parsedRound && parsedRound > 0 ? parsedRound : undefined;
         try {
           await createGame({
             tournamentId: input.tournamentId,
@@ -385,6 +391,7 @@ export const tournamentsRouter = router({
             teamBName,
             matchDate: new Date(matchDateStr),
             phase: phase || "Fase de Grupos",
+            roundNumber,
           });
           imported++;
         } catch (err) {
@@ -468,6 +475,7 @@ export const tournamentsRouter = router({
       matchDate: z.date().optional(),
       venue: z.string().optional(),
       phase: z.string().optional(),
+      roundNumber: z.number().int().positive().nullable().optional(),
       status: z.enum(["scheduled", "live", "finished", "cancelled"]).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -482,6 +490,7 @@ export const tournamentsRouter = router({
       if (updates.matchDate !== undefined) cleanUpdates.matchDate = updates.matchDate;
       if (updates.venue !== undefined) cleanUpdates.venue = updates.venue;
       if (updates.phase !== undefined) cleanUpdates.phase = updates.phase;
+      if (updates.roundNumber !== undefined) cleanUpdates.roundNumber = updates.roundNumber;
       if (updates.status !== undefined) cleanUpdates.status = updates.status;
       await db.update(games).set(cleanUpdates).where(eq(games.id, gameId));
       await createAdminLog(ctx.user.id, "update_game", "game", gameId, cleanUpdates);

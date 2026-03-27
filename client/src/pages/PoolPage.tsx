@@ -153,7 +153,25 @@ export default function PoolPage() {
 
   const hasMultiplePhases = uniquePhaseKeys.length > 1;
 
+  // Verifica se todos os jogos têm roundNumber — nesse caso agrupa por rodada
+  const allGamesHaveRound = useMemo(() => games.length > 0 && games.every((g) => g.roundNumber != null), [games]);
+
   const gamesByPhase = useMemo(() => {
+    if (allGamesHaveRound) {
+      // Agrupamento por número de rodada (campeonatos league)
+      const groups = new Map<string, typeof games>();
+      games.forEach((g) => {
+        const key = `round_${g.roundNumber}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(g);
+      });
+      return Array.from(groups.entries()).sort(([a], [b]) => {
+        const na = parseInt(a.replace("round_", ""), 10);
+        const nb = parseInt(b.replace("round_", ""), 10);
+        return na - nb;
+      });
+    }
+    // Agrupamento padrão por fase (texto)
     const phaseOrder = new Map<string, number>();
     phases.forEach((p, i) => phaseOrder.set(p.key, p.order ?? i));
     const groups = new Map<string, typeof games>();
@@ -167,7 +185,7 @@ export default function PoolPage() {
       const ob = phaseOrder.get(b) ?? 999;
       return oa - ob;
     });
-  }, [games, phases]);
+  }, [games, phases, allGamesHaveRound]);
 
   const activePhaseKey = useMemo(() => {
     const livePhase = games.find((g) => g.status === "live")?.phase;
@@ -557,7 +575,9 @@ export default function PoolPage() {
               /* ── MODO FASES: accordion por fase ── */
               <div className="space-y-2">
                 {gamesByPhase.map(([phaseKey, phaseGames]) => {
-                  const label = phaseLabels.get(phaseKey) ?? phaseKey;
+                  const label = allGamesHaveRound && phaseKey.startsWith("round_")
+                    ? `Rodada ${phaseKey.replace("round_", "")}`
+                    : (phaseLabels.get(phaseKey) ?? phaseKey);
                   const isExpanded = expandedPhases.has(phaseKey);
                   const hasLive = phaseGames.some((g) => g.status === "live");
                   const hasOpen = phaseGames.some((g) => g.status === "scheduled" && isGameOpen(g.matchDate));

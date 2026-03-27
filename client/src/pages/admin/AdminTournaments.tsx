@@ -100,7 +100,7 @@ export default function AdminTournaments() {
   const [phaseForm, setPhaseForm] = useState<PhaseEntry>({ key: "", label: "", order: 1, slots: 4, isKnockout: false });
 
   // ── Step 3: add game (optional) ──
-  const [gameForm, setGameForm] = useState({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "" });
+  const [gameForm, setGameForm] = useState({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "", roundNumber: "" });
 
   // ── Mutations ──
   const createMutation = trpc.tournaments.create.useMutation({
@@ -119,8 +119,8 @@ export default function AdminTournaments() {
   const addGameMutation = trpc.tournaments.addGame.useMutation({
     onSuccess: () => {
       toast.success("Jogo adicionado.");
-      setGameForm({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "" });
-      refetch();
+    setGameForm({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "", roundNumber: "" });
+    refetch();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -158,7 +158,7 @@ export default function AdminTournaments() {
     setForm({ name: "", slug: "", country: "BR", season: new Date().getFullYear().toString(), startDate: "", endDate: "", logoUrl: "", isGlobal: true });
     setPhases([]);
     setPhaseForm({ key: "", label: "", order: 1, slots: 4, isKnockout: false });
-    setGameForm({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "" });
+    setGameForm({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "", roundNumber: "" });
   };
 
   const handleOpenCreate = () => {
@@ -213,6 +213,7 @@ export default function AdminTournaments() {
     if (!createdTournamentId || !gameForm.teamAName || !gameForm.teamBName || !gameForm.matchDate) {
       return toast.error("Preencha Time A, Time B e Data/Hora.");
     }
+    const rn = gameForm.roundNumber ? parseInt(gameForm.roundNumber, 10) : undefined;
     addGameMutation.mutate({
       tournamentId: createdTournamentId,
       phase: gameForm.phase || "Sem fase",
@@ -220,6 +221,7 @@ export default function AdminTournaments() {
       teamBName: gameForm.teamBName,
       matchDate: new Date(gameForm.matchDate).getTime(),
       venue: gameForm.venue || undefined,
+      roundNumber: rn && rn > 0 ? rn : undefined,
     });
   };
 
@@ -243,7 +245,7 @@ export default function AdminTournaments() {
     importCsvMutation.mutate({ tournamentId: parseInt(csvPoolId), csvData: csvContent });
   };
 
-  const CSV_TEMPLATE = `homeTeamId,awayTeamId,matchDate,bettingDeadlineMinutes,phase,venue\n1,2,2026-06-15T15:00:00Z,60,Grupo A,Estádio Nacional\n3,4,2026-06-15T18:00:00Z,60,Grupo A,Arena Fonte Nova`;
+  const CSV_TEMPLATE = `homeTeamId,awayTeamId,matchDate,bettingDeadlineMinutes,phase,venue,roundNumber\n1,2,2026-06-15T15:00:00Z,60,Rodada 1,Estádio Nacional,1\n3,4,2026-06-15T18:00:00Z,60,Rodada 1,Arena Fonte Nova,1`;
 
   // ── Wizard step labels ──
   const steps = [
@@ -590,6 +592,11 @@ export default function AdminTournaments() {
                     <Input placeholder="Maracanã" value={gameForm.venue} className="h-8 text-sm"
                       onChange={(e) => setGameForm((f) => ({ ...f, venue: e.target.value }))} />
                   </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Rodada <span className="text-muted-foreground">(número, opcional)</span></Label>
+                  <Input type="number" min={1} placeholder="Ex: 1" value={gameForm.roundNumber} className="h-8 text-sm"
+                    onChange={(e) => setGameForm((f) => ({ ...f, roundNumber: e.target.value }))} />
                 </div>
                 <Button size="sm" variant="outline" className="w-full gap-1.5 h-8 text-xs"
                   onClick={handleAddGame}

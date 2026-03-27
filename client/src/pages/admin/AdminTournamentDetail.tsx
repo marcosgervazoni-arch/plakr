@@ -61,6 +61,7 @@ interface EditGameForm {
   matchDate: string;
   venue: string;
   status: GameStatus;
+  roundNumber: string;
 }
 
 export default function AdminTournamentDetail() {
@@ -101,7 +102,7 @@ export default function AdminTournamentDetail() {
 
   // ── Add Game form ──
   const [showAddGame, setShowAddGame] = useState(false);
-  const [gameForm, setGameForm] = useState({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "" });
+  const [gameForm, setGameForm] = useState({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "", roundNumber: "" });
 
   // ── Set Result form ──
   const [showSetResult, setShowSetResult] = useState(false);
@@ -110,7 +111,7 @@ export default function AdminTournamentDetail() {
 
   // ── Edit Game inline ──
   const [editingGameId, setEditingGameId] = useState<number | null>(null);
-  const [editGameForm, setEditGameForm] = useState<EditGameForm>({ teamAName: "", teamBName: "", matchDate: "", venue: "", status: "scheduled" });
+  const [editGameForm, setEditGameForm] = useState<EditGameForm>({ teamAName: "", teamBName: "", matchDate: "", venue: "", status: "scheduled", roundNumber: "" });
 
   // ── Add Phase form ──
   const [showAddPhase, setShowAddPhase] = useState(false);
@@ -136,7 +137,7 @@ export default function AdminTournamentDetail() {
   });
 
   const addGameMutation = trpc.tournaments.addGame.useMutation({
-    onSuccess: () => { toast.success("Jogo adicionado."); setShowAddGame(false); setGameForm({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "" }); refetch(); },
+    onSuccess: () => { toast.success("Jogo adicionado."); setShowAddGame(false); setGameForm({ phase: "", teamAName: "", teamBName: "", matchDate: "", venue: "", roundNumber: "" }); refetch(); },
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
@@ -612,20 +613,35 @@ export default function AdminTournamentDetail() {
                                   <Input value={editGameForm.venue} onChange={(e) => setEditGameForm(f => ({ ...f, venue: e.target.value }))} className="h-8 text-sm" placeholder="Estádio" />
                                 </div>
                               </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Rodada <span className="text-muted-foreground">(número)</span></Label>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  placeholder="Ex: 5"
+                                  value={editGameForm.roundNumber}
+                                  onChange={(e) => setEditGameForm(f => ({ ...f, roundNumber: e.target.value }))}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
                               <div className="flex gap-2 justify-end">
                                 <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingGameId(null)}>
                                   <X className="h-3.5 w-3.5 mr-1" /> Cancelar
                                 </Button>
                                 <Button size="sm" className="h-7 text-xs bg-brand hover:bg-brand/90 gap-1"
                                   disabled={updateGameMutation.isPending}
-                                  onClick={() => updateGameMutation.mutate({
-                                    gameId: g.id,
-                                    teamAName: editGameForm.teamAName || undefined,
-                                    teamBName: editGameForm.teamBName || undefined,
-                                    matchDate: editGameForm.matchDate ? new Date(editGameForm.matchDate) : undefined,
-                                    venue: editGameForm.venue || undefined,
-                                    status: editGameForm.status,
-                                  })}>
+                                  onClick={() => {
+                                    const rn = editGameForm.roundNumber ? parseInt(editGameForm.roundNumber, 10) : undefined;
+                                    updateGameMutation.mutate({
+                                      gameId: g.id,
+                                      teamAName: editGameForm.teamAName || undefined,
+                                      teamBName: editGameForm.teamBName || undefined,
+                                      matchDate: editGameForm.matchDate ? new Date(editGameForm.matchDate) : undefined,
+                                      venue: editGameForm.venue || undefined,
+                                      status: editGameForm.status,
+                                      roundNumber: rn && rn > 0 ? rn : null,
+                                    });
+                                  }}>
                                   {updateGameMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                                   Salvar
                                 </Button>
@@ -670,6 +686,7 @@ export default function AdminTournamentDetail() {
                                       matchDate: g.matchDate ? format(new Date(g.matchDate), "yyyy-MM-dd'T'HH:mm") : "",
                                       venue: g.venue ?? "",
                                       status: (g.status as GameStatus) ?? "scheduled",
+                                      roundNumber: g.roundNumber != null ? String(g.roundNumber) : "",
                                     });
                                   }}
                                 >
@@ -920,16 +937,30 @@ export default function AdminTournamentDetail() {
               <Label>Estádio / Local</Label>
               <Input placeholder="Maracanã, Rio de Janeiro" value={gameForm.venue} onChange={(e) => setGameForm(f => ({ ...f, venue: e.target.value }))} />
             </div>
+            <div className="space-y-1">
+              <Label>Rodada <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+              <Input
+                type="number"
+                min={1}
+                placeholder="Ex: 5"
+                value={gameForm.roundNumber}
+                onChange={(e) => setGameForm(f => ({ ...f, roundNumber: e.target.value }))}
+              />
+            </div>
             <Button className="w-full bg-brand hover:bg-brand/90"
               disabled={!gameForm.teamAName || !gameForm.teamBName || !gameForm.matchDate || addGameMutation.isPending}
-              onClick={() => addGameMutation.mutate({
-                tournamentId,
-                phase: gameForm.phase || "Sem fase",
-                teamAName: gameForm.teamAName,
-                teamBName: gameForm.teamBName,
-                matchDate: new Date(gameForm.matchDate).getTime(),
-                venue: gameForm.venue || undefined,
-              })}>
+              onClick={() => {
+                const rn = gameForm.roundNumber ? parseInt(gameForm.roundNumber, 10) : undefined;
+                addGameMutation.mutate({
+                  tournamentId,
+                  phase: gameForm.phase || "Sem fase",
+                  teamAName: gameForm.teamAName,
+                  teamBName: gameForm.teamBName,
+                  matchDate: new Date(gameForm.matchDate).getTime(),
+                  venue: gameForm.venue || undefined,
+                  roundNumber: rn && rn > 0 ? rn : undefined,
+                });
+              }}>
               {addGameMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Adicionar Jogo
             </Button>

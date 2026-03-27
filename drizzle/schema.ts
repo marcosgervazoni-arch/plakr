@@ -169,6 +169,7 @@ export const games = mysqlTable("games", {
   teamBFlag: text("teamBFlag"),
   groupName: varchar("groupName", { length: 10 }),
   phase: varchar("phase", { length: 64 }).notNull().default("group_stage"),
+  roundNumber: int("roundNumber"), // número da rodada (ex: 5 = Rodada 5); null para fases eliminatórias
   matchDate: timestamp("matchDate").notNull(),
   venue: varchar("venue", { length: 255 }),
   status: mysqlEnum("status", ["scheduled", "live", "finished", "cancelled"]).default("scheduled").notNull(),
