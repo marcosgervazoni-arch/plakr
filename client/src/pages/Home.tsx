@@ -5,6 +5,7 @@
  * customCode por seção: quando preenchido, tem prioridade total sobre o conteúdo padrão.
  */
 import { useEffect, useState } from "react";
+import BadgeShowcase from "@/components/BadgeShowcase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, Infinity as InfinityIcon, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -743,6 +744,30 @@ export default function Home() {
               freeFeatures={freeFeatures}
               proFeatures={proFeatures}
             />
+          </section>
+        </CustomOrDefault>
+      )}
+
+      {/* ── BADGES ─────────────────────────────────────────────────────────── */}
+      {(config?.sectionBadgesEnabled ?? true) && (
+        <CustomOrDefault customCode={config?.badgesCustomCode}>
+          <section className="py-20" style={{ background: "#080C18" }} aria-labelledby="section-badges">
+            <div className="max-w-4xl mx-auto px-4">
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
+                  style={{ background: "rgba(255,184,0,0.1)", color: "#FFB800", border: "1px solid rgba(255,184,0,0.2)" }}>
+                  🏅 Conquistas
+                </div>
+                <h2 id="section-badges" className="text-3xl md:text-4xl font-black mb-4 text-white">
+                  Quem aposta bem,{" "}
+                  <span style={{ color: "#FFB800" }}>vira lenda</span>
+                </h2>
+                <p className="text-lg max-w-xl mx-auto" style={{ color: "#9CA3AF" }}>
+                  Cada palpite certo te aproxima de uma conquista. Placares exatos, zebras, liderança — há badges para todos os estilos de apostador.
+                </p>
+              </div>
+              <BadgeShowcase />
+            </div>
           </section>
         </CustomOrDefault>
       )}

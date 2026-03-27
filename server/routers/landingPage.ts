@@ -22,6 +22,7 @@ const landingPageConfigSchema = z.object({
   sectionFeaturesEnabled: z.boolean().optional(),
   sectionPlansEnabled: z.boolean().optional(),
   sectionFaqEnabled: z.boolean().optional(),
+  sectionBadgesEnabled: z.boolean().optional(),
   sectionCtaFinalEnabled: z.boolean().optional(),
   differentialHeadline: z.string().max(255).optional(),
   differentialBody: z.string().nullable().optional(),
@@ -40,6 +41,7 @@ const landingPageConfigSchema = z.object({
   featuresCustomCode: z.string().nullable().optional(),
   plansCustomCode: z.string().nullable().optional(),
   faqCustomCode: z.string().nullable().optional(),
+  badgesCustomCode: z.string().nullable().optional(),
   ctaFinalCustomCode: z.string().nullable().optional(),
 });
 
@@ -83,6 +85,7 @@ export const landingPageRouter = router({
         "sectionFeaturesEnabled",
         "sectionPlansEnabled",
         "sectionFaqEnabled",
+        "sectionBadgesEnabled",
         "sectionCtaFinalEnabled",
         "heroBadgeEnabled",
         "heroCountdownEnabled",

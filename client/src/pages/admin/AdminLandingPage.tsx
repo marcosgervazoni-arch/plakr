@@ -60,6 +60,7 @@ interface LandingConfig {
   sectionFeaturesEnabled: boolean;
   sectionPlansEnabled: boolean;
   sectionFaqEnabled: boolean;
+  sectionBadgesEnabled: boolean;
   sectionCtaFinalEnabled: boolean;
   // SEO
   ogImageUrl: string;
@@ -71,6 +72,7 @@ interface LandingConfig {
   featuresCustomCode: string;
   plansCustomCode: string;
   faqCustomCode: string;
+  badgesCustomCode: string;
   ctaFinalCustomCode: string;
 }
 
@@ -96,6 +98,7 @@ const DEFAULTS: LandingConfig = {
   sectionFeaturesEnabled: true,
   sectionPlansEnabled: true,
   sectionFaqEnabled: true,
+  sectionBadgesEnabled: true,
   sectionCtaFinalEnabled: true,
   ogImageUrl: "",
   heroCustomCode: "",
@@ -105,6 +108,7 @@ const DEFAULTS: LandingConfig = {
   featuresCustomCode: "",
   plansCustomCode: "",
   faqCustomCode: "",
+  badgesCustomCode: "",
   ctaFinalCustomCode: "",
 };
 
@@ -350,6 +354,8 @@ export default function AdminLandingPage() {
           serverConfig.sectionPlansEnabled ?? DEFAULTS.sectionPlansEnabled,
         sectionFaqEnabled:
           serverConfig.sectionFaqEnabled ?? DEFAULTS.sectionFaqEnabled,
+        sectionBadgesEnabled:
+          serverConfig.sectionBadgesEnabled ?? DEFAULTS.sectionBadgesEnabled,
         sectionCtaFinalEnabled:
           serverConfig.sectionCtaFinalEnabled ?? DEFAULTS.sectionCtaFinalEnabled,
         ogImageUrl: serverConfig.ogImageUrl ?? "",
@@ -360,6 +366,7 @@ export default function AdminLandingPage() {
         featuresCustomCode: serverConfig.featuresCustomCode ?? "",
         plansCustomCode: serverConfig.plansCustomCode ?? "",
         faqCustomCode: serverConfig.faqCustomCode ?? "",
+        badgesCustomCode: serverConfig.badgesCustomCode ?? "",
         ctaFinalCustomCode: serverConfig.ctaFinalCustomCode ?? "",
       });
       setIsDirty(false);
@@ -793,6 +800,38 @@ export default function AdminLandingPage() {
                 value={config.faqCustomCode}
                 onChange={(v) => update("faqCustomCode", v)}
                 sectionName="FAQ"
+              />
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* ── BADGES ── */}
+          <AccordionItem
+            value="badges"
+            className="rounded-2xl overflow-hidden border"
+            style={{
+              background: "#121826",
+              borderColor: "rgba(255,255,255,0.06)",
+            }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <SectionHeader
+                icon={Trophy}
+                title="Conquistas — Vitrine de Badges"
+                enabled={config.sectionBadgesEnabled}
+                hasCustomCode={config.badgesCustomCode.trim().length > 0}
+                onToggle={(v) => update("sectionBadgesEnabled", v)}
+              />
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Exibe até 6 badges curados automaticamente (priorizando os mais raros e com variedade de categorias).
+                Cada badge mostra emoji, nome, raridade e descrição no tooltip. CTA fixo para criar bolão grátis.
+                Use o código customizado para substituir completamente esta seção.
+              </p>
+              <CustomCodeField
+                value={config.badgesCustomCode}
+                onChange={(v) => update("badgesCustomCode", v)}
+                sectionName="Conquistas"
               />
             </AccordionContent>
           </AccordionItem>

@@ -741,6 +741,7 @@ export const landingPageConfig = mysqlTable("landing_page_config", {
   sectionPlansEnabled: boolean("sectionPlansEnabled").default(true).notNull(),
   sectionFaqEnabled: boolean("sectionFaqEnabled").default(true).notNull(),
   sectionCtaFinalEnabled: boolean("sectionCtaFinalEnabled").default(true).notNull(),
+  sectionBadgesEnabled: boolean("sectionBadgesEnabled").default(true).notNull(),
   // ── Conteúdo editável das seções ──────────────────────────────────────────
   differentialHeadline: varchar("differentialHeadline", { length: 255 }).default("Seu campeonato. Suas regras.").notNull(),
   differentialBody: text("differentialBody"),
@@ -760,6 +761,7 @@ export const landingPageConfig = mysqlTable("landing_page_config", {
   plansCustomCode: text("plansCustomCode"),
   faqCustomCode: text("faqCustomCode"),
   ctaFinalCustomCode: text("ctaFinalCustomCode"),
+  badgesCustomCode: text("badgesCustomCode"),
   // ── Metadados ──────────────────────────────────────────────────────────────────────────────
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -1,0 +1,260 @@
+{
+  "query": "SELECT id, name, emoji, category, rarity, description, criterionType, criterionValue FROM badges WHERE isActive = 1 ORDER BY rarity DESC, category, name LIMIT 50;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, name, emoji, category, rarity, description, criterionType, criterionValue FROM badges WHERE isActive = 1 ORDER BY rarity DESC, category, name LIMIT 50;",
+  "rows": [
+    {
+      "id": "30025",
+      "name": "Chegou Cedo",
+      "emoji": "🎖️",
+      "category": "exclusivo",
+      "rarity": "legendary",
+      "description": "Um dos primeiros 100 usuários da plataforma. Estava aqui antes de todo mundo.",
+      "criterionType": "early_user",
+      "criterionValue": "100"
+    },
+    {
+      "id": "30024",
+      "name": "Cobaia",
+      "emoji": "🧪",
+      "category": "exclusivo",
+      "rarity": "legendary",
+      "description": "Participou do primeiro bolão válido após o lançamento oficial da plataforma. Pioneiro.",
+      "criterionType": "manual",
+      "criterionValue": "0"
+    },
+    {
+      "id": "30004",
+      "name": "Mafioso das Apostas",
+      "emoji": "💎",
+      "category": "precisao",
+      "rarity": "epic",
+      "description": "Cem placares exatos. Manda currículo pro VAR.",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "100"
+    },
+    {
+      "id": "30010",
+      "name": "1/20",
+      "emoji": "🦅",
+      "category": "ranking",
+      "rarity": "epic",
+      "description": "Venceu um bolão com 20 ou mais participantes. Um contra todos.",
+      "criterionType": "first_place_large_pool",
+      "criterionValue": "20"
+    },
+    {
+      "id": "30012",
+      "name": "Ninguém Me Tira",
+      "emoji": "🧊",
+      "category": "ranking",
+      "rarity": "epic",
+      "description": "Manteve o 1º lugar por 3 recálculos consecutivos. Tá sentado aqui e não sai.",
+      "criterionType": "rank_hold_1st",
+      "criterionValue": "3"
+    },
+    {
+      "id": "30011",
+      "name": "Rei da Ultrapassagem",
+      "emoji": "🌋",
+      "category": "ranking",
+      "rarity": "epic",
+      "description": "Subiu 5 ou mais posições em um único recálculo. De onde esse veio?",
+      "criterionType": "rank_jump",
+      "criterionValue": "5"
+    },
+    {
+      "id": "30016",
+      "name": "Foi na Sorte",
+      "emoji": "🎲",
+      "category": "zebra",
+      "rarity": "epic",
+      "description": "Acertou o placar exato de uma zebra. Não foi na sorte, mas pode dizer que foi.",
+      "criterionType": "zebra_exact_score",
+      "criterionValue": "1"
+    },
+    {
+      "id": "30021",
+      "name": "Presida",
+      "emoji": "🎪",
+      "category": "comunidade",
+      "rarity": "rare",
+      "description": "Organizou 5 bolões. Serial boleiro.",
+      "criterionType": "organized_pools",
+      "criterionValue": "5"
+    },
+    {
+      "id": "30006",
+      "name": "Cola na Minha",
+      "emoji": "🌩️",
+      "category": "precisao",
+      "rarity": "rare",
+      "description": "Cinco placares exatos no mesmo bolão. Todo mundo quer sentar do seu lado.",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "5"
+    },
+    {
+      "id": "30003",
+      "name": "Profeta",
+      "emoji": "🔭",
+      "category": "precisao",
+      "rarity": "rare",
+      "description": "Cinquenta placares exatos. Alguém avisa o Nostradamus.",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "50"
+    },
+    {
+      "id": "30008",
+      "name": "Dinastia",
+      "emoji": "👑",
+      "category": "ranking",
+      "rarity": "rare",
+      "description": "Três vitórias em bolões diferentes. Não é sorte, é dom.",
+      "criterionType": "first_place_pools",
+      "criterionValue": "3"
+    },
+    {
+      "id": "30009",
+      "name": "Intocável",
+      "emoji": "🌕",
+      "category": "ranking",
+      "rarity": "rare",
+      "description": "Venceu com 20% ou mais de vantagem sobre o segundo colocado.",
+      "criterionType": "first_place_margin",
+      "criterionValue": "20"
+    },
+    {
+      "id": "30015",
+      "name": "Nem Eu Acreditava",
+      "emoji": "🌀",
+      "category": "zebra",
+      "rarity": "rare",
+      "description": "Três zebras no mesmo bolão. Caos é o seu método.",
+      "criterionType": "zebra_in_pool",
+      "criterionValue": "3"
+    },
+    {
+      "id": "30014",
+      "name": "Sou do Contra",
+      "emoji": "🔮",
+      "category": "zebra",
+      "rarity": "rare",
+      "description": "Cinco zebras acertadas na carreira. Bola de cristal Tupperware.",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "5"
+    },
+    {
+      "id": "30022",
+      "name": "Ansioso Competitivo",
+      "emoji": "⏰",
+      "category": "comunidade",
+      "rarity": "uncommon",
+      "description": "Palpitou com mais de 24h de antecedência em 10 jogos. Não aguenta esperar.",
+      "criterionType": "early_bet",
+      "criterionValue": "10"
+    },
+    {
+      "id": "30020",
+      "name": "Barra Brava",
+      "emoji": "🕸️",
+      "category": "comunidade",
+      "rarity": "uncommon",
+      "description": "Trouxe 10 membros para um bolão via convite. Culpado por isso tudo.",
+      "criterionType": "pool_members_via_invite",
+      "criterionValue": "10"
+    },
+    {
+      "id": "30018",
+      "name": "Levou a Sério",
+      "emoji": "🔥",
+      "category": "comunidade",
+      "rarity": "uncommon",
+      "description": "Palpitou em todos os jogos de um bolão. Nem um em branco.",
+      "criterionType": "all_bets_in_pool",
+      "criterionValue": "1"
+    },
+    {
+      "id": "30023",
+      "name": "Veterano",
+      "emoji": "🌍",
+      "category": "comunidade",
+      "rarity": "uncommon",
+      "description": "Participou de 10 bolões diferentes. Já viu muito bolão cair.",
+      "criterionType": "participated_pools",
+      "criterionValue": "10"
+    },
+    {
+      "id": "30005",
+      "name": "Fiz de Novo",
+      "emoji": "⚡",
+      "category": "precisao",
+      "rarity": "uncommon",
+      "description": "Dois placares exatos no mesmo bolão. Coincidência? Duas vezes não é.",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "2"
+    },
+    {
+      "id": "30002",
+      "name": "Manja Muito",
+      "emoji": "🎯",
+      "category": "precisao",
+      "rarity": "uncommon",
+      "description": "Dez placares exatos na carreira. Definitivamente sabe o que está fazendo.",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "10"
+    },
+    {
+      "id": "30007",
+      "name": "É Campeão",
+      "emoji": "🏆",
+      "category": "ranking",
+      "rarity": "uncommon",
+      "description": "Venceu um bolão. Pode comemorar — você merece.",
+      "criterionType": "first_place_pools",
+      "criterionValue": "1"
+    },
+    {
+      "id": "30013",
+      "name": "Só Eu Acreditei",
+      "emoji": "🦓",
+      "category": "zebra",
+      "rarity": "uncommon",
+      "description": "Acertou uma zebra. Todo mundo duvidou, você não.",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "1"
+    },
+    {
+      "id": "30017",
+      "name": "Boas-Vindas",
+      "emoji": "🌱",
+      "category": "comunidade",
+      "rarity": "common",
+      "description": "Fez o primeiro palpite. A jornada começa aqui.",
+      "criterionType": "first_bet",
+      "criterionValue": "1"
+    },
+    {
+      "id": "30019",
+      "name": "Desbravador",
+      "emoji": "🏗️",
+      "category": "comunidade",
+      "rarity": "common",
+      "description": "Criou o primeiro bolão. Alguém tinha que começar.",
+      "criterionType": "created_pool",
+      "criterionValue": "1"
+    },
+    {
+      "id": "30001",
+      "name": "Chute Certo",
+      "emoji": "🎯",
+      "category": "precisao",
+      "rarity": "common",
+      "description": "Acertou o placar exato de um jogo. Não foi sorte... ou foi?",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temoji\tcategory\trarity\tdescription\tcriterionType\tcriterionValue\n30025\tChegou Cedo\t🎖️\texclusivo\tlegendary\tUm dos primeiros 100 usuários da plataforma. Estava aqui antes de todo mundo.\tearly_user\t100\n30024\tCobaia\t🧪\texclusivo\tlegendary\tParticipou do primeiro bolão válido após o lançamento oficial da plataforma. Pioneiro.\tmanual\t0\n30004\tMafioso das Apostas\t💎\tprecisao\tepic\tCem placares exatos. Manda currículo pro VAR.\texact_scores_career\t100\n30010\t1/20\t🦅\tranking\tepic\tVenceu um bolão com 20 ou mais participantes. Um contra todos.\tfirst_place_large_pool\t20\n30012\tNinguém Me Tira\t🧊\tranking\tepic\tManteve o 1º lugar por 3 recálculos consecutivos. Tá sentado aqui e não sai.\trank_hold_1st\t3\n30011\tRei da Ultrapassagem\t🌋\tranking\tepic\tSubiu 5 ou mais posições em um único recálculo. De onde esse veio?\trank_jump\t5\n30016\tFoi na Sorte\t🎲\tzebra\tepic\tAcertou o placar exato de uma zebra. Não foi na sorte, mas pode dizer que foi.\tzebra_exact_score\t1\n30021\tPresida\t🎪\tcomunidade\trare\tOrganizou 5 bolões. Serial boleiro.\torganized_pools\t5\n30006\tCola na Minha\t🌩️\tprecisao\trare\tCinco placares exatos no mesmo bolão. Todo mundo quer sentar do seu lado.\texact_scores_in_pool\t5\n30003\tProfeta\t🔭\tprecisao\trare\tCinquenta placares exatos. Alguém avisa o Nostradamus.\texact_scores_career\t50\n30008\tDinastia\t👑\tranking\trare\tTrês vitórias em bolões diferentes. Não é sorte, é dom.\tfirst_place_pools\t3\n30009\tIntocável\t🌕\tranking\trare\tVenceu com 20% ou mais de vantagem sobre o segundo colocado.\tfirst_place_margin\t20\n30015\tNem Eu Acreditava\t🌀\tzebra\trare\tTrês zebras no mesmo bolão. Caos é o seu método.\tzebra_in_pool\t3\n30014\tSou do Contra\t🔮\tzebra\trare\tCinco zebras acertadas na carreira. Bola de cristal Tupperware.\tzebra_scores_career\t5\n30022\tAnsioso Competitivo\t⏰\tcomunidade\tuncommon\tPalpitou com mais de 24h de antecedência em 10 jogos. Não aguenta esperar.\tearly_bet\t10\n30020\tBarra Brava\t🕸️\tcomunidade\tuncommon\tTrouxe 10 membros para um bolão via convite. Culpado por isso tudo.\tpool_members_via_invite\t10\n30018\tLevou a Sério\t🔥\tcomunidade\tuncommon\tPalpitou em todos os jogos de um bolão. Nem um em branco.\tall_bets_in_pool\t1\n30023\tVeterano\t🌍\tcomunidade\tuncommon\tParticipou de 10 bolões diferentes. Já viu muito bolão cair.\tparticipated_pools\t10\n30005\tFiz de Novo\t⚡\tprecisao\tuncommon\tDois placares exatos no mesmo bolão. Coincidência? Duas vezes não é.\texact_scores_in_pool\t2\n30002\tManja Muito\t🎯\tprecisao\tuncommon\tDez placares exatos na carreira. Definitivamente sabe o que está fazendo.\texact_scores_career\t10\n30007\tÉ Campeão\t🏆\tranking\tuncommon\tVenceu um bolão. Pode comemorar — você merece.\tfirst_place_pools\t1\n30013\tSó Eu Acreditei\t🦓\tzebra\tuncommon\tAcertou uma zebra. Todo mundo duvidou, você não.\tzebra_scores_career\t1\n30017\tBoas-Vindas\t🌱\tcomunidade\tcommon\tFez o primeiro palpite. A jornada começa aqui.\tfirst_bet\t1\n30019\tDesbravador\t🏗️\tcomunidade\tcommon\tCriou o primeiro bolão. Alguém tinha que começar.\tcreated_pool\t1\n30001\tChute Certo\t🎯\tprecisao\tcommon\tAcertou o placar exato de um jogo. Não foi sorte... ou foi?\texact_scores_career\t1\n",
+  "stderr": "",
+  "execution_time_ms": 406
+}

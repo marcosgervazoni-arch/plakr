@@ -1,4 +1,4 @@
-import { router, protectedProcedure, adminProcedure } from "../_core/trpc";
+import { router, protectedProcedure, adminProcedure, publicProcedure } from "../_core/trpc";
 import { z } from "zod";
 import { createAdminLog } from "../db";
 import logger from "../logger";
@@ -503,5 +503,68 @@ export const badgesRouter = router({
       emoji: b.emoji,
       earnedAt: b.earnedAt,
     }));
+  }),
+
+  /**
+   * Vitrine pública de badges para a landing page.
+   * Retorna até 6 badges curados priorizando raridades mais altas,
+   * com distribuição por categoria para variedade visual.
+   */
+  getShowcase: publicProcedure.query(async () => {
+    const db = await (await import("../../server/db")).getDb();
+    if (!db) return [];
+    const { badges } = await import("../../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+
+    const rarityOrder: Record<string, number> = {
+      legendary: 5, epic: 4, rare: 3, uncommon: 2, common: 1,
+    };
+
+    const allBadges = await db
+      .select({
+        id: badges.id,
+        name: badges.name,
+        emoji: badges.emoji,
+        category: badges.category,
+        description: badges.description,
+        rarity: badges.rarity,
+        iconUrl: badges.iconUrl,
+        criterionType: badges.criterionType,
+        criterionValue: badges.criterionValue,
+      })
+      .from(badges)
+      .where(eq(badges.isActive, true));
+
+    // Distribui por categoria para variedade visual
+    const byCategory: Record<string, typeof allBadges> = {
+      precisao: [], ranking: [], zebra: [], comunidade: [], exclusivo: [],
+    };
+    for (const b of allBadges) {
+      const cat = b.category ?? "comunidade";
+      if (byCategory[cat]) byCategory[cat].push(b);
+      else byCategory["comunidade"].push(b);
+    }
+    // Ordena cada categoria por raridade decrescente
+    for (const cat of Object.keys(byCategory)) {
+      byCategory[cat].sort((a, b) => (rarityOrder[b.rarity] ?? 0) - (rarityOrder[a.rarity] ?? 0));
+    }
+    // Monta seleção curada: 2 precisao, 2 ranking, 1 zebra, 1 exclusivo/comunidade
+    const showcase = [
+      ...byCategory["precisao"].slice(0, 2),
+      ...byCategory["ranking"].slice(0, 2),
+      ...byCategory["zebra"].slice(0, 1),
+      ...(byCategory["exclusivo"].length > 0
+        ? byCategory["exclusivo"].slice(0, 1)
+        : byCategory["comunidade"].slice(0, 1)),
+    ];
+    // Preenche até 6 com os mais raros restantes
+    if (showcase.length < 6) {
+      const usedIds = new Set(showcase.map((b) => b.id));
+      const remaining = allBadges
+        .filter((b) => !usedIds.has(b.id))
+        .sort((a, b) => (rarityOrder[b.rarity] ?? 0) - (rarityOrder[a.rarity] ?? 0));
+      showcase.push(...remaining.slice(0, 6 - showcase.length));
+    }
+    return showcase.slice(0, 6);
   }),
 });

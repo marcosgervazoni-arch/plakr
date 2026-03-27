@@ -1671,3 +1671,12 @@
 
 - [x] Corrigir validação z.string().url() para aceitar string vazia ou null no ogImageUrl
 - [x] Testar exclusão da OG Image no AdminLandingPage sem erro
+
+## ICE-1 — Vitrine de Badges na Landing Page
+
+- [x] Adicionar campo sectionBadgesEnabled e badgesCustomCode no schema + migration
+- [x] Criar publicProcedure getShowcase no router de badges
+- [x] Criar componente BadgeShowcase (grid 2x3, blur/cadeado, tooltip raridade, CTA)
+- [x] Integrar BadgeShowcase na Home.tsx respeitando sectionBadgesEnabled
+- [x] Adicionar seção Conquistas no AdminLandingPage com toggle + código customizado
+- [x] Adicionar sectionBadgesEnabled ao landingPage router (schema e updateConfig)

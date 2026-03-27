@@ -218,6 +218,13 @@
       "when": 1774574348181,
       "tag": "0030_salty_proteus",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "5",
+      "when": 1774585581864,
+      "tag": "0031_faulty_starbolt",
+      "breakpoints": true
     }
   ]
 }
