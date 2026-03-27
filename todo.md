@@ -1751,3 +1751,8 @@
 - [ ] Frontend: card de rivalidade no bottom sheet quando há histórico
 - [ ] Badges: Duelista, Joga Duro, Carrasco, Lenda do X1, Derrubei Golias, Não Foge da Briga, Era o Líder? Nem Vi!
 - [ ] Testes unitários do X1
+
+## Bug: X1 predictionOptions mostrando jogos em vez de tipos fixos
+- [x] Corrigir getOptions para sempre incluir as 4 opções fixas (champion, top_scorer, zebra, exact_score)
+- [x] Adicionar top_scorer, zebra e exact_score ao enum predictionType no schema de create
+- [x] Atualizar X1ChallengeModal para exibir corretamente as opções fixas

@@ -248,7 +248,18 @@ export const x1Router = router({
           { type: "next_n_games" as const, label: "Próximos 20 jogos", value: 20 },
         ],
         predictionOptions: [
+          // ── Opções fixas (sempre disponíveis) ──────────────────────────────
           { type: "champion" as const, label: "Quem vai ser o campeão?" },
+          { type: "top_scorer" as const, label: "Quem vai ser o artilheiro?" },
+          { type: "zebra" as const, label: "Qual será a maior zebra?" },
+          {
+            type: "exact_score" as const,
+            label: nextGame[0]
+              ? `Placar exato: ${nextGame[0].teamAName} x ${nextGame[0].teamBName}`
+              : "Placar exato do próximo jogo",
+            ...(nextGame[0] ? { context: { gameId: nextGame[0].id } } : {}),
+          },
+          // ── Opções contextuais (grupos/fases — torneios cup/groups_knockout) ─
           ...(isGroupsKnockout
             ? [
                 { type: "runner_up" as const, label: "Quem vai ser o vice-campeão?" },
@@ -273,6 +284,7 @@ export const x1Router = router({
                   })),
               ]
             : []),
+          // ── Próximo jogo (vencedor) ──────────────────────────────────────
           ...(nextGame[0]
             ? [
                 {
@@ -301,6 +313,9 @@ export const x1Router = router({
           .enum([
             "champion",
             "runner_up",
+            "top_scorer",
+            "zebra",
+            "exact_score",
             "group_qualified",
             "phase_qualified",
             "eliminated_in_phase",

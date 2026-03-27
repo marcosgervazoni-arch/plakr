@@ -787,6 +787,9 @@ export const x1Challenges = mysqlTable("x1_challenges", {
   predictionType: mysqlEnum("predictionType", [
     "champion",
     "runner_up",
+    "top_scorer",
+    "zebra",
+    "exact_score",
     "group_qualified",
     "phase_qualified",
     "eliminated_in_phase",
