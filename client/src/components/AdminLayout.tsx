@@ -22,6 +22,7 @@ import {
   Palette,
   Settings,
   Shield,
+  Tag,
   Trophy,
   Users,
   Wallet,
@@ -47,7 +48,8 @@ export type AdminSection =
   | "integrations"
   | "badges"
   | "retrospectivas"
-  | "landing-page";
+  | "landing-page"
+  | "pricing";
 
 interface NavItem {
   id: AdminSection;
@@ -107,6 +109,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Wallet,
     items: [
       { id: "subscriptions", label: "Assinaturas", icon: CreditCard, path: "/admin/subscriptions" },
+      { id: "pricing", label: "Preços", icon: Tag, path: "/admin/pricing" },
       { id: "referrals", label: "Programa de Convites", icon: Zap, path: "/admin/referrals" },
     ],
   },

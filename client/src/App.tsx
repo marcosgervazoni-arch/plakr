@@ -56,6 +56,7 @@ import AdminReferrals from "./pages/admin/AdminReferrals";
 import AdminImportLogs from "./pages/admin/AdminImportLogs";
 import AdminRetrospectivas from "./pages/admin/AdminRetrospectivas";
 import AdminLandingPage from "./pages/admin/AdminLandingPage";
+import AdminPricing from "./pages/admin/AdminPricing";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useReferralCapture } from "./hooks/useReferralCapture";
 
@@ -116,6 +117,7 @@ function Router() {
       <Route path="/admin/import-logs" component={AdminImportLogs} />
       <Route path="/admin/retrospectivas" component={AdminRetrospectivas} />
       <Route path="/admin/landing-page" component={AdminLandingPage} />
+      <Route path="/admin/pricing" component={AdminPricing} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -1641,3 +1641,10 @@
 - [x] plan-limits.test.ts: corrigidos 7 testes que falhavam após migração de modelo de assinatura
 - [x] 251/251 testes passando após correções
 - [x] TypeScript: 0 erros reais (tsc --noEmit exit 0)
+
+## Admin — Página de Preços dedicada
+
+- [x] Criar página AdminPricing com acordeões por plano (Gratuito, Pro, Ilimitado)
+- [x] Adicionar rota /admin/pricing e item "Preços" no grupo Financeiro do AdminLayout
+- [x] Remover campos de preço do AdminSettings (evitar duplicidade)
+- [x] Registrar no backlog ideias de UX não implementadas imediatamente
