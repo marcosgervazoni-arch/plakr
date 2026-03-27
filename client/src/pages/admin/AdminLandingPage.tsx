@@ -2,6 +2,7 @@
  * Admin — Página de Vendas
  * Controle completo da landing page via painel Super Admin.
  * - Acordeão por seção: toggle ativo/inativo + editor de conteúdo + campo de código customizado
+ * - Drag-and-drop para reordenar seções (exceto Hero e SEO que são fixos)
  * - Código customizado tem prioridade total sobre o conteúdo padrão na landing page
  */
 import AdminLayout from "@/components/AdminLayout";
@@ -20,6 +21,7 @@ import {
   Eye,
   EyeOff,
   Globe,
+  GripVertical,
   HelpCircle,
   Image,
   LayoutGrid,
@@ -33,8 +35,26 @@ import {
   Zap,
 } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -111,6 +131,18 @@ const DEFAULTS: LandingConfig = {
   badgesCustomCode: "",
   ctaFinalCustomCode: "",
 };
+
+// Ordem padrão das seções reordenáveis (hero e seo são fixos)
+const DEFAULT_SECTIONS_ORDER = [
+  "credibility",
+  "how-it-works",
+  "differential",
+  "features",
+  "plans",
+  "faq",
+  "badges",
+  "cta-final",
+];
 
 // ─── Campo de código customizado ─────────────────────────────────────────────
 
@@ -287,6 +319,67 @@ function SectionHeader({
   );
 }
 
+// ─── Item sortável do acordeão ────────────────────────────────────────────────
+
+function SortableAccordionItem({
+  id,
+  children,
+  isDragging,
+}: {
+  id: string;
+  children: React.ReactNode;
+  isDragging?: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isSelfDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isSelfDragging ? 0.4 : 1,
+    position: "relative" as const,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex gap-2 items-start group">
+      {/* Handle de drag */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex items-center justify-center w-7 h-12 mt-0 rounded-lg cursor-grab active:cursor-grabbing flex-shrink-0 transition-colors"
+        style={{
+          background: isDragging ? "rgba(255,184,0,0.15)" : "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          color: "#4B5563",
+          marginTop: "2px",
+        }}
+        title="Arrastar para reordenar"
+      >
+        <GripVertical size={14} />
+      </div>
+      <div className="flex-1 min-w-0">{children}</div>
+    </div>
+  );
+}
+
+// ─── Mapa de seções ───────────────────────────────────────────────────────────
+
+type SectionId =
+  | "credibility"
+  | "how-it-works"
+  | "differential"
+  | "features"
+  | "plans"
+  | "faq"
+  | "badges"
+  | "cta-final";
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function AdminLandingPage() {
@@ -302,62 +395,50 @@ export default function AdminLandingPage() {
       toast.error("Erro ao salvar: " + err.message);
     },
   });
+  const updateOrderMutation = trpc.landingPage.updateSectionsOrder.useMutation({
+    onError: () => toast.error("Erro ao salvar a ordem das seções."),
+  });
 
   const [config, setConfig] = useState<LandingConfig>(DEFAULTS);
   const [isDirty, setIsDirty] = useState(false);
+  const [sectionsOrder, setSectionsOrder] = useState<string[]>(DEFAULT_SECTIONS_ORDER);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  // Debounce para persistir a ordem sem salvar a cada pixel arrastado
+  const orderDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const persistOrder = useCallback((order: string[]) => {
+    if (orderDebounceRef.current) clearTimeout(orderDebounceRef.current);
+    orderDebounceRef.current = setTimeout(() => {
+      updateOrderMutation.mutate({ order });
+    }, 800);
+  }, [updateOrderMutation]);
 
   useEffect(() => {
     if (serverConfig) {
       setConfig({
         heroHeadline: serverConfig.heroHeadline ?? DEFAULTS.heroHeadline,
-        heroSubheadline:
-          serverConfig.heroSubheadline ?? DEFAULTS.heroSubheadline,
+        heroSubheadline: serverConfig.heroSubheadline ?? DEFAULTS.heroSubheadline,
         heroBadgeText: serverConfig.heroBadgeText ?? DEFAULTS.heroBadgeText,
-        heroBadgeEnabled:
-          serverConfig.heroBadgeEnabled ?? DEFAULTS.heroBadgeEnabled,
-        heroCountdownEnabled:
-          serverConfig.heroCountdownEnabled ?? DEFAULTS.heroCountdownEnabled,
-        heroCountdownDate:
-          serverConfig.heroCountdownDate ?? DEFAULTS.heroCountdownDate,
-        heroCtaPrimaryText:
-          serverConfig.heroCtaPrimaryText ?? DEFAULTS.heroCtaPrimaryText,
-        heroCtaSecondaryText:
-          serverConfig.heroCtaSecondaryText ?? DEFAULTS.heroCtaSecondaryText,
-        heroCtaSecondaryEnabled:
-          serverConfig.heroCtaSecondaryEnabled ??
-          DEFAULTS.heroCtaSecondaryEnabled,
-        differentialHeadline:
-          serverConfig.differentialHeadline ?? DEFAULTS.differentialHeadline,
-        differentialBody:
-          serverConfig.differentialBody ?? DEFAULTS.differentialBody,
-        ctaFinalHeadline:
-          serverConfig.ctaFinalHeadline ?? DEFAULTS.ctaFinalHeadline,
-        ctaFinalPrimaryText:
-          serverConfig.ctaFinalPrimaryText ?? DEFAULTS.ctaFinalPrimaryText,
-        ctaFinalSecondaryText:
-          serverConfig.ctaFinalSecondaryText ?? DEFAULTS.ctaFinalSecondaryText,
-        ctaFinalSecondaryEnabled:
-          serverConfig.ctaFinalSecondaryEnabled ??
-          DEFAULTS.ctaFinalSecondaryEnabled,
-        sectionCredibilityEnabled:
-          serverConfig.sectionCredibilityEnabled ??
-          DEFAULTS.sectionCredibilityEnabled,
-        sectionHowItWorksEnabled:
-          serverConfig.sectionHowItWorksEnabled ??
-          DEFAULTS.sectionHowItWorksEnabled,
-        sectionDifferentialEnabled:
-          serverConfig.sectionDifferentialEnabled ??
-          DEFAULTS.sectionDifferentialEnabled,
-        sectionFeaturesEnabled:
-          serverConfig.sectionFeaturesEnabled ?? DEFAULTS.sectionFeaturesEnabled,
-        sectionPlansEnabled:
-          serverConfig.sectionPlansEnabled ?? DEFAULTS.sectionPlansEnabled,
-        sectionFaqEnabled:
-          serverConfig.sectionFaqEnabled ?? DEFAULTS.sectionFaqEnabled,
-        sectionBadgesEnabled:
-          serverConfig.sectionBadgesEnabled ?? DEFAULTS.sectionBadgesEnabled,
-        sectionCtaFinalEnabled:
-          serverConfig.sectionCtaFinalEnabled ?? DEFAULTS.sectionCtaFinalEnabled,
+        heroBadgeEnabled: serverConfig.heroBadgeEnabled ?? DEFAULTS.heroBadgeEnabled,
+        heroCountdownEnabled: serverConfig.heroCountdownEnabled ?? DEFAULTS.heroCountdownEnabled,
+        heroCountdownDate: serverConfig.heroCountdownDate ?? DEFAULTS.heroCountdownDate,
+        heroCtaPrimaryText: serverConfig.heroCtaPrimaryText ?? DEFAULTS.heroCtaPrimaryText,
+        heroCtaSecondaryText: serverConfig.heroCtaSecondaryText ?? DEFAULTS.heroCtaSecondaryText,
+        heroCtaSecondaryEnabled: serverConfig.heroCtaSecondaryEnabled ?? DEFAULTS.heroCtaSecondaryEnabled,
+        differentialHeadline: serverConfig.differentialHeadline ?? DEFAULTS.differentialHeadline,
+        differentialBody: serverConfig.differentialBody ?? DEFAULTS.differentialBody,
+        ctaFinalHeadline: serverConfig.ctaFinalHeadline ?? DEFAULTS.ctaFinalHeadline,
+        ctaFinalPrimaryText: serverConfig.ctaFinalPrimaryText ?? DEFAULTS.ctaFinalPrimaryText,
+        ctaFinalSecondaryText: serverConfig.ctaFinalSecondaryText ?? DEFAULTS.ctaFinalSecondaryText,
+        ctaFinalSecondaryEnabled: serverConfig.ctaFinalSecondaryEnabled ?? DEFAULTS.ctaFinalSecondaryEnabled,
+        sectionCredibilityEnabled: serverConfig.sectionCredibilityEnabled ?? DEFAULTS.sectionCredibilityEnabled,
+        sectionHowItWorksEnabled: serverConfig.sectionHowItWorksEnabled ?? DEFAULTS.sectionHowItWorksEnabled,
+        sectionDifferentialEnabled: serverConfig.sectionDifferentialEnabled ?? DEFAULTS.sectionDifferentialEnabled,
+        sectionFeaturesEnabled: serverConfig.sectionFeaturesEnabled ?? DEFAULTS.sectionFeaturesEnabled,
+        sectionPlansEnabled: serverConfig.sectionPlansEnabled ?? DEFAULTS.sectionPlansEnabled,
+        sectionFaqEnabled: serverConfig.sectionFaqEnabled ?? DEFAULTS.sectionFaqEnabled,
+        sectionBadgesEnabled: serverConfig.sectionBadgesEnabled ?? DEFAULTS.sectionBadgesEnabled,
+        sectionCtaFinalEnabled: serverConfig.sectionCtaFinalEnabled ?? DEFAULTS.sectionCtaFinalEnabled,
         ogImageUrl: serverConfig.ogImageUrl ?? "",
         heroCustomCode: serverConfig.heroCustomCode ?? "",
         credibilityCustomCode: serverConfig.credibilityCustomCode ?? "",
@@ -369,6 +450,23 @@ export default function AdminLandingPage() {
         badgesCustomCode: serverConfig.badgesCustomCode ?? "",
         ctaFinalCustomCode: serverConfig.ctaFinalCustomCode ?? "",
       });
+
+      // Restaurar ordem salva ou usar padrão
+      if (serverConfig.sectionsOrder) {
+        try {
+          const saved = JSON.parse(serverConfig.sectionsOrder) as string[];
+          // Garantir que todos os IDs padrão estão presentes (para novos campos adicionados depois)
+          const merged = [
+            ...saved.filter((id) => DEFAULT_SECTIONS_ORDER.includes(id)),
+            ...DEFAULT_SECTIONS_ORDER.filter((id) => !saved.includes(id)),
+          ];
+          setSectionsOrder(merged);
+        } catch {
+          setSectionsOrder(DEFAULT_SECTIONS_ORDER);
+        }
+      } else {
+        setSectionsOrder(DEFAULT_SECTIONS_ORDER);
+      }
       setIsDirty(false);
     }
   }, [serverConfig]);
@@ -390,13 +488,324 @@ export default function AdminLandingPage() {
     setIsDirty(true);
   };
 
+  // ─── DnD sensors ────────────────────────────────────────────────────────────
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragStart = (event: { active: { id: string | number } }) => {
+    setActiveDragId(String(event.active.id));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = sectionsOrder.indexOf(String(active.id));
+    const newIndex = sectionsOrder.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+    const newOrder = arrayMove(sectionsOrder, oldIndex, newIndex);
+    setSectionsOrder(newOrder);
+    persistOrder(newOrder);
+  };
+
+  // ─── Mapa de renderização das seções ────────────────────────────────────────
+  const renderSection = (id: string) => {
+    switch (id as SectionId) {
+      case "credibility":
+        return (
+          <AccordionItem
+            key="credibility"
+            value="credibility"
+            className="rounded-2xl overflow-hidden border"
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <SectionHeader
+                icon={Globe}
+                title="Credibilidade — Campeonatos suportados"
+                enabled={config.sectionCredibilityEnabled}
+                hasCustomCode={config.credibilityCustomCode.trim().length > 0}
+                onToggle={(v) => update("sectionCredibilityEnabled", v)}
+              />
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Faixa com os campeonatos disponíveis gratuitamente + "Crie o seu próprio →". Sem campos editáveis — use o código customizado para personalizar.
+              </p>
+              <CustomCodeField
+                value={config.credibilityCustomCode}
+                onChange={(v) => update("credibilityCustomCode", v)}
+                sectionName="Credibilidade"
+              />
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "how-it-works":
+        return (
+          <AccordionItem
+            key="how-it-works"
+            value="how-it-works"
+            className="rounded-2xl overflow-hidden border"
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <SectionHeader
+                icon={Zap}
+                title="Como funciona — 4 passos"
+                enabled={config.sectionHowItWorksEnabled}
+                hasCustomCode={config.howItWorksCustomCode.trim().length > 0}
+                onToggle={(v) => update("sectionHowItWorksEnabled", v)}
+              />
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Seção "Seu bolão pronto em 2 minutos" com os 4 passos do organizador. Sem campos editáveis — use o código customizado para personalizar.
+              </p>
+              <CustomCodeField
+                value={config.howItWorksCustomCode}
+                onChange={(v) => update("howItWorksCustomCode", v)}
+                sectionName="Como funciona"
+              />
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "differential":
+        return (
+          <AccordionItem
+            key="differential"
+            value="differential"
+            className="rounded-2xl overflow-hidden border"
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <SectionHeader
+                icon={Crown}
+                title="Diferencial Pro — Campeonato personalizado"
+                enabled={config.sectionDifferentialEnabled}
+                hasCustomCode={config.differentialCustomCode.trim().length > 0}
+                onToggle={(v) => update("sectionDifferentialEnabled", v)}
+              />
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Headline da seção</Label>
+                <Input
+                  value={config.differentialHeadline}
+                  onChange={(e) => update("differentialHeadline", e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Corpo do texto</Label>
+                <Textarea
+                  value={config.differentialBody}
+                  onChange={(e) => update("differentialBody", e.target.value)}
+                  rows={4}
+                />
+              </div>
+              <CustomCodeField
+                value={config.differentialCustomCode}
+                onChange={(v) => update("differentialCustomCode", v)}
+                sectionName="Diferencial Pro"
+              />
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "features":
+        return (
+          <AccordionItem
+            key="features"
+            value="features"
+            className="rounded-2xl overflow-hidden border"
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <SectionHeader
+                icon={LayoutGrid}
+                title="Funcionalidades — Grid de cards"
+                enabled={config.sectionFeaturesEnabled}
+                hasCustomCode={config.featuresCustomCode.trim().length > 0}
+                onToggle={(v) => update("sectionFeaturesEnabled", v)}
+              />
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Grid com cards de funcionalidades (Ranking, Palpites, Convite, Estatísticas, Conquistas, Retrospectiva, Regras, Campeonatos, Campeonato personalizado). Use o código customizado para personalizar.
+              </p>
+              <CustomCodeField
+                value={config.featuresCustomCode}
+                onChange={(v) => update("featuresCustomCode", v)}
+                sectionName="Funcionalidades"
+              />
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "plans":
+        return (
+          <AccordionItem
+            key="plans"
+            value="plans"
+            className="rounded-2xl overflow-hidden border"
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <SectionHeader
+                icon={Users}
+                title="Planos — Comparativo Gratuito vs Pro"
+                enabled={config.sectionPlansEnabled}
+                hasCustomCode={config.plansCustomCode.trim().length > 0}
+                onToggle={(v) => update("sectionPlansEnabled", v)}
+              />
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Comparativo lado a lado dos planos Gratuito e Pro com CTAs. Os preços e features são definidos no código — use o código customizado para personalizar ou ajustar valores.
+              </p>
+              <CustomCodeField
+                value={config.plansCustomCode}
+                onChange={(v) => update("plansCustomCode", v)}
+                sectionName="Planos"
+              />
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "faq":
+        return (
+          <AccordionItem
+            key="faq"
+            value="faq"
+            className="rounded-2xl overflow-hidden border"
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <SectionHeader
+                icon={HelpCircle}
+                title="FAQ — Perguntas frequentes"
+                enabled={config.sectionFaqEnabled}
+                hasCustomCode={config.faqCustomCode.trim().length > 0}
+                onToggle={(v) => update("sectionFaqEnabled", v)}
+              />
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                6 perguntas frequentes em acordeão. Use o código customizado para adicionar, remover ou editar perguntas.
+              </p>
+              <CustomCodeField
+                value={config.faqCustomCode}
+                onChange={(v) => update("faqCustomCode", v)}
+                sectionName="FAQ"
+              />
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "badges":
+        return (
+          <AccordionItem
+            key="badges"
+            value="badges"
+            className="rounded-2xl overflow-hidden border"
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <SectionHeader
+                icon={Trophy}
+                title="Conquistas — Vitrine de Badges"
+                enabled={config.sectionBadgesEnabled}
+                hasCustomCode={config.badgesCustomCode.trim().length > 0}
+                onToggle={(v) => update("sectionBadgesEnabled", v)}
+              />
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Exibe até 6 badges curados automaticamente (priorizando os mais raros e com variedade de categorias).
+                Cada badge mostra emoji, nome, raridade e descrição no tooltip. CTA fixo para criar bolão grátis.
+                Use o código customizado para substituir completamente esta seção.
+              </p>
+              <CustomCodeField
+                value={config.badgesCustomCode}
+                onChange={(v) => update("badgesCustomCode", v)}
+                sectionName="Conquistas"
+              />
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      case "cta-final":
+        return (
+          <AccordionItem
+            key="cta-final"
+            value="cta-final"
+            className="rounded-2xl overflow-hidden border"
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
+          >
+            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
+              <SectionHeader
+                icon={Megaphone}
+                title="CTA Final — Chamada para ação"
+                enabled={config.sectionCtaFinalEnabled}
+                hasCustomCode={config.ctaFinalCustomCode.trim().length > 0}
+                onToggle={(v) => update("sectionCtaFinalEnabled", v)}
+              />
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-5 space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Headline do CTA final</Label>
+                <Input
+                  value={config.ctaFinalHeadline}
+                  onChange={(e) => update("ctaFinalHeadline", e.target.value)}
+                />
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">CTA primário</Label>
+                  <Input
+                    value={config.ctaFinalPrimaryText}
+                    onChange={(e) => update("ctaFinalPrimaryText", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">CTA secundário (Pro)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={config.ctaFinalSecondaryText}
+                      onChange={(e) => update("ctaFinalSecondaryText", e.target.value)}
+                    />
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Switch
+                        checked={config.ctaFinalSecondaryEnabled}
+                        onCheckedChange={(v) => update("ctaFinalSecondaryEnabled", v)}
+                      />
+                      <span className="text-xs text-muted-foreground">Exibir</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <CustomCodeField
+                value={config.ctaFinalCustomCode}
+                onChange={(v) => update("ctaFinalCustomCode", v)}
+                sectionName="CTA Final"
+              />
+            </AccordionContent>
+          </AccordionItem>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   if (isLoading) {
     return (
       <AdminLayout activeSection="landing-page">
         <div className="flex items-center justify-center h-64">
-          <div className="text-muted-foreground text-sm">
-            Carregando configurações...
-          </div>
+          <div className="text-muted-foreground text-sm">Carregando configurações...</div>
         </div>
       </AdminLayout>
     );
@@ -413,8 +822,8 @@ export default function AdminLandingPage() {
               <h1 className="text-xl font-bold">Página de Vendas</h1>
             </div>
             <p className="text-sm text-muted-foreground">
-              Configure o conteúdo, visibilidade e código customizado de cada
-              seção. Código customizado tem prioridade sobre o conteúdo padrão.
+              Configure o conteúdo, visibilidade e código customizado de cada seção.
+              Arraste pelo ícone <GripVertical size={12} className="inline-block" /> para reordenar. Código customizado tem prioridade sobre o conteúdo padrão.
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -440,11 +849,7 @@ export default function AdminLandingPage() {
               disabled={!isDirty || updateMutation.isPending}
             >
               <Save className="h-3.5 w-3.5" />
-              {updateMutation.isPending
-                ? "Salvando..."
-                : isDirty
-                  ? "Salvar alterações"
-                  : "Salvo"}
+              {updateMutation.isPending ? "Salvando..." : isDirty ? "Salvar alterações" : "Salvo"}
             </Button>
           </div>
         </div>
@@ -460,22 +865,16 @@ export default function AdminLandingPage() {
           >
             <Zap size={14} />
             <span className="font-medium">Há alterações não salvas.</span>
-            <span className="text-muted-foreground">
-              Clique em "Salvar alterações" para publicar.
-            </span>
+            <span className="text-muted-foreground">Clique em "Salvar alterações" para publicar.</span>
           </div>
         )}
 
-        {/* Acordeão de seções */}
+        {/* ── HERO (fixo — sempre primeiro) ── */}
         <Accordion type="multiple" className="space-y-3">
-          {/* ── HERO ── */}
           <AccordionItem
             value="hero"
             className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
           >
             <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
               <SectionHeader
@@ -488,18 +887,14 @@ export default function AdminLandingPage() {
             <AccordionContent className="px-5 pb-5 space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    Headline principal
-                  </Label>
+                  <Label className="text-xs text-muted-foreground">Headline principal</Label>
                   <Input
                     value={config.heroHeadline}
                     onChange={(e) => update("heroHeadline", e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    Texto do badge Copa 2026
-                  </Label>
+                  <Label className="text-xs text-muted-foreground">Texto do badge Copa 2026</Label>
                   <div className="flex gap-2">
                     <Input
                       value={config.heroBadgeText}
@@ -510,17 +905,13 @@ export default function AdminLandingPage() {
                         checked={config.heroBadgeEnabled}
                         onCheckedChange={(v) => update("heroBadgeEnabled", v)}
                       />
-                      <span className="text-xs text-muted-foreground">
-                        Exibir
-                      </span>
+                      <span className="text-xs text-muted-foreground">Exibir</span>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">
-                  Sub-headline
-                </Label>
+                <Label className="text-xs text-muted-foreground">Sub-headline</Label>
                 <Textarea
                   value={config.heroSubheadline}
                   onChange={(e) => update("heroSubheadline", e.target.value)}
@@ -529,45 +920,31 @@ export default function AdminLandingPage() {
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    CTA primário (botão principal)
-                  </Label>
+                  <Label className="text-xs text-muted-foreground">CTA primário (botão principal)</Label>
                   <Input
                     value={config.heroCtaPrimaryText}
-                    onChange={(e) =>
-                      update("heroCtaPrimaryText", e.target.value)
-                    }
+                    onChange={(e) => update("heroCtaPrimaryText", e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    CTA secundário (Pro)
-                  </Label>
+                  <Label className="text-xs text-muted-foreground">CTA secundário (Pro)</Label>
                   <div className="flex gap-2">
                     <Input
                       value={config.heroCtaSecondaryText}
-                      onChange={(e) =>
-                        update("heroCtaSecondaryText", e.target.value)
-                      }
+                      onChange={(e) => update("heroCtaSecondaryText", e.target.value)}
                     />
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <Switch
                         checked={config.heroCtaSecondaryEnabled}
-                        onCheckedChange={(v) =>
-                          update("heroCtaSecondaryEnabled", v)
-                        }
+                        onCheckedChange={(v) => update("heroCtaSecondaryEnabled", v)}
                       />
-                      <span className="text-xs text-muted-foreground">
-                        Exibir
-                      </span>
+                      <span className="text-xs text-muted-foreground">Exibir</span>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">
-                  Data da Copa (contador regressivo — formato ISO 8601)
-                </Label>
+                <Label className="text-xs text-muted-foreground">Data da Copa (contador regressivo — formato ISO 8601)</Label>
                 <div className="flex gap-2">
                   <Input
                     value={config.heroCountdownDate}
@@ -578,13 +955,9 @@ export default function AdminLandingPage() {
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <Switch
                       checked={config.heroCountdownEnabled}
-                      onCheckedChange={(v) =>
-                        update("heroCountdownEnabled", v)
-                      }
+                      onCheckedChange={(v) => update("heroCountdownEnabled", v)}
                     />
-                    <span className="text-xs text-muted-foreground">
-                      Exibir
-                    </span>
+                    <span className="text-xs text-muted-foreground">Exibir</span>
                   </div>
                 </div>
               </div>
@@ -595,327 +968,51 @@ export default function AdminLandingPage() {
               />
             </AccordionContent>
           </AccordionItem>
+        </Accordion>
 
-          {/* ── CREDIBILIDADE ── */}
-          <AccordionItem
-            value="credibility"
-            className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
-          >
-            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
-              <SectionHeader
-                icon={Globe}
-                title="Credibilidade — Campeonatos suportados"
-                enabled={config.sectionCredibilityEnabled}
-                hasCustomCode={config.credibilityCustomCode.trim().length > 0}
-                onToggle={(v) => update("sectionCredibilityEnabled", v)}
-              />
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Faixa com os campeonatos disponíveis gratuitamente + "Crie o
-                seu próprio →". Sem campos editáveis — use o código customizado
-                para personalizar.
-              </p>
-              <CustomCodeField
-                value={config.credibilityCustomCode}
-                onChange={(v) => update("credibilityCustomCode", v)}
-                sectionName="Credibilidade"
-              />
-            </AccordionContent>
-          </AccordionItem>
+        {/* ── SEÇÕES REORDENÁVEIS ── */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={sectionsOrder} strategy={verticalListSortingStrategy}>
+            <Accordion type="multiple" className="space-y-3">
+              {sectionsOrder.map((id) => (
+                <SortableAccordionItem key={id} id={id} isDragging={activeDragId === id}>
+                  {renderSection(id)}
+                </SortableAccordionItem>
+              ))}
+            </Accordion>
+          </SortableContext>
 
-          {/* ── COMO FUNCIONA ── */}
-          <AccordionItem
-            value="how-it-works"
-            className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
-          >
-            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
-              <SectionHeader
-                icon={Zap}
-                title="Como funciona — 4 passos"
-                enabled={config.sectionHowItWorksEnabled}
-                hasCustomCode={config.howItWorksCustomCode.trim().length > 0}
-                onToggle={(v) => update("sectionHowItWorksEnabled", v)}
-              />
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Seção "Seu bolão pronto em 2 minutos" com os 4 passos do
-                organizador. Sem campos editáveis — use o código customizado
-                para personalizar.
-              </p>
-              <CustomCodeField
-                value={config.howItWorksCustomCode}
-                onChange={(v) => update("howItWorksCustomCode", v)}
-                sectionName="Como funciona"
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* ── DIFERENCIAL PRO ── */}
-          <AccordionItem
-            value="differential"
-            className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
-          >
-            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
-              <SectionHeader
-                icon={Crown}
-                title="Diferencial Pro — Campeonato personalizado"
-                enabled={config.sectionDifferentialEnabled}
-                hasCustomCode={config.differentialCustomCode.trim().length > 0}
-                onToggle={(v) => update("sectionDifferentialEnabled", v)}
-              />
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">
-                  Headline da seção
-                </Label>
-                <Input
-                  value={config.differentialHeadline}
-                  onChange={(e) =>
-                    update("differentialHeadline", e.target.value)
-                  }
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">
-                  Corpo do texto
-                </Label>
-                <Textarea
-                  value={config.differentialBody}
-                  onChange={(e) => update("differentialBody", e.target.value)}
-                  rows={4}
-                />
-              </div>
-              <CustomCodeField
-                value={config.differentialCustomCode}
-                onChange={(v) => update("differentialCustomCode", v)}
-                sectionName="Diferencial Pro"
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* ── FEATURES ── */}
-          <AccordionItem
-            value="features"
-            className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
-          >
-            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
-              <SectionHeader
-                icon={LayoutGrid}
-                title="Funcionalidades — Grid de cards"
-                enabled={config.sectionFeaturesEnabled}
-                hasCustomCode={config.featuresCustomCode.trim().length > 0}
-                onToggle={(v) => update("sectionFeaturesEnabled", v)}
-              />
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Grid com cards de funcionalidades (Ranking, Palpites, Convite,
-                Estatísticas, Conquistas, Retrospectiva, Regras, Campeonatos,
-                Campeonato personalizado). Use o código customizado para
-                personalizar.
-              </p>
-              <CustomCodeField
-                value={config.featuresCustomCode}
-                onChange={(v) => update("featuresCustomCode", v)}
-                sectionName="Funcionalidades"
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* ── PLANOS ── */}
-          <AccordionItem
-            value="plans"
-            className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
-          >
-            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
-              <SectionHeader
-                icon={Users}
-                title="Planos — Comparativo Gratuito vs Pro"
-                enabled={config.sectionPlansEnabled}
-                hasCustomCode={config.plansCustomCode.trim().length > 0}
-                onToggle={(v) => update("sectionPlansEnabled", v)}
-              />
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Comparativo lado a lado dos planos Gratuito e Pro com CTAs. Os
-                preços e features são definidos no código — use o código
-                customizado para personalizar ou ajustar valores.
-              </p>
-              <CustomCodeField
-                value={config.plansCustomCode}
-                onChange={(v) => update("plansCustomCode", v)}
-                sectionName="Planos"
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* ── FAQ ── */}
-          <AccordionItem
-            value="faq"
-            className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
-          >
-            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
-              <SectionHeader
-                icon={HelpCircle}
-                title="FAQ — Perguntas frequentes"
-                enabled={config.sectionFaqEnabled}
-                hasCustomCode={config.faqCustomCode.trim().length > 0}
-                onToggle={(v) => update("sectionFaqEnabled", v)}
-              />
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                6 perguntas frequentes em acordeão. Use o código customizado
-                para adicionar, remover ou editar perguntas.
-              </p>
-              <CustomCodeField
-                value={config.faqCustomCode}
-                onChange={(v) => update("faqCustomCode", v)}
-                sectionName="FAQ"
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* ── BADGES ── */}
-          <AccordionItem
-            value="badges"
-            className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
-          >
-            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
-              <SectionHeader
-                icon={Trophy}
-                title="Conquistas — Vitrine de Badges"
-                enabled={config.sectionBadgesEnabled}
-                hasCustomCode={config.badgesCustomCode.trim().length > 0}
-                onToggle={(v) => update("sectionBadgesEnabled", v)}
-              />
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Exibe até 6 badges curados automaticamente (priorizando os mais raros e com variedade de categorias).
-                Cada badge mostra emoji, nome, raridade e descrição no tooltip. CTA fixo para criar bolão grátis.
-                Use o código customizado para substituir completamente esta seção.
-              </p>
-              <CustomCodeField
-                value={config.badgesCustomCode}
-                onChange={(v) => update("badgesCustomCode", v)}
-                sectionName="Conquistas"
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* ── CTA FINAL ── */}
-          <AccordionItem
-            value="cta-final"
-            className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
-          >
-            <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
-              <SectionHeader
-                icon={Megaphone}
-                title="CTA Final — Chamada para ação"
-                enabled={config.sectionCtaFinalEnabled}
-                hasCustomCode={config.ctaFinalCustomCode.trim().length > 0}
-                onToggle={(v) => update("sectionCtaFinalEnabled", v)}
-              />
-            </AccordionTrigger>
-            <AccordionContent className="px-5 pb-5 space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">
-                  Headline do CTA final
-                </Label>
-                <Input
-                  value={config.ctaFinalHeadline}
-                  onChange={(e) => update("ctaFinalHeadline", e.target.value)}
-                />
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    CTA primário
-                  </Label>
-                  <Input
-                    value={config.ctaFinalPrimaryText}
-                    onChange={(e) =>
-                      update("ctaFinalPrimaryText", e.target.value)
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    CTA secundário (Pro)
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={config.ctaFinalSecondaryText}
-                      onChange={(e) =>
-                        update("ctaFinalSecondaryText", e.target.value)
-                      }
-                    />
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <Switch
-                        checked={config.ctaFinalSecondaryEnabled}
-                        onCheckedChange={(v) =>
-                          update("ctaFinalSecondaryEnabled", v)
-                        }
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        Exibir
-                      </span>
-                    </div>
-                  </div>
+          <DragOverlay>
+            {activeDragId ? (
+              <div
+                className="rounded-2xl border px-5 py-4 text-sm font-semibold opacity-90 shadow-2xl"
+                style={{
+                  background: "#1A2235",
+                  borderColor: "rgba(255,184,0,0.4)",
+                  color: "#FFB800",
+                  cursor: "grabbing",
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <GripVertical size={14} />
+                  Movendo seção...
                 </div>
               </div>
-              <CustomCodeField
-                value={config.ctaFinalCustomCode}
-                onChange={(v) => update("ctaFinalCustomCode", v)}
-                sectionName="CTA Final"
-              />
-            </AccordionContent>
-          </AccordionItem>
-          {/* ── SEO & COMPARTILHAMENTO ── */}
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+
+        {/* ── SEO (fixo — sempre último) ── */}
+        <Accordion type="multiple" className="space-y-3">
           <AccordionItem
             value="seo"
             className="rounded-2xl overflow-hidden border"
-            style={{
-              background: "#121826",
-              borderColor: "rgba(255,255,255,0.06)",
-            }}
+            style={{ background: "#121826", borderColor: "rgba(255,255,255,0.06)" }}
           >
             <AccordionTrigger className="px-5 py-4 hover:no-underline [&>svg]:text-yellow-400">
               <div className="flex items-center gap-3 flex-1 pr-4">
@@ -946,8 +1043,6 @@ export default function AdminLandingPage() {
               <p className="text-sm text-muted-foreground">
                 A <strong style={{ color: "#F9FAFB" }}>OG Image</strong> é a imagem exibida quando o link do Plakr! é compartilhado no WhatsApp, Instagram, LinkedIn e outras redes. Recomendado: <strong style={{ color: "#FFB800" }}>1200 × 630 px</strong>.
               </p>
-
-              {/* Preview da proporção 1200×630 */}
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Imagem de compartilhamento (Open Graph)</Label>
                 <div
@@ -955,7 +1050,6 @@ export default function AdminLandingPage() {
                   style={{
                     border: "1px solid rgba(255,255,255,0.08)",
                     background: "#0B0F1A",
-                    // Proporção 1200×630 ≈ aspect-ratio 1.905
                     aspectRatio: "1200 / 630",
                     maxWidth: "600px",
                   }}
@@ -976,7 +1070,6 @@ export default function AdminLandingPage() {
                   </p>
                 )}
               </div>
-
               <div
                 className="flex items-start gap-3 rounded-lg px-4 py-3 text-xs"
                 style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.2)" }}
@@ -1006,9 +1099,7 @@ export default function AdminLandingPage() {
               }}
             >
               <Save size={16} />
-              {updateMutation.isPending
-                ? "Salvando..."
-                : "Salvar alterações"}
+              {updateMutation.isPending ? "Salvando..." : "Salvar alterações"}
             </Button>
           </div>
         )}

@@ -102,4 +102,21 @@ export const landingPageRouter = router({
       await db.update(landingPageConfig).set({ [input.section]: input.enabled }).where(eq(landingPageConfig.id, 1));
       return { success: true };
     }),
+
+  // Reordenar seções da landing page via drag-and-drop
+  updateSectionsOrder: adminProcedure
+    .input(z.object({
+      order: z.array(z.string()).min(1).max(20),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await (await import("../db")).getDb();
+      if (!db) throw new Error("DB unavailable");
+      const { landingPageConfig } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      await db
+        .update(landingPageConfig)
+        .set({ sectionsOrder: JSON.stringify(input.order) })
+        .where(eq(landingPageConfig.id, 1));
+      return { success: true, order: input.order };
+    }),
 });

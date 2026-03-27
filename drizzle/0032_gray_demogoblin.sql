@@ -1,0 +1,1 @@
+ALTER TABLE `landing_page_config` ADD `sectionsOrder` text;

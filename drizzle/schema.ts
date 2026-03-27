@@ -762,6 +762,7 @@ export const landingPageConfig = mysqlTable("landing_page_config", {
   faqCustomCode: text("faqCustomCode"),
   ctaFinalCustomCode: text("ctaFinalCustomCode"),
   badgesCustomCode: text("badgesCustomCode"),
+  sectionsOrder: text("sectionsOrder"), // JSON array de IDs de seção, ex: ["hero","plans","faq"]
   // ── Metadados ──────────────────────────────────────────────────────────────────────────────
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -1680,3 +1680,16 @@
 - [x] Integrar BadgeShowcase na Home.tsx respeitando sectionBadgesEnabled
 - [x] Adicionar seção Conquistas no AdminLandingPage com toggle + código customizado
 - [x] Adicionar sectionBadgesEnabled ao landingPage router (schema e updateConfig)
+
+## Bugfix — Erros TypeScript pool.plan
+
+- [x] Confirmado: stripe.ts não tem pool.plan — erro era falso positivo do LSP cache
+- [x] Confirmado: tournaments.ts não tem pool.plan — erro era falso positivo do LSP cache
+
+## Drag-and-Drop — Reordenação de Seções da Página de Vendas
+
+- [ ] Adicionar campo sectionsOrder (JSON) no schema landing_page_config
+- [ ] Criar procedure updateSectionsOrder no landingPage router
+- [ ] Instalar @dnd-kit/core e @dnd-kit/sortable
+- [ ] Implementar drag-and-drop no AdminLandingPage com handle de arraste
+- [ ] Persistir nova ordem no banco ao soltar
