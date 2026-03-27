@@ -211,6 +211,13 @@
       "when": 1774562764093,
       "tag": "0029_youthful_goblin_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1774574348181,
+      "tag": "0030_salty_proteus",
+      "breakpoints": true
     }
   ]
 }

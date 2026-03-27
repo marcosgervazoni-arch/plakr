@@ -53,6 +53,9 @@ export default function AdminSettings() {
     stripePriceIdUnlimited: "",
     stripePriceIdUnlimitedAnnual: "",
     stripeMonthlyPrice: 2990,
+    stripeProAnnualPrice: 39900,
+    stripeUnlimitedMonthlyPrice: 8990,
+    stripeUnlimitedAnnualPrice: 89900,
   });
 
   // Push / VAPID
@@ -87,6 +90,9 @@ export default function AdminSettings() {
         stripePriceIdUnlimited: (settings as any).stripePriceIdUnlimited ?? "",
         stripePriceIdUnlimitedAnnual: (settings as any).stripePriceIdUnlimitedAnnual ?? "",
         stripeMonthlyPrice: settings.stripeMonthlyPrice ?? 2990,
+        stripeProAnnualPrice: (settings as any).stripeProAnnualPrice ?? 39900,
+        stripeUnlimitedMonthlyPrice: (settings as any).stripeUnlimitedMonthlyPrice ?? 8990,
+        stripeUnlimitedAnnualPrice: (settings as any).stripeUnlimitedAnnualPrice ?? 89900,
       });
       setPushForm({
         vapidPublicKey: (settings as any).vapidPublicKey ?? "",
@@ -276,18 +282,46 @@ export default function AdminSettings() {
 
                 <Separator />
 
-                {/* Preço exibido na UI */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">Preço Mensal Pro (em centavos)</Label>
-                    <Input
-                      {...numField("stripeMonthlyPrice")}
-                      placeholder="3990"
-                      className="font-mono"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Exibido na tela de upgrade. Ex: 3990 = R$&nbsp;39,90/mês
-                    </p>
+                {/* Preços exibidos na tela de upgrade */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Preços exibidos na tela de upgrade (em centavos)</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Pro Mensal</Label>
+                      <Input
+                        {...numField("stripeMonthlyPrice")}
+                        placeholder="3990"
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground">Ex: 3990 = R$&nbsp;39,90/mês</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Pro Anual</Label>
+                      <Input
+                        {...numField("stripeProAnnualPrice")}
+                        placeholder="39900"
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground">Ex: 39900 = R$&nbsp;399,00/ano</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Ilimitado Mensal</Label>
+                      <Input
+                        {...numField("stripeUnlimitedMonthlyPrice")}
+                        placeholder="8990"
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground">Ex: 8990 = R$&nbsp;89,90/mês</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Ilimitado Anual</Label>
+                      <Input
+                        {...numField("stripeUnlimitedAnnualPrice")}
+                        placeholder="89900"
+                        className="font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground">Ex: 89900 = R$&nbsp;899,00/ano</p>
+                    </div>
                   </div>
                 </div>
 

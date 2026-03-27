@@ -75,6 +75,9 @@ export const platformRouter = router({
       stripePriceIdUnlimited: z.string().optional(),
       stripePriceIdUnlimitedAnnual: z.string().optional(),
       stripeMonthlyPrice: z.number().optional(),
+      stripeProAnnualPrice: z.number().optional(),
+      stripeUnlimitedMonthlyPrice: z.number().optional(),
+      stripeUnlimitedAnnualPrice: z.number().optional(),
       // VAPID / Push
       vapidPublicKey: z.string().optional(),
       vapidPrivateKey: z.string().optional(),

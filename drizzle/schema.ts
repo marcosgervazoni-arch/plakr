@@ -59,6 +59,9 @@ export const platformSettings = mysqlTable("platform_settings", {
   stripePriceIdUnlimited: varchar("stripePriceIdUnlimited", { length: 128 }),
   stripePriceIdUnlimitedAnnual: varchar("stripePriceIdUnlimitedAnnual", { length: 128 }),
   stripeMonthlyPrice: int("stripeMonthlyPrice").default(3990),
+  stripeProAnnualPrice: int("stripeProAnnualPrice").default(39900),
+  stripeUnlimitedMonthlyPrice: int("stripeUnlimitedMonthlyPrice").default(8990),
+  stripeUnlimitedAnnualPrice: int("stripeUnlimitedAnnualPrice").default(89900),
   // VAPID keys para Web Push — gerenciadas pelo superadmin no painel
   vapidPublicKey: text("vapidPublicKey"),
   vapidPrivateKey: text("vapidPrivateKey"),
