@@ -1662,3 +1662,7 @@
 - [x] Revisar cards de plano no UpgradePage (Gratuito, Pro, Ilimitado presentes)
 - [x] Replicar toggle na landing page de vendas (Home.tsx) — 3 cards + toggle Mensal/Anual
 - [x] Registrar ideias de UX no backlog (docs/backlog/pricing-ux.md — 6 ideias ICE-001 a ICE-006)
+
+## ICE-001 — Preservar billing period da landing no /upgrade
+
+- [x] UpgradePage lê ?billing= da URL e pré-seleciona o toggle Mensal/Anual

@@ -29,7 +29,7 @@ import {
   Sparkles,
   CalendarDays,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -169,7 +169,11 @@ export default function UpgradePage() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [billing, setBilling] = useState<BillingPeriod>("monthly");
+  const initialBilling = useMemo<BillingPeriod>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("billing") === "annual" ? "annual" : "monthly";
+  }, []);
+  const [billing, setBilling] = useState<BillingPeriod>(initialBilling);
 
   // Preços dinâmicos do banco (publicProcedure — sem auth necessária)
   const { data: pricing, isLoading: loadingPrices } =
