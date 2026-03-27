@@ -239,6 +239,20 @@
       "when": 1774622570306,
       "tag": "0033_condemned_nitro",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1774642867594,
+      "tag": "0034_mean_captain_marvel",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "5",
+      "when": 1774643192834,
+      "tag": "0035_material_hydra",
+      "breakpoints": true
     }
   ]
 }

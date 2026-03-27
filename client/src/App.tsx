@@ -57,6 +57,7 @@ import AdminImportLogs from "./pages/admin/AdminImportLogs";
 import AdminRetrospectivas from "./pages/admin/AdminRetrospectivas";
 import AdminLandingPage from "./pages/admin/AdminLandingPage";
 import AdminPricing from "./pages/admin/AdminPricing";
+import X1ChallengePage from "./pages/X1ChallengePage";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useReferralCapture } from "./hooks/useReferralCapture";
 
@@ -86,6 +87,7 @@ function Router() {
       <Route path="/notifications" component={Notifications} />
       <Route path="/notification-preferences" component={NotificationPreferences} />
       <Route path="/suspended" component={Suspended} />
+      <Route path="/x1/:id" component={X1ChallengePage} />
 
       {/* Organizer routes — O1-O6 */}
       <Route path="/create-pool" component={CreatePool} />

@@ -1,6 +1,6 @@
 # Especificação de Feature — "Vem pro X1"
 
-> **Versão:** 1.1 | **Data:** 2026-03-27 | **Status:** Proposta para validação
+> **Versão:** 1.6 | **Data:** 2026-03-27 | **Status:** Especificação completa aprovada — pronta para desenvolvimento
 > **Pré-requisito bloqueante:** `PRE-001 — Campo roundNumber na tabela games` (ver Seção 0)
 >
 > Documento produzido pela orquestração dos 40 especialistas do ecossistema Plakr.
@@ -115,13 +115,70 @@ PENDING → ACTIVE → CONCLUDED → [EXPIRED se não aceito em 48h]
 
 **Escopo dos palpites:** o X1 usa os **palpites já registrados** pelos dois apostadores no bolão. Não há palpites exclusivos para o X1 — a disputa é uma lente sobre os dados existentes. Isso é fundamental: não cria fricção adicional e não distorce o comportamento de apostas.
 
-**Período do desafio:** ao criar o X1, o desafiador escolhe o escopo temporal:
+**Período do desafio:** ao criar o X1, o desafiador escolhe o escopo temporal. As opções disponíveis variam conforme o **formato do campeonato**:
 
-| Opção | Descrição |
-|-------|-----------|
-| **Próxima rodada** | Apenas os jogos da próxima rodada do campeonato |
-| **Próximos N jogos** | Os próximos 5, 10 ou 20 jogos do campeonato (escolha do desafiador) |
-| **Até o fim do bolão** | Todos os jogos restantes do bolão |
+**Campeonatos de pontos corridos** (`format = league`) — ex: Brasileirão, Premier League:
+
+| Opção | Descrição | Requisito técnico |
+|-------|-----------|------------------|
+| **Próxima rodada** | Todos os jogos da próxima rodada ainda não disputada (menor `roundNumber` com status `scheduled`) | Campo `roundNumber` preenchido |
+| **Próximos N jogos** | Os próximos 5, 10 ou 20 jogos do campeonato, na ordem cronológica a partir da aceitação | Nenhum |
+
+**Campeonatos com fase de grupos e/ou chaveamento** (`format = groups_knockout` ou `cup`) — ex: Copa do Mundo, Libertadores, Champions League:
+
+| Opção | Descrição | Requisito técnico |
+|-------|-----------|------------------|
+| **Próxima fase** | Todos os jogos da fase atual (ou próxima fase ainda não iniciada), identificada pelo campo `phase` da tabela `tournament_phases` | Campo `phase` preenchido nos jogos |
+| **Próximos N jogos** | Os próximos 5, 10 ou 20 jogos do campeonato, na ordem cronológica a partir da aceitação | Nenhum |
+
+> **Nota:** A opção "Até o fim do bolão" foi removida da especificação. As possibilidades "Próximo jogo específico", "Fase + grupo específico" e "Fase eliminatória completa" foram registradas no backlog de evoluções futuras (seção 11).
+
+### 2.3 Tipos de Desafio
+
+O X1 suporta dois tipos de desafio, definidos pelo campo `challengeType` na tabela `x1_challenges`:
+
+---
+
+#### Tipo 1 — Duelo de Palpites (`score_duel`)
+
+O tipo original do X1. Dois apostadores competem usando os palpites que já fizeram no bolão. Vence quem acumular mais pontos nos jogos do período definido. Descrito em detalhes na seção 2.2.
+
+---
+
+#### Tipo 2 — Previsão de Campeonato (`prediction`)
+
+Um apostador desafia outro com uma **previsão sobre um evento do campeonato**. Cada um escolhe uma resposta diferente. O sistema resolve automaticamente quando o evento ocorre, sem nenhuma intervenção manual.
+
+**Regra de acerto:** a previsão só é considerada vencedora se cumprir **100% dos requisitos**. Não há acerto parcial. Em caso de ambos errarem, o resultado é empate técnico.
+
+**Previsões disponíveis:**
+
+| # | Previsão | Disponibilidade | Como o sistema resolve |
+|---|----------|----------------|------------------------|
+| 1 | **Campeão do campeonato** | Qualquer formato | Time vencedor do jogo com `phase = final` e `status = finished` |
+| 2 | **Vice-campeão** | Grupos/chaveamento | Time perdedor do jogo com `phase = final` e `status = finished` |
+| 3 | **Time eliminado em fase X** | Grupos/chaveamento | Time perdedor de jogo `isKnockout = true` na fase escolhida |
+| 4 | **Classificados para fase X** | Grupos/chaveamento | Vencedores de todos os jogos da fase anterior quando todos estiverem `finished` |
+| 5 | **Classificados de um grupo** | Grupos/chaveamento | Times com mais pontos no `groupName` escolhido quando todos os jogos do grupo estiverem `finished` |
+| 6 | **Vencedor de um jogo específico** | Qualquer formato | Time com maior `scoreA` ou `scoreB` no jogo escolhido quando `status = finished` |
+
+**Previsões descartadas e motivo:**
+
+| Previsão | Motivo da exclusão |
+|----------|--------------------|
+| Primeiro eliminado do mata-mata | Inserção de placares é manual e não segue ordem cronológica — não é automatizável |
+| Placar exato de um jogo | Removido a pedido |
+| Artilheiro | Schema não armazena gols por jogador |
+| Apostas sobre desempenho do bolão | Não necessário na versão atual |
+
+**Fluxo do X1 de Previsão:**
+
+1. Desafiador escolhe o tipo `prediction` ao criar o X1
+2. Seleciona a previsão desejada (ex: "Campeão do campeonato")
+3. Escolhe sua resposta (ex: "Brasil")
+4. Desafiado recebe o convite, vê a previsão e a resposta do desafiador, e escolhe sua própria resposta (ex: "Argentina")
+5. Quando o evento se resolve, o job `x1-prediction-resolver` compara as respostas com o resultado real e declara o vencedor
+6. Ambos recebem notificação com o resultado
 
 **Critério de vitória:** o apostador que acumular mais pontos (conforme as regras de pontuação do bolão) nos jogos do período definido vence o X1. Em caso de empate, o critério de desempate é o número de placares exatos; se ainda houver empate, o resultado é declarado **empate técnico** e ambos recebem o badge de participação.
 
@@ -129,14 +186,14 @@ PENDING → ACTIVE → CONCLUDED → [EXPIRED se não aceito em 48h]
 
 | Plano | X1s simultâneos ativos | X1s por bolão (total) |
 |-------|------------------------|----------------------|
-| Gratuito | 1 | 3 |
+| Free | 1 | 3 |
 | Pro | 5 | ilimitado |
-| Ilimitado | ilimitado | ilimitado |
+| Unlimited | ilimitado | ilimitado |
 
 ### 2.3 Fluxo Detalhado
 
 **Passo 1 — Desafio enviado:**
-O apostador A acessa o perfil público do apostador B dentro do bolão e toca em "Vem pro X1". Seleciona o escopo do desafio e confirma. Uma notificação in-app (e push, se habilitado) é enviada ao apostador B com a mensagem: *"[Nome A] te mandou um X1! Você aceita o desafio?"*
+O apostador A está na tela do bolão, visualiza o ranking e toca no botão **⚔️ Desafiar** no card do participante que deseja desafiar. Um bottom sheet sobe com a lista de opções de desafio disponíveis (ver seção 5.4). O apostador seleciona a opção desejada, configura os parâmetros (escopo ou resposta da previsão) e confirma. Uma notificação in-app (e push, se habilitado) é enviada ao apostador B com a mensagem: *"[Nome A] te mandou um X1! Você aceita o desafio?"*
 
 **Passo 2 — Resposta ao convite:**
 O apostador B tem 48 horas para aceitar ou recusar. Se não responder, o convite expira automaticamente e o apostador A é notificado. Se recusar, o apostador A recebe notificação de recusa. Se aceitar, o X1 entra em estado `active`.
@@ -157,20 +214,22 @@ O sistema de badges do X1 é progressivo e se integra ao sistema de badges já e
 
 | Badge | Critério | Raridade | Emoji |
 |-------|----------|----------|-------|
-| **Primeiro Sangue** | Vencer o primeiro X1 da carreira | Common | ⚔️ |
-| **Invicto** | Vencer 3 X1s consecutivos | Uncommon | 🛡️ |
+| **Duelista** | Vencer o primeiro X1 da carreira | Common | ⚔️ |
+| **Joga Duro** | Vencer 3 X1s consecutivos | Uncommon | 🛡️ |
 | **Carrasco** | Vencer 5 X1s contra o mesmo adversário | Rare | 💀 |
-| **Lendário do X1** | Vencer 10 X1s no total | Epic | 👑 |
-| **Zebra Duelista** | Vencer um X1 estando 10+ pontos atrás na metade do período | Legendary | 🦓 |
-| **Honra no Campo** | Completar 5 X1s sem nenhuma desistência | Common | 🤝 |
-| **Algoz do Líder** | Vencer um X1 contra o 1º colocado do ranking do bolão | Rare | 🎯 |
+| **Lenda do X1** | Vencer 10 X1s no total | Epic | 👑 |
+| **Derrubei Goliás** | Vencer um X1 estando 10+ pontos atrás na metade do período | Legendary | 🦓 |
+| **Não Foge da Briga** | Completar 5 X1s sem nenhuma desistência | Common | 🤝 |
+| **Era o Líder? Nem Vi!** | Vencer um X1 contra o 1º colocado do ranking do bolão | Rare | 🎯 |
 
 ### 3.2 Destaque no Ranking do Bolão
 
-O ranking do bolão exibe, ao lado do nome de cada apostador, um indicador visual do histórico de X1s no bolão atual:
+O ranking do bolão exibe, ao lado do nome de cada apostador, os seguintes indicadores visuais:
 
-- **Ícone de espada dourada** ao lado do nome: apostador com mais vitórias em X1 no bolão
-- **Streak ativo**: se o apostador está em sequência de vitórias no X1, exibe "🔥 3x" ao lado do nome
+- **Ícone de espada dourada** ⚔️ ao lado do nome: apostador com mais vitórias em X1 no bolão atual
+- **Ícone de duelo ativo** 🔴 ao lado do nome: apostador com X1 em andamento no momento
+
+> **Removido:** streak ativo de vitórias ("🔥 3x") — descartado na revisão.
 
 ### 3.3 Card de Compartilhamento do X1
 
@@ -181,6 +240,7 @@ Ao concluir um X1, o vencedor pode gerar e compartilhar um card visual (imagem P
 - Badge conquistado
 - Frase gerada por IA com tom irreverente (ex: *"Gerva destruiu o Zé no X1! 47 a 31. Sem apelação."*)
 - Logo do Plakr e link para o bolão
+- **Marca d'água do Plakr sempre presente**, independente do plano do usuário
 
 Este card segue o mesmo padrão visual da retrospectiva do bolão.
 
@@ -300,49 +360,135 @@ O Super Admin terá acesso a um painel de monitoramento de X1s com:
 └─────────────────────────────────────────────────┘
 ```
 
-### 5.4 Tela: Criação do Desafio (`/pools/:slug/x1/new`)
+### 5.4 Fluxo de Criação do Desafio — Bottom Sheet no Ranking
 
-**Estrutura visual:**
+**Ponto de entrada:** botão **⚔️ Desafiar** no card de cada participante no ranking do bolão. O botão não aparece no card do próprio usuário.
+
+**Passo 1 — Seleção do desafio (bottom sheet):**
+
+Ao tocar em ⚔️ Desafiar, um bottom sheet sobe com a lista de opções disponíveis. As opções variam conforme o formato do campeonato:
 
 ```
-┌─────────────────────────────────────────────────┐
-│  ← Voltar                                        │
-│  ⚔️  Quem você vai desafiar?                    │
-├─────────────────────────────────────────────────┤
-│  [🔍 Buscar participante...]                     │
+┌──────────────────────────────────────────────────┐
+│  Desafiar o Zé — o que você aposta?              │
+├──────────────────────────────────────────────────┤
 │                                                  │
-│  Sugestões (apostadores próximos no ranking):    │
-│  ┌──────────────────────────────────────────┐   │
-│  │ 🥇 Zé Silva  · 312 pts · 2º lugar  [X1] │   │
-│  │ 🥈 Ana Lima  · 298 pts · 3º lugar  [X1] │   │
-│  │ 🥉 João Melo · 287 pts · 4º lugar  [X1] │   │
-│  └──────────────────────────────────────────┘   │
-├─────────────────────────────────────────────────┤
-│  Escopo do desafio:                              │
-│  ○ Próxima rodada (6 jogos)                      │
-│  ● Próximos 10 jogos                             │
-│  ○ Próximos 20 jogos                             │
-│  ○ Até o fim do bolão (34 jogos restantes)       │
-├─────────────────────────────────────────────────┤
-│  [Enviar desafio para Zé Silva ⚔️]              │
-└─────────────────────────────────────────────────┘
+│  ○  Disputa de palpites — quem pontua mais?      │
+│                                                  │
+│  ○  Quem vai ser o campeão?                      │
+│  ○  Quem vai ser o vice-campeão?                 │
+│  ○  Quem passa do Grupo G?          (dinâmico)   │
+│  ○  Quem vai para a semifinal?      (dinâmico)   │
+│  ○  Quem cai nas quartas?           (dinâmico)   │
+│  ○  Quem vence o próximo jogo?                   │
+│                                                  │
+└──────────────────────────────────────────────────┘
 ```
 
-### 5.5 Atualizações no Perfil Público
+> Opções dinâmicas aparecem apenas quando o campeonato tem fase de grupos ou chaveamento. A opção "Disputa de palpites" está sempre disponível.
+
+**Passo 2a — Se escolheu "Disputa de palpites — quem pontua mais?":**
+
+```
+┌──────────────────────────────────────────────────┐
+│  Por quantos jogos você aposta?                  │
+│                                                  │
+│  ○  Próxima rodada  (6 jogos)   [só em league]   │
+│  ○  Próxima fase    (8 jogos)   [só em copa]     │
+│  ○  Próximos 5 jogos                             │
+│  ●  Próximos 10 jogos                            │
+│  ○  Próximos 20 jogos                            │
+│                                                  │
+│  [Enviar desafio ⚔️]                            │
+└──────────────────────────────────────────────────┘
+```
+
+**Passo 2b — Se escolheu qualquer previsão de campeonato:**
+
+```
+┌──────────────────────────────────────────────────┐
+│  Na sua opinião, quem vai ser o campeão?         │
+│                                                  │
+│  🇧🇷 Brasil                                      │
+│  🇦🇷 Argentina                                   │
+│  🇫🇷 França                                      │
+│  ... (lista de times do campeonato)              │
+│                                                  │
+│  [Enviar desafio ⚔️]                            │
+└──────────────────────────────────────────────────┘
+```
+
+**Passo 3 — Tela do desafiado ao aceitar:**
+
+O desafiado vê a escolha do desafiante e deve escolher uma opção **diferente**. Para previsões com múltiplos times (classificados de grupo, classificados para fase), o desafiado não pode repetir nenhum dos times escolhidos pelo desafiante.
+
+```
+┌──────────────────────────────────────────────────┐
+│  Gerva apostou: 🇧🇷 Brasil                       │
+│  Qual é o seu palpite? (não pode ser Brasil)     │
+│                                                  │
+│  ○  Argentina   ○  França   ○  Alemanha...       │
+│                                                  │
+│  [Aceitar desafio]  [Recusar]                    │
+└──────────────────────────────────────────────────┘
+```
+
+> **Caso especial — Classificados de grupo:** como o grupo tem exatamente 4 times e passam 2, as escolhas são automaticamente opostas. O sistema exibe: *"Gerva apostou em Brasil e Suíça. Você aposta nos outros dois: Sérvia e Camarões. Aceita?"*
+
+> **Validação de disponibilidade:** para previsões do tipo "Classificados para fase X", o sistema verifica antes de permitir o desafio se há times suficientes disponíveis para o desafiado escolher. Se não houver, o desafio não é permitido e o desafiante é informado.
+
+### 5.5 Rivalidade Contínua
+
+A Rivalidade Contínua é uma camada de memória que o sistema mantém sobre o histórico de todos os desafios entre dois apostadores no mesmo bolão — independente do tipo (Duelo de Palpites ou Previsão de Campeonato). Ela não é um desafio em si; é um **placar acumulado** que alimenta a narrativa de longo prazo entre dois apostadores.
+
+**Pontos de presença no produto:**
+
+**1. Hub do X1 no bolão — aba "Rivalidades"**
+
+Lista os pares de apostadores com mais histórico de X1s no bolão, com o placar de cada rivalidade:
+
+```
+┌──────────────────────────────────────────────────┐
+│  ⚔️  Rivalidades do Bolão                         │
+├──────────────────────────────────────────────────┤
+│  Gerva  2 × 1  Zé   (1 empate)   5 desafios     │
+│  Ana   3 × 3  João (0 empate)   6 desafios     │
+│  Pedro 1 × 0  Luís (1 empate)   2 desafios     │
+└──────────────────────────────────────────────────┘
+```
+
+**2. Card de rivalidade no ranking**
+
+Ao tocar no botão ⚔️ Desafiar no card de um participante com quem o usuário já tem histórico, o bottom sheet exibe o placar da rivalidade como contexto antes da lista de opções:
+
+```
+┌──────────────────────────────────────────────────┐
+│  Desafiar o Zé                                    │
+│  Sua série: Gerva 2 × 1 Zé  (1 empate)          │
+├──────────────────────────────────────────────────┤
+│  o que você aposta?                               │
+│  ○  Disputa de palpites — quem pontua mais?      │
+│  ○  Quem vai ser o campeão?                      │
+│  ...                                              │
+└──────────────────────────────────────────────────┘
+```
+
+**Implementação técnica:** não requer mudança de schema. É uma query de agregação sobre `x1_challenges` agrupando por par de usuários dentro do mesmo bolão. Nova procedure: `x1.getRivalry`.
+
+### 5.6 Atualizações no Perfil Público
 
 A seção "Histórico X1" é adicionada ao perfil público do usuário, exibida apenas quando o visualizador e o dono do perfil compartilham pelo menos um bolão. Ela mostra:
 
-- Placar geral de X1s entre os dois (ex: "Você: 3 vitórias | Ele: 2 vitórias")
+- Placar de rivalidade entre os dois (ex: "Você 3 × 2 Zé · 1 empate")
 - Badges de X1 conquistados
-- Botão "Vem pro X1" para desafiar diretamente do perfil
 
-### 5.6 Atualizações no Ranking do Bolão
+### 5.7 Atualizações no Ranking do Bolão
 
 Cada linha do ranking passa a exibir:
 
-- Ícone `⚔️` ao lado do nome se o apostador tem X1 ativo no bolão
-- Streak de vitórias em X1 (ex: `🔥 3x`) se aplicável
-- Ao clicar no nome, o botão "Vem pro X1" aparece no card de perfil rápido
+- Ícone ⚔️ (espada dourada) ao lado do nome do apostador com mais vitórias em X1 no bolão
+- Ícone 🔴 (duelo ativo) ao lado do nome enquanto há X1 em andamento
+- Botão ⚔️ Desafiar no card de cada participante (exceto o próprio usuário)
 
 ### 5.7 Notificações — Novos Tipos
 
@@ -372,8 +518,12 @@ Cada linha do ranking passa a exibir:
 | `challengerId` | int FK → users | Quem enviou o desafio |
 | `challengedId` | int FK → users | Quem recebeu o desafio |
 | `status` | enum | `pending`, `active`, `concluded`, `expired`, `cancelled` |
-| `scopeType` | enum | `next_round`, `next_n_games`, `until_end` |
-| `scopeValue` | int | N de jogos (quando scopeType = `next_n_games`) |
+| `challengeType` | enum | `score_duel`, `prediction` |
+| `predictionType` | enum | `champion`, `runner_up`, `group_qualified`, `phase_qualified`, `eliminated_in_phase`, `next_game_winner` (null para score_duel) |
+| `challengerAnswer` | json | Resposta do desafiante (times ou resultado escolhido) |
+| `challengedAnswer` | json | Resposta do desafiado (preenchida ao aceitar) |
+| `scopeType` | enum | `next_round`, `next_phase`, `next_n_games` (apenas para score_duel) |
+| `scopeValue` | int | N de jogos (quando scopeType = `next_n_games`, null para prediction) |
 | `gameIds` | json | Array de IDs dos jogos do período |
 | `challengerPoints` | int | Pontos do desafiador ao final |
 | `challengedPoints` | int | Pontos do desafiado ao final |
@@ -408,6 +558,7 @@ Cada linha do ranking passa a exibir:
 | `x1.getMyStats` | protectedProcedure | Estatísticas do usuário autenticado |
 | `x1.getUserStats` | protectedProcedure | Estatísticas de outro usuário (perfil público) |
 | `x1.getAdminStats` | adminProcedure | Painel admin de monitoramento |
+| `x1.getRivalry` | protectedProcedure | Placar de rivalidade entre dois apostadores no bolão |
 
 ### 6.3 Jobs em Background
 
@@ -416,6 +567,8 @@ Cada linha do ranking passa a exibir:
 **Job: `x1-score-update`** — acionado pelo job de scoring existente após apurar cada jogo. Para cada jogo apurado, verifica se há X1s ativos que incluem aquele jogo e atualiza `x1_game_scores` e os totais em `x1_challenges`. Se for o último jogo do período, conclui o X1 e dispara notificações de resultado.
 
 **Job: `x1-badge-award`** — acionado após conclusão de cada X1. Verifica critérios de badges e atribui os que foram conquistados, integrando com o sistema de badges existente.
+
+**Job: `x1-prediction-resolver`** — acionado após cada jogo ser marcado como `finished`. Para cada jogo apurado, verifica se há previsões ativas que podem ser resolvidas com base nos dados de placar e fase. Resolve automaticamente sem intervenção humana. Regra: acerto exige 100% — sem acerto parcial.
 
 ### 6.4 Segurança e Validações
 
@@ -484,14 +637,15 @@ O limite de X1s simultâneos é o principal gatilho de upgrade relacionado à fe
 
 ### 8.2 Features Exclusivas por Plano
 
-| Feature X1 | Gratuito | Pro | Ilimitado |
-|------------|----------|-----|-----------|
+| Feature X1 | Free | Pro | Unlimited |
+|------------|------|-----|-----------|
 | Criar X1 | ✅ (1 ativo) | ✅ (5 ativos) | ✅ (ilimitado) |
 | Aceitar X1 | ✅ | ✅ | ✅ |
 | Histórico de X1s | Últimos 3 | Ilimitado | Ilimitado |
-| Card de compartilhamento | ✅ (com marca d'água) | ✅ (sem marca d'água) | ✅ (sem marca d'água) |
-| Estatísticas avançadas | Básico | Completo | Completo |
-| X1 "Até o fim do bolão" | ❌ | ✅ | ✅ |
+| Card de compartilhamento | ✅ (com marca d'água) | ✅ (com marca d'água) | ✅ (com marca d'água) |
+
+> **Removido:** diferença de card sem marca d'água por plano — card sempre exibido com marca d'água em todos os planos.
+> **Removido:** estatísticas avançadas — não há distinção de nível de estatísticas entre planos.
 
 ### 8.3 Impacto no MRR (Estimativa)
 

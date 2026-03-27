@@ -48,11 +48,13 @@ import {
   Sparkles,
   Trophy,
   Users,
+  Swords,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
+import X1ChallengeModal from "@/components/X1ChallengeModal";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { AdBanner } from "@/components/AdBanner";
 import {
@@ -244,6 +246,8 @@ export default function PoolPage() {
 
   const [showAllGames, setShowAllGames] = useState(false);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(() => new Set([activePhaseKey ?? ""]));
+  // Estado do modal X1
+  const [x1Modal, setX1Modal] = useState<{ open: boolean; opponentId: number; opponentName: string } | null>(null);
 
   const togglePhase = (key: string) => {
     setExpandedPhases((prev) => {
@@ -887,6 +891,16 @@ export default function PoolPage() {
                                   </p>
                                 )}
                               </div>
+                              {/* Botão X1 — só aparece para outros participantes, não para si mesmo */}
+                              {!isMe && user && (
+                                <button
+                                  onClick={() => setX1Modal({ open: true, opponentId: rankUser.id, opponentName: rankUser.name ?? "" })}
+                                  className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center border border-border/30 bg-card/40 hover:border-primary/40 hover:bg-primary/10 transition-all group"
+                                  title={`Desafiar ${rankUser.name} no X1`}
+                                >
+                                  <Swords className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                                </button>
+                              )}
                             </div>
                             {/* Separador visual após top-3 */}
                             {showSeparator && (
@@ -1001,6 +1015,20 @@ export default function PoolPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal X1 — Vem pro X1 */}
+      {x1Modal && data?.pool.id && (
+        <X1ChallengeModal
+          open={x1Modal.open}
+          onClose={() => setX1Modal(null)}
+          poolId={data.pool.id}
+          opponentId={x1Modal.opponentId}
+          opponentName={x1Modal.opponentName}
+          onSuccess={(challengeId) => {
+            navigate(`/x1/${challengeId}`);
+          }}
+        />
+      )}
     </div>
   );
 }

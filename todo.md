@@ -1693,3 +1693,61 @@
 - [ ] Instalar @dnd-kit/core e @dnd-kit/sortable
 - [ ] Implementar drag-and-drop no AdminLandingPage com handle de arraste
 - [ ] Persistir nova ordem no banco ao soltar
+
+## Feature: Vem pro X1 (spec v1.6 aprovada)
+
+- [ ] Schema: tabela x1_challenges (challengeType, predictionType, challengerAnswer, challengedAnswer, scopeType, scopeValue)
+- [ ] Schema: tabela x1_game_scores
+- [ ] Migration SQL aplicada
+- [ ] Backend: procedure x1.create
+- [ ] Backend: procedure x1.accept (validação: resposta diferente do desafiante)
+- [ ] Backend: procedure x1.decline
+- [ ] Backend: procedure x1.cancel
+- [ ] Backend: procedure x1.getByPool
+- [ ] Backend: procedure x1.getById
+- [ ] Backend: procedure x1.getRivalry
+- [ ] Backend: procedure x1.getMyStats
+- [ ] Job: x1-expiry-check (cron horário)
+- [ ] Job: x1-score-update (pós apuração de jogo)
+- [ ] Job: x1-badge-award (pós conclusão de X1)
+- [ ] Job: x1-prediction-resolver (pós jogo finished, acerto 100%)
+- [ ] Frontend: botão ⚔️ Desafiar no card do ranking
+- [ ] Frontend: bottom sheet de opções de desafio (lista única sem separação de tipo)
+- [ ] Frontend: fluxo passo 2a — seleção de escopo (score_duel)
+- [ ] Frontend: fluxo passo 2b — seleção de resposta (prediction)
+- [ ] Frontend: tela de aceitação do desafiado (ver escolha do desafiante + fazer a sua)
+- [ ] Frontend: hub do X1 no bolão (meus desafios + aba rivalidades)
+- [ ] Frontend: detalhe do X1 ativo com placar em tempo real
+- [ ] Frontend: ícone ⚔️ (mais vitórias) e 🔴 (duelo ativo) no ranking
+- [ ] Frontend: card de rivalidade no bottom sheet quando há histórico
+- [ ] Badges: Duelista, Joga Duro, Carrasco, Lenda do X1, Derrubei Golias, Não Foge da Briga, Era o Líder? Nem Vi!
+- [ ] Testes unitários do X1
+
+## Feature: Vem pro X1 (spec v1.6 aprovada)
+
+- [ ] Schema: tabela x1_challenges (challengeType, predictionType, challengerAnswer, challengedAnswer, scopeType, scopeValue)
+- [ ] Schema: tabela x1_game_scores
+- [ ] Migration SQL aplicada
+- [ ] Backend: procedure x1.create
+- [ ] Backend: procedure x1.accept (validação: resposta diferente do desafiante)
+- [ ] Backend: procedure x1.decline
+- [ ] Backend: procedure x1.cancel
+- [ ] Backend: procedure x1.getByPool
+- [ ] Backend: procedure x1.getById
+- [ ] Backend: procedure x1.getRivalry
+- [ ] Backend: procedure x1.getMyStats
+- [ ] Job: x1-expiry-check (cron horário)
+- [ ] Job: x1-score-update (pós apuração de jogo)
+- [ ] Job: x1-badge-award (pós conclusão de X1)
+- [ ] Job: x1-prediction-resolver (pós jogo finished, acerto 100%)
+- [ ] Frontend: botão ⚔️ Desafiar no card do ranking
+- [ ] Frontend: bottom sheet de opções de desafio (lista única sem separação de tipo)
+- [ ] Frontend: fluxo passo 2a — seleção de escopo (score_duel)
+- [ ] Frontend: fluxo passo 2b — seleção de resposta (prediction)
+- [ ] Frontend: tela de aceitação do desafiado (ver escolha do desafiante + fazer a sua)
+- [ ] Frontend: hub do X1 no bolão (meus desafios + aba rivalidades)
+- [ ] Frontend: detalhe do X1 ativo com placar em tempo real
+- [ ] Frontend: ícone ⚔️ (mais vitórias) e 🔴 (duelo ativo) no ranking
+- [ ] Frontend: card de rivalidade no bottom sheet quando há histórico
+- [ ] Badges: Duelista, Joga Duro, Carrasco, Lenda do X1, Derrubei Golias, Não Foge da Briga, Era o Líder? Nem Vi!
+- [ ] Testes unitários do X1

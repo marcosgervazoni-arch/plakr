@@ -386,6 +386,9 @@ export const notifications = mysqlTable("notifications", {
     "plan_expiring",
     "pool_concluded",
     "badge_unlocked",
+    "x1_challenge_received",
+    "x1_challenge_accepted",
+    "x1_challenge_concluded",
   ]).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
@@ -769,3 +772,52 @@ export const landingPageConfig = mysqlTable("landing_page_config", {
 });
 export type LandingPageConfig = typeof landingPageConfig.$inferSelect;
 export type InsertLandingPageConfig = typeof landingPageConfig.$inferInsert;
+
+// ─── X1 — DUELOS E PREVISÕES ──────────────────────────────────────────────────
+
+export const x1Challenges = mysqlTable("x1_challenges", {
+  id: int("id").autoincrement().primaryKey(),
+  poolId: int("poolId").notNull().references(() => pools.id),
+  challengerId: int("challengerId").notNull().references(() => users.id),
+  challengedId: int("challengedId").notNull().references(() => users.id),
+  status: mysqlEnum("status", ["pending", "active", "concluded", "expired", "cancelled"]).default("pending").notNull(),
+  // Tipo de desafio
+  challengeType: mysqlEnum("challengeType", ["score_duel", "prediction"]).notNull(),
+  // Campos específicos de prediction
+  predictionType: mysqlEnum("predictionType", [
+    "champion",
+    "runner_up",
+    "group_qualified",
+    "phase_qualified",
+    "eliminated_in_phase",
+    "next_game_winner",
+  ]),
+  challengerAnswer: json("challengerAnswer").$type<string | string[]>(), // time(s) ou resultado escolhido pelo desafiante
+  challengedAnswer: json("challengedAnswer").$type<string | string[]>(),  // time(s) ou resultado escolhido pelo desafiado (preenchido ao aceitar)
+  predictionContext: json("predictionContext").$type<{ phase?: string; groupName?: string; gameId?: number }>(), // contexto da previsão (fase, grupo, jogo)
+  // Campos específicos de score_duel
+  scopeType: mysqlEnum("scopeType", ["next_round", "next_phase", "next_n_games"]),
+  scopeValue: int("scopeValue"), // N de jogos quando scopeType = next_n_games
+  gameIds: json("gameIds").$type<number[]>(), // IDs dos jogos do período (score_duel)
+  challengerPoints: int("challengerPoints").default(0).notNull(),
+  challengedPoints: int("challengedPoints").default(0).notNull(),
+  winnerId: int("winnerId").references(() => users.id), // null = empate ou não concluído
+  // Controle de tempo
+  expiresAt: timestamp("expiresAt"), // 48h após criação para o desafiado aceitar
+  concludedAt: timestamp("concludedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type X1Challenge = typeof x1Challenges.$inferSelect;
+export type InsertX1Challenge = typeof x1Challenges.$inferInsert;
+
+export const x1GameScores = mysqlTable("x1_game_scores", {
+  id: int("id").autoincrement().primaryKey(),
+  challengeId: int("challengeId").notNull().references(() => x1Challenges.id),
+  gameId: int("gameId").notNull().references(() => games.id),
+  challengerPoints: int("challengerPoints").default(0).notNull(),
+  challengedPoints: int("challengedPoints").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type X1GameScore = typeof x1GameScores.$inferSelect;
+export type InsertX1GameScore = typeof x1GameScores.$inferInsert;
