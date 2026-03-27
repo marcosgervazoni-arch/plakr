@@ -1648,3 +1648,9 @@
 - [x] Adicionar rota /admin/pricing e item "Preços" no grupo Financeiro do AdminLayout
 - [x] Remover campos de preço do AdminSettings (evitar duplicidade)
 - [x] Registrar no backlog ideias de UX não implementadas imediatamente
+
+## UpgradePage — Preços dinâmicos do banco
+
+- [x] Buscar preços via trpc.platform.getPublicPricing no UpgradePage
+- [x] Remover valores fixos de preço do código do UpgradePage
+- [x] Exibir skeleton/loading enquanto os preços carregam

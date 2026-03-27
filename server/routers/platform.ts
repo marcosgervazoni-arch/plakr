@@ -9,7 +9,7 @@ import {
   getPlatformSettings,
   updatePlatformSettings,
 } from "../db";
-import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
 export const platformRouter = router({
@@ -34,6 +34,17 @@ export const platformRouter = router({
       proPlans: Number(proCount?.c ?? 0),
       totalBets: Number(betsCount?.c ?? 0),
       totalTournaments: Number(tourCount?.c ?? 0),
+    };
+  }),
+
+  // Retorna preços públicos para a tela de upgrade (sem auth necessária)
+  getPublicPricing: publicProcedure.query(async () => {
+    const settings = await getPlatformSettings();
+    return {
+      proMonthlyPrice: settings?.stripeMonthlyPrice ?? 3990,
+      proAnnualPrice: (settings as any)?.stripeProAnnualPrice ?? 39900,
+      unlimitedMonthlyPrice: (settings as any)?.stripeUnlimitedMonthlyPrice ?? 8990,
+      unlimitedAnnualPrice: (settings as any)?.stripeUnlimitedAnnualPrice ?? 89900,
     };
   }),
 

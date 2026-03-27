@@ -1,11 +1,13 @@
 /**
  * Upgrade — /upgrade
- * Página de pricing: Free | Pro (R$ 39,90/mês) | Ilimitado (R$ 89,90/mês)
+ * Página de pricing: Free | Pro | Ilimitado
+ * Preços carregados dinamicamente do banco via trpc.platform.getSettings
  * Modelo: Pro por Conta — o plano é do usuário, não do bolão.
  */
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { getLoginUrl } from "@/const";
@@ -28,6 +30,18 @@ import {
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatPrice(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+  });
+}
+
+// ─── Features (estáticas — apenas textos de marketing) ────────────────────────
 
 const FREE_FEATURES = [
   { label: "Até 2 bolões simultâneos", included: true },
@@ -84,13 +98,27 @@ const FAQ = [
   },
 ];
 
+// ─── Skeleton de preço ────────────────────────────────────────────────────────
+
+function PriceSkeleton() {
+  return <Skeleton className="h-9 w-28 mt-1" />;
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
+
 export default function UpgradePage() {
   const analytics = useAnalytics();
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const { data: myPlanData } = trpc.stripe.getMyPlan.useQuery(undefined, { enabled: isAuthenticated });
+  // Preços dinâmicos do banco (publicProcedure — sem auth necessária)
+  const { data: pricing, isLoading: loadingPrices } =
+    trpc.platform.getPublicPricing.useQuery();
+
+  const { data: myPlanData } = trpc.stripe.getMyPlan.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
 
   const checkoutMutation = trpc.stripe.createCheckout.useMutation({
     onSuccess: ({ checkoutUrl }) => {
@@ -113,6 +141,12 @@ export default function UpgradePage() {
 
   const currentTier = myPlanData?.tier ?? "free";
 
+  // Preços vindos do banco, com fallbacks seguros
+  const proMonthlyPrice = pricing?.proMonthlyPrice ?? 3990;
+  const proAnnualPrice = pricing?.proAnnualPrice ?? 39900;
+  const unlimitedMonthlyPrice = pricing?.unlimitedMonthlyPrice ?? 8990;
+  const unlimitedAnnualPrice = pricing?.unlimitedAnnualPrice ?? 89900;
+
   const handleCheckout = (tier: "pro" | "unlimited") => {
     analytics.trackUpgradeClicked({ source: "upgrade_page", pool_slug: tier });
     checkoutMutation.mutate({ tier, origin: window.location.origin });
@@ -127,11 +161,16 @@ export default function UpgradePage() {
           <Badge className="bg-primary/10 text-primary border-primary/20 text-xs px-3 py-1">
             <Crown className="w-3 h-3 mr-1.5" /> Escolha seu plano
           </Badge>
-          <h1 className="font-bold text-3xl lg:text-4xl" style={{ fontFamily: "'Syne', sans-serif" }}>
+          <h1
+            className="font-bold text-3xl lg:text-4xl"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
             Leve seus bolões ao próximo nível
           </h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Desbloqueie recursos avançados para organizar bolões profissionais. O plano é da sua conta — todos os seus bolões ganham os benefícios automaticamente.
+            Desbloqueie recursos avançados para organizar bolões profissionais.
+            O plano é da sua conta — todos os seus bolões ganham os benefícios
+            automaticamente.
           </p>
         </div>
 
@@ -141,12 +180,24 @@ export default function UpgradePage() {
           {/* Free */}
           <div className="bg-card border border-border/30 rounded-2xl p-6 space-y-5">
             <div>
-              <p className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>Gratuito</p>
+              <p
+                className="font-bold text-lg"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
+                Gratuito
+              </p>
               <div className="flex items-end gap-1 mt-1">
-                <span className="font-bold text-3xl" style={{ fontFamily: "'JetBrains Mono', monospace" }}>R$ 0</span>
+                <span
+                  className="font-bold text-3xl"
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                >
+                  R$ 0
+                </span>
                 <span className="text-muted-foreground text-sm mb-1">/mês</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Para começar sem compromisso.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Para começar sem compromisso.
+              </p>
             </div>
             <div className="space-y-2.5">
               {FREE_FEATURES.map((f) => (
@@ -156,17 +207,27 @@ export default function UpgradePage() {
                   ) : (
                     <XCircle className="w-4 h-4 text-muted-foreground/40 shrink-0" />
                   )}
-                  <span className={`text-sm ${f.included ? "" : "text-muted-foreground/60"}`}>{f.label}</span>
+                  <span
+                    className={`text-sm ${f.included ? "" : "text-muted-foreground/60"}`}
+                  >
+                    {f.label}
+                  </span>
                 </div>
               ))}
             </div>
             {isAuthenticated ? (
-              <Button variant="outline" className="w-full" disabled={currentTier === "free"}>
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={currentTier === "free"}
+              >
                 {currentTier === "free" ? "Plano atual" : "Plano básico"}
               </Button>
             ) : (
               <a href={getLoginUrl("/upgrade")}>
-                <Button variant="outline" className="w-full">Começar grátis</Button>
+                <Button variant="outline" className="w-full">
+                  Começar grátis
+                </Button>
               </a>
             )}
           </div>
@@ -179,12 +240,35 @@ export default function UpgradePage() {
               </Badge>
             </div>
             <div>
-              <p className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>Pro</p>
-              <div className="flex items-end gap-1 mt-1">
-                <span className="font-bold text-3xl text-primary" style={{ fontFamily: "'JetBrains Mono', monospace" }}>R$ 39,90</span>
-                <span className="text-muted-foreground text-sm mb-1">/mês</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Por conta. Cancele quando quiser.</p>
+              <p
+                className="font-bold text-lg"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
+                Pro
+              </p>
+              {loadingPrices ? (
+                <PriceSkeleton />
+              ) : (
+                <div className="flex items-end gap-1 mt-1">
+                  <span
+                    className="font-bold text-3xl text-primary"
+                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                  >
+                    {formatPrice(proMonthlyPrice)}
+                  </span>
+                  <span className="text-muted-foreground text-sm mb-1">
+                    /mês
+                  </span>
+                </div>
+              )}
+              {!loadingPrices && proAnnualPrice > 0 && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  ou {formatPrice(proAnnualPrice)}/ano
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Por conta. Cancele quando quiser.
+              </p>
             </div>
             <div className="space-y-2.5">
               {PRO_FEATURES.map(({ icon: Icon, label }) => (
@@ -209,10 +293,14 @@ export default function UpgradePage() {
                 <Button
                   variant="outline"
                   className="w-full text-xs"
-                  onClick={() => portalMutation.mutate({ origin: window.location.origin })}
+                  onClick={() =>
+                    portalMutation.mutate({ origin: window.location.origin })
+                  }
                   disabled={portalMutation.isPending}
                 >
-                  {portalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                  {portalMutation.isPending ? (
+                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                  ) : null}
                   Gerenciar assinatura
                 </Button>
               </div>
@@ -244,12 +332,35 @@ export default function UpgradePage() {
               </Badge>
             </div>
             <div>
-              <p className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>Ilimitado</p>
-              <div className="flex items-end gap-1 mt-1">
-                <span className="font-bold text-3xl text-yellow-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>R$ 89,90</span>
-                <span className="text-muted-foreground text-sm mb-1">/mês</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Sem limites. Para quem leva a sério.</p>
+              <p
+                className="font-bold text-lg"
+                style={{ fontFamily: "'Syne', sans-serif" }}
+              >
+                Ilimitado
+              </p>
+              {loadingPrices ? (
+                <PriceSkeleton />
+              ) : (
+                <div className="flex items-end gap-1 mt-1">
+                  <span
+                    className="font-bold text-3xl text-yellow-400"
+                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                  >
+                    {formatPrice(unlimitedMonthlyPrice)}
+                  </span>
+                  <span className="text-muted-foreground text-sm mb-1">
+                    /mês
+                  </span>
+                </div>
+              )}
+              {!loadingPrices && unlimitedAnnualPrice > 0 && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  ou {formatPrice(unlimitedAnnualPrice)}/ano
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Sem limites. Para quem leva a sério.
+              </p>
             </div>
             <div className="space-y-2.5">
               {UNLIMITED_FEATURES.map(({ icon: Icon, label }) => (
@@ -268,16 +379,23 @@ export default function UpgradePage() {
               </a>
             ) : currentTier === "unlimited" ? (
               <div className="space-y-2">
-                <Button className="w-full bg-yellow-500 hover:bg-yellow-400 text-black" disabled>
+                <Button
+                  className="w-full bg-yellow-500 hover:bg-yellow-400 text-black"
+                  disabled
+                >
                   <Sparkles className="w-4 h-4 mr-2" /> Plano atual
                 </Button>
                 <Button
                   variant="outline"
                   className="w-full text-xs"
-                  onClick={() => portalMutation.mutate({ origin: window.location.origin })}
+                  onClick={() =>
+                    portalMutation.mutate({ origin: window.location.origin })
+                  }
                   disabled={portalMutation.isPending}
                 >
-                  {portalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                  {portalMutation.isPending ? (
+                    <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                  ) : null}
                   Gerenciar assinatura
                 </Button>
               </div>
@@ -301,7 +419,10 @@ export default function UpgradePage() {
         {/* ── Feature comparison table ── */}
         <div className="bg-card border border-border/30 rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-border/30">
-            <h2 className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>
+            <h2
+              className="font-bold text-lg"
+              style={{ fontFamily: "'Syne', sans-serif" }}
+            >
               Comparação detalhada
             </h2>
           </div>
@@ -309,10 +430,18 @@ export default function UpgradePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/30">
-                  <th className="text-left px-6 py-3 font-medium text-muted-foreground">Recurso</th>
-                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">Gratuito</th>
-                  <th className="text-center px-4 py-3 font-medium text-primary">Pro</th>
-                  <th className="text-center px-4 py-3 font-medium text-yellow-400">Ilimitado</th>
+                  <th className="text-left px-6 py-3 font-medium text-muted-foreground">
+                    Recurso
+                  </th>
+                  <th className="text-center px-4 py-3 font-medium text-muted-foreground">
+                    Gratuito
+                  </th>
+                  <th className="text-center px-4 py-3 font-medium text-primary">
+                    Pro
+                  </th>
+                  <th className="text-center px-4 py-3 font-medium text-yellow-400">
+                    Ilimitado
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/20">
@@ -326,11 +455,20 @@ export default function UpgradePage() {
                   ["API de resultados automática", "—", "—", "Em breve"],
                   ["Suporte", "Comunidade", "Prioritário", "Prioritário"],
                 ].map(([feature, free, pro, unlimited]) => (
-                  <tr key={feature} className="hover:bg-muted/20 transition-colors">
+                  <tr
+                    key={feature}
+                    className="hover:bg-muted/20 transition-colors"
+                  >
                     <td className="px-6 py-3 text-sm">{feature}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground text-sm">{free}</td>
-                    <td className="px-4 py-3 text-center text-primary font-medium text-sm">{pro}</td>
-                    <td className="px-4 py-3 text-center text-yellow-400 font-medium text-sm">{unlimited}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground text-sm">
+                      {free}
+                    </td>
+                    <td className="px-4 py-3 text-center text-primary font-medium text-sm">
+                      {pro}
+                    </td>
+                    <td className="px-4 py-3 text-center text-yellow-400 font-medium text-sm">
+                      {unlimited}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -340,12 +478,18 @@ export default function UpgradePage() {
 
         {/* ── FAQ ── */}
         <div className="space-y-3">
-          <h2 className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>
+          <h2
+            className="font-bold text-lg"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
             Perguntas frequentes
           </h2>
           <div className="space-y-2">
             {FAQ.map((item, i) => (
-              <div key={i} className="bg-card border border-border/30 rounded-xl overflow-hidden">
+              <div
+                key={i}
+                className="bg-card border border-border/30 rounded-xl overflow-hidden"
+              >
                 <button
                   className="w-full flex items-center justify-between px-5 py-4 text-left gap-4"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -370,11 +514,16 @@ export default function UpgradePage() {
         {/* ── Bottom CTA ── */}
         <div className="bg-primary/5 border border-primary/20 rounded-2xl p-8 text-center space-y-4">
           <Crown className="w-10 h-10 text-primary mx-auto" />
-          <h3 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
+          <h3
+            className="font-bold text-xl"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
             Pronto para começar?
           </h3>
           <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            Use o cartão de teste <span className="font-mono font-bold">4242 4242 4242 4242</span> para experimentar o checkout sem custo real.
+            Use o cartão de teste{" "}
+            <span className="font-mono font-bold">4242 4242 4242 4242</span>{" "}
+            para experimentar o checkout sem custo real.
           </p>
           {!isAuthenticated ? (
             <a href={getLoginUrl("/upgrade")}>
@@ -383,8 +532,17 @@ export default function UpgradePage() {
               </Button>
             </a>
           ) : currentTier === "free" ? (
-            <Button size="lg" className="gap-2" onClick={() => handleCheckout("pro")} disabled={checkoutMutation.isPending}>
-              {checkoutMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Crown className="w-4 h-4" />}
+            <Button
+              size="lg"
+              className="gap-2"
+              onClick={() => handleCheckout("pro")}
+              disabled={checkoutMutation.isPending}
+            >
+              {checkoutMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Crown className="w-4 h-4" />
+              )}
               Assinar Pro agora
             </Button>
           ) : (
