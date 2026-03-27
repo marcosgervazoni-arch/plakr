@@ -248,18 +248,9 @@ export const x1Router = router({
           { type: "next_n_games" as const, label: "Próximos 20 jogos", value: 20 },
         ],
         predictionOptions: [
-          // ── Opções fixas (sempre disponíveis) ──────────────────────────────
+          // ── Campeão (sempre disponível) ────────────────────────────────────
           { type: "champion" as const, label: "Quem vai ser o campeão?" },
-          { type: "top_scorer" as const, label: "Quem vai ser o artilheiro?" },
-          { type: "zebra" as const, label: "Qual será a maior zebra?" },
-          {
-            type: "exact_score" as const,
-            label: nextGame[0]
-              ? `Placar exato: ${nextGame[0].teamAName} x ${nextGame[0].teamBName}`
-              : "Placar exato do próximo jogo",
-            ...(nextGame[0] ? { context: { gameId: nextGame[0].id } } : {}),
-          },
-          // ── Opções contextuais (grupos/fases — torneios cup/groups_knockout) ─
+          // ── Opções de grupos/fases (apenas cup / groups_knockout) ──────────
           ...(isGroupsKnockout
             ? [
                 { type: "runner_up" as const, label: "Quem vai ser o vice-campeão?" },
@@ -284,12 +275,12 @@ export const x1Router = router({
                   })),
               ]
             : []),
-          // ── Próximo jogo (vencedor) ──────────────────────────────────────
+          // ── Vencedor do próximo jogo (qualquer formato, se houver jogo) ────
           ...(nextGame[0]
             ? [
                 {
                   type: "next_game_winner" as const,
-                  label: `Quem vence ${nextGame[0].teamAName} x ${nextGame[0].teamBName}?`,
+                  label: `Quem vence ${nextGame[0].teamAName ?? "Time A"} x ${nextGame[0].teamBName ?? "Time B"}?`,
                   context: { gameId: nextGame[0].id },
                 },
               ]
@@ -313,9 +304,6 @@ export const x1Router = router({
           .enum([
             "champion",
             "runner_up",
-            "top_scorer",
-            "zebra",
-            "exact_score",
             "group_qualified",
             "phase_qualified",
             "eliminated_in_phase",
@@ -421,6 +409,26 @@ export const x1Router = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "challengerAnswer é obrigatório para prediction." });
       }
 
+      // Captura ranking atual dos dois jogadores no bolão (para badges "Derrubei Golias" e "Era o Líder?")
+      let challengerRankAtStart: number | null = null;
+      let opponentRankAtStart: number | null = null;
+      try {
+        const { poolMemberStats } = await getSchema();
+        const { asc: _asc } = await import("drizzle-orm");
+        const rankRows = await db
+          .select({ userId: poolMemberStats.userId, totalPoints: poolMemberStats.totalPoints })
+          .from(poolMemberStats)
+          .where(eq(poolMemberStats.poolId, poolId))
+          .orderBy(_asc(poolMemberStats.totalPoints));
+        // Ordena desc por pontos e atribui posição
+        const sorted = [...rankRows].sort((a, b) => (b.totalPoints ?? 0) - (a.totalPoints ?? 0));
+        const challengerPos = sorted.findIndex((r) => r.userId === ctx.user.id);
+        const opponentPos = sorted.findIndex((r) => r.userId === challengedId);
+        if (challengerPos !== -1) challengerRankAtStart = challengerPos + 1;
+        if (opponentPos !== -1) opponentRankAtStart = opponentPos + 1;
+      } catch (e) {
+        logger.warn({ err: e }, "[X1] Failed to capture rank at start");
+      }
       // Cria o desafio (expira em 48h)
       const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
       const result = await db.insert(x1Challenges).values({
@@ -436,6 +444,8 @@ export const x1Router = router({
         scopeValue: input.scopeValue ?? null,
         gameIds: gameIds.length ? gameIds : null,
         expiresAt,
+        challengerRankAtStart,
+        opponentRankAtStart,
       });
 
       const challengeId = Number((result as any).insertId);

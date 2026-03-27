@@ -1756,3 +1756,10 @@
 - [x] Corrigir getOptions para sempre incluir as 4 opções fixas (champion, top_scorer, zebra, exact_score)
 - [x] Adicionar top_scorer, zebra e exact_score ao enum predictionType no schema de create
 - [x] Atualizar X1ChallengeModal para exibir corretamente as opções fixas
+
+## Bug: X1 modal não segue spec v1.6 (correção)
+- [ ] Reverter enum predictionType: remover top_scorer, zebra, exact_score (não estão na spec)
+- [ ] Corrigir getOptions: predictionOptions deve seguir exatamente a tabela da seção 2.2
+- [ ] Corrigir X1ChallengeModal: lista única sem separação de tipo (score_duel + predictions misturadas)
+- [ ] Corrigir fluxo: passo 2a (escopo) para score_duel, passo 2b (escolha de time) para prediction
+- [ ] Aplicar migração SQL para reverter o enum

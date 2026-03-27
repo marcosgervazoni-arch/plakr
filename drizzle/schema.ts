@@ -787,9 +787,6 @@ export const x1Challenges = mysqlTable("x1_challenges", {
   predictionType: mysqlEnum("predictionType", [
     "champion",
     "runner_up",
-    "top_scorer",
-    "zebra",
-    "exact_score",
     "group_qualified",
     "phase_qualified",
     "eliminated_in_phase",
@@ -805,6 +802,9 @@ export const x1Challenges = mysqlTable("x1_challenges", {
   challengerPoints: int("challengerPoints").default(0).notNull(),
   challengedPoints: int("challengedPoints").default(0).notNull(),
   winnerId: int("winnerId").references(() => users.id), // null = empate ou não concluído
+  // Ranking no momento do desafio (para badges "Derrubei Golias" e "Era o Líder? Nem Vi!")
+  challengerRankAtStart: int("challengerRankAtStart"), // posição do desafiante no ranking do bolão ao criar o X1
+  opponentRankAtStart: int("opponentRankAtStart"),   // posição do desafiado no ranking do bolão ao criar o X1
   // Controle de tempo
   expiresAt: timestamp("expiresAt"), // 48h após criação para o desafiado aceitar
   concludedAt: timestamp("concludedAt"),

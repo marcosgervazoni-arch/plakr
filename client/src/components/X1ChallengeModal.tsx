@@ -1,12 +1,24 @@
 /**
  * X1ChallengeModal — Modal de criação de desafio "Vem pro X1"
  *
- * Fluxo:
- * 1. Carrega as opções disponíveis via getOptions
- * 2. Usuário escolhe o tipo de desafio (score_duel ou prediction)
- * 3. Para score_duel: escolhe o escopo (próxima rodada, próxima fase, próximos N jogos)
- * 4. Para prediction: escolhe o tipo de previsão e sua resposta
- * 5. Confirma e cria o desafio
+ * Fluxo conforme spec v1.6 — seção 5.4:
+ *
+ * Passo 1 — Lista única de opções (score_duel + predictions misturadas):
+ *   ○ Disputa de palpites — quem pontua mais?
+ *   ○ Quem vai ser o campeão?
+ *   ○ Quem vai ser o vice-campeão?       (só em cup/groups_knockout)
+ *   ○ Quem passa do Grupo G?             (dinâmico, só em cup/groups_knockout)
+ *   ○ Quem vai para a semifinal?         (dinâmico, só em cup/groups_knockout)
+ *   ○ Quem cai nas quartas?              (dinâmico, só em cup/groups_knockout)
+ *   ○ Quem vence o próximo jogo?         (se houver jogo agendado)
+ *
+ * Passo 2a — Se escolheu "Disputa de palpites":
+ *   Escolhe o escopo (próxima rodada, próxima fase, próximos N jogos)
+ *
+ * Passo 2b — Se escolheu qualquer previsão:
+ *   Escolhe sua resposta (time ou times da lista)
+ *
+ * Passo 3 — Confirmação e envio
  */
 
 import { useState } from "react";
@@ -20,8 +32,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Swords, Trophy, Target, ChevronRight, ChevronLeft, Check, Lock } from "lucide-react";
+import { Loader2, Swords, Target, ChevronRight, ChevronLeft, Check, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface X1ChallengeModalProps {
@@ -33,7 +44,13 @@ interface X1ChallengeModalProps {
   onSuccess?: (challengeId: number) => void;
 }
 
-type Step = "choose" | "scope" | "prediction_type" | "prediction_answer" | "confirm";
+type Step = "list" | "scope" | "answer" | "confirm";
+
+type PredictionOption = {
+  type: "champion" | "runner_up" | "group_qualified" | "phase_qualified" | "eliminated_in_phase" | "next_game_winner";
+  label: string;
+  context?: { phase?: string; groupName?: string; gameId?: number };
+};
 
 export default function X1ChallengeModal({
   open,
@@ -43,13 +60,13 @@ export default function X1ChallengeModal({
   opponentName,
   onSuccess,
 }: X1ChallengeModalProps) {
-  const [step, setStep] = useState<Step>("choose");
+  const [step, setStep] = useState<Step>("list");
   const [challengeType, setChallengeType] = useState<"score_duel" | "prediction" | null>(null);
+  // score_duel
   const [scopeType, setScopeType] = useState<"next_round" | "next_phase" | "next_n_games" | null>(null);
   const [scopeValue, setScopeValue] = useState<number | null>(null);
-  const [predictionType, setPredictionType] = useState<string | null>(null);
-  const [predictionContext, setPredictionContext] = useState<{ phase?: string; groupName?: string; gameId?: number } | null>(null);
-  const [challengerAnswer, setChallengerAnswer] = useState<string | string[] | null>(null);
+  // prediction
+  const [selectedPrediction, setSelectedPrediction] = useState<PredictionOption | null>(null);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
 
   const { data: options, isLoading: optionsLoading } = trpc.x1.getOptions.useQuery(
@@ -74,77 +91,79 @@ export default function X1ChallengeModal({
   });
 
   function handleClose() {
-    setStep("choose");
+    setStep("list");
     setChallengeType(null);
     setScopeType(null);
     setScopeValue(null);
-    setPredictionType(null);
-    setPredictionContext(null);
-    setChallengerAnswer(null);
+    setSelectedPrediction(null);
     setSelectedTeams([]);
     onClose();
   }
 
-  function handleSelectScoreDuel() {
+  /** Passo 1 — usuário clicou em "Disputa de palpites" */
+  function handlePickScoreDuel() {
     setChallengeType("score_duel");
     setStep("scope");
   }
 
-  function handleSelectPrediction() {
+  /** Passo 1 — usuário clicou em uma opção de previsão */
+  function handlePickPrediction(opt: PredictionOption) {
     setChallengeType("prediction");
-    setStep("prediction_type");
+    setSelectedPrediction(opt);
+    setSelectedTeams([]);
+    setStep("answer");
   }
 
-  function handleSelectScope(type: "next_round" | "next_phase" | "next_n_games", value?: number) {
+  /** Passo 2a — usuário escolheu o escopo do duelo de palpites */
+  function handlePickScope(type: "next_round" | "next_phase" | "next_n_games", value?: number) {
     setScopeType(type);
     setScopeValue(value ?? null);
     setStep("confirm");
   }
 
-  function handleSelectPredictionType(type: string, context?: { phase?: string; groupName?: string; gameId?: number }) {
-    setPredictionType(type);
-    setPredictionContext(context ?? null);
-    setStep("prediction_answer");
-  }
-
-  function handleSelectAnswer(answer: string | string[]) {
-    setChallengerAnswer(answer);
-    setStep("confirm");
-  }
-
-  function handleConfirm() {
-    if (!challengeType) return;
-    createChallenge.mutate({
-      poolId,
-      challengedId: opponentId,
-      challengeType,
-      scopeType: scopeType ?? undefined,
-      scopeValue: scopeValue ?? undefined,
-      predictionType: predictionType as any ?? undefined,
-      challengerAnswer: challengerAnswer ?? undefined,
-      predictionContext: predictionContext ?? undefined,
-    });
-  }
-
-  // Determina quantos times devem ser selecionados para o tipo de previsão
-  function getAnswerCount(type: string | null): number {
+  /** Quantos times o usuário precisa selecionar para este tipo de previsão */
+  function getRequiredCount(type: string | null): number {
     if (!type) return 1;
     if (type === "group_qualified") return 2;
     if (type === "phase_qualified" || type === "eliminated_in_phase") return 2;
     return 1;
   }
 
+  /** Passo 2b — toggle de time na lista de resposta */
   function toggleTeam(teamName: string) {
-    const maxCount = getAnswerCount(predictionType);
+    const required = getRequiredCount(selectedPrediction?.type ?? null);
     if (selectedTeams.includes(teamName)) {
       setSelectedTeams(selectedTeams.filter((t) => t !== teamName));
-    } else if (selectedTeams.length < maxCount) {
-      const newTeams = [...selectedTeams, teamName];
-      setSelectedTeams(newTeams);
-      if (newTeams.length === maxCount) {
-        handleSelectAnswer(maxCount === 1 ? newTeams[0] : newTeams);
+    } else if (selectedTeams.length < required) {
+      const next = [...selectedTeams, teamName];
+      setSelectedTeams(next);
+      // Avança automaticamente quando o número de seleções está completo
+      if (next.length === required) {
+        setStep("confirm");
       }
     }
+  }
+
+  /** Passo 3 — confirma e envia o desafio */
+  function handleConfirm() {
+    if (!challengeType) return;
+    const answer =
+      challengeType === "prediction"
+        ? selectedTeams.length === 1
+          ? selectedTeams[0]
+          : selectedTeams
+        : undefined;
+
+    createChallenge.mutate({
+      poolId,
+      challengedId: opponentId,
+      challengeType,
+      scopeType: scopeType ?? undefined,
+      scopeValue: scopeValue ?? undefined,
+      predictionType: (selectedPrediction?.type as any) ?? undefined,
+      challengerAnswer: answer,
+      predictionContext: selectedPrediction?.context ?? undefined,
+    });
   }
 
   if (!open) return null;
@@ -152,11 +171,11 @@ export default function X1ChallengeModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="max-w-sm bg-[#121826] border-border/40 p-0 overflow-hidden">
-        {/* Header */}
+        {/* ── Header ── */}
         <DialogHeader className="px-5 pt-5 pb-0">
           <div className="flex items-center gap-2 mb-1">
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center"
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
               style={{ background: "rgba(255,184,0,0.15)" }}
             >
               <Swords className="w-4 h-4" style={{ color: "#FFB800" }} />
@@ -171,15 +190,22 @@ export default function X1ChallengeModal({
         </DialogHeader>
 
         <div className="px-5 pb-5 pt-4">
-          {optionsLoading ? (
+          {/* ── Loading ── */}
+          {optionsLoading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
-          ) : !options ? (
+          )}
+
+          {/* ── Erro ao carregar ── */}
+          {!optionsLoading && !options && (
             <p className="text-sm text-muted-foreground text-center py-4">
               Não foi possível carregar as opções de desafio.
             </p>
-          ) : !options.canChallenge ? (
+          )}
+
+          {/* ── Limite de plano atingido ── */}
+          {!optionsLoading && options && !options.canChallenge && (
             <div className="text-center py-4 space-y-3">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
@@ -202,76 +228,78 @@ export default function X1ChallengeModal({
                 Fazer upgrade
               </Button>
             </div>
-          ) : (
-            <>
-              {/* STEP: choose */}
-              {step === "choose" && (
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground mb-3">Escolha o tipo de desafio:</p>
+          )}
 
-                  {/* Duelo de Palpites */}
+          {/* ── Fluxo principal ── */}
+          {!optionsLoading && options && options.canChallenge && (
+            <>
+              {/* ══ PASSO 1 — Lista única de opções ══════════════════════════════ */}
+              {step === "list" && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Desafiar {opponentName} — o que você aposta?
+                  </p>
+
+                  {/* Duelo de palpites — sempre primeiro */}
                   <button
-                    onClick={handleSelectScoreDuel}
-                    className="w-full flex items-start gap-3 p-3.5 rounded-xl border border-border/40 bg-card/60 hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
+                    onClick={handlePickScoreDuel}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#FFB800]/40 hover:bg-[#FFB800]/5 transition-all text-left group"
                   >
                     <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                       style={{ background: "rgba(255,184,0,0.15)" }}
                     >
-                      <Swords className="w-4 h-4" style={{ color: "#FFB800" }} />
+                      <Swords className="w-3.5 h-3.5" style={{ color: "#FFB800" }} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold group-hover:text-primary transition-colors">
-                        Duelo de Palpites
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Disputa de palpites — quem pontua mais?
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 mt-2.5" />
+                    <span className="text-sm font-medium flex-1">
+                      Disputa de palpites — quem pontua mais?
+                    </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </button>
 
-                  {/* Previsão de Campeonato */}
-                  <button
-                    onClick={handleSelectPrediction}
-                    className="w-full flex items-start gap-3 p-3.5 rounded-xl border border-border/40 bg-card/60 hover:border-primary/40 hover:bg-primary/5 transition-all text-left group"
-                  >
-                    <div
-                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                      style={{ background: "rgba(0,194,255,0.15)" }}
-                    >
-                      <Trophy className="w-4 h-4" style={{ color: "#00C2FF" }} />
+                  {/* Opções de previsão — misturadas na mesma lista */}
+                  {options.predictionOptions.length > 0 && (
+                    <div className="max-h-56 overflow-y-auto space-y-2 pr-0.5">
+                      {options.predictionOptions.map((opt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handlePickPrediction(opt as PredictionOption)}
+                          className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left group"
+                        >
+                          <div
+                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ background: "rgba(0,194,255,0.12)" }}
+                          >
+                            <Target className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
+                          </div>
+                          <span className="text-sm font-medium flex-1">{opt.label}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                        </button>
+                      ))}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold group-hover:text-primary transition-colors">
-                        Previsão de Campeonato
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Quem vai ser campeão? Quem passa de fase?
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 mt-2.5" />
-                  </button>
+                  )}
                 </div>
               )}
 
-              {/* STEP: scope (score_duel) */}
+              {/* ══ PASSO 2a — Escopo do duelo de palpites ══════════════════════ */}
               {step === "scope" && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-3">
                     <button
-                      onClick={() => setStep("choose")}
+                      onClick={() => setStep("list")}
                       className="text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <p className="text-xs text-muted-foreground">Duelo de Palpites — escolha o período:</p>
+                    <p className="text-xs text-muted-foreground">
+                      Disputa de palpites — por quantos jogos você aposta?
+                    </p>
                   </div>
                   {options.scopeOptions.map((opt) => (
                     <button
                       key={`${opt.type}-${(opt as any).value ?? ""}`}
-                      onClick={() => handleSelectScope(opt.type, (opt as any).value)}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
+                      onClick={() => handlePickScope(opt.type, (opt as any).value)}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#FFB800]/40 hover:bg-[#FFB800]/5 transition-all text-left"
                     >
                       <div
                         className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -279,61 +307,29 @@ export default function X1ChallengeModal({
                       >
                         <Target className="w-3.5 h-3.5" style={{ color: "#FFB800" }} />
                       </div>
-                      <span className="text-sm font-medium">{opt.label}</span>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto shrink-0" />
+                      <span className="text-sm font-medium flex-1">{opt.label}</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0 ml-auto" />
                     </button>
                   ))}
                 </div>
               )}
 
-              {/* STEP: prediction_type */}
-              {step === "prediction_type" && (
+              {/* ══ PASSO 2b — Escolha da resposta (previsão) ═══════════════════ */}
+              {step === "answer" && selectedPrediction && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-3">
                     <button
-                      onClick={() => setStep("choose")}
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <p className="text-xs text-muted-foreground">Previsão — o que você quer apostar?</p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
-                    {options.predictionOptions.map((opt, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSelectPredictionType(opt.type, (opt as any).context)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
-                      >
-                        <div
-                          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ background: "rgba(0,194,255,0.12)" }}
-                        >
-                          <Trophy className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
-                        </div>
-                        <span className="text-sm font-medium">{opt.label}</span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto shrink-0" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* STEP: prediction_answer */}
-              {step === "prediction_answer" && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <button
-                      onClick={() => { setStep("prediction_type"); setSelectedTeams([]); }}
+                      onClick={() => { setStep("list"); setSelectedTeams([]); }}
                       className="text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
                     <div>
-                      <p className="text-xs text-muted-foreground">Sua aposta:</p>
-                      {getAnswerCount(predictionType) > 1 && (
+                      <p className="text-xs text-muted-foreground">{selectedPrediction.label}</p>
+                      {getRequiredCount(selectedPrediction.type) > 1 && (
                         <p className="text-[10px] text-muted-foreground/60">
-                          Selecione {getAnswerCount(predictionType)} times ({selectedTeams.length}/{getAnswerCount(predictionType)})
+                          Selecione {getRequiredCount(selectedPrediction.type)} times (
+                          {selectedTeams.length}/{getRequiredCount(selectedPrediction.type)})
                         </p>
                       )}
                     </div>
@@ -341,8 +337,8 @@ export default function X1ChallengeModal({
                   <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
                     {options.teams.map((team) => {
                       const isSelected = selectedTeams.includes(team.name);
-                      const maxCount = getAnswerCount(predictionType);
-                      const isDisabled = !isSelected && selectedTeams.length >= maxCount;
+                      const required = getRequiredCount(selectedPrediction.type);
+                      const isDisabled = !isSelected && selectedTeams.length >= required;
                       return (
                         <button
                           key={team.id}
@@ -351,14 +347,18 @@ export default function X1ChallengeModal({
                           className={cn(
                             "w-full flex items-center gap-2.5 p-2.5 rounded-lg border transition-all text-left",
                             isSelected
-                              ? "border-primary/60 bg-primary/10"
+                              ? "border-[#FFB800]/60 bg-[#FFB800]/10"
                               : isDisabled
                               ? "border-border/20 bg-card/20 opacity-40 cursor-not-allowed"
-                              : "border-border/30 bg-card/40 hover:border-primary/30 hover:bg-primary/5"
+                              : "border-border/30 bg-card/40 hover:border-[#FFB800]/30 hover:bg-[#FFB800]/5"
                           )}
                         >
                           {team.flagUrl ? (
-                            <img src={team.flagUrl} alt={team.name} className="w-6 h-6 rounded-full object-cover shrink-0" />
+                            <img
+                              src={team.flagUrl}
+                              alt={team.name}
+                              className="w-6 h-6 rounded-full object-cover shrink-0"
+                            />
                           ) : (
                             <div className="w-6 h-6 rounded-full bg-muted/40 flex items-center justify-center shrink-0">
                               <span className="text-[9px] font-bold text-muted-foreground">
@@ -382,14 +382,14 @@ export default function X1ChallengeModal({
                 </div>
               )}
 
-              {/* STEP: confirm */}
+              {/* ══ PASSO 3 — Confirmação ════════════════════════════════════════ */}
               {step === "confirm" && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-1">
                     <button
                       onClick={() => {
                         if (challengeType === "score_duel") setStep("scope");
-                        else setStep("prediction_answer");
+                        else { setStep("answer"); setSelectedTeams([]); }
                       }}
                       className="text-muted-foreground hover:text-foreground transition-colors"
                     >
@@ -399,11 +399,13 @@ export default function X1ChallengeModal({
                   </div>
 
                   {/* Resumo */}
-                  <div className="rounded-xl border border-border/40 bg-card/60 p-4 space-y-3">
+                  <div className="rounded-xl border border-border/40 bg-card/60 p-4 space-y-2.5">
                     <div className="flex items-center gap-2">
                       <Swords className="w-4 h-4 shrink-0" style={{ color: "#FFB800" }} />
                       <span className="text-sm font-semibold">
-                        {challengeType === "score_duel" ? "Duelo de Palpites" : "Previsão de Campeonato"}
+                        {challengeType === "score_duel"
+                          ? "Disputa de palpites — quem pontua mais?"
+                          : selectedPrediction?.label}
                       </span>
                     </div>
 
@@ -416,30 +418,22 @@ export default function X1ChallengeModal({
                       </div>
                     )}
 
-                    {challengeType === "prediction" && predictionType && (
-                      <>
-                        <div className="text-sm text-muted-foreground">
-                          <span className="text-foreground font-medium">Aposta: </span>
-                          {options.predictionOptions.find((o) => o.type === predictionType)?.label ?? predictionType}
-                        </div>
-                        {challengerAnswer && (
-                          <div className="text-sm text-muted-foreground">
-                            <span className="text-foreground font-medium">Sua escolha: </span>
-                            <span className="text-primary font-semibold">
-                              {Array.isArray(challengerAnswer) ? challengerAnswer.join(", ") : challengerAnswer}
-                            </span>
-                          </div>
-                        )}
-                      </>
+                    {challengeType === "prediction" && selectedTeams.length > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        <span className="text-foreground font-medium">Sua aposta: </span>
+                        <span className="font-semibold" style={{ color: "#FFB800" }}>
+                          {selectedTeams.join(", ")}
+                        </span>
+                      </div>
                     )}
 
                     <div className="text-sm text-muted-foreground">
                       <span className="text-foreground font-medium">Adversário: </span>
                       {opponentName}
                     </div>
-                    <div className="text-xs text-muted-foreground/60">
+                    <p className="text-xs text-muted-foreground/60">
                       O desafio expira em 48h se não for aceito.
-                    </div>
+                    </p>
                   </div>
 
                   <Button

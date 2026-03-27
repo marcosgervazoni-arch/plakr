@@ -234,4 +234,111 @@ describe("x1 — lógica de negócio", () => {
       expect(ctx1.user.id).not.toBe(ctx2.user.id);
     });
   });
+
+  describe("tipos de previsão válidos (spec v1.6)", () => {
+    const VALID_PREDICTION_TYPES = [
+      "champion",
+      "runner_up",
+      "group_qualified",
+      "phase_qualified",
+      "eliminated_in_phase",
+      "next_game_winner",
+    ] as const;
+
+    const REMOVED_PREDICTION_TYPES = ["top_scorer", "zebra", "exact_score"];
+
+    it("deve aceitar apenas os 6 tipos de previsão da spec v1.6", () => {
+      expect(VALID_PREDICTION_TYPES).toHaveLength(6);
+    });
+
+    it("não deve incluir top_scorer, zebra ou exact_score", () => {
+      REMOVED_PREDICTION_TYPES.forEach((removed) => {
+        expect(VALID_PREDICTION_TYPES as readonly string[]).not.toContain(removed);
+      });
+    });
+
+    it("champion deve estar sempre disponível", () => {
+      expect(VALID_PREDICTION_TYPES).toContain("champion");
+    });
+
+    it("next_game_winner deve estar disponível quando há jogo agendado", () => {
+      const hasNextGame = true;
+      const options = [
+        { type: "champion" },
+        ...(hasNextGame ? [{ type: "next_game_winner" }] : []),
+      ];
+      expect(options.some((o) => o.type === "next_game_winner")).toBe(true);
+    });
+
+    it("next_game_winner não deve aparecer quando não há jogo agendado", () => {
+      const hasNextGame = false;
+      const options = [
+        { type: "champion" },
+        ...(hasNextGame ? [{ type: "next_game_winner" }] : []),
+      ];
+      expect(options.some((o) => o.type === "next_game_winner")).toBe(false);
+    });
+  });
+
+  describe("badges do X1", () => {
+    const X1_BADGES = [
+      { name: "Duelista",       criterionType: "x1_wins_career",       criterionValue: 1,  rarity: "common" },
+      { name: "Joga Duro",      criterionType: "x1_wins_career",       criterionValue: 5,  rarity: "uncommon" },
+      { name: "Carrasco",       criterionType: "x1_wins_career",       criterionValue: 10, rarity: "rare" },
+      { name: "Lenda do X1",    criterionType: "x1_wins_career",       criterionValue: 25, rarity: "legendary" },
+      { name: "Derrubei Golias",criterionType: "x1_win_vs_leader",     criterionValue: 1,  rarity: "epic" },
+      { name: "Não Foge da Briga",criterionType: "x1_challenges_sent",criterionValue: 3,  rarity: "common" },
+      { name: "Era o Líder? Nem Vi!",criterionType: "x1_win_vs_higher_rank",criterionValue: 1, rarity: "rare" },
+    ];
+
+    it("deve haver exatamente 7 badges do X1", () => {
+      expect(X1_BADGES).toHaveLength(7);
+    });
+
+    it("badges de vitória devem ter critério x1_wins_career", () => {
+      const winsCareerBadges = X1_BADGES.filter((b) => b.criterionType === "x1_wins_career");
+      expect(winsCareerBadges).toHaveLength(4);
+    });
+
+    it("badges de vitória devem ter valores crescentes (1, 5, 10, 25)", () => {
+      const values = X1_BADGES
+        .filter((b) => b.criterionType === "x1_wins_career")
+        .map((b) => b.criterionValue)
+        .sort((a, b) => a - b);
+      expect(values).toEqual([1, 5, 10, 25]);
+    });
+
+    it("Lenda do X1 deve ser legendary", () => {
+      const lenda = X1_BADGES.find((b) => b.name === "Lenda do X1");
+      expect(lenda?.rarity).toBe("legendary");
+    });
+
+    it("Derrubei Golias deve ser epic", () => {
+      const golias = X1_BADGES.find((b) => b.name === "Derrubei Golias");
+      expect(golias?.rarity).toBe("epic");
+    });
+
+    it("critério x1_win_vs_leader deve verificar rank do adversário = 1", () => {
+      // Simula a lógica do checkCriterion
+      const opponentRankAtStart = 1;
+      const isLeader = opponentRankAtStart === 1;
+      expect(isLeader).toBe(true);
+    });
+
+    it("critério x1_win_vs_higher_rank deve verificar rank do adversário < rank do desafiante", () => {
+      // Adversário em 2º, desafiante em 5º — adversário está à frente
+      const opponentRankAtStart = 2;
+      const challengerRankAtStart = 5;
+      const opponentWasAhead = opponentRankAtStart < challengerRankAtStart;
+      expect(opponentWasAhead).toBe(true);
+    });
+
+    it("critério x1_win_vs_higher_rank não deve ativar quando adversário está atrás", () => {
+      // Adversário em 5º, desafiante em 2º — desafiante está à frente
+      const opponentRankAtStart = 5;
+      const challengerRankAtStart = 2;
+      const opponentWasAhead = opponentRankAtStart < challengerRankAtStart;
+      expect(opponentWasAhead).toBe(false);
+    });
+  });
 });

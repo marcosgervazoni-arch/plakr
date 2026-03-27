@@ -484,6 +484,80 @@ export async function checkCriterion(
       return Number(row?.count ?? 0) >= criterionValue;
     }
 
+    // ── X1 DUELOS ─────────────────────────────────────────────────────────────
+
+    /**
+     * x1_wins_career — Vitórias em X1 na carreira >= N
+     * Badges: Duelista (1), Joga Duro (5), Carrasco (10), Lenda do X1 (25)
+     */
+    case "x1_wins_career": {
+      const { x1Challenges } = await import("../drizzle/schema");
+      const [row] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(x1Challenges)
+        .where(
+          and(
+            eq(x1Challenges.status, "concluded"),
+            eq(x1Challenges.winnerId, userId)
+          )
+        );
+      return Number(row?.count ?? 0) >= criterionValue;
+    }
+
+    /**
+     * x1_win_vs_leader — Vencer um X1 contra quem estava em 1º lugar no ranking
+     * Badge: Derrubei Golias (1 vitória contra o líder)
+     * Critério: existe pelo menos 1 X1 concluído onde o adversário era líder no momento
+     * (armazenado em x1Challenges.opponentRankAtStart = 1)
+     */
+    case "x1_win_vs_leader": {
+      const { x1Challenges } = await import("../drizzle/schema");
+      const [row] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(x1Challenges)
+        .where(
+          and(
+            eq(x1Challenges.status, "concluded"),
+            eq(x1Challenges.winnerId, userId),
+            sql`${x1Challenges.opponentRankAtStart} = 1`
+          )
+        );
+      return Number(row?.count ?? 0) >= criterionValue;
+    }
+
+    /**
+     * x1_challenges_sent — Desafios enviados >= N
+     * Badge: Não Foge da Briga (3 desafios enviados)
+     */
+    case "x1_challenges_sent": {
+      const { x1Challenges } = await import("../drizzle/schema");
+      const [row] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(x1Challenges)
+        .where(eq(x1Challenges.challengerId, userId));
+      return Number(row?.count ?? 0) >= criterionValue;
+    }
+
+    /**
+     * x1_win_vs_higher_rank — Vencer X1 contra alguém com ranking melhor
+     * Badge: Era o Líder? Nem Vi! (vencer contra quem estava à frente no ranking)
+     * Critério: x1 concluído onde opponentRankAtStart < challengerRankAtStart
+     */
+    case "x1_win_vs_higher_rank": {
+      const { x1Challenges } = await import("../drizzle/schema");
+      const [row] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(x1Challenges)
+        .where(
+          and(
+            eq(x1Challenges.status, "concluded"),
+            eq(x1Challenges.winnerId, userId),
+            sql`${x1Challenges.opponentRankAtStart} < ${x1Challenges.challengerRankAtStart}`
+          )
+        );
+      return Number(row?.count ?? 0) >= criterionValue;
+    }
+
     default:
       return false;
   }
