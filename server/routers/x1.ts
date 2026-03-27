@@ -858,6 +858,126 @@ export const x1Router = router({
       };
     }),
 
+  // ─── Admin: listar todos os desafios da plataforma ────────────────────────
+  adminList: protectedProcedure
+    .input(
+      z.object({
+        poolId: z.number().optional(),
+        status: z.enum(["all", "pending", "active", "concluded", "expired", "declined", "cancelled"]).default("all"),
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const { x1Challenges, users, pools } = await getSchema();
+      const { eq, and, desc, count } = await import("drizzle-orm");
+
+      const conditions: any[] = [];
+      if (input.poolId) conditions.push(eq(x1Challenges.poolId, input.poolId));
+      if (input.status !== "all") conditions.push(eq(x1Challenges.status, input.status as any));
+
+      const whereClause = conditions.length ? and(...conditions) : undefined;
+
+      const [totalRows, rows] = await Promise.all([
+        db.select({ count: count() }).from(x1Challenges).where(whereClause),
+        db
+          .select()
+          .from(x1Challenges)
+          .where(whereClause)
+          .orderBy(desc(x1Challenges.createdAt))
+          .limit(input.pageSize)
+          .offset((input.page - 1) * input.pageSize),
+      ]);
+
+      const total = totalRows[0]?.count ?? 0;
+
+      // Enriquece com usuários e bolão
+      const userIdSet = new Set<number>();
+      const poolIdSet = new Set<number>();
+      for (const r of rows) {
+        userIdSet.add(r.challengerId);
+        userIdSet.add(r.challengedId);
+        if (r.winnerId) userIdSet.add(r.winnerId);
+        poolIdSet.add(r.poolId);
+      }
+      const { inArray } = await import("drizzle-orm");
+      const [userRows, poolRows] = await Promise.all([
+        userIdSet.size
+          ? db.select({ id: users.id, name: users.name }).from(users).where(inArray(users.id, Array.from(userIdSet)))
+          : [],
+        poolIdSet.size
+          ? db.select({ id: pools.id, name: pools.name, slug: pools.slug }).from(pools).where(inArray(pools.id, Array.from(poolIdSet)))
+          : [],
+      ]);
+      const userMap = Object.fromEntries((userRows as any[]).map((u: any) => [u.id, u]));
+      const poolMap = Object.fromEntries((poolRows as any[]).map((p: any) => [p.id, p]));
+
+      return {
+        total,
+        page: input.page,
+        pageSize: input.pageSize,
+        totalPages: Math.ceil(total / input.pageSize),
+        items: rows.map((r) => ({
+          ...r,
+          challenger: userMap[r.challengerId] ?? null,
+          challenged: userMap[r.challengedId] ?? null,
+          winner: r.winnerId ? (userMap[r.winnerId] ?? null) : null,
+          pool: poolMap[r.poolId] ?? null,
+        })),
+      };
+    }),
+
+  // ─── Admin: cancelar/forçar conclusão de um desafio ─────────────────────
+  adminForceCancel: protectedProcedure
+    .input(z.object({ challengeId: z.number(), reason: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      const { x1Challenges } = await getSchema();
+      const { eq } = await import("drizzle-orm");
+
+      const rows = await db.select().from(x1Challenges).where(eq(x1Challenges.id, input.challengeId)).limit(1);
+      if (!rows.length) throw new TRPCError({ code: "NOT_FOUND" });
+      const c = rows[0];
+      if (c.status === "concluded" || c.status === "expired") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Desafio já encerrado." });
+      }
+
+      await db
+        .update(x1Challenges)
+        .set({ status: "cancelled" })
+        .where(eq(x1Challenges.id, input.challengeId));
+
+      logger.info(`[X1][Admin] Force-cancelled challenge ${input.challengeId} by admin ${ctx.user.id}. Reason: ${input.reason ?? "none"}`);
+      return { success: true };
+    }),
+
+  // ─── Admin: estatísticas globais do X1 ───────────────────────────────────
+  adminStats: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+    const db = await getDb();
+    const { x1Challenges } = await getSchema();
+    const { count, eq } = await import("drizzle-orm");
+
+    const [total, pending, active, concluded, expired] = await Promise.all([
+      db.select({ count: count() }).from(x1Challenges),
+      db.select({ count: count() }).from(x1Challenges).where(eq(x1Challenges.status, "pending")),
+      db.select({ count: count() }).from(x1Challenges).where(eq(x1Challenges.status, "active")),
+      db.select({ count: count() }).from(x1Challenges).where(eq(x1Challenges.status, "concluded")),
+      db.select({ count: count() }).from(x1Challenges).where(eq(x1Challenges.status, "expired")),
+    ]);
+
+    return {
+      total: total[0]?.count ?? 0,
+      pending: pending[0]?.count ?? 0,
+      active: active[0]?.count ?? 0,
+      concluded: concluded[0]?.count ?? 0,
+      expired: expired[0]?.count ?? 0,
+    };
+  }),
+
   // ─── Expirar desafios pendentes vencidos (cron job) ───────────────────────
   expireStale: protectedProcedure.mutation(async ({ ctx }) => {
     const db = await getDb();

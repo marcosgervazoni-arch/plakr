@@ -2,6 +2,7 @@ import "dotenv/config";
 import { startScoringWorker } from "../scoring";
 import { startArchivalCron } from "../archival";
 import { startEmailCrons } from "../emailCron";
+import { registerX1CronJobs } from "../jobs/x1-jobs";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
 import { registerOgRoutes, registerLandingOgRoute } from "../og";
@@ -123,6 +124,7 @@ async function startServer() {
   startScoringWorker();
   startArchivalCron();
   startEmailCrons();
+  registerX1CronJobs();
 }
 
 startServer().catch(console.error);

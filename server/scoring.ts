@@ -477,6 +477,15 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
       )
     ).catch(() => {});
   }
+
+  // ⚔️ X1: atualiza placar dos duelos que incluem este jogo (assíncrono, não crítico)
+  import("./jobs/x1-jobs")
+    .then(({ x1ScoreUpdateJob }) =>
+      x1ScoreUpdateJob(gameId).catch((e: unknown) =>
+        logger.warn({ gameId, err: e }, "[X1] Score update job falhou (não crítico)")
+      )
+    )
+    .catch(() => {});
 }
 
 // ─── WORKER ───────────────────────────────────────────────────────────────────

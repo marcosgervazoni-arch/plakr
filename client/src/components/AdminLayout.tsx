@@ -22,6 +22,7 @@ import {
   Palette,
   Settings,
   Shield,
+  Swords,
   Tag,
   Trophy,
   Users,
@@ -49,7 +50,8 @@ export type AdminSection =
   | "badges"
   | "retrospectivas"
   | "landing-page"
-  | "pricing";
+  | "pricing"
+  | "x1-duels";
 
 interface NavItem {
   id: AdminSection;
@@ -91,6 +93,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "users", label: "Usuários", icon: Users, path: "/admin/users" },
       { id: "badges", label: "Badges", icon: Award, path: "/admin/badges" },
+      { id: "x1-duels", label: "Duelos X1", icon: Swords, path: "/admin/x1-duels" },
     ],
   },
   {

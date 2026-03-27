@@ -55,6 +55,7 @@ import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import X1ChallengeModal from "@/components/X1ChallengeModal";
+import X1DuelsTab from "@/components/X1DuelsTab";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { AdBanner } from "@/components/AdBanner";
 import {
@@ -75,7 +76,7 @@ export default function PoolPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
-      if (tab === "ranking" || tab === "games" || tab === "members") return tab;
+      if (tab === "ranking" || tab === "games" || tab === "members" || tab === "duelos") return tab;
     }
     return "games";
   });
@@ -557,14 +558,17 @@ export default function PoolPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {/* Abas */}
           <TabsList className="w-full bg-card border border-border/50 mb-5 h-10">
-            <TabsTrigger value="games" className="flex-1 text-sm gap-1.5">
-              <Calendar className="w-3.5 h-3.5" /> Jogos
+            <TabsTrigger value="games" className="flex-1 text-xs gap-1">
+              <Calendar className="w-3 h-3" /> Jogos
             </TabsTrigger>
-            <TabsTrigger value="ranking" className="flex-1 text-sm gap-1.5">
-              <Trophy className="w-3.5 h-3.5" /> Ranking
+            <TabsTrigger value="ranking" className="flex-1 text-xs gap-1">
+              <Trophy className="w-3 h-3" /> Ranking
             </TabsTrigger>
-            <TabsTrigger value="members" className="flex-1 text-sm gap-1.5">
-              <Users className="w-3.5 h-3.5" /> Membros
+            <TabsTrigger value="duelos" className="flex-1 text-xs gap-1">
+              <Swords className="w-3 h-3" /> Duelos
+            </TabsTrigger>
+            <TabsTrigger value="members" className="flex-1 text-xs gap-1">
+              <Users className="w-3 h-3" /> Membros
             </TabsTrigger>
           </TabsList>
 
@@ -941,6 +945,18 @@ export default function PoolPage() {
             )}
           </TabsContent>
 
+          {/* ══ ABA DUELOS ══ */}
+          <TabsContent value="duelos" className="mt-0">
+            {data?.pool.id && (
+              <X1DuelsTab
+                poolId={data.pool.id}
+                onChallenge={() => {
+                  toast.info("Acesse a aba Ranking para desafiar um participante.");
+                  setActiveTab("ranking");
+                }}
+              />
+            )}
+          </TabsContent>
           {/* ══ ABA MEMBROS ══ */}
           <TabsContent value="members" className="mt-0">
             {!members ? (
