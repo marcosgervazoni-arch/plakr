@@ -1958,3 +1958,6 @@
 
 ## Bug Popup de Anúncio (28/03/2026)
 - [x] Popup de anúncio não aparecia — bug de dupla avaliação no useEffect; corrigido com ref popupEvaluated + separação de canShowPopup/markPopupShown
+
+## Investigação Profunda Anúncios (28/03/2026)
+- [x] Causa raiz: usuário admin tinha plano Pro ativo — isPro bloqueava todos os anúncios. Corrigido: admins sempre veem anúncios independente do plano

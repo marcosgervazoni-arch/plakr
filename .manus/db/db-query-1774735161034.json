@@ -1,0 +1,50 @@
+{
+  "query": "SELECT u.id, u.name, u.role, up.plan, up.isActive, up.planExpiresAt FROM users u LEFT JOIN user_plans up ON u.id = up.userId ORDER BY u.id LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT u.id, u.name, u.role, up.plan, up.isActive, up.planExpiresAt FROM users u LEFT JOIN user_plans up ON u.id = up.userId ORDER BY u.id LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Marcos Gervazoni",
+      "role": "admin",
+      "plan": "pro",
+      "isActive": "1",
+      "planExpiresAt": "2026-04-28 18:19:42"
+    },
+    {
+      "id": "150121",
+      "name": "Filipe Postai",
+      "role": "user",
+      "plan": "NULL",
+      "isActive": "NULL",
+      "planExpiresAt": "NULL"
+    },
+    {
+      "id": "210136",
+      "name": "Eduardo Souza",
+      "role": "user",
+      "plan": "NULL",
+      "isActive": "NULL",
+      "planExpiresAt": "NULL"
+    },
+    {
+      "id": "390554",
+      "name": "Integration User B",
+      "role": "user",
+      "plan": "NULL",
+      "isActive": "NULL",
+      "planExpiresAt": "NULL"
+    },
+    {
+      "id": "390555",
+      "name": "Test Admin",
+      "role": "admin",
+      "plan": "NULL",
+      "isActive": "NULL",
+      "planExpiresAt": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\trole\tplan\tisActive\tplanExpiresAt\n1\tMarcos Gervazoni\tadmin\tpro\t1\t2026-04-28 18:19:42\n150121\tFilipe Postai\tuser\tNULL\tNULL\tNULL\n210136\tEduardo Souza\tuser\tNULL\tNULL\tNULL\n390554\tIntegration User B\tuser\tNULL\tNULL\tNULL\n390555\tTest Admin\tadmin\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}
