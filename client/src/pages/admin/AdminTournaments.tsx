@@ -32,7 +32,9 @@ import {
   Globe,
   Layers,
   Loader2,
+  Play,
   Plus,
+  Swords,
   Trash2,
   Trophy,
   Upload,
@@ -87,6 +89,10 @@ export default function AdminTournaments() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [showResolver, setShowResolver] = useState(false);
+  const [resolverTournamentId, setResolverTournamentId] = useState("");
+  const [resolverPhase, setResolverPhase] = useState("");
+  const [resolverResult, setResolverResult] = useState<{ resolved: number; skipped: number; errors: number; phasesChecked?: number; totalResolved?: number } | null>(null);
   const { data: tournaments, refetch } = trpc.tournaments.list.useQuery();
 
   // ── Step 1: info form ──
@@ -135,6 +141,23 @@ export default function AdminTournaments() {
       toast.error("Erro ao excluir", { description: err.message });
       setDeleteTarget(null);
     },
+  });
+
+  const resolvePhase = trpc.x1.adminResolvePhase.useMutation({
+    onSuccess: (data) => {
+      const resolved = 'totalResolved' in data ? data.totalResolved : ('resolved' in data ? data.resolved : 0);
+      const skipped = 'skipped' in data ? data.skipped : 0;
+      const errors = 'errors' in data ? (data as { errors?: number }).errors ?? 0 : 0;
+      const phasesChecked = 'phasesChecked' in data ? data.phasesChecked : undefined;
+      const totalResolved = 'totalResolved' in data ? data.totalResolved : undefined;
+      setResolverResult({ resolved, skipped, errors, phasesChecked, totalResolved });
+      if (resolved > 0) {
+        toast.success(`${resolved} duelo(s) resolvido(s) com sucesso!`);
+      } else {
+        toast.info("Nenhum duelo resolvido — fase pode não estar 100% encerrada.");
+      }
+    },
+    onError: (e) => toast.error(e.message),
   });
 
   const importCsvMutation = trpc.tournaments.importGames.useMutation({
@@ -271,10 +294,16 @@ export default function AdminTournaments() {
               Novo Campeonato
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowCsvImport(true)} className="gap-2">
-            <Upload className="h-4 w-4" />
-            Importar CSV
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => setShowCsvImport(true)} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Importar CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => { setResolverResult(null); setShowResolver(true); }} className="gap-2 border-amber-500/30 text-amber-400 hover:bg-amber-500/10">
+              <Swords className="h-4 w-4" />
+              Resolver Fase X1
+            </Button>
+          </div>
         </div>
 
         {/* Lista de campeonatos */}
@@ -616,6 +645,96 @@ export default function AdminTournaments() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Modal: Resolver Fase X1 ── */}
+      <Dialog open={showResolver} onOpenChange={(open) => { setShowResolver(open); if (!open) setResolverResult(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Swords className="h-5 w-5 text-amber-400" />
+              Resolver Fase X1
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Força a resolução dos duelos de previsão de fase. Use o modo <strong>cirúrgico</strong> para uma fase específica, ou <strong>completo</strong> para verificar todas as fases encerradas.
+            </p>
+
+            {/* Modo cirúrgico */}
+            <div className="border border-border/50 rounded-lg p-3 space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Modo cirúrgico (fase específica)</p>
+              <div className="space-y-1">
+                <Label className="text-xs">ID do Campeonato</Label>
+                <Input
+                  placeholder="Ex: 1"
+                  value={resolverTournamentId}
+                  onChange={(e) => setResolverTournamentId(e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Fase (nome exato)</Label>
+                <Input
+                  placeholder="Ex: Quartas de Final"
+                  value={resolverPhase}
+                  onChange={(e) => setResolverPhase(e.target.value)}
+                  className="h-8 text-sm"
+                />
+                <p className="text-xs text-muted-foreground">Use o nome exato da fase como cadastrado no campeonato.</p>
+              </div>
+              <Button
+                size="sm"
+                className="w-full gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+                disabled={!resolverTournamentId || !resolverPhase || resolvePhase.isPending}
+                onClick={() => resolvePhase.mutate({ tournamentId: parseInt(resolverTournamentId), phase: resolverPhase })}
+              >
+                {resolvePhase.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+                Resolver esta fase
+              </Button>
+            </div>
+
+            {/* Modo completo */}
+            <div className="border border-border/50 rounded-lg p-3 space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Modo completo (todas as fases)</p>
+              <p className="text-xs text-muted-foreground">Verifica todos os torneios ativos e resolve automaticamente as fases 100% encerradas.</p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full gap-2"
+                disabled={resolvePhase.isPending}
+                onClick={() => resolvePhase.mutate({})}
+              >
+                {resolvePhase.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Swords className="h-3.5 w-3.5" />}
+                Executar resolver completo
+              </Button>
+            </div>
+
+            {/* Resultado */}
+            {resolverResult && (
+              <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Resultado</p>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-green-500/10 rounded p-2">
+                    <p className="text-lg font-bold text-green-400">{resolverResult.totalResolved ?? resolverResult.resolved}</p>
+                    <p className="text-xs text-muted-foreground">Resolvidos</p>
+                  </div>
+                  <div className="bg-yellow-500/10 rounded p-2">
+                    <p className="text-lg font-bold text-yellow-400">{resolverResult.skipped}</p>
+                    <p className="text-xs text-muted-foreground">Ignorados</p>
+                  </div>
+                  <div className="bg-red-500/10 rounded p-2">
+                    <p className="text-lg font-bold text-red-400">{resolverResult.errors}</p>
+                    <p className="text-xs text-muted-foreground">Erros</p>
+                  </div>
+                </div>
+                {resolverResult.phasesChecked !== undefined && (
+                  <p className="text-xs text-muted-foreground text-center">Fases verificadas: {resolverResult.phasesChecked}</p>
+                )}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

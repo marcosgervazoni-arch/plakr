@@ -1795,3 +1795,9 @@
 - [x] Procedure admin x1.adminResolvePhase para disparo manual (modo cirurgico e modo completo)
 - [x] Notificações ao vencedor e ao perdedor do duelo via createNotification
 - [x] Testes unitários do resolver (11 testes, 316 passando no total)
+
+## Sprint 28/03/2026 — TS Fix + Admin Resolver
+- [x] Corrigir erros de TypeScript: causa raiz era target ausente no tsconfig.json (adicionado ES2020)
+- [x] Adicionar botão "Resolver Fase X1" no AdminTournaments.tsx (modo cirúrgico + modo completo)
+- [x] Procedure x1.adminResolvePhase exposta na UI admin com feedback de resultado (resolvidos/ignorados/erros)
+- [x] 316 testes passando, lsp: No errors, typescript: No errors

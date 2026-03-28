@@ -379,7 +379,7 @@ export async function runX1PredictionResolverJob(): Promise<ResolverRunResult> {
       )
     );
 
-  const tournamentIds = [...new Set(activePools.map((p) => p.tournamentId))];
+  const tournamentIds = Array.from(new Set(activePools.map((p) => p.tournamentId)));
 
   if (!tournamentIds.length) {
     logger.debug("[X1][Resolver] No active tournaments found");
@@ -409,7 +409,7 @@ export async function runX1PredictionResolverJob(): Promise<ResolverRunResult> {
 
     const allKnockoutPhases = Array.from(phaseMap.keys());
 
-    for (const [phase, counts] of phaseMap.entries()) {
+    for (const [phase, counts] of Array.from(phaseMap.entries())) {
       phasesChecked++;
 
       // Só processa fases 100% encerradas
