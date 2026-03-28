@@ -28,6 +28,7 @@ import {
   Timer,
   RefreshCw,
   Ban,
+  ArrowLeft,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { format, formatDistanceToNow } from "date-fns";
@@ -291,6 +292,12 @@ export default function BetHistory() {
 
         {/* Cabeçalho */}
         <div>
+          <Link href={`/pool/${slug}`}>
+            <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3 -ml-0.5">
+              <ArrowLeft className="w-4 h-4" />
+              Voltar ao bolão
+            </button>
+          </Link>
           <h1
             className="font-bold text-2xl"
             style={{ fontFamily: "'Syne', sans-serif" }}

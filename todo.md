@@ -1904,3 +1904,6 @@
 
 ## Bug 28/03/2026 — Palpites não persistem
 - [x] Investigar e corrigir: palpites salvos via Central de Palpites e aba Jogos não estão sendo persistidos — causa raiz: myBets retornava {bet, game} mas frontend acessava b.gameId diretamente. Corrigido: myBets agora retorna campos do bet achatados sem join com games.
+
+## Sprint 28/03/2026 — Botão Voltar na Central de Palpites
+- [x] BetHistory: adicionar botão "Voltar" que navega para /pool/:slug (página principal do bolão)
