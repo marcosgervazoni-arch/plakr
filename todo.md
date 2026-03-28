@@ -1784,3 +1784,7 @@
 - [x] Corrigir backend getOptions: usar contagem de jogos da fase quando times não estão cadastrados
 - [x] Corrigir backend accept: mesma estratégia de cálculo para validação
 - [x] Rodada de 32 (16 jogos) → teamsRequired=16; Oitavas (8) → 8; Quartas (4) → 4; Semifinais (2) → 2; Final (1) → 1
+
+## SEO — Página inicial (28/03/2026)
+- [x] Reduzir keywords de 9 para 7 palavras-chave focadas
+- [x] Encurtar meta description de 188 para 150 caracteres (dentro do limite de 160)
