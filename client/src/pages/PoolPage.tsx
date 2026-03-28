@@ -177,8 +177,14 @@ export default function PoolPage() {
       });
     }
     // Agrupamento padrão por fase (texto)
+    // IMPORTANTE: jogos importados via CSV podem ter o campo `phase` preenchido
+    // com o label (ex: "Quartas de Final") em vez da chave (ex: "quarter_finals").
+    // Por isso mapeamos tanto pela chave quanto pelo label para garantir a ordenação correta.
     const phaseOrder = new Map<string, number>();
-    phases.forEach((p, i) => phaseOrder.set(p.key, p.order ?? i));
+    phases.forEach((p, i) => {
+      phaseOrder.set(p.key, p.order ?? i);
+      phaseOrder.set(p.label, p.order ?? i); // fallback para jogos com label no campo phase
+    });
     const groups = new Map<string, typeof games>();
     games.forEach((g) => {
       const key = g.phase ?? "group_stage";

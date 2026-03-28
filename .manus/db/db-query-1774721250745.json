@@ -1,0 +1,154 @@
+{
+  "query": "SELECT tp.id, tp.tournamentId, tp.key, tp.label, tp.order, tp.isKnockout FROM tournament_phases tp ORDER BY tp.tournamentId, tp.order;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT tp.id, tp.tournamentId, tp.key, tp.label, tp.order, tp.isKnockout FROM tournament_phases tp ORDER BY tp.tournamentId, tp.order;",
+  "rows": [
+    {
+      "id": "1",
+      "tournamentId": "2",
+      "key": "group_a",
+      "label": "Grupo A",
+      "order": "1",
+      "isKnockout": "0"
+    },
+    {
+      "id": "2",
+      "tournamentId": "2",
+      "key": "group_b",
+      "label": "Grupo B",
+      "order": "2",
+      "isKnockout": "0"
+    },
+    {
+      "id": "3",
+      "tournamentId": "2",
+      "key": "group_c",
+      "label": "Grupo C",
+      "order": "3",
+      "isKnockout": "0"
+    },
+    {
+      "id": "4",
+      "tournamentId": "2",
+      "key": "group_d",
+      "label": "Grupo D",
+      "order": "4",
+      "isKnockout": "0"
+    },
+    {
+      "id": "5",
+      "tournamentId": "2",
+      "key": "group_e",
+      "label": "Grupo E",
+      "order": "5",
+      "isKnockout": "0"
+    },
+    {
+      "id": "6",
+      "tournamentId": "2",
+      "key": "group_f",
+      "label": "Grupo F",
+      "order": "6",
+      "isKnockout": "0"
+    },
+    {
+      "id": "7",
+      "tournamentId": "2",
+      "key": "group_g",
+      "label": "Grupo G",
+      "order": "7",
+      "isKnockout": "0"
+    },
+    {
+      "id": "8",
+      "tournamentId": "2",
+      "key": "group_h",
+      "label": "Grupo H",
+      "order": "8",
+      "isKnockout": "0"
+    },
+    {
+      "id": "9",
+      "tournamentId": "2",
+      "key": "group_i",
+      "label": "Grupo I",
+      "order": "9",
+      "isKnockout": "0"
+    },
+    {
+      "id": "10",
+      "tournamentId": "2",
+      "key": "group_j",
+      "label": "Grupo J",
+      "order": "10",
+      "isKnockout": "0"
+    },
+    {
+      "id": "11",
+      "tournamentId": "2",
+      "key": "group_k",
+      "label": "Grupo K",
+      "order": "11",
+      "isKnockout": "0"
+    },
+    {
+      "id": "12",
+      "tournamentId": "2",
+      "key": "group_l",
+      "label": "Grupo L",
+      "order": "12",
+      "isKnockout": "0"
+    },
+    {
+      "id": "13",
+      "tournamentId": "2",
+      "key": "round_of_32",
+      "label": "Rodada de 32",
+      "order": "13",
+      "isKnockout": "1"
+    },
+    {
+      "id": "14",
+      "tournamentId": "2",
+      "key": "round_of_16",
+      "label": "Oitavas de Final",
+      "order": "14",
+      "isKnockout": "1"
+    },
+    {
+      "id": "30001",
+      "tournamentId": "2",
+      "key": "quarter_finals",
+      "label": "Quartas de Final",
+      "order": "15",
+      "isKnockout": "1"
+    },
+    {
+      "id": "15",
+      "tournamentId": "2",
+      "key": "semifinals",
+      "label": "Semifinais",
+      "order": "16",
+      "isKnockout": "1"
+    },
+    {
+      "id": "16",
+      "tournamentId": "2",
+      "key": "third_place",
+      "label": "Disputa 3º Lugar",
+      "order": "17",
+      "isKnockout": "1"
+    },
+    {
+      "id": "17",
+      "tournamentId": "2",
+      "key": "final",
+      "label": "Final",
+      "order": "18",
+      "isKnockout": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttournamentId\tkey\tlabel\torder\tisKnockout\n1\t2\tgroup_a\tGrupo A\t1\t0\n2\t2\tgroup_b\tGrupo B\t2\t0\n3\t2\tgroup_c\tGrupo C\t3\t0\n4\t2\tgroup_d\tGrupo D\t4\t0\n5\t2\tgroup_e\tGrupo E\t5\t0\n6\t2\tgroup_f\tGrupo F\t6\t0\n7\t2\tgroup_g\tGrupo G\t7\t0\n8\t2\tgroup_h\tGrupo H\t8\t0\n9\t2\tgroup_i\tGrupo I\t9\t0\n10\t2\tgroup_j\tGrupo J\t10\t0\n11\t2\tgroup_k\tGrupo K\t11\t0\n12\t2\tgroup_l\tGrupo L\t12\t0\n13\t2\tround_of_32\tRodada de 32\t13\t1\n14\t2\tround_of_16\tOitavas de Final\t14\t1\n30001\t2\tquarter_finals\tQuartas de Final\t15\t1\n15\t2\tsemifinals\tSemifinais\t16\t1\n16\t2\tthird_place\tDisputa 3º Lugar\t17\t1\n17\t2\tfinal\tFinal\t18\t1\n",
+  "stderr": "",
+  "execution_time_ms": 362
+}

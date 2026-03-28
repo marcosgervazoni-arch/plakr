@@ -1832,3 +1832,7 @@
 - [x] Badge de palpites pendentes no FAB
 - [x] Spacer h-20 garante que conteúdo não fique atrás da barra
 - [x] 0 erros de TypeScript
+
+## Bug: Ordem das fases no PoolPage (28/03/2026)
+- [x] Causa raiz: jogos importados via CSV têm campo `phase` preenchido com label (ex: "Quartas de Final") em vez da chave (ex: "quarter_finals")
+- [x] Correção: phaseOrder agora mapeia tanto pela chave quanto pelo label de cada fase

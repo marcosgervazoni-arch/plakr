@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, phase, matchDate, status FROM games WHERE phase IN ('round_of_32', 'round_of_16', 'quarter_finals', 'semifinals', 'final') ORDER BY phase LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, phase, matchDate, status FROM games WHERE phase IN ('round_of_32', 'round_of_16', 'quarter_finals', 'semifinals', 'final') ORDER BY phase LIMIT 20;",
+  "rows": [
+    {
+      "id": "104",
+      "phase": "Final",
+      "matchDate": "2026-07-19 22:00:00",
+      "status": "scheduled"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphase\tmatchDate\tstatus\n104\tFinal\t2026-07-19 22:00:00\tscheduled\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}
