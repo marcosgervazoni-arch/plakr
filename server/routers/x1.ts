@@ -159,9 +159,9 @@ export const x1Router = router({
 
       const t = tournament[0];
       const isLeague = t.format === "league";
-      // Detecta grupos/fases pelos dados reais, independente do formato cadastrado.
-      // Torneios "custom" com jogos de grupo/fase também devem exibir essas opções.
-      const isGroupsKnockout = t.format === "groups_knockout" || t.format === "cup" || t.format === "custom";
+      // isGroupsKnockout é determinado DEPOIS de buscar os dados reais.
+      // Não depende do formato cadastrado — qualquer torneio com grupos/fases no banco exibe essas opções.
+      // A flag será definida abaixo após buscar groups e knockoutPhases.
 
       // Busca times do torneio para previsões
       const teamList = await db
@@ -229,12 +229,25 @@ export const x1Router = router({
       const canChallenge = activeCount.length < limits.maxActive;
       const planLimit = limits.maxActive === Infinity ? null : limits.maxActive;
 
+      // Detecção 100% baseada nos dados reais do banco:
+      // - hasGroups: true se o torneio tem jogos com groupName preenchido
+      // - knockoutPhases: fases que não são de grupo (excluindo group_stage, group_a, group_b...)
+      // Isso garante que qualquer organizador que crie um bolão com grupos/fases veja as opções corretas,
+      // independente do formato cadastrado (league, cup, groups_knockout, custom, etc.)
+      const hasGroups = groups.length > 0;
+      const knockoutPhases = phases.filter(
+        (p) => p && p !== "group_stage" && !p.startsWith("group_")
+      );
+      const hasKnockoutPhases = knockoutPhases.length > 0;
+      // isGroupsKnockout: true se o torneio tem grupos OU fases de mata-mata nos dados reais
+      const isGroupsKnockout = hasGroups || hasKnockoutPhases;
+
       return {
         tournamentFormat: t.format,
         isLeague,
         isGroupsKnockout,
         hasNextRound,
-        hasNextPhase: isGroupsKnockout,
+        hasNextPhase: hasKnockoutPhases,
         nextGame: nextGame[0] ?? null,
         teams: teamList,
         groups,
@@ -244,36 +257,29 @@ export const x1Router = router({
         activeCount: activeCount.length,
         scopeOptions: [
           ...(hasNextRound ? [{ type: "next_round" as const, label: "Próxima rodada" }] : []),
-          ...(isGroupsKnockout ? [{ type: "next_phase" as const, label: "Próxima fase" }] : []),
+          ...(hasKnockoutPhases ? [{ type: "next_phase" as const, label: "Próxima fase" }] : []),
           { type: "next_n_games" as const, label: "Próximos 5 jogos", value: 5 },
           { type: "next_n_games" as const, label: "Próximos 10 jogos", value: 10 },
           { type: "next_n_games" as const, label: "Próximos 20 jogos", value: 20 },
         ],
         predictionOptions: [
-          // ── Campeão (sempre disponível) ────────────────────────────────────
+          // ── Campleão (sempre disponível) ────────────────────────────────────
           { type: "champion" as const, label: "Quem vai ser o campeão?" },
-          // ── Classificação em grupo (apenas cup / groups_knockout com grupos) ─
-          ...(isGroupsKnockout && groups.length > 0
+          // ── Classificação em grupo (detectado pelos dados reais) ──────────────────
+          ...(hasGroups
             ? groups.map((g) => ({
                 type: "group_qualified" as const,
                 label: `Quem classifica no Grupo ${g}?`,
                 context: { groupName: g },
               }))
             : []),
-          // ── Classificação por fase (apenas fases de mata-mata, excluindo group_stage e group_*) ─
-          ...(isGroupsKnockout
-            ? (() => {
-                const knockoutPhases = phases.filter(
-                  (p) => p && p !== "group_stage" && !p.startsWith("group_")
-                );
-                return knockoutPhases.length > 0
-                  ? knockoutPhases.map((p) => ({
-                      type: "phase_qualified" as const,
-                      label: `Quem passa para ${p}?`,
-                      context: { phase: p },
-                    }))
-                  : [];
-              })()
+          // ── Classificação por fase de mata-mata (detectado pelos dados reais) ────────
+          ...(hasKnockoutPhases
+            ? knockoutPhases.map((p) => ({
+                type: "phase_qualified" as const,
+                label: `Quem passa para ${p}?`,
+                context: { phase: p },
+              }))
             : []),
         ],
       };
