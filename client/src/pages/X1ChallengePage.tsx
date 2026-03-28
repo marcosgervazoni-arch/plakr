@@ -222,19 +222,45 @@ export default function X1ChallengePage() {
     onError: (err) => toast.error("Erro ao concluir", { description: err.message }),
   });
 
-  // Quantos times precisam ser selecionados
-  const requiredCount = challenge?.predictionType === "group_qualified" ? 2 : 1;
+  // Quantos times precisam ser selecionados (dinâmico: vem do backend via x1Options)
+  // - champion: 1
+  // - group_qualified: 2
+  // - phase_qualified: Math.floor(teamsInPhase / 2) — calculado no backend
+  const requiredCount = useMemo(() => {
+    if (!challenge) return 1;
+    if (challenge.predictionType === "champion") return 1;
+    if (challenge.predictionType === "group_qualified") return 2;
+    if (challenge.predictionType === "phase_qualified" && x1Options?.predictionOptions) {
+      // Busca a opção correspondente à fase do desafio
+      const phaseContext = challenge.predictionContext as { phase?: string } | null;
+      const phaseKey = phaseContext?.phase;
+      const opt = x1Options.predictionOptions.find(
+        (o) => o.type === "phase_qualified" && (o as any).context?.phase === phaseKey
+      );
+      return (opt as any)?.teamsRequired ?? 1;
+    }
+    return 1;
+  }, [challenge, x1Options?.predictionOptions]);
 
-  // Times disponíveis para o desafiado escolher (excluindo a escolha exata do desafiante apenas para champion/phase)
+  // Times disponíveis para o desafiado escolher
+  // - champion: exclui o time do desafiante
+  // - phase_qualified: exclui times do desafiante (não pode ser idêntico)
+  // - group_qualified: todos os times disponíveis (validação de "não exatamente iguais" é no backend)
   const availableTeams = useMemo(() => {
     if (!x1Options?.teams) return [];
     const challengerAnswer = challenge?.challengerAnswer;
     if (!challengerAnswer) return x1Options.teams;
 
-    if (challenge?.predictionType === "champion" || challenge?.predictionType === "phase_qualified") {
+    if (challenge?.predictionType === "champion") {
       // Desafiado não pode escolher o mesmo time
       const blocked = Array.isArray(challengerAnswer) ? challengerAnswer : [challengerAnswer as string];
       return x1Options.teams.filter((t) => !blocked.includes(t.name));
+    }
+    if (challenge?.predictionType === "phase_qualified") {
+      // Desafiado não pode escolher combinação idêntica — mas pode escolher times em comum
+      // Apenas bloqueamos a seleção completa idêntica (validado no backend)
+      // Aqui mostramos todos os times da fase
+      return x1Options.teams;
     }
     // group_qualified: todos os times disponíveis (validação de "não exatamente iguais" é no backend)
     return x1Options.teams;
@@ -250,7 +276,11 @@ export default function X1ChallengePage() {
 
   function handleAcceptPrediction() {
     if (selectedTeams.length < requiredCount) {
-      toast.error(`Selecione ${requiredCount === 2 ? "2 times" : "um time"} para continuar.`);
+      toast.error(
+        requiredCount > 1
+          ? `Selecione ${requiredCount} times para continuar.`
+          : "Selecione um time para continuar."
+      );
       return;
     }
     const answer = selectedTeams.length === 1 ? selectedTeams[0] : selectedTeams;
@@ -495,10 +525,12 @@ export default function X1ChallengePage() {
                     </p>
                   </div>
 
-                  {/* Instrução */}
+                  {/* Instrução dinâmica */}
                   <p className="text-xs text-muted-foreground">
                     {challenge.predictionType === "group_qualified"
                       ? `Escolha 2 times (${selectedTeams.length}/2). Sua combinação não pode ser idêntica à do adversário.`
+                      : challenge.predictionType === "phase_qualified" && requiredCount > 1
+                      ? `Escolha ${requiredCount} times que avançam (${selectedTeams.length}/${requiredCount}). Sua combinação não pode ser idêntica à do adversário.`
                       : "Escolha um time diferente do adversário."}
                   </p>
 

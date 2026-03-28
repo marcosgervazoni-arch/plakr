@@ -1763,3 +1763,18 @@
 - [ ] Corrigir X1ChallengeModal: lista única sem separação de tipo (score_duel + predictions misturadas)
 - [ ] Corrigir fluxo: passo 2a (escopo) para score_duel, passo 2b (escolha de time) para prediction
 - [ ] Aplicar migração SQL para reverter o enum
+
+## Sprint X1 — Lógica correta de phase_qualified (28/03/2026)
+- [x] Backend getOptions: calcular phaseTeamMap com times únicos por fase
+- [x] Backend getOptions: retornar teamsRequired = Math.floor(teamsInPhase / 2) por fase
+- [x] Backend getOptions: group_qualified sempre retorna teamsRequired = 2
+- [x] Backend accept: validação de número exato de times para phase_qualified
+- [x] Backend accept: validação de combinação não-idêntica para phase_qualified (sorted compare)
+- [x] Backend accept: validação de combinação não-idêntica para group_qualified (sorted compare)
+- [x] X1ChallengeModal: usa teamsRequired dinâmico do backend (não hardcoded)
+- [x] X1ChallengeModal: barra de progresso para seleção múltipla de times
+- [x] X1ChallengeModal: lista de fases mostra "Selecione N times que avançam"
+- [x] X1ChallengeModal: auto-avança para confirmação quando seleção completa
+- [x] X1ChallengePage: requiredCount dinâmico via x1Options.predictionOptions
+- [x] X1ChallengePage: instrução dinâmica para phase_qualified com N times
+- [x] 305 testes passando

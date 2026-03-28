@@ -22,8 +22,9 @@
  *   → Ao escolher a fase, vai para Passo 3 (times da fase)
  *
  * Passo 3 — Escolha do(s) time(s)
- *   champion / phase_qualified: 1 time
+ *   champion: 1 time
  *   group_qualified: 2 times (combinação diferente do desafiante)
+ *   phase_qualified: N times = Math.floor(teamsInPhase / 2) — todos que avançam
  *   → Ao completar a seleção, vai para confirmação
  *
  * Passo 4 — Confirmação e envio
@@ -32,7 +33,7 @@
  *        (validado no backend e exibido na tela de aceitação)
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
@@ -77,6 +78,7 @@ type PredictionOption = {
   type: "champion" | "group_qualified" | "phase_qualified";
   label: string;
   context?: { phase?: string; groupName?: string };
+  teamsRequired: number;
 };
 
 export default function X1ChallengeModal({
@@ -96,8 +98,11 @@ export default function X1ChallengeModal({
   const [selectedPrediction, setSelectedPrediction] = useState<PredictionOption | null>(null);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
 
+  // IDs estáveis para evitar re-fetch infinito
+  const stableInput = useMemo(() => ({ poolId, opponentId }), [poolId, opponentId]);
+
   const { data: options, isLoading: optionsLoading } = trpc.x1.getOptions.useQuery(
-    { poolId, opponentId },
+    stableInput,
     { enabled: open, retry: false }
   );
 
@@ -134,18 +139,16 @@ export default function X1ChallengeModal({
 
   function handlePickChampion() {
     setChallengeType("prediction");
-    setSelectedPrediction({ type: "champion", label: "Quem vai ser o campeão?" });
+    setSelectedPrediction({ type: "champion", label: "Quem vai ser o campeão?", teamsRequired: 1 });
     setSelectedTeams([]);
     setStep("answer");
   }
 
   function handlePickGroupCategory() {
-    // Vai para o grid de grupos
     setStep("pick_group");
   }
 
   function handlePickPhaseCategory() {
-    // Vai para a lista de fases
     setStep("pick_phase");
   }
 
@@ -155,17 +158,19 @@ export default function X1ChallengeModal({
       type: "group_qualified",
       label: `Quem classifica no Grupo ${groupName}?`,
       context: { groupName },
+      teamsRequired: 2,
     });
     setSelectedTeams([]);
     setStep("answer");
   }
 
-  function handleSelectPhase(phase: string, label: string) {
+  function handleSelectPhase(phase: string, label: string, teamsRequired: number) {
     setChallengeType("prediction");
     setSelectedPrediction({
       type: "phase_qualified",
       label,
       context: { phase },
+      teamsRequired,
     });
     setSelectedTeams([]);
     setStep("answer");
@@ -177,20 +182,15 @@ export default function X1ChallengeModal({
     setStep("confirm");
   }
 
-  /** Quantos times precisam ser selecionados */
-  function getRequiredCount(type: string | null): number {
-    if (type === "group_qualified") return 2;
-    return 1;
-  }
-
   function toggleTeam(teamName: string) {
-    const required = getRequiredCount(selectedPrediction?.type ?? null);
+    const required = selectedPrediction?.teamsRequired ?? 1;
     if (selectedTeams.includes(teamName)) {
       setSelectedTeams(selectedTeams.filter((t) => t !== teamName));
     } else if (selectedTeams.length < required) {
       const next = [...selectedTeams, teamName];
       setSelectedTeams(next);
       if (next.length === required) {
+        // Auto-avança para confirmação quando atingir o número exato
         setStep("confirm");
       }
     }
@@ -223,14 +223,15 @@ export default function X1ChallengeModal({
     return options.groups ?? [];
   }
 
-  /** Extrai fases de mata-mata das predictionOptions */
-  function getKnockoutPhases(): { phase: string; label: string }[] {
+  /** Extrai fases de mata-mata das predictionOptions com teamsRequired */
+  function getKnockoutPhases(): { phase: string; label: string; teamsRequired: number }[] {
     if (!options) return [];
     return (options.predictionOptions ?? [])
       .filter((o) => o.type === "phase_qualified")
       .map((o) => ({
         phase: (o as any).context?.phase ?? o.label,
         label: o.label,
+        teamsRequired: (o as any).teamsRequired ?? 1,
       }));
   }
 
@@ -252,6 +253,9 @@ export default function X1ChallengeModal({
   const knockoutPhases = getKnockoutPhases();
   const hasGroups = groups.length > 0;
   const hasPhases = knockoutPhases.length > 0;
+
+  const required = selectedPrediction?.teamsRequired ?? 1;
+  const selectionComplete = selectedTeams.length === required;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
@@ -484,10 +488,10 @@ export default function X1ChallengeModal({
                       Classificação por fase — escolha a fase
                     </p>
                   </div>
-                  {knockoutPhases.map(({ phase, label }) => (
+                  {knockoutPhases.map(({ phase, label, teamsRequired }) => (
                     <button
                       key={phase}
-                      onClick={() => handleSelectPhase(phase, label)}
+                      onClick={() => handleSelectPhase(phase, label, teamsRequired)}
                       className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left"
                     >
                       <div
@@ -496,7 +500,12 @@ export default function X1ChallengeModal({
                       >
                         <Target className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
                       </div>
-                      <span className="text-sm font-medium flex-1">{label}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium block">{label}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          Selecione {teamsRequired} time{teamsRequired !== 1 ? "s" : ""} que avançam
+                        </span>
+                      </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                     </button>
                   ))}
@@ -520,20 +529,36 @@ export default function X1ChallengeModal({
                     </button>
                     <div>
                       <p className="text-xs text-muted-foreground">{selectedPrediction.label}</p>
-                      {getRequiredCount(selectedPrediction.type) > 1 && (
+                      {required > 1 && (
                         <p className="text-[10px] text-muted-foreground/60">
-                          Selecione {getRequiredCount(selectedPrediction.type)} times (
-                          {selectedTeams.length}/{getRequiredCount(selectedPrediction.type)})
+                          Selecione {required} time{required !== 1 ? "s" : ""} que avançam (
+                          {selectedTeams.length}/{required})
                         </p>
                       )}
                     </div>
                   </div>
 
+                  {/* Indicador de progresso quando múltiplos times */}
+                  {required > 1 && (
+                    <div className="flex gap-1 mb-2">
+                      {Array.from({ length: required }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={cn(
+                            "h-1 flex-1 rounded-full transition-all",
+                            i < selectedTeams.length
+                              ? "bg-[#FFB800]"
+                              : "bg-border/30"
+                          )}
+                        />
+                      ))}
+                    </div>
+                  )}
+
                   {/* Lista de times filtrada por grupo quando aplicável */}
                   <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
                     {getTeamsForAnswer().map((team) => {
                       const isSelected = selectedTeams.includes(team.name);
-                      const required = getRequiredCount(selectedPrediction.type);
                       const isDisabled = !isSelected && selectedTeams.length >= required;
                       return (
                         <button
@@ -575,6 +600,22 @@ export default function X1ChallengeModal({
                       );
                     })}
                   </div>
+
+                  {/* Botão manual para avançar quando seleção completa mas não auto-avançou */}
+                  {selectionComplete && (
+                    <Button
+                      className="w-full mt-2"
+                      size="sm"
+                      style={{
+                        background: "linear-gradient(135deg, #FFB800, #FF8A00)",
+                        color: "#0B0F1A",
+                      }}
+                      onClick={() => setStep("confirm")}
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Confirmar seleção
+                    </Button>
+                  )}
                 </div>
               )}
 
@@ -619,7 +660,9 @@ export default function X1ChallengeModal({
 
                     {challengeType === "prediction" && selectedTeams.length > 0 && (
                       <div className="text-sm text-muted-foreground">
-                        <span className="text-foreground font-medium">Sua aposta: </span>
+                        <span className="text-foreground font-medium">
+                          {selectedTeams.length > 1 ? "Seus times: " : "Sua aposta: "}
+                        </span>
                         <span className="font-semibold" style={{ color: "#FFB800" }}>
                           {selectedTeams.join(", ")}
                         </span>

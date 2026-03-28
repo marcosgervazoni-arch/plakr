@@ -190,15 +190,21 @@ export const x1Router = router({
       }
       const groups = Array.from(groupSet);
 
-      // Busca fases disponíveis
-      const phaseGames = await db
-        .select({ phase: games.phase })
+      // Busca fases disponíveis com times únicos por fase
+      // Isso permite calcular quantos times passam de cada fase (metade dos times da fase)
+      const phaseGamesWithTeams = await db
+        .select({ phase: games.phase, teamAId: games.teamAId, teamBId: games.teamBId })
         .from(games)
         .where(eq(games.tournamentId, t.id))
         .orderBy(asc(games.matchDate));
       const phaseSet = new Set<string>();
-      for (const g of phaseGames) {
+      // Mapa: fase -> set de teamIds únicos
+      const phaseTeamMap = new Map<string, Set<number>>();
+      for (const g of phaseGamesWithTeams) {
         phaseSet.add(g.phase);
+        if (!phaseTeamMap.has(g.phase)) phaseTeamMap.set(g.phase, new Set());
+        if (g.teamAId) phaseTeamMap.get(g.phase)!.add(g.teamAId);
+        if (g.teamBId) phaseTeamMap.get(g.phase)!.add(g.teamBId);
       }
       const phases = Array.from(phaseSet);
 
@@ -263,23 +269,32 @@ export const x1Router = router({
           { type: "next_n_games" as const, label: "Próximos 20 jogos", value: 20 },
         ],
         predictionOptions: [
-          // ── Campleão (sempre disponível) ────────────────────────────────────
-          { type: "champion" as const, label: "Quem vai ser o campeão?" },
-          // ── Classificação em grupo (detectado pelos dados reais) ──────────────────
+          // ── Campão (sempre disponível) ────────────────────────────────────
+          { type: "champion" as const, label: "Quem vai ser o campão?", teamsRequired: 1 },
+          // ── Classificação em grupo (detectado pelos dados reais) ────────────────────
           ...(hasGroups
             ? groups.map((g) => ({
                 type: "group_qualified" as const,
                 label: `Quem classifica no Grupo ${g}?`,
                 context: { groupName: g },
+                // Em campeonatos com fase de grupos, tipicamente 2 times passam por grupo
+                teamsRequired: 2,
               }))
             : []),
-          // ── Classificação por fase de mata-mata (detectado pelos dados reais) ────────
+          // ── Classificação por fase de mata-mata (detectado pelos dados reais) ────────────
           ...(hasKnockoutPhases
-            ? knockoutPhases.map((p) => ({
-                type: "phase_qualified" as const,
-                label: `Quem passa para ${p}?`,
-                context: { phase: p },
-              }))
+            ? knockoutPhases.map((p) => {
+                // Times únicos na fase
+                const teamsInPhase = phaseTeamMap.get(p)?.size ?? 0;
+                // Metade dos times da fase avança (eliminatória simples)
+                const teamsRequired = Math.max(1, Math.floor(teamsInPhase / 2));
+                return {
+                  type: "phase_qualified" as const,
+                  label: `Quem passa para ${p}?`,
+                  context: { phase: p },
+                  teamsRequired,
+                };
+              })
             : []),
         ],
       };
@@ -491,10 +506,92 @@ export const x1Router = router({
       if (c.challengeType === "prediction") {
         if (!input.challengedAnswer)
           throw new TRPCError({ code: "BAD_REQUEST", message: "Você precisa escolher sua resposta." });
-        const challengerAns = JSON.stringify(c.challengerAnswer);
-        const challengedAns = JSON.stringify(input.challengedAnswer);
-        if (challengerAns === challengedAns) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Sua resposta não pode ser igual à do desafiante." });
+
+        // Normaliza as respostas para arrays
+        const challengerArr: string[] = Array.isArray(c.challengerAnswer)
+          ? (c.challengerAnswer as string[])
+          : [c.challengerAnswer as string];
+        const challengedArr: string[] = Array.isArray(input.challengedAnswer)
+          ? input.challengedAnswer
+          : [input.challengedAnswer];
+
+        // Valida número correto de times para phase_qualified
+        if (c.predictionType === "phase_qualified") {
+          // Calcula quantos times a fase tem para determinar o número esperado
+          const { games } = await getSchema();
+          const { eq: _eq } = await import("drizzle-orm");
+          const { pools: _pools } = await getSchema();
+          const poolRow = await db.select().from(_pools).where(_eq(_pools.id, c.poolId)).limit(1);
+          if (poolRow.length) {
+            const phaseKey = (c.predictionContext as { phase?: string } | null)?.phase;
+            if (phaseKey) {
+              const phaseGames = await db
+                .select({ teamAId: games.teamAId, teamBId: games.teamBId })
+                .from(games)
+                .where(_eq(games.tournamentId, poolRow[0].tournamentId))
+              const phaseTeamSet = new Set<number>();
+              for (const g of phaseGames) {
+                if (g.teamAId) phaseTeamSet.add(g.teamAId);
+                if (g.teamBId) phaseTeamSet.add(g.teamBId);
+              }
+              // Filtra apenas jogos da fase específica
+              const phaseSpecificGames = await db
+                .select({ teamAId: games.teamAId, teamBId: games.teamBId })
+                .from(games)
+                .where(
+                  (await import("drizzle-orm")).and(
+                    _eq(games.tournamentId, poolRow[0].tournamentId),
+                    _eq(games.phase, phaseKey)
+                  )
+                );
+              const phaseSpecificTeams = new Set<number>();
+              for (const g of phaseSpecificGames) {
+                if (g.teamAId) phaseSpecificTeams.add(g.teamAId);
+                if (g.teamBId) phaseSpecificTeams.add(g.teamBId);
+              }
+              const expectedCount = Math.max(1, Math.floor(phaseSpecificTeams.size / 2));
+              if (challengedArr.length !== expectedCount) {
+                throw new TRPCError({
+                  code: "BAD_REQUEST",
+                  message: `Você deve selecionar exatamente ${expectedCount} time${expectedCount !== 1 ? "s" : ""} que avançam nesta fase.`,
+                });
+              }
+              // Verifica se o desafiante também enviou a quantidade correta
+              if (challengerArr.length !== expectedCount) {
+                // Desafiante enviou quantidade errada (legado) — aceita sem validação de quantidade
+              } else {
+                // Verifica combinação idêntica (mesmos times, mesma ordem ou não)
+                const challengerSorted = [...challengerArr].sort();
+                const challengedSorted = [...challengedArr].sort();
+                if (JSON.stringify(challengerSorted) === JSON.stringify(challengedSorted)) {
+                  throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Sua combinação de times não pode ser idêntica à do desafiante.",
+                  });
+                }
+              }
+            }
+          }
+        } else if (c.predictionType === "group_qualified") {
+          // group_qualified: 2 times, combinação não pode ser idêntica
+          if (challengedArr.length !== 2) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Você deve selecionar exatamente 2 times." });
+          }
+          const challengerSorted = [...challengerArr].sort();
+          const challengedSorted = [...challengedArr].sort();
+          if (JSON.stringify(challengerSorted) === JSON.stringify(challengedSorted)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Sua combinação de times não pode ser idêntica à do desafiante.",
+            });
+          }
+        } else {
+          // champion e outros: resposta única, não pode ser igual
+          const challengerAns = JSON.stringify(challengerArr[0]);
+          const challengedAns = JSON.stringify(challengedArr[0]);
+          if (challengerAns === challengedAns) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Sua resposta não pode ser igual à do desafiante." });
+          }
         }
       }
 
