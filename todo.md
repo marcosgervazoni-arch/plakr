@@ -1807,3 +1807,8 @@
 
 ## Bug: Conquistas /dashboard desktop — card muito estreito (28/03/2026)
 - [x] Coluna esquerda do Dashboard aumentada de 280px para 320px (mais espaço para o grid de badges)
+
+## Bug/UX: Submenus de bolões no header (28/03/2026)
+- [x] Removido NotificationBell absoluto do topo do sidebar desktop (causava sobreposição visual)
+- [x] NotificationBell integrado como item de nav normal no sidebar (com label 'Notificações')
+- [x] Ordem do sidebar: Dashboard → Meu Perfil → Explorar Bolões → Conquistas → Notificações → Meus Bolões → Upgrade → Admin → Sair
