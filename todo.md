@@ -1961,3 +1961,6 @@
 
 ## Investigação Profunda Anúncios (28/03/2026)
 - [x] Causa raiz: usuário admin tinha plano Pro ativo — isPro bloqueava todos os anúncios. Corrigido: admins sempre veem anúncios independente do plano
+
+## Bug Banner Topo Desktop (28/03/2026)
+- [x] Banner de topo desktop corrigido: o main tinha overflow-y-auto no elemento pai, empurrando o banner para fora da área visível. Corrigido com overflow-hidden no main + área scrollável separada para o conteúdo
