@@ -405,8 +405,8 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
       )}
 
-      {/* Upgrade CTA — apenas para usuários free */}
-      {isAuthenticated && !isPro && (
+      {/* Upgrade CTA — apenas para usuários free (não admin, não pro) */}
+      {isAuthenticated && !isPro && !isAdmin && (
         <div className="p-3 border-t border-border/30">
           <Link href="/upgrade" onClick={() => setSidebarOpen(false)}>
             <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 cursor-pointer hover:bg-primary/15 transition-colors">

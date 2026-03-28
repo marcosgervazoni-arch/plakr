@@ -1990,3 +1990,6 @@
 - [x] Corrigido: AdBanner agora usa trpc.platform.getAdConfig (pública) em vez de getSettings (restrita a admin)
 - [x] Corrigido: adsEnabled estava 0 no banco — ativado via SQL (toggle global de anúncios ligado)
 - [x] Documentado: código between_mobile deve usar zona 320×50 (mesmo tamanho do top_mobile)
+
+## Correção sidebar Upgrade CTA (28/03/2026)
+- [x] Card "Upgrade para Pro" não aparecia corretamente para admins — condição corrigida para !isPro && !isAdmin
