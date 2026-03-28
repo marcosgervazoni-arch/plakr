@@ -1967,3 +1967,9 @@
 
 ## Bug Anúncios Visíveis para Usuários Pro (28/03/2026)
 - [x] Todos os AdBanner auditados: sidebar (AppShell), between_sections (Dashboard + PoolPage) corrigidos com guarda !isPro. Usuários Pro não veem nenhum anúncio em nenhuma tela.
+
+## Adsterra + Dimensões Fixas de Anúncios (28/03/2026)
+- [x] Auditar AdBanner e mapear dimensões por posição (desktop e mobile)
+- [x] Fixar dimensões no AdBanner — banners do admin respeitam o container, não o contrário
+- [x] Criar estrutura de integração Adsterra no AdBanner (zonas via env/admin, fallback automático)
+- [x] Documentar mapa de zonas Adsterra para o usuário
