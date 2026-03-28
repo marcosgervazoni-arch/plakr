@@ -48,6 +48,16 @@ export const platformRouter = router({
     };
   }),
 
+  // Retorna configuração de rede de anúncios para o AdBanner (pública — não contém dados sensíveis)
+  getAdConfig: publicProcedure.query(async () => {
+    const settings = await getPlatformSettings();
+    if (!settings) return { adsEnabled: false, adNetworkScripts: null };
+    return {
+      adsEnabled: settings.adsEnabled ?? false,
+      adNetworkScripts: settings.adNetworkScripts ?? null,
+    };
+  }),
+
   // Retorna apenas campos seguros e não sensíveis para usuários autenticados
   getPublicSettings: protectedProcedure.query(async () => {
     const settings = await getPlatformSettings();

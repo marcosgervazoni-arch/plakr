@@ -1984,3 +1984,9 @@
 - [x] AdminIntegrations: instruções atualizadas para orientar a colar o código do GET CODE
 - [x] AdBanner: AdsterraSlot reescrito para injetar código HTML via iframe (em vez de script por ID de zona)
 - [x] AdBanner: lê adNetworkScripts do banco via trpc.platform.getSettings (sem env vars)
+
+## Correções Adsterra pós-configuração (28/03/2026)
+- [x] Corrigido: getSettings era adminProcedure — criada procedure pública getAdConfig que retorna adsEnabled + adNetworkScripts
+- [x] Corrigido: AdBanner agora usa trpc.platform.getAdConfig (pública) em vez de getSettings (restrita a admin)
+- [x] Corrigido: adsEnabled estava 0 no banco — ativado via SQL (toggle global de anúncios ligado)
+- [x] Documentado: código between_mobile deve usar zona 320×50 (mesmo tamanho do top_mobile)

@@ -20,6 +20,7 @@
  *   no banco via AdminIntegrations → campo adNetworkScripts
  * - Quando não há banner próprio cadastrado na posição, o código Adsterra
  *   é injetado via iframe para isolamento de scripts
+ * - Adsterra é exibido independente do toggle adsEnabled (que controla só banners próprios)
  */
 import { trpc } from "@/lib/trpc";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -128,8 +129,10 @@ interface AdBannerProps {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export function AdBanner({ position, className }: AdBannerProps) {
+  // getActive já filtra por adsEnabled no servidor (banners próprios)
   const { data: allAds } = trpc.ads.getActive.useQuery({ position });
-  const { data: platformSettings } = trpc.platform.getSettings.useQuery();
+  // getAdConfig é público — retorna adsEnabled + adNetworkScripts para todos os usuários
+  const { data: adConfig } = trpc.platform.getAdConfig.useQuery();
   const recordClickMutation = trpc.ads.recordClick.useMutation();
   const isMobile = useIsMobile();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -143,9 +146,9 @@ export function AdBanner({ position, className }: AdBannerProps) {
   const dims = AD_DIMENSIONS[position];
   const { w: adWidth, h: adHeight } = isMobile ? dims.mobile : dims.desktop;
 
-  // Código Adsterra do banco (prioridade) — fallback: nulo
+  // Código Adsterra do banco
   const adsterraKey = getAdsterraKey(position, isMobile);
-  const adNetworkScripts = (platformSettings?.adNetworkScripts as Record<string, unknown> | null) ?? {};
+  const adNetworkScripts = (adConfig?.adNetworkScripts as Record<string, unknown> | null) ?? {};
   const adsterraCode = typeof adNetworkScripts[adsterraKey] === "string" && (adNetworkScripts[adsterraKey] as string).trim().length > 0
     ? (adNetworkScripts[adsterraKey] as string)
     : null;
