@@ -190,21 +190,27 @@ export const x1Router = router({
       }
       const groups = Array.from(groupSet);
 
-      // Busca fases disponíveis com times únicos por fase
-      // Isso permite calcular quantos times passam de cada fase (metade dos times da fase)
+      // Busca fases disponíveis com contagem de jogos e times únicos por fase.
+      // IMPORTANTE: Em torneios de mata-mata, os jogos futuros geralmente não têm teamAId/teamBId
+      // preenchidos (o chaveamento é dinâmico). Por isso, usamos o número de JOGOS da fase
+      // para calcular quantos times avançam: em eliminatória simples, cada jogo produz 1 vencedor,
+      // então teamsRequired = número de jogos da fase.
       const phaseGamesWithTeams = await db
         .select({ phase: games.phase, teamAId: games.teamAId, teamBId: games.teamBId })
         .from(games)
         .where(eq(games.tournamentId, t.id))
         .orderBy(asc(games.matchDate));
       const phaseSet = new Set<string>();
-      // Mapa: fase -> set de teamIds únicos
+      // Mapa: fase -> set de teamIds únicos (quando preenchidos)
       const phaseTeamMap = new Map<string, Set<number>>();
+      // Mapa: fase -> contagem de jogos
+      const phaseGameCount = new Map<string, number>();
       for (const g of phaseGamesWithTeams) {
         phaseSet.add(g.phase);
         if (!phaseTeamMap.has(g.phase)) phaseTeamMap.set(g.phase, new Set());
         if (g.teamAId) phaseTeamMap.get(g.phase)!.add(g.teamAId);
         if (g.teamBId) phaseTeamMap.get(g.phase)!.add(g.teamBId);
+        phaseGameCount.set(g.phase, (phaseGameCount.get(g.phase) ?? 0) + 1);
       }
       const phases = Array.from(phaseSet);
 
@@ -281,13 +287,18 @@ export const x1Router = router({
                 teamsRequired: 2,
               }))
             : []),
-          // ── Classificação por fase de mata-mata (detectado pelos dados reais) ────────────
+          // ── Classificação por fase de mata-mata (detectado pelos dados reais) ──────────
           ...(hasKnockoutPhases
             ? knockoutPhases.map((p) => {
-                // Times únicos na fase
+                // Estratégia de cálculo de teamsRequired:
+                // 1º) Se os times já estão cadastrados nos jogos: usa metade dos times únicos
+                // 2º) Se os jogos ainda não têm times (chaveamento dinâmico): usa número de jogos
+                //    (em eliminatória simples, cada jogo produz exatamente 1 vencedor)
                 const teamsInPhase = phaseTeamMap.get(p)?.size ?? 0;
-                // Metade dos times da fase avança (eliminatória simples)
-                const teamsRequired = Math.max(1, Math.floor(teamsInPhase / 2));
+                const gameCount = phaseGameCount.get(p) ?? 0;
+                const teamsRequired = teamsInPhase >= 2
+                  ? Math.max(1, Math.floor(teamsInPhase / 2))
+                  : Math.max(1, gameCount);
                 return {
                   type: "phase_qualified" as const,
                   label: `Quem passa para ${p}?`,
@@ -517,50 +528,39 @@ export const x1Router = router({
 
         // Valida número correto de times para phase_qualified
         if (c.predictionType === "phase_qualified") {
-          // Calcula quantos times a fase tem para determinar o número esperado
           const { games } = await getSchema();
-          const { eq: _eq } = await import("drizzle-orm");
+          const { eq: _eq, and: _and } = await import("drizzle-orm");
           const { pools: _pools } = await getSchema();
           const poolRow = await db.select().from(_pools).where(_eq(_pools.id, c.poolId)).limit(1);
           if (poolRow.length) {
             const phaseKey = (c.predictionContext as { phase?: string } | null)?.phase;
             if (phaseKey) {
-              const phaseGames = await db
-                .select({ teamAId: games.teamAId, teamBId: games.teamBId })
-                .from(games)
-                .where(_eq(games.tournamentId, poolRow[0].tournamentId))
-              const phaseTeamSet = new Set<number>();
-              for (const g of phaseGames) {
-                if (g.teamAId) phaseTeamSet.add(g.teamAId);
-                if (g.teamBId) phaseTeamSet.add(g.teamBId);
-              }
-              // Filtra apenas jogos da fase específica
+              // Busca jogos da fase específica
               const phaseSpecificGames = await db
                 .select({ teamAId: games.teamAId, teamBId: games.teamBId })
                 .from(games)
-                .where(
-                  (await import("drizzle-orm")).and(
-                    _eq(games.tournamentId, poolRow[0].tournamentId),
-                    _eq(games.phase, phaseKey)
-                  )
-                );
+                .where(_and(_eq(games.tournamentId, poolRow[0].tournamentId), _eq(games.phase, phaseKey)));
+
+              // Mesma estratégia do getOptions:
+              // - Se times já cadastrados: metade dos times únicos
+              // - Se jogos sem times (chaveamento dinâmico): número de jogos
               const phaseSpecificTeams = new Set<number>();
               for (const g of phaseSpecificGames) {
                 if (g.teamAId) phaseSpecificTeams.add(g.teamAId);
                 if (g.teamBId) phaseSpecificTeams.add(g.teamBId);
               }
-              const expectedCount = Math.max(1, Math.floor(phaseSpecificTeams.size / 2));
+              const expectedCount = phaseSpecificTeams.size >= 2
+                ? Math.max(1, Math.floor(phaseSpecificTeams.size / 2))
+                : Math.max(1, phaseSpecificGames.length);
+
               if (challengedArr.length !== expectedCount) {
                 throw new TRPCError({
                   code: "BAD_REQUEST",
                   message: `Você deve selecionar exatamente ${expectedCount} time${expectedCount !== 1 ? "s" : ""} que avançam nesta fase.`,
                 });
               }
-              // Verifica se o desafiante também enviou a quantidade correta
-              if (challengerArr.length !== expectedCount) {
-                // Desafiante enviou quantidade errada (legado) — aceita sem validação de quantidade
-              } else {
-                // Verifica combinação idêntica (mesmos times, mesma ordem ou não)
+              // Verifica combinação idêntica apenas quando desafiante enviou mesma quantidade
+              if (challengerArr.length === expectedCount) {
                 const challengerSorted = [...challengerArr].sort();
                 const challengedSorted = [...challengedArr].sort();
                 if (JSON.stringify(challengerSorted) === JSON.stringify(challengedSorted)) {

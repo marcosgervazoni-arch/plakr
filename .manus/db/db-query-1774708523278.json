@@ -1,0 +1,9 @@
+{
+  "query": "\nSELECT \n  g.phase,\n  COUNT(DISTINCT g.teamAId) as unique_teamA,\n  COUNT(DISTINCT g.teamBId) as unique_teamB,\n  COUNT(*) as game_count,\n  g.tournamentId\nFROM games g\nWHERE g.phase IS NOT NULL \n  AND g.phase != '' \n  AND g.phase NOT LIKE 'group_%' \n  AND g.phase != 'group_stage'\n  AND g.teamAId IS NOT NULL\nGROUP BY g.tournamentId, g.phase\nORDER BY g.tournamentId, g.phase\nLIMIT 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT \n  g.phase,\n  COUNT(DISTINCT g.teamAId) as unique_teamA,\n  COUNT(DISTINCT g.teamBId) as unique_teamB,\n  COUNT(*) as game_count,\n  g.tournamentId\nFROM games g\nWHERE g.phase IS NOT NULL \n  AND g.phase != '' \n  AND g.phase NOT LIKE 'group_%' \n  AND g.phase != 'group_stage'\n  AND g.teamAId IS NOT NULL\nGROUP BY g.tournamentId, g.phase\nORDER BY g.tournamentId, g.phase\nLIMIT 20;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 400
+}

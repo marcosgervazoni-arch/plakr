@@ -1778,3 +1778,9 @@
 - [x] X1ChallengePage: requiredCount dinâmico via x1Options.predictionOptions
 - [x] X1ChallengePage: instrução dinâmica para phase_qualified com N times
 - [x] 305 testes passando
+
+## Bug: X1 phase_qualified avança com 1 time em vez de N (28/03/2026)
+- [x] Diagnosticar causa raiz: jogos de mata-mata não têm teamAId/teamBId preenchidos (chaveamento dinâmico)
+- [x] Corrigir backend getOptions: usar contagem de jogos da fase quando times não estão cadastrados
+- [x] Corrigir backend accept: mesma estratégia de cálculo para validação
+- [x] Rodada de 32 (16 jogos) → teamsRequired=16; Oitavas (8) → 8; Quartas (4) → 4; Semifinais (2) → 2; Final (1) → 1

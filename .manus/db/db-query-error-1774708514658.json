@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT \n  t.id as tournament_id,\n  t.name as tournament_name,\n  g.phase,\n  COUNT(DISTINCT COALESCE(g.team_a_id, 0)) + COUNT(DISTINCT COALESCE(g.team_b_id, 0)) as approx_teams,\n  COUNT(DISTINCT g.team_a_id) as unique_team_a,\n  COUNT(DISTINCT g.team_b_id) as unique_team_b,\n  COUNT(*) as game_count\nFROM games g\nJOIN tournaments t ON t.id = g.tournament_id\nWHERE g.phase IS NOT NULL AND g.phase != '' AND g.phase NOT LIKE 'group_%' AND g.phase != 'group_stage'\nGROUP BY t.id, t.name, g.phase\nORDER BY t.id, g.phase\nLIMIT 30;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT \n  t.id as tournament_id,\n  t.name as tournament_name,\n  g.phase,\n  COUNT(DISTINCT COALESCE(g.team_a_id, 0)) + COUNT(DISTINCT COALESCE(g.team_b_id, 0)) as approx_teams,\n  COUNT(DISTINCT g.team_a_id) as unique_team_a,\n  COUNT(DISTINCT g.team_b_id) as unique_team_b,\n  COUNT(*) as game_count\nFROM games g\nJOIN tournaments t ON t.id = g.tournament_id\nWHERE g.phase IS NOT NULL AND g.phase != '' AND g.phase NOT LIKE 'group_%' AND g.phase != 'group_stage'\nGROUP BY t.id, t.name, g.phase\nORDER BY t.id, g.phase\nLIMIT 30;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'g.tournament_id' in 'on clause'"
+  ]
+}

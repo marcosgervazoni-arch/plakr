@@ -1,0 +1,118 @@
+{
+  "query": "\nSELECT phase, COUNT(*) as total, SUM(CASE WHEN teamAId IS NOT NULL THEN 1 ELSE 0 END) as with_teamA, SUM(CASE WHEN teamBId IS NOT NULL THEN 1 ELSE 0 END) as with_teamB FROM games GROUP BY phase ORDER BY phase LIMIT 20;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT phase, COUNT(*) as total, SUM(CASE WHEN teamAId IS NOT NULL THEN 1 ELSE 0 END) as with_teamA, SUM(CASE WHEN teamBId IS NOT NULL THEN 1 ELSE 0 END) as with_teamB FROM games GROUP BY phase ORDER BY phase LIMIT 20;\n",
+  "rows": [
+    {
+      "phase": "Disputa 3º Lugar",
+      "total": "1",
+      "with_teamA": "0",
+      "with_teamB": "0"
+    },
+    {
+      "phase": "Final",
+      "total": "1",
+      "with_teamA": "0",
+      "with_teamB": "0"
+    },
+    {
+      "phase": "group_a",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_b",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_c",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_d",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_e",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_f",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_g",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_h",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_i",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_j",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_k",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "group_l",
+      "total": "6",
+      "with_teamA": "6",
+      "with_teamB": "6"
+    },
+    {
+      "phase": "Oitavas de Final",
+      "total": "8",
+      "with_teamA": "0",
+      "with_teamB": "0"
+    },
+    {
+      "phase": "Quartas de Final",
+      "total": "4",
+      "with_teamA": "0",
+      "with_teamB": "0"
+    },
+    {
+      "phase": "Rodada de 32",
+      "total": "16",
+      "with_teamA": "0",
+      "with_teamB": "0"
+    },
+    {
+      "phase": "Semifinais",
+      "total": "2",
+      "with_teamA": "0",
+      "with_teamB": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "phase\ttotal\twith_teamA\twith_teamB\nDisputa 3º Lugar\t1\t0\t0\nFinal\t1\t0\t0\ngroup_a\t6\t6\t6\ngroup_b\t6\t6\t6\ngroup_c\t6\t6\t6\ngroup_d\t6\t6\t6\ngroup_e\t6\t6\t6\ngroup_f\t6\t6\t6\ngroup_g\t6\t6\t6\ngroup_h\t6\t6\t6\ngroup_i\t6\t6\t6\ngroup_j\t6\t6\t6\ngroup_k\t6\t6\t6\ngroup_l\t6\t6\t6\nOitavas de Final\t8\t0\t0\nQuartas de Final\t4\t0\t0\nRodada de 32\t16\t0\t0\nSemifinais\t2\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 349
+}

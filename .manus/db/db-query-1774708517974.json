@@ -1,0 +1,234 @@
+{
+  "query": "SHOW COLUMNS FROM games;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW COLUMNS FROM games;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "tournamentId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "externalId",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "teamAId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "teamBId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "teamAName",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "teamBName",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "teamAFlag",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "teamBFlag",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "groupName",
+      "Type": "varchar(10)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "phase",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "group_stage",
+      "Extra": ""
+    },
+    {
+      "Field": "matchDate",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "venue",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "enum('scheduled','live','finished','cancelled')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "scheduled",
+      "Extra": ""
+    },
+    {
+      "Field": "scoreA",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "scoreB",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "matchNumber",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sourceMatchAId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sourceMatchBId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sourceMatchARole",
+      "Type": "enum('winner','runner_up')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sourceMatchBRole",
+      "Type": "enum('winner','runner_up')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "isZebraResult",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "manuallyEdited",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "importedFromSheets",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "reminderSentAt",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "roundNumber",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\ntournamentId\tint\tNO\tMUL\tNULL\t\nexternalId\tvarchar(64)\tYES\t\tNULL\t\nteamAId\tint\tYES\tMUL\tNULL\t\nteamBId\tint\tYES\tMUL\tNULL\t\nteamAName\tvarchar(128)\tYES\t\tNULL\t\nteamBName\tvarchar(128)\tYES\t\tNULL\t\nteamAFlag\ttext\tYES\t\tNULL\t\nteamBFlag\ttext\tYES\t\tNULL\t\ngroupName\tvarchar(10)\tYES\t\tNULL\t\nphase\tvarchar(64)\tNO\t\tgroup_stage\t\nmatchDate\ttimestamp\tNO\t\tNULL\t\nvenue\tvarchar(255)\tYES\t\tNULL\t\nstatus\tenum('scheduled','live','finished','cancelled')\tNO\t\tscheduled\t\nscoreA\tint\tYES\t\tNULL\t\nscoreB\tint\tYES\t\tNULL\t\nmatchNumber\tint\tYES\t\tNULL\t\nsourceMatchAId\tint\tYES\t\tNULL\t\nsourceMatchBId\tint\tYES\t\tNULL\t\nsourceMatchARole\tenum('winner','runner_up')\tYES\t\tNULL\t\nsourceMatchBRole\tenum('winner','runner_up')\tYES\t\tNULL\t\nisZebraResult\ttinyint(1)\tNO\t\t0\t\nmanuallyEdited\ttinyint(1)\tNO\t\t0\t\nimportedFromSheets\ttinyint(1)\tNO\t\t0\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nreminderSentAt\ttimestamp\tYES\t\tNULL\t\nroundNumber\tint\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 369
+}
