@@ -1836,3 +1836,8 @@
 ## Bug: Ordem das fases no PoolPage (28/03/2026)
 - [x] Causa raiz: jogos importados via CSV têm campo `phase` preenchido com label (ex: "Quartas de Final") em vez da chave (ex: "quarter_finals")
 - [x] Correção: phaseOrder agora mapeia tanto pela chave quanto pelo label de cada fase
+
+## Sprint 28/03/2026 — CSV Phase + Confrontos Visuais
+- [x] Normalizar campo phase na importação CSV (e Google Sheets) para usar chave via normalizePhaseToKey()
+- [x] Confrontos visuais no cabeçalho das fases de mata-mata (ex: Brasil vs Argentina · França vs Espanha)
+- [x] 316 testes passando, 0 erros de TypeScript

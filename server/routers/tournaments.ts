@@ -33,6 +33,22 @@ import {
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
+// Helper: normaliza o valor do campo `phase` vindo do CSV para a chave da fase no banco.
+// Jogos importados podem ter o label (ex: "Quartas de Final") ou a chave (ex: "quarter_finals").
+// Se o valor já for uma chave válida, retorna direto; caso contrário, busca pelo label.
+async function normalizePhaseToKey(phaseValue: string, tournamentId: number): Promise<string> {
+  if (!phaseValue) return phaseValue;
+  const phases = await getTournamentPhases(tournamentId);
+  // Verifica se já é uma chave válida
+  const byKey = phases.find((p) => p.key === phaseValue);
+  if (byKey) return byKey.key;
+  // Tenta encontrar pelo label (case-insensitive)
+  const byLabel = phases.find((p) => p.label.toLowerCase() === phaseValue.toLowerCase());
+  if (byLabel) return byLabel.key;
+  // Fallback: retorna o valor original para não perder dados
+  return phaseValue;
+}
+
 // Helper local: monta ScoringRules a partir das regras do bolão + defaults da plataforma
 function buildEffectiveRules(
   rules: Awaited<ReturnType<typeof getPoolScoringRules>>,
@@ -116,12 +132,14 @@ export const tournamentsRouter = router({
         const parsedRound = roundNumberRaw ? parseInt(roundNumberRaw.replace(/"/g, ""), 10) : undefined;
         const roundNumber = parsedRound && parsedRound > 0 ? parsedRound : undefined;
         try {
+          const rawPhase = (phase ?? "Fase de Grupos").replace(/"/g, "");
+          const normalizedPhase = await normalizePhaseToKey(rawPhase, input.tournamentId);
           await createGame({
             tournamentId: input.tournamentId,
             teamAName: teamAName.replace(/"/g, ""),
             teamBName: teamBName.replace(/"/g, ""),
             matchDate: new Date(matchDateStr.replace(/"/g, "")),
-            phase: (phase ?? "Fase de Grupos").replace(/"/g, ""),
+            phase: normalizedPhase,
             venue: venue?.replace(/"/g, "") || undefined,
             roundNumber,
           });
@@ -385,12 +403,14 @@ export const tournamentsRouter = router({
         const parsedRound = roundNumberRaw ? parseInt(roundNumberRaw, 10) : undefined;
         const roundNumber = parsedRound && parsedRound > 0 ? parsedRound : undefined;
         try {
+          const rawPhase = phase || "Fase de Grupos";
+          const normalizedPhase = await normalizePhaseToKey(rawPhase, input.tournamentId);
           await createGame({
             tournamentId: input.tournamentId,
             teamAName,
             teamBName,
             matchDate: new Date(matchDateStr),
-            phase: phase || "Fase de Grupos",
+            phase: normalizedPhase,
             roundNumber,
           });
           imported++;

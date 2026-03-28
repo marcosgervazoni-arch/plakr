@@ -601,6 +601,11 @@ export default function PoolPage() {
                     const open = isGameOpen(g.matchDate);
                     return open && g.status !== "finished" && !betsByGame.has(g.id);
                   }).length;
+                  // Confrontos visuais para fases de mata-mata com times definidos
+                  const phaseMatchups = phaseGames
+                    .filter((g) => g.teamAName && g.teamBName)
+                    .map((g) => `${g.teamAName} vs ${g.teamBName}`);
+                  const isKnockoutPhase = phaseMatchups.length > 0 && phaseMatchups.length === phaseGames.length;
 
                   return (
                     <div key={phaseKey} className="rounded-xl border border-border/40 overflow-hidden">
@@ -615,25 +620,33 @@ export default function PoolPage() {
                             : "bg-muted/30 hover:bg-muted/50"
                         }`}
                       >
-                        <div className="flex items-center gap-2.5">
-                          {hasLive && (
-                            <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse shrink-0" />
-                          )}
-                          <span className={`font-semibold text-sm ${
-                            hasLive ? "text-red-400" : isExpanded ? "text-primary" : "text-foreground"
-                          }`}>
-                            {label}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {phaseGames.length} jogo{phaseGames.length !== 1 ? "s" : ""}
-                          </span>
-                          {pendingBets > 0 && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
-                              {pendingBets} sem palpite
+                        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                          <div className="flex items-center gap-2.5">
+                            {hasLive && (
+                              <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse shrink-0" />
+                            )}
+                            <span className={`font-semibold text-sm ${
+                              hasLive ? "text-red-400" : isExpanded ? "text-primary" : "text-foreground"
+                            }`}>
+                              {label}
                             </span>
-                          )}
-                          {allFinished && (
-                            <span className="text-xs text-muted-foreground/60">✓ Encerrada</span>
+                            <span className="text-xs text-muted-foreground">
+                              {phaseGames.length} jogo{phaseGames.length !== 1 ? "s" : ""}
+                            </span>
+                            {pendingBets > 0 && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-bold">
+                                {pendingBets} sem palpite
+                              </span>
+                            )}
+                            {allFinished && (
+                              <span className="text-xs text-muted-foreground/60">✓ Encerrada</span>
+                            )}
+                          </div>
+                          {/* Confrontos visuais — apenas para fases com times definidos e fase recolhida */}
+                          {isKnockoutPhase && !isExpanded && (
+                            <p className="text-[10px] text-muted-foreground/70 truncate leading-tight">
+                              {phaseMatchups.slice(0, 3).join(" · ")}{phaseMatchups.length > 3 ? ` · +${phaseMatchups.length - 3}` : ""}
+                            </p>
                           )}
                         </div>
                         <ChevronDown
