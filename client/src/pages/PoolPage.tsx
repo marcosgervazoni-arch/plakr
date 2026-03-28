@@ -743,8 +743,8 @@ export default function PoolPage() {
               </div>
             )}
 
-            {/* AdBanner no final — não empurra o conteúdo principal */}
-            {games.length > 0 && <AdBanner position="top" className="w-full" />}
+            {/* AdBanner entre seções — após lista de jogos */}
+            {games.length > 0 && <AdBanner position="between_sections" className="w-full mt-3" />}
           </TabsContent>
 
           {/* ══ ABA RANKING ══ */}

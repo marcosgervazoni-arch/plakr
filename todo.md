@@ -1942,3 +1942,10 @@
 - [x] BUG 1: Mutation create não enviava device/startAt/endAt/sortOrder — procedure create expandida com todos os campos
 - [x] BUG 2: getActive não verificava adsEnabled da platformSettings — corrigido em db.ts
 - [x] MELHORIA: AdBanner position="top" adicionado no AppShell (desktop e mobile) — banner de topo aparece em todas as telas
+
+## Posicionamento de Anúncios — Lacunas (28/03/2026)
+- [x] Rodapé (bottom): AdBanner adicionado no AppShell (desktop e mobile)
+- [x] Entre Seções (between_sections): adicionado na PoolPage após lista de jogos
+- [x] Popup: AdBanner position="popup" adicionado globalmente no AppShell
+- [x] popupFrequency adicionado no formulário do AdminAds (visível apenas quando posição é popup)
+- [x] Anúncios suprimidos para usuários Pro (isPro) no AppShell

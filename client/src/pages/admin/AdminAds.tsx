@@ -124,13 +124,12 @@ type AdForm = {
   startAt: string;
   endAt: string;
   sortOrder: number;
+  popupFrequency: "session" | "daily" | "always";
 };
-
 const defaultForm: AdForm = {
   title: "", assetUrl: "", linkUrl: "", type: "banner", position: "sidebar",
-  device: "all", isActive: true, startAt: "", endAt: "", sortOrder: 0,
+  device: "all", isActive: true, startAt: "", endAt: "", sortOrder: 0, popupFrequency: "session",
 };
-
 export default function AdminAds() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editAd, setEditAd] = useState<(AdForm & { id: number }) | null>(null);
@@ -195,10 +194,10 @@ export default function AdminAds() {
       startAt: (ad as { startAt?: Date | null }).startAt ? new Date((ad as { startAt: Date }).startAt).toISOString().slice(0, 16) : "",
       endAt: (ad as { endAt?: Date | null }).endAt ? new Date((ad as { endAt: Date }).endAt).toISOString().slice(0, 16) : "",
       sortOrder: (ad as { sortOrder?: number }).sortOrder ?? 0,
+      popupFrequency: ((ad as { popupFrequency?: string }).popupFrequency as "session" | "daily" | "always") ?? "session",
     });
   };
-
-  const adsGlobalEnabled = settings?.adsEnabled ?? true;
+  const adsGlobalEnabled = settings?.adsEnabled ?? true;;
 
   // Totais de cliques
   const totalClicks = clicksData?.reduce((acc, r) => acc + Number(r.clicks), 0) ?? 0;
@@ -427,6 +426,7 @@ export default function AdminAds() {
           startAt: form.startAt ? new Date(form.startAt) : undefined,
           endAt: form.endAt ? new Date(form.endAt) : undefined,
           sortOrder: form.sortOrder,
+          popupFrequency: form.popupFrequency,
         })}
         isPending={createMutation.isPending}
         submitLabel="Criar Anúncio"
@@ -453,6 +453,7 @@ export default function AdminAds() {
             startAt: editAd.startAt ? new Date(editAd.startAt) : null,
             endAt: editAd.endAt ? new Date(editAd.endAt) : null,
             sortOrder: editAd.sortOrder,
+            popupFrequency: editAd.popupFrequency,
           })}
           isPending={updateMutation.isPending}
           submitLabel="Salvar Alterações"
@@ -556,6 +557,21 @@ function AdFormDialog({
               </SelectContent>
             </Select>
           </div>
+          {/* ─ Frequência do Popup ─ visível apenas quando posição é popup ─ */}
+          {form.position === "popup" && (
+            <div className="space-y-1">
+              <Label>Frequência de exibição</Label>
+              <Select value={form.popupFrequency} onValueChange={(v) => update({ popupFrequency: v as AdForm["popupFrequency"] })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="session">Uma vez por sessão (recomendado)</SelectItem>
+                  <SelectItem value="daily">Uma vez por dia</SelectItem>
+                  <SelectItem value="always">Sempre que a página carregar</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Controla com que frequência o popup aparece para o mesmo usuário.</p>
+            </div>
+          )}
           {/* ─ Upload de Mídia (imagem ou vídeo) ─ oculto para tipo Script ─ */}
           {!isScript && (
             <div className="space-y-1">

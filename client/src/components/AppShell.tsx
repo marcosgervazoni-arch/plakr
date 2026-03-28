@@ -518,21 +518,28 @@ export default function AppShell({ children }: AppShellProps) {
         </aside>
 
         {/* Main content — apenas este elemento rola */}
-        <main className="flex-1 min-w-0 overflow-y-auto h-screen">
-          {/* Banner de topo — exibido globalmente para todos os usuários */}
-          <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0" />
-          {children}
+        <main className="flex-1 min-w-0 overflow-y-auto h-screen flex flex-col">
+          {/* Banner de topo — apenas para usuários free */}
+          {!isPro && <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0" />}
+          <div className="flex-1">{children}</div>
+          {/* Banner de rodapé — apenas para usuários free */}
+          {!isPro && <AdBanner position="bottom" className="w-full rounded-none border-x-0 border-b-0" />}
         </main>
       </div>
 
       {/* Mobile layout — sem flex fixo, scroll natural */}
-      <div className="lg:hidden flex-1">
-        <main className="min-w-0">
-          {/* Banner de topo mobile */}
-          <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0" />
+      <div className="lg:hidden flex-1 flex flex-col">
+        <main className="min-w-0 flex-1">
+          {/* Banner de topo mobile — apenas para usuários free */}
+          {!isPro && <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0" />}
           {children}
+          {/* Banner de rodapé mobile — apenas para usuários free */}
+          {!isPro && <AdBanner position="bottom" className="w-full rounded-none border-x-0" />}
         </main>
       </div>
+
+      {/* Popup global — apenas para usuários free, renderizado fora do fluxo */}
+      {!isPro && <AdBanner position="popup" />}
     </div>
   );
 }
