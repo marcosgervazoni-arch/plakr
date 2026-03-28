@@ -43,6 +43,7 @@ import {
   LogOut,
   Medal,
   MoreHorizontal,
+  ScrollText,
   Settings,
   Share2,
   Sparkles,
@@ -56,6 +57,7 @@ import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import X1ChallengeModal from "@/components/X1ChallengeModal";
 import X1DuelsTab from "@/components/X1DuelsTab";
+import PoolBottomNav from "@/components/PoolBottomNav";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { AdBanner } from "@/components/AdBanner";
 import {
@@ -76,7 +78,7 @@ export default function PoolPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
-      if (tab === "ranking" || tab === "games" || tab === "members" || tab === "duelos") return tab;
+      if (tab === "ranking" || tab === "games" || tab === "members" || tab === "duelos" || tab === "rules") return tab;
     }
     return "games";
   });
@@ -329,6 +331,12 @@ export default function PoolPage() {
     toast.success("Link copiado!");
   };
 
+  /* Palpites pendentes para o badge do FAB */
+  const pendingBetsCount = games.filter((g) => {
+    const open = isGameOpen(g.matchDate);
+    return open && g.status !== "finished" && !betsByGame.has(g.id);
+  }).length;
+
   /* Stats para o hero */
   const finishedGames = games.filter((g) => g.status === "finished").length;
   const scheduledGames = games.filter((g) => g.status === "scheduled").length;
@@ -556,20 +564,13 @@ export default function PoolPage() {
       {/* ── Conteúdo principal ── */}
       <main className="max-w-2xl mx-auto px-4 py-5">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* Abas */}
-          <TabsList className="w-full bg-card border border-border/50 mb-5 h-10">
-            <TabsTrigger value="games" className="flex-1 text-xs gap-1">
-              <Calendar className="w-3 h-3" /> Jogos
-            </TabsTrigger>
-            <TabsTrigger value="ranking" className="flex-1 text-xs gap-1">
-              <Trophy className="w-3 h-3" /> Ranking
-            </TabsTrigger>
-            <TabsTrigger value="duelos" className="flex-1 text-xs gap-1">
-              <Swords className="w-3 h-3" /> Duelos
-            </TabsTrigger>
-            <TabsTrigger value="members" className="flex-1 text-xs gap-1">
-              <Users className="w-3 h-3" /> Membros
-            </TabsTrigger>
+          {/* TabsList oculta — navegação feita pelo PoolBottomNav */}
+          <TabsList className="hidden">
+            <TabsTrigger value="games">Jogos</TabsTrigger>
+            <TabsTrigger value="ranking">Ranking</TabsTrigger>
+            <TabsTrigger value="duelos">Duelos</TabsTrigger>
+            <TabsTrigger value="members">Membros</TabsTrigger>
+            <TabsTrigger value="rules">Regulamento</TabsTrigger>
           </TabsList>
 
           {/* ══ ABA JOGOS ══ */}
@@ -1003,6 +1004,26 @@ export default function PoolPage() {
               </div>
             )}
           </TabsContent>
+
+          {/* ══ ABA REGULAMENTO ══ */}
+          <TabsContent value="rules" className="mt-0">
+            <div className="text-center py-10 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
+                <ScrollText className="w-7 h-7 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base mb-1">Regulamento do Bolão</h3>
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                  Consulte as regras de pontuação, prazo de palpites e critérios de desempate.
+                </p>
+              </div>
+              <Link href={`/pool/${slug}/rules`}>
+                <Button className="gap-2">
+                  <ScrollText className="w-4 h-4" /> Ver Regulamento Completo
+                </Button>
+              </Link>
+            </div>
+          </TabsContent>
         </Tabs>
       </main>
 
@@ -1045,6 +1066,13 @@ export default function PoolPage() {
           }}
         />
       )}
+
+      {/* ── Barra de navegação inferior FAB ── */}
+      <PoolBottomNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        pendingBetsCount={pendingBetsCount}
+      />
     </div>
   );
 }

@@ -1823,3 +1823,12 @@
 - [x] Itens: Jogos & Palpites, Ranking, Duelos X1, Regulamento, Chaveamento, Meus Palpites, Retrospectiva
 - [x] Cabeçalho colapsável com nome do bolão ativo (em destaque com cor primária)
 - [x] Hierarquia: seção do bolão ativo fica entre Notificações e Meus Bolões
+
+## UX: Barra de navegação inferior FAB no PoolPage (28/03/2026)
+- [x] Componente PoolBottomNav criado com FAB dourado central (Palpites/Jogos)
+- [x] Ordem: Regras | Membros | [FAB Palpites] | Jogos | Ranking
+- [x] TabsList original ocultada (hidden) — navegação feita pelo PoolBottomNav
+- [x] Aba 'rules' adicionada com link para /pool/:slug/rules
+- [x] Badge de palpites pendentes no FAB
+- [x] Spacer h-20 garante que conteúdo não fique atrás da barra
+- [x] 0 erros de TypeScript
