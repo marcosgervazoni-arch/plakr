@@ -159,7 +159,9 @@ export const x1Router = router({
 
       const t = tournament[0];
       const isLeague = t.format === "league";
-      const isGroupsKnockout = t.format === "groups_knockout" || t.format === "cup";
+      // Detecta grupos/fases pelos dados reais, independente do formato cadastrado.
+      // Torneios "custom" com jogos de grupo/fase também devem exibir essas opções.
+      const isGroupsKnockout = t.format === "groups_knockout" || t.format === "cup" || t.format === "custom";
 
       // Busca times do torneio para previsões
       const teamList = await db
@@ -258,15 +260,20 @@ export const x1Router = router({
                 context: { groupName: g },
               }))
             : []),
-          // ── Classificação por fase (apenas cup / groups_knockout com fases) ─
-          ...(isGroupsKnockout && phases.filter((p) => p !== "group_stage").length > 0
-            ? phases
-                .filter((p) => p !== "group_stage")
-                .map((p) => ({
-                  type: "phase_qualified" as const,
-                  label: `Quem passa para a fase ${p}?`,
-                  context: { phase: p },
-                }))
+          // ── Classificação por fase (apenas fases de mata-mata, excluindo group_stage e group_*) ─
+          ...(isGroupsKnockout
+            ? (() => {
+                const knockoutPhases = phases.filter(
+                  (p) => p && p !== "group_stage" && !p.startsWith("group_")
+                );
+                return knockoutPhases.length > 0
+                  ? knockoutPhases.map((p) => ({
+                      type: "phase_qualified" as const,
+                      label: `Quem passa para ${p}?`,
+                      context: { phase: p },
+                    }))
+                  : [];
+              })()
             : []),
         ],
       };

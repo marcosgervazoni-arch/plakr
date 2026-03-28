@@ -1,0 +1,20 @@
+{
+  "query": "\nSELECT t.id, t.name, t.format,\n  (SELECT COUNT(*) FROM games g WHERE g.tournamentId = t.id) as total_games,\n  (SELECT COUNT(*) FROM games g WHERE g.tournamentId = t.id AND g.groupName IS NOT NULL AND g.groupName != '') as games_with_group,\n  (SELECT COUNT(*) FROM games g WHERE g.tournamentId = t.id AND g.phase IS NOT NULL AND g.phase != '') as games_with_phase,\n  (SELECT GROUP_CONCAT(DISTINCT g.groupName ORDER BY g.groupName SEPARATOR ', ') FROM games g WHERE g.tournamentId = t.id AND g.groupName IS NOT NULL AND g.groupName != '') as group_names,\n  (SELECT GROUP_CONCAT(DISTINCT g.phase ORDER BY g.phase SEPARATOR ', ') FROM games g WHERE g.tournamentId = t.id AND g.phase IS NOT NULL AND g.phase != '') as phases\nFROM tournaments t\nORDER BY t.id DESC\nLIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT t.id, t.name, t.format,\n  (SELECT COUNT(*) FROM games g WHERE g.tournamentId = t.id) as total_games,\n  (SELECT COUNT(*) FROM games g WHERE g.tournamentId = t.id AND g.groupName IS NOT NULL AND g.groupName != '') as games_with_group,\n  (SELECT COUNT(*) FROM games g WHERE g.tournamentId = t.id AND g.phase IS NOT NULL AND g.phase != '') as games_with_phase,\n  (SELECT GROUP_CONCAT(DISTINCT g.groupName ORDER BY g.groupName SEPARATOR ', ') FROM games g WHERE g.tournamentId = t.id AND g.groupName IS NOT NULL AND g.groupName != '') as group_names,\n  (SELECT GROUP_CONCAT(DISTINCT g.phase ORDER BY g.phase SEPARATOR ', ') FROM games g WHERE g.tournamentId = t.id AND g.phase IS NOT NULL AND g.phase != '') as phases\nFROM tournaments t\nORDER BY t.id DESC\nLIMIT 5;\n",
+  "rows": [
+    {
+      "id": "2",
+      "name": "Copa do Mundo FIFA",
+      "format": "custom",
+      "total_games": "104",
+      "games_with_group": "72",
+      "games_with_phase": "104",
+      "group_names": "A, B, C, D, E, F, G, H, I, J, K, L",
+      "phases": "Disputa 3º Lugar, Final, group_a, group_b, group_c, group_d, group_e, group_f, group_g, group_h, group_i, group_j, group_k, group_l, Oitavas de Final, Quartas de Final, Rodada de 32, Semifinais"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tformat\ttotal_games\tgames_with_group\tgames_with_phase\tgroup_names\tphases\n2\tCopa do Mundo FIFA\tcustom\t104\t72\t104\tA, B, C, D, E, F, G, H, I, J, K, L\tDisputa 3º Lugar, Final, group_a, group_b, group_c, group_d, group_e, group_f, group_g, group_h, group_i, group_j, group_k, group_l, Oitavas de Final, Quartas de Final, Rodada de 32, Semifinais\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}
