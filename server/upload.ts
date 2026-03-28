@@ -2,12 +2,22 @@
  * File upload route for Plakr!
  * POST /api/upload — accepts base64-encoded files, uploads to S3, returns URL
  * Supports: images (5MB), videos (50MB), audio (16MB), documents (16MB)
+ *
+ * Security layers:
+ * [S1] Authentication required for all uploads
+ * [S2] Admin-only folders: "ads" folder requires role=admin
+ * [S3] MIME type allowlist (SVG blocked — XSS risk)
+ * [S4] Size limits per category
+ * [S5] Filename sanitization + nanoid suffix (prevents path traversal)
+ * [S6] Rate limiting: 10 uploads/min (configured in _core/index.ts)
  */
 import { Request, Response, Express } from "express";
 import { storagePut } from "./storage";
 import { nanoid } from "nanoid";
 import { sdk } from "./_core/sdk";
 import logger from "./logger";
+// Folders that require admin role
+const ADMIN_ONLY_FOLDERS = ["ads", "admin"];
 
 const ALLOWED_TYPES: Record<string, { ext: string; category: string }> = {
   // Images
@@ -68,6 +78,24 @@ export function registerUploadRoute(app: Express) {
 
       if (!data || !contentType) {
         return res.status(400).json({ error: "data and contentType are required" });
+      }
+
+      // [S2] Admin-only folders: reject non-admins trying to upload to restricted paths
+      const requestedFolder = (folder ?? "uploads").split("/")[0];
+      if (ADMIN_ONLY_FOLDERS.includes(requestedFolder)) {
+        // Fetch role from DB — sdk.authenticateRequest only returns JWT payload
+        const { getDb } = await import("./db");
+        const dbConn = await getDb();
+        if (!dbConn) {
+          return res.status(500).json({ error: "Database unavailable" });
+        }
+        const { users } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const [dbUser] = await dbConn.select({ role: users.role }).from(users).where(eq(users.id, user.id)).limit(1);
+        if (!dbUser || dbUser.role !== "admin") {
+          logger.warn({ userId: user.id, folder }, "[Upload] Non-admin tried to upload to restricted folder");
+          return res.status(403).json({ error: "Acesso negado. Esta pasta requer permissão de administrador." });
+        }
       }
 
       const typeInfo = ALLOWED_TYPES[contentType];

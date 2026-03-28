@@ -26,8 +26,69 @@ import {
   Smartphone,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
+import { Upload, X, Loader2 as Loader2Upload, Image as ImageIcon, Video } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+
+// ─── Hook de upload de mídia para anúncios (pasta ads/ — restrita a admin) ────
+function useAdMediaUpload(onSuccess: (url: string) => void) {
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const upload = useCallback(async (file: File) => {
+    // Tipos permitidos para anúncios
+    const ALLOWED = [
+      "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif",
+      "video/mp4", "video/webm",
+    ];
+    const MAX_IMAGE = 5 * 1024 * 1024;   // 5 MB
+    const MAX_VIDEO = 50 * 1024 * 1024;  // 50 MB
+
+    if (!ALLOWED.includes(file.type)) {
+      toast.error("Formato não suportado. Use JPG, PNG, WebP, GIF, MP4 ou WebM.");
+      return;
+    }
+    const limit = file.type.startsWith("video/") ? MAX_VIDEO : MAX_IMAGE;
+    if (file.size > limit) {
+      toast.error(`Arquivo muito grande. Máximo: ${Math.round(limit / 1024 / 1024)} MB`);
+      return;
+    }
+
+    setUploading(true);
+    setProgress(10);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      setProgress(40);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: base64, contentType: file.type, folder: "ads" }),
+      });
+      setProgress(80);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Upload falhou" }));
+        throw new Error(err.error || "Upload falhou");
+      }
+      const { url } = await res.json();
+      setProgress(100);
+      onSuccess(url);
+      toast.success("Mídia enviada com sucesso!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro no upload");
+    } finally {
+      setUploading(false);
+      setTimeout(() => setProgress(0), 600);
+    }
+  }, [onSuccess]);
+
+  return { upload, uploading, progress };
+}
 
 // ─── Dimensões recomendadas por posição ──────────────────────────────────────
 const POSITION_DIMENSIONS: Record<string, { label: string; size: string; ratio: string }> = {
@@ -433,6 +494,10 @@ function AdFormDialog({
 }) {
   const posInfo = POSITION_DIMENSIONS[form.position];
   const update = (patch: Partial<AdForm>) => (setForm as (u: (f: AdForm) => AdForm) => void)(f => ({ ...f, ...patch }));
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { upload, uploading, progress } = useAdMediaUpload((url) => update({ assetUrl: url }));
+  const isVideo = form.type === "video";
+  const isScript = form.type === "script";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -487,10 +552,104 @@ function AdFormDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
-            <Label>URL da Mídia (imagem ou vídeo)</Label>
-            <Input value={form.assetUrl} onChange={(e) => update({ assetUrl: e.target.value })} placeholder="https://cdn.exemplo.com/banner.jpg" />
-          </div>
+          {/* ─ Upload de Mídia (imagem ou vídeo) ─ oculto para tipo Script ─ */}
+          {!isScript && (
+            <div className="space-y-1">
+              <Label className="flex items-center gap-2">
+                {isVideo ? <Video className="h-3.5 w-3.5" /> : <ImageIcon className="h-3.5 w-3.5" />}
+                {isVideo ? "Vídeo do anúncio" : "Imagem do anúncio"}
+                <span className="text-xs text-muted-foreground font-normal">
+                  {isVideo ? "MP4 ou WebM — máx. 50 MB" : "JPG, PNG, WebP ou GIF — máx. 5 MB"}
+                </span>
+              </Label>
+
+              {/* Zona de upload / preview */}
+              <div
+                className="relative rounded-xl border-2 border-dashed border-border/50 hover:border-brand/50 hover:bg-muted/10 transition-all cursor-pointer overflow-hidden"
+                style={{ minHeight: 96 }}
+                onClick={() => !uploading && inputRef.current?.click()}
+              >
+                {form.assetUrl ? (
+                  <div className="relative w-full">
+                    {isVideo ? (
+                      <video
+                        src={form.assetUrl}
+                        className="w-full max-h-40 object-contain rounded-lg"
+                        muted playsInline controls={false}
+                      />
+                    ) : (
+                      <img
+                        src={form.assetUrl}
+                        alt="Preview"
+                        className="w-full max-h-40 object-contain rounded-lg"
+                      />
+                    )}
+                    {/* Overlay de troca/remover */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-lg">
+                      <Button
+                        type="button" variant="secondary" size="sm"
+                        className="gap-1.5 text-xs"
+                        onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+                        disabled={uploading}
+                      >
+                        <Upload className="h-3.5 w-3.5" /> Trocar
+                      </Button>
+                      <Button
+                        type="button" variant="destructive" size="sm"
+                        className="gap-1.5 text-xs"
+                        onClick={(e) => { e.stopPropagation(); update({ assetUrl: "" }); }}
+                        disabled={uploading}
+                      >
+                        <X className="h-3.5 w-3.5" /> Remover
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2 py-6 px-4 text-center">
+                    {uploading ? (
+                      <Loader2Upload className="h-7 w-7 animate-spin text-brand" />
+                    ) : (
+                      <Upload className="h-7 w-7 text-muted-foreground/50" />
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {uploading ? "Enviando..." : "Clique para selecionar arquivo"}
+                    </p>
+                  </div>
+                )}
+                {uploading && (
+                  <div className="absolute bottom-0 left-0 right-0 px-3 pb-2">
+                    <Progress value={progress} className="h-1" />
+                  </div>
+                )}
+              </div>
+
+              {/* Campo de URL manual como fallback */}
+              <div className="flex items-center gap-2 mt-1">
+                <Input
+                  value={form.assetUrl}
+                  onChange={(e) => update({ assetUrl: e.target.value })}
+                  placeholder="Ou cole uma URL externa..."
+                  className="text-xs h-8"
+                />
+              </div>
+
+              <input
+                ref={inputRef}
+                type="file"
+                accept={isVideo ? "video/mp4,video/webm" : "image/jpeg,image/png,image/webp,image/gif"}
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }}
+              />
+            </div>
+          )}
+
+          {/* Campo de URL da mídia para tipo Script */}
+          {isScript && (
+            <div className="space-y-1">
+              <Label>URL da Mídia (opcional)</Label>
+              <Input value={form.assetUrl} onChange={(e) => update({ assetUrl: e.target.value })} placeholder="https://cdn.exemplo.com/banner.jpg" />
+            </div>
+          )}
           <div className="space-y-1">
             <Label>URL de Destino (clique)</Label>
             <Input value={form.linkUrl} onChange={(e) => update({ linkUrl: e.target.value })} placeholder="https://anunciante.com" />

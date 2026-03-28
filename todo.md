@@ -1921,3 +1921,19 @@
 - [x] AdminUsers: invalidar queries afetadas após bloquear/desbloquear/promover/remover usuário
 - [x] AdminTournamentDetail: invalidar palpites e ranking após setResult e recalculate
 - [x] AdminPools: invalidar getBySlug após grantPro, revokePro e deletePool
+
+## Estudo de Duplicidade e Navegação (28/03/2026) — PENDENTE PARA IMPLEMENTAÇÃO FUTURA
+- [ ] Ver docs/estudo-duplicidade-navegacao.md para detalhes completos
+- [ ] Remover PoolSettings.tsx (arquivo morto, sem rota registrada)
+- [ ] Remover rota /enter-pool (redireciona apenas para /pools/public)
+- [ ] Redirecionar / → /dashboard automaticamente para usuários logados
+- [ ] Unificar /my-profile e /profile/:userId em uma única rota com modo de edição
+- [ ] Mover NotificationPreferences para aba dentro de /notifications
+- [ ] Mover Conquistas para seção/aba dentro do Dashboard
+- [ ] Consolidar 8 rotas admin em abas de telas existentes (system, import-logs, retrospectivas, landing-page, pricing → settings/pools/tournaments)
+- [ ] Ocultar rotas admin prematuras: badges, ads, referrals, x1-duels
+
+## Upload de Mídia no AdminAds (28/03/2026)
+- [x] Criar endpoint seguro de upload de mídia para anúncios (adminProcedure + validações MIME + limite de tamanho)
+- [x] Atualizar AdminAds com componente de upload inline (imagem e vídeo)
+- [x] Garantir que apenas admins autenticados possam fazer upload (pasta ads/ restrita no servidor)
