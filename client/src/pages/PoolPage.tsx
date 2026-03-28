@@ -369,8 +369,8 @@ export default function PoolPage() {
 
 
 
-      {/* ── Header sticky ── */}
-      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-md">
+      {/* ── Header sticky — desktop only (mobile usa AppShell top bar + sub-header abaixo) ── */}
+      <header className="hidden lg:block sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-md">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <Link href="/dashboard">
@@ -385,10 +385,16 @@ export default function PoolPage() {
               )}
             </div>
           </div>
-
           <div className="flex items-center gap-1.5 shrink-0">
-
             <NotificationBell />
+            {/* Engrenagem — apenas para organizadores */}
+            {isOrganizer && (
+              <Link href={`/pool/${slug}/manage`}>
+                <Button variant="ghost" size="icon" className="w-8 h-8" title="Configurações do bolão">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </Link>
+            )}
             {/* Menu de ações */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -434,6 +440,68 @@ export default function PoolPage() {
           </div>
         </div>
       </header>
+
+      {/* ── Sub-header mobile — fica abaixo do top bar do AppShell (top-14) ── */}
+      <div className="lg:hidden sticky top-14 z-30 border-b border-border/40 bg-background/90 backdrop-blur-md">
+        <div className="px-4 h-11 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="icon" className="w-7 h-7 shrink-0 -ml-1">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <div className="min-w-0">
+              <p className="font-semibold text-sm leading-tight truncate">{pool.name}</p>
+              {tournament?.name && (
+                <p className="text-[11px] text-muted-foreground truncate leading-tight">{tournament.name}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-0.5 shrink-0">
+            {/* Engrenagem — apenas para organizadores */}
+            {isOrganizer && (
+              <Link href={`/pool/${slug}/manage`}>
+                <Button variant="ghost" size="icon" className="w-7 h-7" title="Configurações do bolão">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </Link>
+            )}
+            {/* Menu de ações */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="w-7 h-7">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link href={`/pool/${slug}/history`} className="flex items-center gap-2 cursor-pointer">
+                    <Trophy className="w-3.5 h-3.5" /> Meus Palpites
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/pool/${slug}/bracket`} className="flex items-center gap-2 cursor-pointer">
+                    <Medal className="w-3.5 h-3.5" /> Chaveamento
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/pool/${slug}/rules`} className="flex items-center gap-2 cursor-pointer">
+                    <Lock className="w-3.5 h-3.5" /> Regulamento
+                  </Link>
+                </DropdownMenuItem>
+                {isParticipant && (
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive focus:bg-destructive/10 flex items-center gap-2 cursor-pointer"
+                    onClick={() => setShowLeaveConfirm(true)}
+                  >
+                    <LogOut className="w-3.5 h-3.5" /> Sair do bolão
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
 
       {/* ── Hero ── */}
       <div className="relative overflow-hidden bg-gradient-to-br from-primary/20 via-primary/8 to-background border-b border-border/30">

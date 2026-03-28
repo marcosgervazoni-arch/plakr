@@ -1859,3 +1859,7 @@
 - [x] Bug fix: getMemberProfile reordenado para verificar autorização antes de usar getDb
 - [x] Bug fix: getUserPlanTier adicionado ao mock do teste de isolamento
 - [x] 316 testes passando, 0 erros TypeScript
+
+## Sprint 28/03/2026 — Correções PoolPage Header
+- [x] Remover header duplicado no mobile (PoolPage tem 2 headers: AppShell + header próprio)
+- [x] Adicionar ícone de engrenagem no header do PoolPage (ao lado do sino, visível apenas para organizadores, direciona para /pool/:slug/manage)
