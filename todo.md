@@ -1910,3 +1910,8 @@
 
 ## Sprint 28/03/2026 — Redesign botões de palpite na aba Jogos
 - [ ] GameCard: redesenhar botões "Salvar palpite" e "Atualizar palpite" para ficarem mais integrados ao layout (menos chamativos, mais sutis)
+
+## Correções de Consistência de Cache (28/03/2026)
+- [x] OrganizerGames: invalidar `pools.getBySlug`, `bets.myBets` e `rankings.myPoolPosition` após registrar resultado de jogo
+- [x] OrganizerMembers: invalidar `pools.getMembers` globalmente (não só refetch local) após remover participante
+- [x] OrganizerMembers: invalidar `pools.getBySlug` após transferir organização (AppShell atualiza ícone de engrenagem)

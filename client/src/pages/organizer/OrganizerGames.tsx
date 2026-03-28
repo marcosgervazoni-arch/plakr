@@ -49,6 +49,7 @@ interface GameRow {
 
 export default function OrganizerGames() {
   const { slug } = useParams<{ slug: string }>();
+  const utils = trpc.useUtils();
 
   const { data: poolData, isLoading: poolLoading } = trpc.pools.getBySlug.useQuery(
     { slug: slug ?? "" },
@@ -68,15 +69,16 @@ export default function OrganizerGames() {
     onSuccess: () => {
       toast.success("Resultado registrado e pontuações recalculadas.");
       setEditGame(null);
-      refetchPool();
+      // Invalida TODAS as queries afetadas pelo novo resultado:
+      // 1. Dados do bolão e lista de jogos (placar atualizado)
+      utils.pools.getBySlug.invalidate({ slug: slug! });
+      // 2. Palpites do usuário (resultType e pointsEarned mudam)
+      utils.bets.myBets.invalidate();
+      // 3. Ranking (pontuação dos participantes muda)
+      utils.rankings.myPoolPosition.invalidate();
     },
     onError: (err) => toast.error(err.message || "Erro ao registrar resultado."),
   });
-
-  const { refetch: refetchPool } = trpc.pools.getBySlug.useQuery(
-    { slug: slug ?? "" },
-    { enabled: !!slug }
-  );
 
   const openEdit = (game: GameRow) => {
     setEditGame(game);

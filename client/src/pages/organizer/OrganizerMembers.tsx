@@ -54,6 +54,7 @@ type FilterType = "all" | "inactive" | "top" | "bottom";
 export default function OrganizerMembers() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const utils = trpc.useUtils();
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -77,7 +78,10 @@ export default function OrganizerMembers() {
     onSuccess: () => {
       toast.success("Participante removido do bolão.");
       setRemoveTarget(null);
-      refetch();
+      // Invalida lista de membros em TODAS as telas que a exibem
+      utils.pools.getMembers.invalidate();
+      // Invalida dados gerais do bolão (contagem de membros no header)
+      utils.pools.getBySlug.invalidate({ slug: slug! });
     },
     onError: (err) => toast.error(err.message || "Erro ao remover participante."),
   });
@@ -87,7 +91,11 @@ export default function OrganizerMembers() {
       toast.success("Cargo de organizador transferido com sucesso.");
       setTransferTarget(null);
       setTransferDialogOpen(false);
-      refetch();
+      // Invalida membros (badge de Organizador muda)
+      utils.pools.getMembers.invalidate();
+      // Invalida dados do bolão: o AppShell precisa saber que o organizador mudou
+      // para exibir ou ocultar o ícone de engrenagem corretamente
+      utils.pools.getBySlug.invalidate({ slug: slug! });
     },
     onError: (err) => toast.error(err.message || "Erro ao transferir cargo."),
   });
