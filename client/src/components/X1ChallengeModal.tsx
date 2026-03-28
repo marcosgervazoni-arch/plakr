@@ -1,23 +1,32 @@
 /**
  * X1ChallengeModal — Modal de criação de desafio "Vem pro X1"
  *
- * Fluxo aprovado (Gerva, 28/03/2026):
+ * Fluxo aprovado (Gerva, 28/03/2026 — revisão UX):
  *
- * Passo 1 — Lista única de opções:
- *   ○ Disputa de palpites — quem pontua mais?   (sempre)
- *   ○ Quem vai ser o campeão?                   (sempre)
- *   ○ Quem classifica no Grupo [X]?             (só em cup/groups_knockout com grupos)
- *   ○ Quem passa para a fase [X]?               (só em cup/groups_knockout com fases)
+ * Passo 1 — Categorias (máximo 4, lista curta):
+ *   ⚔️  Disputa de palpites — quem pontua mais?   (sempre)
+ *   🏆  Quem vai ser o campeão?                   (sempre)
+ *   👥  Classificação em grupo                    (só se o torneio tiver grupos)
+ *   🎯  Classificação por fase                    (só se o torneio tiver fases de mata-mata)
  *
- * Passo 2a — Se escolheu "Disputa de palpites":
- *   Escolhe o escopo (próxima rodada, próxima fase, próximos N jogos)
- *   → Vai direto para confirmação
+ * Passo 2a — Escopo do duelo de palpites
+ *   Escolhe o período (próxima rodada, próxima fase, próximos N jogos)
+ *   → Vai para confirmação
  *
- * Passo 2b — Se escolheu qualquer previsão:
- *   Escolhe 1 time (champion / phase_qualified) ou 2 times (group_qualified)
- *   → Vai para confirmação ao completar a seleção
+ * Passo 2b — Seleção de grupo (grid compacto)
+ *   Exibe os grupos do torneio em grid de 3 colunas
+ *   → Ao escolher o grupo, vai para Passo 3 (times do grupo)
  *
- * Passo 3 — Confirmação e envio
+ * Passo 2c — Seleção de fase (lista vertical)
+ *   Exibe as fases de mata-mata do torneio
+ *   → Ao escolher a fase, vai para Passo 3 (times da fase)
+ *
+ * Passo 3 — Escolha do(s) time(s)
+ *   champion / phase_qualified: 1 time
+ *   group_qualified: 2 times (combinação diferente do desafiante)
+ *   → Ao completar a seleção, vai para confirmação
+ *
+ * Passo 4 — Confirmação e envio
  *
  * Regra: desafiado não pode escolher o mesmo palpite que o desafiante
  *        (validado no backend e exibido na tela de aceitação)
@@ -34,7 +43,17 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Swords, Target, ChevronRight, ChevronLeft, Check, Lock, Users } from "lucide-react";
+import {
+  Loader2,
+  Swords,
+  Target,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Lock,
+  Users,
+  Trophy,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface X1ChallengeModalProps {
@@ -46,7 +65,13 @@ interface X1ChallengeModalProps {
   onSuccess?: (challengeId: number) => void;
 }
 
-type Step = "list" | "scope" | "answer" | "confirm";
+type Step =
+  | "categories"   // Passo 1: 4 categorias fixas
+  | "scope"        // Passo 2a: escopo do duelo de palpites
+  | "pick_group"   // Passo 2b: grid de grupos
+  | "pick_phase"   // Passo 2c: lista de fases
+  | "answer"       // Passo 3: escolha de times
+  | "confirm";     // Passo 4: confirmação
 
 type PredictionOption = {
   type: "champion" | "group_qualified" | "phase_qualified";
@@ -62,7 +87,7 @@ export default function X1ChallengeModal({
   opponentName,
   onSuccess,
 }: X1ChallengeModalProps) {
-  const [step, setStep] = useState<Step>("list");
+  const [step, setStep] = useState<Step>("categories");
   const [challengeType, setChallengeType] = useState<"score_duel" | "prediction" | null>(null);
   // score_duel
   const [scopeType, setScopeType] = useState<"next_round" | "next_phase" | "next_n_games" | null>(null);
@@ -93,7 +118,7 @@ export default function X1ChallengeModal({
   });
 
   function handleClose() {
-    setStep("list");
+    setStep("categories");
     setChallengeType(null);
     setScopeType(null);
     setScopeValue(null);
@@ -107,9 +132,41 @@ export default function X1ChallengeModal({
     setStep("scope");
   }
 
-  function handlePickPrediction(opt: PredictionOption) {
+  function handlePickChampion() {
     setChallengeType("prediction");
-    setSelectedPrediction(opt);
+    setSelectedPrediction({ type: "champion", label: "Quem vai ser o campeão?" });
+    setSelectedTeams([]);
+    setStep("answer");
+  }
+
+  function handlePickGroupCategory() {
+    // Vai para o grid de grupos
+    setStep("pick_group");
+  }
+
+  function handlePickPhaseCategory() {
+    // Vai para a lista de fases
+    setStep("pick_phase");
+  }
+
+  function handleSelectGroup(groupName: string) {
+    setChallengeType("prediction");
+    setSelectedPrediction({
+      type: "group_qualified",
+      label: `Quem classifica no Grupo ${groupName}?`,
+      context: { groupName },
+    });
+    setSelectedTeams([]);
+    setStep("answer");
+  }
+
+  function handleSelectPhase(phase: string, label: string) {
+    setChallengeType("prediction");
+    setSelectedPrediction({
+      type: "phase_qualified",
+      label,
+      context: { phase },
+    });
     setSelectedTeams([]);
     setStep("answer");
   }
@@ -160,7 +217,41 @@ export default function X1ChallengeModal({
     });
   }
 
+  /** Extrai grupos únicos das predictionOptions */
+  function getGroups(): string[] {
+    if (!options) return [];
+    return options.groups ?? [];
+  }
+
+  /** Extrai fases de mata-mata das predictionOptions */
+  function getKnockoutPhases(): { phase: string; label: string }[] {
+    if (!options) return [];
+    return (options.predictionOptions ?? [])
+      .filter((o) => o.type === "phase_qualified")
+      .map((o) => ({
+        phase: (o as any).context?.phase ?? o.label,
+        label: o.label,
+      }));
+  }
+
+  /** Retorna os times filtrados por grupo quando aplicável */
+  function getTeamsForAnswer() {
+    if (!options) return [];
+    if (selectedPrediction?.context?.groupName) {
+      const filtered = options.teams.filter(
+        (t) => (t as any).groupName === selectedPrediction.context?.groupName
+      );
+      return filtered.length > 0 ? filtered : options.teams;
+    }
+    return options.teams;
+  }
+
   if (!open) return null;
+
+  const groups = getGroups();
+  const knockoutPhases = getKnockoutPhases();
+  const hasGroups = groups.length > 0;
+  const hasPhases = knockoutPhases.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
@@ -227,17 +318,17 @@ export default function X1ChallengeModal({
           {/* ── Fluxo principal ── */}
           {!optionsLoading && options && options.canChallenge && (
             <>
-              {/* ══ PASSO 1 — Lista única de opções ══════════════════════════════ */}
-              {step === "list" && (
+              {/* ══ PASSO 1 — Categorias (máximo 4 itens) ══════════════════════ */}
+              {step === "categories" && (
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground mb-3">
                     Desafiar {opponentName} — o que você aposta?
                   </p>
 
-                  {/* Duelo de palpites — sempre primeiro */}
+                  {/* Duelo de palpites — sempre */}
                   <button
                     onClick={handlePickScoreDuel}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#FFB800]/40 hover:bg-[#FFB800]/5 transition-all text-left group"
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#FFB800]/40 hover:bg-[#FFB800]/5 transition-all text-left"
                   >
                     <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
@@ -251,67 +342,64 @@ export default function X1ChallengeModal({
                     <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </button>
 
-                  {/* Quem vai ser o campeão? — sempre */}
+                  {/* Campeão — sempre */}
                   <button
-                    onClick={() =>
-                      handlePickPrediction({
-                        type: "champion",
-                        label: "Quem vai ser o campeão?",
-                      })
-                    }
-                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left group"
+                    onClick={handlePickChampion}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#FFB800]/40 hover:bg-[#FFB800]/5 transition-all text-left"
                   >
                     <div
                       className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ background: "rgba(0,194,255,0.12)" }}
+                      style={{ background: "rgba(255,184,0,0.12)" }}
                     >
-                      <Target className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
+                      <Trophy className="w-3.5 h-3.5" style={{ color: "#FFB800" }} />
                     </div>
                     <span className="text-sm font-medium flex-1">Quem vai ser o campeão?</span>
                     <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </button>
 
-                  {/* Quem classifica no Grupo X? — só em cup/groups_knockout com grupos */}
-                  {options.isGroupsKnockout &&
-                    options.predictionOptions
-                      .filter((o) => o.type === "group_qualified")
-                      .map((opt, i) => (
-                        <button
-                          key={`gq-${i}`}
-                          onClick={() => handlePickPrediction(opt as PredictionOption)}
-                          className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left group"
-                        >
-                          <div
-                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                            style={{ background: "rgba(0,194,255,0.12)" }}
-                          >
-                            <Users className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
-                          </div>
-                          <span className="text-sm font-medium flex-1">{opt.label}</span>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                        </button>
-                      ))}
+                  {/* Classificação em grupo — só se o torneio tiver grupos */}
+                  {hasGroups && (
+                    <button
+                      onClick={handlePickGroupCategory}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left"
+                    >
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: "rgba(0,194,255,0.12)" }}
+                      >
+                        <Users className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium block">Classificação em grupo</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {groups.length} grupo{groups.length !== 1 ? "s" : ""} disponíve{groups.length !== 1 ? "is" : "l"}
+                        </span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </button>
+                  )}
 
-                  {/* Quem passa para a fase X? — só em cup/groups_knockout com fases */}
-                  {options.isGroupsKnockout &&
-                    options.predictionOptions
-                      .filter((o) => o.type === "phase_qualified")
-                      .map((opt, i) => (
-                        <button
-                          key={`pq-${i}`}
-                          onClick={() => handlePickPrediction(opt as PredictionOption)}
-                          className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left group"
-                        >
-                          <div
-                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                            style={{ background: "rgba(0,194,255,0.12)" }}
-                          >
-                            <Target className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
-                          </div>
-                          <span className="text-sm font-medium flex-1">{opt.label}</span>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                        </button>
-                      ))}
+                  {/* Classificação por fase — só se o torneio tiver fases de mata-mata */}
+                  {hasPhases && (
+                    <button
+                      onClick={handlePickPhaseCategory}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left"
+                    >
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: "rgba(0,194,255,0.12)" }}
+                      >
+                        <Target className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium block">Classificação por fase</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {knockoutPhases.length} fase{knockoutPhases.length !== 1 ? "s" : ""} disponíve{knockoutPhases.length !== 1 ? "is" : "l"}
+                        </span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -320,7 +408,7 @@ export default function X1ChallengeModal({
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-3">
                     <button
-                      onClick={() => setStep("list")}
+                      onClick={() => setStep("categories")}
                       className="text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ChevronLeft className="w-4 h-4" />
@@ -348,12 +436,84 @@ export default function X1ChallengeModal({
                 </div>
               )}
 
-              {/* ══ PASSO 2b — Escolha da resposta (previsão) ═══════════════════ */}
+              {/* ══ PASSO 2b — Grid de grupos ════════════════════════════════════ */}
+              {step === "pick_group" && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <button
+                      onClick={() => setStep("categories")}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <p className="text-xs text-muted-foreground">
+                      Classificação em grupo — escolha o grupo
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {groups.map((g) => (
+                      <button
+                        key={g}
+                        onClick={() => handleSelectGroup(g)}
+                        className="flex flex-col items-center justify-center p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/50 hover:bg-[#00C2FF]/8 transition-all aspect-square"
+                      >
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center mb-1"
+                          style={{ background: "rgba(0,194,255,0.12)" }}
+                        >
+                          <Users className="w-4 h-4" style={{ color: "#00C2FF" }} />
+                        </div>
+                        <span className="text-sm font-bold">{g}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ══ PASSO 2c — Lista de fases ════════════════════════════════════ */}
+              {step === "pick_phase" && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <button
+                      onClick={() => setStep("categories")}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <p className="text-xs text-muted-foreground">
+                      Classificação por fase — escolha a fase
+                    </p>
+                  </div>
+                  {knockoutPhases.map(({ phase, label }) => (
+                    <button
+                      key={phase}
+                      onClick={() => handleSelectPhase(phase, label)}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left"
+                    >
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: "rgba(0,194,255,0.12)" }}
+                      >
+                        <Target className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
+                      </div>
+                      <span className="text-sm font-medium flex-1">{label}</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* ══ PASSO 3 — Escolha do(s) time(s) ════════════════════════════ */}
               {step === "answer" && selectedPrediction && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 mb-3">
                     <button
-                      onClick={() => { setStep("list"); setSelectedTeams([]); }}
+                      onClick={() => {
+                        setSelectedTeams([]);
+                        if (selectedPrediction.type === "group_qualified") setStep("pick_group");
+                        else if (selectedPrediction.type === "phase_qualified") setStep("pick_phase");
+                        else setStep("categories");
+                      }}
                       className="text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ChevronLeft className="w-4 h-4" />
@@ -371,16 +531,7 @@ export default function X1ChallengeModal({
 
                   {/* Lista de times filtrada por grupo quando aplicável */}
                   <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
-                    {(selectedPrediction.context?.groupName
-                      ? options.teams.filter(
-                          (t) => (t as any).groupName === selectedPrediction.context?.groupName
-                        ).length > 0
-                        ? options.teams.filter(
-                            (t) => (t as any).groupName === selectedPrediction.context?.groupName
-                          )
-                        : options.teams
-                      : options.teams
-                    ).map((team) => {
+                    {getTeamsForAnswer().map((team) => {
                       const isSelected = selectedTeams.includes(team.name);
                       const required = getRequiredCount(selectedPrediction.type);
                       const isDisabled = !isSelected && selectedTeams.length >= required;
@@ -427,14 +578,17 @@ export default function X1ChallengeModal({
                 </div>
               )}
 
-              {/* ══ PASSO 3 — Confirmação ════════════════════════════════════════ */}
+              {/* ══ PASSO 4 — Confirmação ════════════════════════════════════════ */}
               {step === "confirm" && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-1">
                     <button
                       onClick={() => {
                         if (challengeType === "score_duel") setStep("scope");
-                        else { setStep("answer"); setSelectedTeams([]); }
+                        else {
+                          setSelectedTeams([]);
+                          setStep("answer");
+                        }
                       }}
                       className="text-muted-foreground hover:text-foreground transition-colors"
                     >
