@@ -99,6 +99,7 @@ export const platformRouter = router({
       adsEnabled: z.boolean().optional(),
       restrictedInviteMessage: z.string().max(500).optional().nullable(),
       cobaiaPoolId: z.number().int().positive().optional().nullable(),
+      adNetworkScripts: z.record(z.string(), z.string()).optional().nullable(),
     }))
     .mutation(async ({ input, ctx }) => {
       await updatePlatformSettings(input, ctx.user.id);

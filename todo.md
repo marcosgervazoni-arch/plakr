@@ -1973,3 +1973,8 @@
 - [x] Fixar dimensões no AdBanner — banners do admin respeitam o container, não o contrário
 - [x] Criar estrutura de integração Adsterra no AdBanner (zonas via env/admin, fallback automático)
 - [x] Documentar mapa de zonas Adsterra para o usuário
+
+## Card Adsterra no Painel Admin (28/03/2026)
+- [x] Criar card de configuração Adsterra no AdminIntegrations com campos por posição
+- [x] Salvar IDs de zona via platformSettings no banco (campo adNetworkScripts JSON)
+- [x] adNetworkScripts adicionado ao updateSettings e ao getSettings — AdBanner usa banco como fonte primária

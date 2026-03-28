@@ -1,4 +1,5 @@
 import AdminLayout from "@/components/AdminLayout";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,10 +23,30 @@ export default function AdminIntegrations() {
   const [fbPixelId, setFbPixelId] = useState("");
   const [saved, setSaved] = useState(false);
 
+  // Adsterra zone IDs por posição
+  const [adTopDesktop, setAdTopDesktop] = useState("");
+  const [adTopMobile, setAdTopMobile] = useState("");
+  const [adSidebar, setAdSidebar] = useState("");
+  const [adBetweenDesktop, setAdBetweenDesktop] = useState("");
+  const [adBetweenMobile, setAdBetweenMobile] = useState("");
+  const [adBottomDesktop, setAdBottomDesktop] = useState("");
+  const [adBottomMobile, setAdBottomMobile] = useState("");
+  const [adPopup, setAdPopup] = useState("");
+
   useEffect(() => {
     if (settings) {
       setGaMeasurementId(settings.gaMeasurementId ?? "");
       setFbPixelId(settings.fbPixelId ?? "");
+      const scripts = (settings.adNetworkScripts as Record<string, unknown> | null) ?? {};
+      const str = (v: unknown): string => (typeof v === "string" ? v : "");
+      setAdTopDesktop(str(scripts["top_desktop"]));
+      setAdTopMobile(str(scripts["top_mobile"]));
+      setAdSidebar(str(scripts["sidebar"]));
+      setAdBetweenDesktop(str(scripts["between_desktop"]));
+      setAdBetweenMobile(str(scripts["between_mobile"]));
+      setAdBottomDesktop(str(scripts["bottom_desktop"]));
+      setAdBottomMobile(str(scripts["bottom_mobile"]));
+      setAdPopup(str(scripts["popup"]));
     }
   }, [settings]);
 
@@ -58,7 +79,20 @@ export default function AdminIntegrations() {
             className={`gap-2 shrink-0 transition-all duration-300 ${
               saved ? "bg-green-600 hover:bg-green-700" : "bg-brand hover:bg-brand/90"
             }`}
-            onClick={() => updateMutation.mutate({ gaMeasurementId, fbPixelId })}
+            onClick={() => updateMutation.mutate({
+              gaMeasurementId,
+              fbPixelId,
+              adNetworkScripts: {
+                top_desktop: adTopDesktop,
+                top_mobile: adTopMobile,
+                sidebar: adSidebar,
+                between_desktop: adBetweenDesktop,
+                between_mobile: adBetweenMobile,
+                bottom_desktop: adBottomDesktop,
+                bottom_mobile: adBottomMobile,
+                popup: adPopup,
+              },
+            })}
             disabled={updateMutation.isPending || isLoading}
           >
             {updateMutation.isPending ? (
@@ -178,6 +212,107 @@ export default function AdminIntegrations() {
                     <li>Crie ou selecione um Pixel existente</li>
                     <li>Copie o <strong>Pixel ID</strong> (número de 15 dígitos)</li>
                   </ol>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Adsterra */}
+            <Card className="border-border/50 md:col-span-2">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-orange-500/20 flex items-center justify-center">
+                      <span className="text-xs font-bold text-orange-400">A</span>
+                    </div>
+                    <CardTitle className="text-base">Adsterra — Rede de Anúncios</CardTitle>
+                  </div>
+                  {(adTopDesktop || adTopMobile || adSidebar || adBetweenDesktop || adPopup) ? (
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1 text-xs">
+                      <CheckCircle2 className="h-3 w-3" /> Configurado
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground border-border text-xs gap-1">
+                      <XCircle className="h-3 w-3" /> Não configurado
+                    </Badge>
+                  )}
+                </div>
+                <CardDescription className="text-sm">
+                  Preencha os IDs de zona do Adsterra para cada posição. Quando não há banner próprio cadastrado, o Adsterra preenche o espaço automaticamente. Usuários Pro nunca veem anúncios.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {/* Como obter */}
+                <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider">Como configurar</p>
+                  <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Acesse <a href="https://adsterra.com" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline inline-flex items-center gap-1">adsterra.com <ExternalLink className="h-3 w-3" /></a> e crie uma conta como Publisher</li>
+                    <li>Para cada posição abaixo, crie uma zona com o tamanho indicado</li>
+                    <li>Copie o ID numérico da zona (ex: <code className="bg-muted px-1 rounded">1234567</code>) e cole no campo correspondente</li>
+                    <li>Clique em "Salvar Integrações" — os anúncios começam a aparecer imediatamente</li>
+                  </ol>
+                </div>
+
+                {/* Desktop */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Desktop</p>
+                    <Separator className="flex-1" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Topo <span className="text-muted-foreground font-normal">(728×90px — Leaderboard)</span></Label>
+                      <Input value={adTopDesktop} onChange={e => setAdTopDesktop(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Sidebar <span className="text-muted-foreground font-normal">(300×250px — Medium Rectangle)</span></Label>
+                      <Input value={adSidebar} onChange={e => setAdSidebar(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Entre Seções <span className="text-muted-foreground font-normal">(728×90px — Leaderboard)</span></Label>
+                      <Input value={adBetweenDesktop} onChange={e => setAdBetweenDesktop(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Rodapé <span className="text-muted-foreground font-normal">(728×90px — Leaderboard)</span></Label>
+                      <Input value={adBottomDesktop} onChange={e => setAdBottomDesktop(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mobile</p>
+                    <Separator className="flex-1" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Topo <span className="text-muted-foreground font-normal">(320×50px — Mobile Banner)</span></Label>
+                      <Input value={adTopMobile} onChange={e => setAdTopMobile(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Entre Seções <span className="text-muted-foreground font-normal">(320×100px — Large Mobile Banner)</span></Label>
+                      <Input value={adBetweenMobile} onChange={e => setAdBetweenMobile(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Rodapé <span className="text-muted-foreground font-normal">(320×50px — Mobile Banner)</span></Label>
+                      <Input value={adBottomMobile} onChange={e => setAdBottomMobile(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Popup */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Popup / Interstitial</p>
+                    <Separator className="flex-1" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Popup <span className="text-muted-foreground font-normal">(400×300px — Interstitial)</span></Label>
+                      <Input value={adPopup} onChange={e => setAdPopup(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
+                      <p className="text-xs text-muted-foreground">Aparece após 2 segundos na primeira visita da sessão</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
