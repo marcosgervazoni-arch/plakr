@@ -30,7 +30,7 @@ export const betsRouter = router({
       const db = await (await import("../db")).getDb();
       if (!db) return { items: [], nextCursor: undefined, hasMore: false };
 
-      const { bets: betsT, games: gamesT } = await import("../../drizzle/schema");
+      const { bets: betsT } = await import("../../drizzle/schema");
       const { eq, and, lt, desc } = await import("drizzle-orm");
 
       const conditions = [
@@ -42,19 +42,15 @@ export const betsRouter = router({
       }
 
       const rows = await db
-        .select({
-          bet: betsT,
-          game: gamesT,
-        })
+        .select()
         .from(betsT)
-        .leftJoin(gamesT, eq(betsT.gameId, gamesT.id))
         .where(and(...conditions))
         .orderBy(desc(betsT.id))
         .limit(input.limit + 1);
 
       const hasMore = rows.length > input.limit;
       const items = hasMore ? rows.slice(0, input.limit) : rows;
-      const nextCursor = hasMore ? items[items.length - 1]?.bet.id : undefined;
+      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
       return { items, nextCursor, hasMore };
     }),

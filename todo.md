@@ -1901,3 +1901,6 @@
 ## Sprint 28/03/2026 — Sincronização real de palpites e link Palpites mobile
 - [x] Corrigir sincronização: palpite feito na Central de Palpites deve refletir imediatamente na aba Jogos (invalidação global utils.bets.myBets.invalidate() sem filtro)
 - [x] PoolBottomNav: botão "Palpites" deve navegar para /pool/:slug/history (Central de Palpites)
+
+## Bug 28/03/2026 — Palpites não persistem
+- [x] Investigar e corrigir: palpites salvos via Central de Palpites e aba Jogos não estão sendo persistidos — causa raiz: myBets retornava {bet, game} mas frontend acessava b.gameId diretamente. Corrigido: myBets agora retorna campos do bet achatados sem join com games.
