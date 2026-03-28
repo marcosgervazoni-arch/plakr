@@ -1879,3 +1879,13 @@
 
 ## Sprint 28/03/2026 — Correção link Regras na barra inferior mobile
 - [x] PoolBottomNav: botão "Regras" deve navegar diretamente para /pool/:slug/rules (sem tela intermediária)
+
+## Diretriz registrada — Navegação
+- [x] DIRETRIZ: Sempre priorizar menos complexidade de navegação, menos fricção, maior clareza e redução da estrutura do projeto
+
+## Sprint 28/03/2026 — Central de Palpites /history
+- [x] Reimplementar BetHistory.tsx como central de ação com filtros inline (Todos / Falta palpitar / Aguardando resultado / Acertei / Errei)
+- [x] Banner de urgência condicional quando há jogos sem palpite
+- [x] Palpite inline no card (campos de placar + botão Salvar) para jogos pendentes
+- [x] Ordenação por urgência dentro de cada filtro
+- [x] Resumo de performance no rodapé
