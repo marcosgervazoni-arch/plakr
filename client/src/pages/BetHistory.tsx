@@ -17,6 +17,7 @@ import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Check,
   Loader2,
   Trophy,
   Target,
@@ -523,6 +524,26 @@ export default function BetHistory() {
                                 : "border border-[#FFB800]/40 focus:border-[#FFB800] focus:ring-[#FFB800]/30"
                             )}
                           />
+                          {/* Botão confirmar — ícone circular inline */}
+                          <button
+                            onClick={() => handleSave(g)}
+                            disabled={isSaving || inp.a === "" || inp.b === ""}
+                            title={isEditing ? "Atualizar palpite" : "Salvar palpite"}
+                            className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center transition-all shrink-0 disabled:opacity-40 disabled:cursor-not-allowed",
+                              isEditing
+                                ? "bg-[#00C2FF]/15 hover:bg-[#00C2FF]/30 text-[#00C2FF]"
+                                : "bg-[#FFB800]/15 hover:bg-[#FFB800]/30 text-[#FFB800]"
+                            )}
+                          >
+                            {isSaving ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : isEditing ? (
+                              <RefreshCw className="w-3.5 h-3.5" />
+                            ) : (
+                              <Check className="w-3.5 h-3.5" />
+                            )}
+                          </button>
                         </div>
                       ) : (
                         /* Palpite registrado (somente leitura) */
@@ -578,30 +599,8 @@ export default function BetHistory() {
                     </div>
                   </div>
 
-                  {/* Rodapé do card */}
-                  {isActionable ? (
-                    /* Botão Salvar / Atualizar palpite */
-                    <Button
-                      size="sm"
-                      onClick={() => handleSave(g)}
-                      disabled={isSaving || inp.a === "" || inp.b === ""}
-                      className={cn(
-                        "w-full font-bold hover:opacity-90",
-                        isEditing
-                          ? "bg-gradient-to-r from-[#00C2FF] to-[#0080FF] text-white"
-                          : "bg-gradient-to-r from-[#FFB800] to-[#FF8A00] text-[#0B0F1A]"
-                      )}
-                    >
-                      {isSaving ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : isEditing ? (
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                      ) : (
-                        <PenLine className="w-4 h-4 mr-2" />
-                      )}
-                      {isEditing ? "Atualizar palpite" : "Salvar palpite"}
-                    </Button>
-                  ) : bet && bet.resultType !== "pending" ? (
+                  {/* Rodé do card */}
+                  {isActionable ? null : bet && bet.resultType !== "pending" ? (
                     /* Badge de resultado + pontos */
                     <div className="flex items-center justify-between pt-1 border-t border-border/20">
                       <div className="flex items-center gap-1.5">

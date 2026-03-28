@@ -1907,3 +1907,6 @@
 
 ## Sprint 28/03/2026 — Botão Voltar na Central de Palpites
 - [x] BetHistory: adicionar botão "Voltar" que navega para /pool/:slug (página principal do bolão)
+
+## Sprint 28/03/2026 — Redesign botões de palpite na aba Jogos
+- [ ] GameCard: redesenhar botões "Salvar palpite" e "Atualizar palpite" para ficarem mais integrados ao layout (menos chamativos, mais sutis)

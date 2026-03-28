@@ -44,6 +44,7 @@ import {
   LogOut,
   Medal,
   MoreHorizontal,
+  RefreshCw,
   ScrollText,
   Settings,
   Share2,
@@ -1230,20 +1231,35 @@ function GameCard({
               <div className="text-xs text-muted-foreground font-medium">Resultado</div>
             )}
             {open && !finished ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Input
                   type="number" min={0} max={99} placeholder="0" value={betA}
                   onChange={(e) => setBetInputs((prev) => ({ ...prev, [game.id]: { a: e.target.value, b: prev[game.id]?.b ?? betB } }))}
-                  className="w-14 text-center h-11 text-lg font-bold p-0"
+                  className="w-12 text-center h-10 text-base font-bold p-0"
                   inputMode="numeric"
                 />
-                <span className="text-muted-foreground/70 font-bold text-base select-none">VS</span>
+                <span className="text-muted-foreground/70 font-bold text-sm select-none">VS</span>
                 <Input
                   type="number" min={0} max={99} placeholder="0" value={betB}
                   onChange={(e) => setBetInputs((prev) => ({ ...prev, [game.id]: { a: prev[game.id]?.a ?? betA, b: e.target.value } }))}
-                  className="w-14 text-center h-11 text-lg font-bold p-0"
+                  className="w-12 text-center h-10 text-base font-bold p-0"
                   inputMode="numeric"
                 />
+                {/* Botão confirmar — ícone inline discreto */}
+                <button
+                  onClick={() => handleBetSubmit(game.id)}
+                  disabled={placeBetPending}
+                  title={hasBet ? "Atualizar palpite" : "Salvar palpite"}
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-primary/10 hover:bg-primary/25 text-primary disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  {placeBetPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : hasBet ? (
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5" />
+                  )}
+                </button>
               </div>
             ) : hasBet ? (
               <div className="text-center">
@@ -1265,21 +1281,7 @@ function GameCard({
                 +{myBet!.pointsEarned ?? 0} pts
               </p>
             )}
-            {open && !finished && (
-              <Button
-                size="sm" className="h-9 px-4 text-xs mt-1 min-w-[100px]"
-                onClick={() => handleBetSubmit(game.id)}
-                disabled={placeBetPending}
-              >
-                {placeBetPending ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : hasBet ? (
-                  <><Check className="w-3 h-3 mr-1" /> Atualizar palpite</>
-                ) : (
-                  "Salvar palpite"
-                )}
-              </Button>
-            )}
+
           </div>
 
           {/* Time B */}
