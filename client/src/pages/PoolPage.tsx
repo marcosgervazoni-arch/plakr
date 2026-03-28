@@ -1099,6 +1099,7 @@ export default function PoolPage() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         pendingBetsCount={pendingBetsCount}
+        slug={slug}
       />
     </div>
     </AppShell>

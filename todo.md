@@ -1876,3 +1876,6 @@
 ## Sprint 28/03/2026 — Remoção sub-header mobile e engrenagem no top bar
 - [x] Remover sub-header mobile do bolão (div lg:hidden sticky top-14) do PoolPage
 - [x] Adicionar ícone de engrenagem no top bar do AppShell (ao lado do sino), visível apenas quando usuário é organizador do bolão ativo
+
+## Sprint 28/03/2026 — Correção link Regras na barra inferior mobile
+- [x] PoolBottomNav: botão "Regras" deve navegar diretamente para /pool/:slug/rules (sem tela intermediária)

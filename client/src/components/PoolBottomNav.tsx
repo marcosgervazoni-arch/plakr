@@ -1,12 +1,14 @@
 /**
  * PoolBottomNav — Barra de navegação inferior estilo FAB para o PoolPage.
  *
- * Layout: Regulamento | Membros | [Palpites FAB dourado] | Jogos | Ranking
+ * Layout: Regras | Membros | [Palpites FAB dourado] | Jogos | Ranking
  *
  * O botão central (Palpites) é um FAB circular dourado elevado, estilo ação principal.
  * Os 4 itens laterais são abas simples com ícone + label.
+ * "Regras" navega diretamente para /pool/:slug/rules (sem tela intermediária).
  */
 import { cn } from "@/lib/utils";
+import { Link } from "wouter";
 import {
   Calendar,
   Trophy,
@@ -19,21 +21,61 @@ interface PoolBottomNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   pendingBetsCount?: number;
+  slug?: string;
 }
 
-const sideItems = [
-  { id: "rules",   label: "Regras",   icon: ScrollText },
-  { id: "members", label: "Membros",  icon: Users      },
+const tabItems = [
+  { id: "rules",   label: "Regras",   icon: ScrollText, directLink: true  },
+  { id: "members", label: "Membros",  icon: Users,      directLink: false },
   // centro: FAB
-  { id: "games",   label: "Jogos",    icon: Calendar   },
-  { id: "ranking", label: "Ranking",  icon: Trophy     },
+  { id: "games",   label: "Jogos",    icon: Calendar,   directLink: false },
+  { id: "ranking", label: "Ranking",  icon: Trophy,     directLink: false },
 ];
 
 export default function PoolBottomNav({
   activeTab,
   onTabChange,
   pendingBetsCount = 0,
+  slug,
 }: PoolBottomNavProps) {
+
+  const renderItem = (item: typeof tabItems[0]) => {
+    const isActive = activeTab === item.id;
+    const btnClass = cn(
+      "flex-1 flex flex-col items-center justify-center gap-0.5 h-full transition-colors",
+      isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+    );
+    const inner = (
+      <>
+        <item.icon className={cn("w-5 h-5", isActive && "stroke-[2.5]")} />
+        <span className={cn("text-[10px] font-medium leading-none", isActive && "font-semibold")}>
+          {item.label}
+        </span>
+      </>
+    );
+
+    // "Regras" navega diretamente para a página completa (sem aba intermediária)
+    if (item.directLink && slug) {
+      return (
+        <Link key={item.id} href={`/pool/${slug}/rules`} className="flex-1 h-full">
+          <button className={cn(btnClass, "w-full")}>
+            {inner}
+          </button>
+        </Link>
+      );
+    }
+
+    return (
+      <button
+        key={item.id}
+        onClick={() => onTabChange(item.id)}
+        className={btnClass}
+      >
+        {inner}
+      </button>
+    );
+  };
+
   return (
     <>
       {/* Espaçador — apenas mobile */}
@@ -49,51 +91,13 @@ export default function PoolBottomNav({
           {/* Barra de fundo */}
           <div className="flex items-center bg-card/95 backdrop-blur-md border-t border-border/40 shadow-2xl h-16">
             {/* Lado esquerdo: Regras + Membros */}
-            {sideItems.slice(0, 2).map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onTabChange(item.id)}
-                  className={cn(
-                    "flex-1 flex flex-col items-center justify-center gap-0.5 h-full transition-colors",
-                    isActive
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <item.icon className={cn("w-5 h-5", isActive && "stroke-[2.5]")} />
-                  <span className={cn("text-[10px] font-medium leading-none", isActive && "font-semibold")}>
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
+            {tabItems.slice(0, 2).map(renderItem)}
 
             {/* Espaço central para o FAB */}
             <div className="w-20 shrink-0" />
 
             {/* Lado direito: Jogos + Ranking */}
-            {sideItems.slice(2).map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onTabChange(item.id)}
-                  className={cn(
-                    "flex-1 flex flex-col items-center justify-center gap-0.5 h-full transition-colors",
-                    isActive
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <item.icon className={cn("w-5 h-5", isActive && "stroke-[2.5]")} />
-                  <span className={cn("text-[10px] font-medium leading-none", isActive && "font-semibold")}>
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
+            {tabItems.slice(2).map(renderItem)}
           </div>
 
           {/* FAB central — Palpites (elevado acima da barra) */}
