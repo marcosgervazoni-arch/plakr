@@ -144,6 +144,7 @@ export default function AdminPools() {
   const [retroSearchInput, setRetroSearchInput] = useState("");
   const [reprocessingId, setReprocessingId] = useState<number | null>(null);
   const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null);
@@ -186,6 +187,8 @@ export default function AdminPools() {
       setDeleteTarget(null);
       setSelectedPool(null);
       refetch();
+      // Invalida cache do bolão para removê-lo de qualquer tela que o exiba
+      utils.pools.getBySlug.invalidate();
     },
     onError: (err) => {
       toast.error("Erro ao excluir", { description: err.message });
@@ -211,6 +214,8 @@ export default function AdminPools() {
     onSuccess: () => {
       toast.success("Plano Pro concedido ao organizador!");
       refetch();
+      // Invalida dados do bolão: o badge Pro e os limites mudam na PoolPage/OrganizerLayout
+      utils.pools.getBySlug.invalidate();
     },
     onError: (err: { message: string }) => toast.error("Erro ao conceder Pro", { description: err.message }),
   });
@@ -218,6 +223,8 @@ export default function AdminPools() {
     onSuccess: () => {
       toast.success("Plano Pro revogado do organizador.");
       refetch();
+      // Invalida dados do bolão: o badge Pro e os limites mudam na PoolPage/OrganizerLayout
+      utils.pools.getBySlug.invalidate();
     },
     onError: (err: { message: string }) => toast.error("Erro ao revogar Pro", { description: err.message }),
   });

@@ -69,6 +69,7 @@ export default function AdminUsers() {
   const [notifMessage, setNotifMessage] = useState("");
   const [activeTab, setActiveTab] = useState("actions");
 
+  const utils = trpc.useUtils();
   const { data: usersData, isLoading, refetch } = trpc.users.list.useQuery({ limit: 100 });
   const users = usersData?.items;
 
@@ -81,7 +82,11 @@ export default function AdminUsers() {
     onSuccess: () => {
       toast.success(blockTarget?.blocked ? "Usuário desbloqueado." : "Usuário bloqueado.");
       setBlockTarget(null);
+      // Invalida lista de usuários desta tela
       refetch();
+      // Invalida sessão do usuário afetado: se ele estiver logado,
+      // o próximo request vai retornar 403 e redirecioná-lo para /suspended
+      utils.auth.me.invalidate();
       // Update selected user if it's the same
       if (selectedUser && blockTarget && selectedUser.id === blockTarget.id) {
         setSelectedUser((u) => u ? { ...u, isBlocked: !blockTarget.blocked } : u);
@@ -93,7 +98,9 @@ export default function AdminUsers() {
   const promoteAdminMutation = trpc.users.promoteToAdmin.useMutation({
     onSuccess: () => {
       toast.success("Usuário promovido a Admin.");
+      // Invalida lista e sessão: o usuário promovido passa a ter acesso ao painel admin
       refetch();
+      utils.auth.me.invalidate();
       if (selectedUser) setSelectedUser((u) => u ? { ...u, role: "admin" } : u);
     },
     onError: (e: { message: string }) => toast.error(e.message),
@@ -102,7 +109,9 @@ export default function AdminUsers() {
   const demoteAdminMutation = trpc.users.demoteFromAdmin.useMutation({
     onSuccess: () => {
       toast.success("Admin rebaixado para usuário.");
+      // Invalida lista e sessão: o usuário rebaixado perde acesso ao painel admin
       refetch();
+      utils.auth.me.invalidate();
       if (selectedUser) setSelectedUser((u) => u ? { ...u, role: "user" } : u);
     },
     onError: (e: { message: string }) => toast.error(e.message),
@@ -113,7 +122,9 @@ export default function AdminUsers() {
       toast.success("Usuário anonimizado e removido.");
       setRemoveTarget(null);
       setSelectedUser(null);
+      // Invalida lista e sessão: usuário removido deve ser deslogado
       refetch();
+      utils.auth.me.invalidate();
     },
     onError: (e: { message: string }) => toast.error(e.message),
   });

@@ -68,6 +68,7 @@ export default function AdminTournamentDetail() {
   const { id } = useParams<{ id: string }>();
   const tournamentId = Number(id);
   const [, navigate] = useLocation();
+  const utils = trpc.useUtils();
 
   const { data, isLoading, refetch } = trpc.tournaments.getById.useQuery(
     { id: tournamentId },
@@ -79,6 +80,9 @@ export default function AdminTournamentDetail() {
     onSuccess: (data) => {
       toast.success(`Pontuação recalculada! ${data.totalRecalculated} membros atualizados.`);
       refetch();
+      // Recalcular afeta palpites e rankings de todos os bolões deste campeonato
+      utils.bets.myBets.invalidate();
+      utils.rankings.myPoolPosition.invalidate();
     },
     onError: (e: { message: string }) => toast.error("Erro ao recalcular", { description: e.message }),
   });
@@ -142,7 +146,17 @@ export default function AdminTournamentDetail() {
   });
 
   const setResultMutation = trpc.tournaments.setResult.useMutation({
-    onSuccess: () => { toast.success("Resultado registrado."); setShowSetResult(false); setResultTarget(null); refetch(); },
+    onSuccess: () => {
+      toast.success("Resultado registrado.");
+      setShowSetResult(false);
+      setResultTarget(null);
+      refetch();
+      // Resultado de jogo afeta palpites (resultType/pontos) e rankings
+      utils.bets.myBets.invalidate();
+      utils.rankings.myPoolPosition.invalidate();
+      // Invalida dados dos bolões para que placar apareça atualizado na PoolPage
+      utils.pools.getBySlug.invalidate();
+    },
     onError: (e: { message: string }) => toast.error(e.message),
   });
 

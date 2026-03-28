@@ -1915,3 +1915,9 @@
 - [x] OrganizerGames: invalidar `pools.getBySlug`, `bets.myBets` e `rankings.myPoolPosition` após registrar resultado de jogo
 - [x] OrganizerMembers: invalidar `pools.getMembers` globalmente (não só refetch local) após remover participante
 - [x] OrganizerMembers: invalidar `pools.getBySlug` após transferir organização (AppShell atualiza ícone de engrenagem)
+
+## Auditoria de Invalidações — Painel Admin (28/03/2026)
+- [x] AdminGameResults: invalidar queries afetadas após registrar resultado via admin
+- [x] AdminUsers: invalidar queries afetadas após bloquear/desbloquear/promover/remover usuário
+- [x] AdminTournamentDetail: invalidar palpites e ranking após setResult e recalculate
+- [x] AdminPools: invalidar getBySlug após grantPro, revokePro e deletePool

@@ -90,8 +90,16 @@ export default function AdminGameResults() {
       toast.error(`${success} salvo(s), ${errors} erro(s). Verifique e tente novamente.`);
     }
     setResults({});
+    // Invalida a lista de jogos pendentes (esta tela)
     refetch();
+    // Invalida alertas do dashboard admin
     utils.adminDashboard.getDashboardAlerts.invalidate();
+    // Registrar resultado afeta palpites (resultType/pontos) e rankings
+    // de TODOS os bolões que usam esse campeonato — invalidação global é a mais segura
+    utils.bets.myBets.invalidate();
+    utils.rankings.myPoolPosition.invalidate();
+    // Invalida dados dos bolões para que placar apareça atualizado na PoolPage
+    utils.pools.getBySlug.invalidate();
   };
 
   return (
