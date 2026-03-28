@@ -1978,3 +1978,9 @@
 - [x] Criar card de configuração Adsterra no AdminIntegrations com campos por posição
 - [x] Salvar IDs de zona via platformSettings no banco (campo adNetworkScripts JSON)
 - [x] adNetworkScripts adicionado ao updateSettings e ao getSettings — AdBanner usa banco como fonte primária
+
+## Adsterra: código HTML completo (28/03/2026)
+- [x] AdminIntegrations: campos trocados de Input (ID numérico) para Textarea (código HTML completo do GET CODE)
+- [x] AdminIntegrations: instruções atualizadas para orientar a colar o código do GET CODE
+- [x] AdBanner: AdsterraSlot reescrito para injetar código HTML via iframe (em vez de script por ID de zona)
+- [x] AdBanner: lê adNetworkScripts do banco via trpc.platform.getSettings (sem env vars)

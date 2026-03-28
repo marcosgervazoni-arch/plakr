@@ -15,10 +15,11 @@
  * Regra: o container define o tamanho — o conteúdo (imagem/vídeo/script)
  * se adapta ao container, nunca o contrário.
  *
- * Integração Adsterra (pendente — configurar após criar conta):
- * - Cada posição tem uma variável de ambiente correspondente (VITE_ADSTERRA_ZONE_*)
- * - Quando a variável está preenchida E não há banner próprio cadastrado,
- *   o script do Adsterra é renderizado no mesmo container
+ * Integração Adsterra:
+ * - O código HTML completo (copiado do painel Adsterra → GET CODE) é salvo
+ *   no banco via AdminIntegrations → campo adNetworkScripts
+ * - Quando não há banner próprio cadastrado na posição, o código Adsterra
+ *   é injetado via iframe para isolamento de scripts
  */
 import { trpc } from "@/lib/trpc";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -50,35 +51,12 @@ const AD_DIMENSIONS: Record<
   popup:            { desktop: { w: 400, h: 300 }, mobile: { w: 320, h: 250 } },
 };
 
-// ─── Zonas Adsterra por posição ──────────────────────────────────────────────
-// Preencher com os IDs de zona gerados no painel do Adsterra após criar a conta.
-// Cada zona deve ser criada com o tamanho correspondente na tabela acima.
-//
-// Exemplo de configuração no .env:
-//   VITE_ADSTERRA_ZONE_TOP_DESKTOP=1234567
-//   VITE_ADSTERRA_ZONE_TOP_MOBILE=1234568
-//   VITE_ADSTERRA_ZONE_SIDEBAR=1234569
-//   VITE_ADSTERRA_ZONE_BETWEEN_DESKTOP=1234570
-//   VITE_ADSTERRA_ZONE_BETWEEN_MOBILE=1234571
-//   VITE_ADSTERRA_ZONE_BOTTOM_DESKTOP=1234572
-//   VITE_ADSTERRA_ZONE_BOTTOM_MOBILE=1234573
-//   VITE_ADSTERRA_ZONE_POPUP=1234574
-//
-const ADSTERRA_ZONES: Record<string, string | undefined> = {
-  top_desktop:       import.meta.env.VITE_ADSTERRA_ZONE_TOP_DESKTOP,
-  top_mobile:        import.meta.env.VITE_ADSTERRA_ZONE_TOP_MOBILE,
-  sidebar:           import.meta.env.VITE_ADSTERRA_ZONE_SIDEBAR,
-  between_desktop:   import.meta.env.VITE_ADSTERRA_ZONE_BETWEEN_DESKTOP,
-  between_mobile:    import.meta.env.VITE_ADSTERRA_ZONE_BETWEEN_MOBILE,
-  bottom_desktop:    import.meta.env.VITE_ADSTERRA_ZONE_BOTTOM_DESKTOP,
-  bottom_mobile:     import.meta.env.VITE_ADSTERRA_ZONE_BOTTOM_MOBILE,
-  popup:             import.meta.env.VITE_ADSTERRA_ZONE_POPUP,
-};
-
-function getAdsterraZoneKey(position: string, isMobile: boolean): string {
+// ─── Mapa de chaves do adNetworkScripts por posição ──────────────────────────
+function getAdsterraKey(position: string, isMobile: boolean): string {
   if (position === "sidebar") return "sidebar";
   if (position === "popup") return "popup";
-  return `${position.replace("between_sections", "between")}_${isMobile ? "mobile" : "desktop"}`;
+  const base = position === "between_sections" ? "between" : position;
+  return `${base}_${isMobile ? "mobile" : "desktop"}`;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -116,28 +94,28 @@ function markPopupShown(ad: Ad): void {
   else if (ad.popupFrequency === "daily") localStorage.setItem(key, new Date().toDateString());
 }
 
-// ─── Componente Adsterra (fallback quando não há banner próprio) ──────────────
-function AdsterraSlot({ zoneId, width, height }: { zoneId: string; width: number; height: number }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const injected = useRef(false);
+// ─── Componente Adsterra: injeta código HTML completo via iframe ──────────────
+function AdsterraSlot({ htmlCode, width, height }: { htmlCode: string; width: number; height: number }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    if (injected.current || !containerRef.current) return;
-    injected.current = true;
-
-    // Adsterra usa um script + atributo de zona para injetar o banner
-    const script = document.createElement("script");
-    script.async = true;
-    script.setAttribute("data-cfasync", "false");
-    script.src = `//pl${zoneId}.profitablegatecpm.com/${zoneId}/invoke.js`;
-    containerRef.current.appendChild(script);
-  }, [zoneId]);
+    if (!iframeRef.current) return;
+    const doc = iframeRef.current.contentDocument;
+    if (!doc) return;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>*{margin:0;padding:0;overflow:hidden;}</style></head><body>${htmlCode}</body></html>`);
+    doc.close();
+  }, [htmlCode]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ width, height, overflow: "hidden" }}
-      className="flex items-center justify-center"
+    <iframe
+      ref={iframeRef}
+      width={width}
+      height={height}
+      style={{ border: "none", display: "block" }}
+      title="Publicidade"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      scrolling="no"
     />
   );
 }
@@ -151,6 +129,7 @@ interface AdBannerProps {
 // ─── Componente principal ─────────────────────────────────────────────────────
 export function AdBanner({ position, className }: AdBannerProps) {
   const { data: allAds } = trpc.ads.getActive.useQuery({ position });
+  const { data: platformSettings } = trpc.platform.getSettings.useQuery();
   const recordClickMutation = trpc.ads.recordClick.useMutation();
   const isMobile = useIsMobile();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -164,9 +143,12 @@ export function AdBanner({ position, className }: AdBannerProps) {
   const dims = AD_DIMENSIONS[position];
   const { w: adWidth, h: adHeight } = isMobile ? dims.mobile : dims.desktop;
 
-  // Zona Adsterra para fallback
-  const adsterraKey = getAdsterraZoneKey(position, isMobile);
-  const adsterraZoneId = ADSTERRA_ZONES[adsterraKey];
+  // Código Adsterra do banco (prioridade) — fallback: nulo
+  const adsterraKey = getAdsterraKey(position, isMobile);
+  const adNetworkScripts = (platformSettings?.adNetworkScripts as Record<string, unknown> | null) ?? {};
+  const adsterraCode = typeof adNetworkScripts[adsterraKey] === "string" && (adNetworkScripts[adsterraKey] as string).trim().length > 0
+    ? (adNetworkScripts[adsterraKey] as string)
+    : null;
 
   // Popup: avaliar apenas uma vez quando os dados chegarem
   useEffect(() => {
@@ -233,7 +215,7 @@ export function AdBanner({ position, className }: AdBannerProps) {
 
   // ── Sem banner próprio: tentar Adsterra como fallback ──────────────────────
   if (ads.length === 0) {
-    if (!adsterraZoneId) return null;
+    if (!adsterraCode) return null;
     return (
       <div
         className={cn(
@@ -245,7 +227,7 @@ export function AdBanner({ position, className }: AdBannerProps) {
         <div className="absolute top-1 right-1 z-10 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded">
           Publicidade
         </div>
-        <AdsterraSlot zoneId={adsterraZoneId} width={adWidth} height={adHeight} />
+        <AdsterraSlot htmlCode={adsterraCode} width={adWidth} height={adHeight} />
       </div>
     );
   }

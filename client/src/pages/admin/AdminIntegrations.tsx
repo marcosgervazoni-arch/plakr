@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import {
   CheckCircle2,
@@ -13,6 +14,7 @@ import {
   Loader2,
   Save,
   XCircle,
+  Code2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -23,7 +25,7 @@ export default function AdminIntegrations() {
   const [fbPixelId, setFbPixelId] = useState("");
   const [saved, setSaved] = useState(false);
 
-  // Adsterra zone IDs por posição
+  // Adsterra: código HTML completo por posição (copiado do painel Adsterra → GET CODE)
   const [adTopDesktop, setAdTopDesktop] = useState("");
   const [adTopMobile, setAdTopMobile] = useState("");
   const [adSidebar, setAdSidebar] = useState("");
@@ -60,6 +62,10 @@ export default function AdminIntegrations() {
 
   const gaConfigured = gaMeasurementId.startsWith("G-");
   const fbConfigured = fbPixelId.length > 5;
+  const adsterraConfigured = !!(adTopDesktop || adTopMobile || adSidebar || adBetweenDesktop || adPopup);
+
+  // Conta quantos campos Adsterra estão preenchidos
+  const adsterraCount = [adTopDesktop, adTopMobile, adSidebar, adBetweenDesktop, adBetweenMobile, adBottomDesktop, adBottomMobile, adPopup].filter(Boolean).length;
 
   return (
     <AdminLayout activeSection="integrations">
@@ -72,7 +78,7 @@ export default function AdminIntegrations() {
             </div>
             <div>
               <h1 className="text-2xl font-bold font-display">Integrações</h1>
-              <p className="text-muted-foreground text-sm mt-0.5">Analytics e rastreamento de marketing</p>
+              <p className="text-muted-foreground text-sm mt-0.5">Analytics, rastreamento e rede de anúncios</p>
             </div>
           </div>
           <Button
@@ -222,13 +228,13 @@ export default function AdminIntegrations() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded bg-orange-500/20 flex items-center justify-center">
-                      <span className="text-xs font-bold text-orange-400">A</span>
+                      <Code2 className="h-3.5 w-3.5 text-orange-400" />
                     </div>
                     <CardTitle className="text-base">Adsterra — Rede de Anúncios</CardTitle>
                   </div>
-                  {(adTopDesktop || adTopMobile || adSidebar || adBetweenDesktop || adPopup) ? (
+                  {adsterraConfigured ? (
                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1 text-xs">
-                      <CheckCircle2 className="h-3 w-3" /> Configurado
+                      <CheckCircle2 className="h-3 w-3" /> {adsterraCount} zona{adsterraCount !== 1 ? "s" : ""} ativa{adsterraCount !== 1 ? "s" : ""}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-muted-foreground border-border text-xs gap-1">
@@ -237,19 +243,33 @@ export default function AdminIntegrations() {
                   )}
                 </div>
                 <CardDescription className="text-sm">
-                  Preencha os IDs de zona do Adsterra para cada posição. Quando não há banner próprio cadastrado, o Adsterra preenche o espaço automaticamente. Usuários Pro nunca veem anúncios.
+                  Cole o código gerado pelo Adsterra em cada posição. Quando não há banner próprio cadastrado, o Adsterra preenche o espaço automaticamente. Usuários Pro nunca veem anúncios.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
-                {/* Como obter */}
-                <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3 space-y-1.5">
-                  <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider">Como configurar</p>
-                  <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                    <li>Acesse <a href="https://adsterra.com" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline inline-flex items-center gap-1">adsterra.com <ExternalLink className="h-3 w-3" /></a> e crie uma conta como Publisher</li>
-                    <li>Para cada posição abaixo, crie uma zona com o tamanho indicado</li>
-                    <li>Copie o ID numérico da zona (ex: <code className="bg-muted px-1 rounded">1234567</code>) e cole no campo correspondente</li>
-                    <li>Clique em "Salvar Integrações" — os anúncios começam a aparecer imediatamente</li>
+
+                {/* Instruções */}
+                <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-4 space-y-2">
+                  <p className="text-xs font-semibold text-orange-400 uppercase tracking-wider">Como configurar — passo a passo</p>
+                  <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                    <li>
+                      Acesse{" "}
+                      <a href="https://adsterra.com" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline inline-flex items-center gap-1">
+                        adsterra.com <ExternalLink className="h-3 w-3" />
+                      </a>{" "}
+                      e faça login como Publisher
+                    </li>
+                    <li>Na lista de unidades de anúncio, clique em <strong>&lt;&gt; GET CODE</strong> ao lado da zona desejada</li>
+                    <li>Copie <strong>todo o código</strong> que aparecer (começa com <code className="bg-muted px-1 rounded">&lt;script</code>)</li>
+                    <li>Cole no campo correspondente abaixo, de acordo com o tamanho da zona</li>
+                    <li>Clique em <strong>Salvar Integrações</strong> — os anúncios aparecem automaticamente nos espaços vazios</li>
                   </ol>
+                  <div className="mt-2 p-2 rounded bg-muted/40 border border-border/40">
+                    <p className="text-xs text-muted-foreground">
+                      <strong className="text-foreground">Dica:</strong> use as zonas criadas com os tamanhos corretos para cada posição.
+                      O tamanho esperado está indicado ao lado de cada campo abaixo.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Desktop */}
@@ -258,23 +278,31 @@ export default function AdminIntegrations() {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Desktop</p>
                     <Separator className="flex-1" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Topo <span className="text-muted-foreground font-normal">(728×90px — Leaderboard)</span></Label>
-                      <Input value={adTopDesktop} onChange={e => setAdTopDesktop(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Sidebar <span className="text-muted-foreground font-normal">(300×250px — Medium Rectangle)</span></Label>
-                      <Input value={adSidebar} onChange={e => setAdSidebar(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Entre Seções <span className="text-muted-foreground font-normal">(728×90px — Leaderboard)</span></Label>
-                      <Input value={adBetweenDesktop} onChange={e => setAdBetweenDesktop(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Rodapé <span className="text-muted-foreground font-normal">(728×90px — Leaderboard)</span></Label>
-                      <Input value={adBottomDesktop} onChange={e => setAdBottomDesktop(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <AdsterraCodeField
+                      label="Topo"
+                      size="728×90px — Leaderboard"
+                      value={adTopDesktop}
+                      onChange={setAdTopDesktop}
+                    />
+                    <AdsterraCodeField
+                      label="Sidebar"
+                      size="300×250px — Medium Rectangle"
+                      value={adSidebar}
+                      onChange={setAdSidebar}
+                    />
+                    <AdsterraCodeField
+                      label="Entre Seções"
+                      size="728×90px — Leaderboard"
+                      value={adBetweenDesktop}
+                      onChange={setAdBetweenDesktop}
+                    />
+                    <AdsterraCodeField
+                      label="Rodapé"
+                      size="728×90px — Leaderboard"
+                      value={adBottomDesktop}
+                      onChange={setAdBottomDesktop}
+                    />
                   </div>
                 </div>
 
@@ -284,19 +312,25 @@ export default function AdminIntegrations() {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mobile</p>
                     <Separator className="flex-1" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Topo <span className="text-muted-foreground font-normal">(320×50px — Mobile Banner)</span></Label>
-                      <Input value={adTopMobile} onChange={e => setAdTopMobile(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Entre Seções <span className="text-muted-foreground font-normal">(320×100px — Large Mobile Banner)</span></Label>
-                      <Input value={adBetweenMobile} onChange={e => setAdBetweenMobile(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Rodapé <span className="text-muted-foreground font-normal">(320×50px — Mobile Banner)</span></Label>
-                      <Input value={adBottomMobile} onChange={e => setAdBottomMobile(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <AdsterraCodeField
+                      label="Topo"
+                      size="320×50px — Mobile Banner"
+                      value={adTopMobile}
+                      onChange={setAdTopMobile}
+                    />
+                    <AdsterraCodeField
+                      label="Entre Seções"
+                      size="320×100px — Large Mobile Banner"
+                      value={adBetweenMobile}
+                      onChange={setAdBetweenMobile}
+                    />
+                    <AdsterraCodeField
+                      label="Rodapé"
+                      size="320×50px — Mobile Banner"
+                      value={adBottomMobile}
+                      onChange={setAdBottomMobile}
+                    />
                   </div>
                 </div>
 
@@ -306,12 +340,14 @@ export default function AdminIntegrations() {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Popup / Interstitial</p>
                     <Separator className="flex-1" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Popup <span className="text-muted-foreground font-normal">(400×300px — Interstitial)</span></Label>
-                      <Input value={adPopup} onChange={e => setAdPopup(e.target.value)} placeholder="ID da zona (ex: 1234567)" className="font-mono text-sm" />
-                      <p className="text-xs text-muted-foreground">Aparece após 2 segundos na primeira visita da sessão</p>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <AdsterraCodeField
+                      label="Popup"
+                      size="400×300px — Interstitial"
+                      value={adPopup}
+                      onChange={setAdPopup}
+                      hint="Aparece após 2 segundos na primeira visita da sessão"
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -325,9 +361,9 @@ export default function AdminIntegrations() {
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Sobre a implementação dos scripts</p>
                     <p className="text-sm text-muted-foreground">
-                      Os IDs salvos aqui são usados para injetar automaticamente os scripts de rastreamento no frontend da plataforma.
-                      O Google Analytics 4 é carregado via gtag.js e o Facebook Pixel via fbevents.js.
-                      Ambos são carregados de forma assíncrona para não impactar a performance.
+                      Os códigos salvos aqui são injetados automaticamente nos espaços de anúncio da plataforma.
+                      O Google Analytics 4 e o Facebook Pixel são carregados de forma assíncrona para não impactar a performance.
+                      Os anúncios Adsterra só aparecem quando não há banner próprio cadastrado na posição correspondente.
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Eventos rastreados automaticamente: pageview, login, cadastro, criação de bolão, upgrade para Pro, palpite registrado.
@@ -340,5 +376,41 @@ export default function AdminIntegrations() {
         )}
       </div>
     </AdminLayout>
+  );
+}
+
+// ─── Campo de código Adsterra ─────────────────────────────────────────────────
+interface AdsterraCodeFieldProps {
+  label: string;
+  size: string;
+  value: string;
+  onChange: (v: string) => void;
+  hint?: string;
+}
+
+function AdsterraCodeField({ label, size, value, onChange, hint }: AdsterraCodeFieldProps) {
+  const isConfigured = value.trim().length > 0;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">
+          {label}{" "}
+          <span className="text-muted-foreground font-normal">({size})</span>
+        </Label>
+        {isConfigured && (
+          <span className="text-[10px] text-green-400 flex items-center gap-0.5">
+            <CheckCircle2 className="h-2.5 w-2.5" /> Configurado
+          </span>
+        )}
+      </div>
+      <Textarea
+        value={value}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
+        placeholder={`Cole aqui o código copiado do Adsterra (GET CODE)\nEx: <script async...></script>`}
+        className="font-mono text-xs resize-none h-20 leading-relaxed"
+        spellCheck={false}
+      />
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
   );
 }
