@@ -60,13 +60,20 @@ const STATUS_CONFIG = {
 };
 
 const CHALLENGE_TYPE_LABELS: Record<string, string> = {
+  score_duel: "Disputa de palpites — quem pontua mais?",
+  prediction: "Previsão de campeonato",
+};
+
+const PREDICTION_TYPE_LABELS: Record<string, string> = {
+  champion: "Quem vai ser o campeão?",
+  group_qualified: "Quem classifica no grupo?",
+  phase_qualified: "Quem passa para a fase?",
+};
+
+const SCOPE_TYPE_LABELS: Record<string, string> = {
   next_round: "Próxima rodada",
   next_phase: "Próxima fase",
-  full_tournament: "Torneio completo",
-  next_game: "Próximo jogo",
-  specific_game: "Jogo específico",
-  top_scorer: "Artilheiro",
-  champion: "Campeão",
+  next_n_games: "Próximos jogos",
 };
 
 export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
@@ -148,7 +155,11 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
                     <span className="text-primary">{c.challenger?.name ?? "Alguém"}</span>
                     {" te desafiou — "}
                     <span className="text-muted-foreground">
-                      {CHALLENGE_TYPE_LABELS[c.challengeType] ?? c.challengeType}
+                      {c.challengeType === "prediction" && c.predictionType
+                        ? (PREDICTION_TYPE_LABELS[c.predictionType] ?? c.predictionType)
+                        : c.challengeType === "score_duel" && c.scopeType
+                          ? `Palpites — ${SCOPE_TYPE_LABELS[c.scopeType] ?? c.scopeType}`
+                          : (CHALLENGE_TYPE_LABELS[c.challengeType] ?? c.challengeType)}
                     </span>
                   </p>
                   <p className="text-[10px] text-muted-foreground">
@@ -254,9 +265,15 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
                 >
                   {/* Header: tipo + status */}
                   <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-xs text-muted-foreground font-medium">
-                      {CHALLENGE_TYPE_LABELS[c.challengeType] ?? c.challengeType}
-                    </span>
+                    <div className="min-w-0 flex-1 mr-2">
+                      <span className="text-xs text-muted-foreground font-medium block truncate">
+                        {c.challengeType === "prediction" && c.predictionType
+                          ? (PREDICTION_TYPE_LABELS[c.predictionType] ?? c.predictionType)
+                          : c.challengeType === "score_duel" && c.scopeType
+                            ? `Palpites — ${SCOPE_TYPE_LABELS[c.scopeType] ?? c.scopeType}`
+                            : (CHALLENGE_TYPE_LABELS[c.challengeType] ?? c.challengeType)}
+                      </span>
+                    </div>
                     <Badge className={`text-[10px] gap-1 py-0 h-5 ${statusCfg.className}`}>
                       <StatusIcon className="w-2.5 h-2.5" />
                       {statusCfg.label}

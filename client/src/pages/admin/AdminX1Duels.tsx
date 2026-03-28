@@ -59,14 +59,31 @@ const STATUS_CONFIG = {
 };
 
 const CHALLENGE_TYPE_LABELS: Record<string, string> = {
+  score_duel: "Disputa de palpites",
+  prediction: "Previsão",
+};
+
+const PREDICTION_TYPE_LABELS: Record<string, string> = {
+  champion: "Campeão",
+  group_qualified: "Classifica no grupo",
+  phase_qualified: "Passa de fase",
+};
+
+const SCOPE_TYPE_LABELS: Record<string, string> = {
   next_round: "Próxima rodada",
   next_phase: "Próxima fase",
-  full_tournament: "Torneio completo",
-  next_game: "Próximo jogo",
-  specific_game: "Jogo específico",
-  top_scorer: "Artilheiro",
-  champion: "Campeão",
+  next_n_games: "Próximos jogos",
 };
+
+function getChallengeLabel(c: { challengeType: string; predictionType?: string | null; scopeType?: string | null }): string {
+  if (c.challengeType === "prediction" && c.predictionType) {
+    return PREDICTION_TYPE_LABELS[c.predictionType] ?? c.predictionType;
+  }
+  if (c.challengeType === "score_duel" && c.scopeType) {
+    return `Palpites — ${SCOPE_TYPE_LABELS[c.scopeType] ?? c.scopeType}`;
+  }
+  return CHALLENGE_TYPE_LABELS[c.challengeType] ?? c.challengeType;
+}
 
 export default function AdminX1Duels() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -236,7 +253,7 @@ export default function AdminX1Duels() {
                           {(c.pool as any)?.name ?? `Bolão #${c.poolId}`}
                         </p>
                         <p className="text-xs font-medium truncate">
-                          {CHALLENGE_TYPE_LABELS[c.challengeType] ?? c.challengeType}
+                          {getChallengeLabel(c)}
                         </p>
                         <p className="text-[10px] text-muted-foreground/60">
                           {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true, locale: ptBR })}
