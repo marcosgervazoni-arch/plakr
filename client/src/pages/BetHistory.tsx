@@ -104,8 +104,9 @@ export default function BetHistory() {
   );
   const poolId = poolData?.pool?.id;
 
-  const { data: betsRaw, isLoading: loadingBets, refetch: refetchBets } =
+  const { data: betsRaw, isLoading: loadingBets } =
     trpc.bets.myBets.useQuery({ poolId: poolId! }, { enabled: !!poolId });
+  const utils = trpc.useUtils();
 
   const { data: games, isLoading: loadingGames } = trpc.pools.getGames.useQuery(
     { poolId: poolId! },
@@ -121,7 +122,7 @@ export default function BetHistory() {
 
   const placeBetMutation = trpc.bets.placeBet.useMutation({
     onSuccess: () => {
-      refetchBets();
+      utils.bets.myBets.invalidate({ poolId: poolId! });
     },
     onError: (err) => {
       toast.error("Erro ao salvar palpite", { description: err.message });

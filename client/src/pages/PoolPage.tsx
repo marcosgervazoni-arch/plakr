@@ -94,7 +94,7 @@ export default function PoolPage() {
     { enabled: !!slug, refetchInterval: 60_000 }
   );
 
-  const { data: myBets, refetch: refetchBets } = trpc.bets.myBets.useQuery(
+  const { data: myBets } = trpc.bets.myBets.useQuery(
     { poolId: data?.pool.id ?? 0 },
     { enabled: !!data?.pool.id }
   );
@@ -124,7 +124,7 @@ export default function PoolPage() {
     onSuccess: (_, vars) => {
       analytics.trackBetSubmitted({ pool_slug: slug ?? undefined, game_id: vars.gameId });
       toast.success("Palpite salvo!");
-      refetchBets();
+      utils.bets.myBets.invalidate({ poolId: data?.pool.id });
       utils.rankings.myPoolPosition.invalidate({ poolId: data?.pool.id });
     },
     onError: (err) => {

@@ -1894,3 +1894,6 @@
 - [x] BetHistory: edição inline de palpite já feito (campos pré-preenchidos + botão "Atualizar palpite")
 - [x] BetHistory: botão "Salvar palpite" apenas para primeiro palpite
 - [x] BetHistory: novo filtro "Jogos sem palpite" (prazo encerrado + sem bet)
+
+## Sprint 28/03/2026 — Consistência de palpites entre telas
+- [x] Palpite feito na Central de Palpites (/history) reflete imediatamente na aba Jogos (/pool/:slug) e vice-versa (invalidação de cache compartilhada via trpc.bets.myBets)
