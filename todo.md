@@ -1964,3 +1964,6 @@
 
 ## Bug Banner Topo Desktop (28/03/2026)
 - [x] Banner de topo desktop corrigido: o main tinha overflow-y-auto no elemento pai, empurrando o banner para fora da área visível. Corrigido com overflow-hidden no main + área scrollável separada para o conteúdo
+
+## Bug Anúncios Visíveis para Usuários Pro (28/03/2026)
+- [x] Todos os AdBanner auditados: sidebar (AppShell), between_sections (Dashboard + PoolPage) corrigidos com guarda !isPro. Usuários Pro não veem nenhum anúncio em nenhuma tela.

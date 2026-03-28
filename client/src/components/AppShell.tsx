@@ -398,10 +398,12 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
       </nav>
 
-      {/* Ad Banner no sidebar */}
-      <div className="px-3 pb-2">
-        <AdBanner position="sidebar" className="w-full" />
-      </div>
+      {/* Ad Banner no sidebar — apenas para usuários free */}
+      {!isPro && (
+        <div className="px-3 pb-2">
+          <AdBanner position="sidebar" className="w-full" />
+        </div>
+      )}
 
       {/* Upgrade CTA — apenas para usuários free */}
       {isAuthenticated && !isPro && (

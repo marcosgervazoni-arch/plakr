@@ -133,6 +133,9 @@ export default function PoolPage() {
     { staleTime: 5 * 60 * 1000 } // cache 5 min
   );
 
+  const { data: userData } = trpc.users.me.useQuery(undefined, { enabled: !!user, staleTime: 5 * 60 * 1000 });
+  const isPro = !!(userData?.plan?.plan === "pro" && userData?.plan?.isActive);
+
   const placeBet = trpc.bets.placeBet.useMutation({
     onSuccess: (_, vars) => {
       analytics.trackBetSubmitted({ pool_slug: slug ?? undefined, game_id: vars.gameId });
@@ -755,8 +758,8 @@ export default function PoolPage() {
               </div>
             )}
 
-            {/* AdBanner entre seções — após lista de jogos */}
-            {games.length > 0 && <AdBanner position="between_sections" className="w-full mt-3" />}
+            {/* AdBanner entre seções — apenas para usuários free */}
+            {games.length > 0 && !isPro && <AdBanner position="between_sections" className="w-full mt-3" />}
           </TabsContent>
 
           {/* ══ ABA RANKING ══ */}

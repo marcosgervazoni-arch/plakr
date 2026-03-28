@@ -709,8 +709,8 @@ export default function Dashboard() {
               <NearestBadges />
             </div>
 
-            {/* Ad between sections */}
-            <AdBanner position="between_sections" className="w-full" />
+            {/* Ad between sections — apenas para usuários free */}
+            {!isPro && <AdBanner position="between_sections" className="w-full" />}
 
             {/* Recent bets — always visible */}
             <section>
