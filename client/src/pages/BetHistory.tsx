@@ -2,11 +2,13 @@
  * Central de Palpites — /pool/:slug/history
  *
  * Tela única com filtros inline. O usuário age sem sair da página:
- *  - Falta palpitar → campos inline + salvar
+ *  - Falta palpitar → campos inline + "Salvar palpite" (primeiro palpite)
+ *  - Palpite feito + prazo aberto → campos pré-preenchidos + "Atualizar palpite"
  *  - Aguardando resultado → palpite registrado + countdown
  *  - Acertei / Errei → resultado + pontos
+ *  - Jogos sem palpite → prazo encerrado sem bet (registro de oportunidades perdidas)
  *
- * Filtros: Todos | Falta palpitar (N) | Aguardando | Acertei | Errei
+ * Filtros: Todos | Falta palpitar (N) | Aguardando | Acertei | Errei | Sem palpite
  * Ordenação: urgência primeiro (prazo mais próximo), depois cronológico.
  */
 import { trpc } from "@/lib/trpc";
@@ -24,6 +26,8 @@ import {
   AlertTriangle,
   PenLine,
   Timer,
+  RefreshCw,
+  Ban,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { format, formatDistanceToNow } from "date-fns";
@@ -33,7 +37,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 // ─── Tipos de filtro ──────────────────────────────────────────────────────────
-type FilterKey = "all" | "pending" | "waiting" | "correct" | "wrong";
+type FilterKey = "all" | "pending" | "editable" | "waiting" | "correct" | "wrong" | "missed";
 
 // ─── Configuração visual por resultado ───────────────────────────────────────
 const resultCfg = {
@@ -90,7 +94,7 @@ export default function BetHistory() {
   const [inlineInputs, setInlineInputs] = useState<
     Record<number, { a: string; b: string }>
   >({});
-  // Quais cards pendentes estão com saving em andamento
+  // Quais cards estão com saving em andamento
   const [savingIds, setSavingIds] = useState<Set<number>>(new Set());
 
   // ── Dados ──────────────────────────────────────────────────────────────────
@@ -127,13 +131,13 @@ export default function BetHistory() {
   // ── Merge bets + games ────────────────────────────────────────────────────
   const bets = Array.isArray(betsRaw) ? betsRaw : (betsRaw?.items ?? []);
 
-  const { enrichedGames, betMap } = useMemo(() => {
-    if (!games) return { enrichedGames: [], betMap: new Map() };
+  const { enrichedGames } = useMemo(() => {
+    if (!games) return { enrichedGames: [] };
     const bm = new Map(bets.map((b) => [b.gameId, b]));
     const eg = games
       .filter((g) => g.status !== "cancelled")
       .map((g) => ({ ...g, bet: bm.get(g.id) ?? null }));
-    return { enrichedGames: eg, betMap: bm };
+    return { enrichedGames: eg };
   }, [games, bets]);
 
   // ── Classificação de cada jogo ────────────────────────────────────────────
@@ -142,12 +146,18 @@ export default function BetHistory() {
   function classifyGame(g: EnrichedGame): FilterKey {
     const matchDate = new Date(g.matchDate);
     const deadline = getDeadline(matchDate, deadlineMinutes);
+    const deadlinePassed = isDeadlinePassed(deadline);
 
     if (!g.bet) {
-      // Sem palpite: só é "falta palpitar" se o prazo não passou
-      if (!isDeadlinePassed(deadline)) return "pending";
-      // Prazo passou sem palpite → trata como "errado" (perdeu a chance)
-      return "wrong";
+      // Sem palpite
+      if (!deadlinePassed) return "pending";   // prazo aberto → falta palpitar
+      return "missed";                          // prazo encerrado → perdeu a chance
+    }
+
+    // Tem palpite
+    if (!deadlinePassed && g.bet.resultType === "pending") {
+      // Prazo ainda aberto + palpite feito → editável
+      return "editable";
     }
 
     if (g.bet.resultType === "pending") return "waiting";
@@ -158,7 +168,7 @@ export default function BetHistory() {
 
   // ── Contagens para badges ─────────────────────────────────────────────────
   const counts = useMemo(() => {
-    const c = { pending: 0, waiting: 0, correct: 0, wrong: 0 };
+    const c = { pending: 0, editable: 0, waiting: 0, correct: 0, wrong: 0, missed: 0 };
     for (const g of enrichedGames) {
       const k = classifyGame(g);
       if (k in c) c[k as keyof typeof c]++;
@@ -168,21 +178,26 @@ export default function BetHistory() {
 
   // ── Filtro + ordenação ────────────────────────────────────────────────────
   const filteredGames = useMemo(() => {
-    const list =
-      activeFilter === "all"
-        ? enrichedGames
-        : enrichedGames.filter((g) => classifyGame(g) === activeFilter);
+    let list: typeof enrichedGames;
+    if (activeFilter === "all") {
+      list = enrichedGames;
+    } else {
+      list = enrichedGames.filter((g) => classifyGame(g) === activeFilter);
+    }
 
     return [...list].sort((a, b) => {
       const da = new Date(a.matchDate).getTime();
       const db2 = new Date(b.matchDate).getTime();
-      // Pendentes: mais urgente primeiro (data crescente)
-      if (activeFilter === "pending" || activeFilter === "all") {
-        const aClass = classifyGame(a);
-        const bClass = classifyGame(b);
-        if (aClass === "pending" && bClass !== "pending") return -1;
-        if (bClass === "pending" && aClass !== "pending") return 1;
-        if (aClass === "pending" && bClass === "pending") return da - db2;
+      const aClass = classifyGame(a);
+      const bClass = classifyGame(b);
+
+      // Pendentes e editáveis: mais urgente primeiro (data crescente)
+      if (activeFilter === "all" || activeFilter === "pending" || activeFilter === "editable") {
+        const aIsAction = aClass === "pending" || aClass === "editable";
+        const bIsAction = bClass === "pending" || bClass === "editable";
+        if (aIsAction && !bIsAction) return -1;
+        if (!aIsAction && bIsAction) return 1;
+        if (aIsAction && bIsAction) return da - db2;
       }
       // Demais: mais recente primeiro
       return db2 - da;
@@ -193,55 +208,63 @@ export default function BetHistory() {
   const summary = useMemo(() => {
     const finished = bets.filter((b) => b.resultType !== "pending");
     const exact = finished.filter((b) => b.resultType === "exact").length;
-    const correct = finished.filter(
-      (b) => b.resultType === "correct_result"
-    ).length;
-    const wrong = finished.filter((b) => b.resultType === "wrong").length;
-    const totalPoints = finished.reduce(
-      (acc, b) => acc + (b.pointsEarned ?? 0),
-      0
-    );
+    const correct = finished.filter((b) => b.resultType === "correct_result").length;
+    const totalPoints = finished.reduce((acc, b) => acc + (b.pointsEarned ?? 0), 0);
     const total = finished.length;
-    const hitRate =
-      total > 0 ? Math.round(((exact + correct) / total) * 100) : 0;
-    return { exact, correct, wrong, totalPoints, total, hitRate };
+    const hitRate = total > 0 ? Math.round(((exact + correct) / total) * 100) : 0;
+    return { exact, correct, totalPoints, total, hitRate };
   }, [bets]);
 
-  // ── Handlers inline ───────────────────────────────────────────────────────
+  // ── Helpers de input ──────────────────────────────────────────────────────
+  function getInputForGame(g: EnrichedGame): { a: string; b: string } {
+    // Se o usuário já digitou algo, usa isso
+    if (inlineInputs[g.id]) return inlineInputs[g.id];
+    // Se tem palpite existente, pré-preenche com os valores atuais
+    if (g.bet) {
+      return {
+        a: String(g.bet.predictedScoreA ?? ""),
+        b: String(g.bet.predictedScoreB ?? ""),
+      };
+    }
+    return { a: "", b: "" };
+  }
+
   function setInput(gameId: number, side: "a" | "b", value: string) {
     setInlineInputs((prev) => ({
       ...prev,
-      [gameId]: { ...{ a: "0", b: "0" }, ...prev[gameId], [side]: value },
+      [gameId]: { ...{ a: "", b: "" }, ...prev[gameId], [side]: value },
     }));
   }
 
-  async function handleSave(gameId: number) {
+  async function handleSave(g: EnrichedGame) {
     if (!poolId) return;
-    const inp = inlineInputs[gameId] ?? { a: "0", b: "0" };
+    const inp = getInputForGame(g);
     const scoreA = parseInt(inp.a, 10);
     const scoreB = parseInt(inp.b, 10);
-    if (isNaN(scoreA) || isNaN(scoreB)) {
+    if (isNaN(scoreA) || isNaN(scoreB) || inp.a === "" || inp.b === "") {
       toast.error("Preencha os dois placares");
       return;
     }
-    setSavingIds((prev) => new Set(prev).add(gameId));
+    setSavingIds((prev) => new Set(prev).add(g.id));
     try {
       await placeBetMutation.mutateAsync({
         poolId,
-        gameId,
+        gameId: g.id,
         predictedScoreA: scoreA,
         predictedScoreB: scoreB,
       });
-      toast.success("Palpite salvo!");
+      const isUpdate = !!g.bet;
+      toast.success(isUpdate ? "Palpite atualizado!" : "Palpite salvo!");
+      // Limpa o override do input (volta a usar o valor do bet)
       setInlineInputs((prev) => {
         const next = { ...prev };
-        delete next[gameId];
+        delete next[g.id];
         return next;
       });
     } finally {
       setSavingIds((prev) => {
         const next = new Set(prev);
-        next.delete(gameId);
+        next.delete(g.id);
         return next;
       });
     }
@@ -250,12 +273,14 @@ export default function BetHistory() {
   const isLoading = loadingBets || loadingGames;
 
   // ── Filtros config ────────────────────────────────────────────────────────
-  const filters: { key: FilterKey; label: string; count?: number }[] = [
+  const filters: { key: FilterKey; label: string; count?: number; urgent?: boolean }[] = [
     { key: "all", label: "Todos" },
-    { key: "pending", label: "Falta palpitar", count: counts.pending },
+    { key: "pending", label: "Falta palpitar", count: counts.pending, urgent: true },
+    { key: "editable", label: "Editáveis", count: counts.editable },
     { key: "waiting", label: "Aguardando", count: counts.waiting },
     { key: "correct", label: "Acertei", count: counts.correct },
     { key: "wrong", label: "Errei", count: counts.wrong },
+    { key: "missed", label: "Sem palpite", count: counts.missed },
   ];
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -323,7 +348,7 @@ export default function BetHistory() {
                       "text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none",
                       isActive
                         ? "bg-[#0B0F1A]/20 text-[#0B0F1A]"
-                        : f.key === "pending"
+                        : f.urgent
                         ? "bg-[#FF3B3B] text-white"
                         : "bg-muted text-muted-foreground"
                     )}
@@ -347,19 +372,18 @@ export default function BetHistory() {
             <p className="font-semibold text-muted-foreground">
               {activeFilter === "pending"
                 ? "Nenhum jogo aguardando palpite"
+                : activeFilter === "editable"
+                ? "Nenhum palpite editável no momento"
                 : activeFilter === "waiting"
                 ? "Nenhum palpite aguardando resultado"
                 : activeFilter === "correct"
                 ? "Nenhum acerto ainda"
                 : activeFilter === "wrong"
                 ? "Nenhum erro ainda"
+                : activeFilter === "missed"
+                ? "Nenhum jogo sem palpite"
                 : "Nenhum palpite registrado"}
             </p>
-            {activeFilter === "pending" && (
-              <p className="text-sm text-muted-foreground/70">
-                Todos os jogos já têm palpite ou o prazo encerrou.
-              </p>
-            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -368,13 +392,17 @@ export default function BetHistory() {
               const matchDate = new Date(g.matchDate);
               const deadline = getDeadline(matchDate, deadlineMinutes);
               const soon = isDeadlineSoon(deadline);
-              const inp = inlineInputs[g.id] ?? { a: "", b: "" };
               const isSaving = savingIds.has(g.id);
               const bet = g.bet;
               const cfg =
                 bet && bet.resultType !== "pending"
                   ? resultCfg[bet.resultType as keyof typeof resultCfg]
                   : resultCfg.pending;
+
+              // Determina se o card tem campos de input (pendente ou editável)
+              const isActionable = classification === "pending" || classification === "editable";
+              const isEditing = classification === "editable";
+              const inp = getInputForGame(g);
 
               return (
                 <div
@@ -385,10 +413,14 @@ export default function BetHistory() {
                       ? soon
                         ? "border-[#FF3B3B]/40 bg-[#FF3B3B]/5"
                         : "border-[#FFB800]/30"
+                      : classification === "editable"
+                      ? "border-[#00C2FF]/30 bg-[#00C2FF]/5"
                       : classification === "correct"
                       ? cfg.border + " " + cfg.bg
                       : classification === "wrong"
                       ? "border-[#FF3B3B]/20 bg-[#FF3B3B]/5"
+                      : classification === "missed"
+                      ? "border-border/20 opacity-60"
                       : "border-border/30"
                   )}
                 >
@@ -403,11 +435,11 @@ export default function BetHistory() {
                     </span>
                     <div className="flex items-center gap-2 shrink-0">
                       {/* Countdown para pendentes */}
-                      {classification === "pending" && (
+                      {(classification === "pending" || classification === "editable") && (
                         <span
                           className={cn(
                             "flex items-center gap-1 font-medium",
-                            soon ? "text-[#FF3B3B]" : "text-[#FFB800]"
+                            soon ? "text-[#FF3B3B]" : classification === "editable" ? "text-[#00C2FF]" : "text-[#FFB800]"
                           )}
                         >
                           <Timer className="w-3 h-3" />
@@ -417,6 +449,13 @@ export default function BetHistory() {
                                 locale: ptBR,
                                 addSuffix: true,
                               })}`}
+                        </span>
+                      )}
+                      {/* Missed: data do jogo */}
+                      {classification === "missed" && (
+                        <span className="flex items-center gap-1 text-muted-foreground/60">
+                          <Ban className="w-3 h-3" />
+                          Sem palpite
                         </span>
                       )}
                       {/* Data do jogo */}
@@ -444,8 +483,8 @@ export default function BetHistory() {
 
                     {/* Placar central */}
                     <div className="flex items-center gap-2 shrink-0">
-                      {classification === "pending" ? (
-                        /* Inputs inline para palpite */
+                      {isActionable ? (
+                        /* Inputs inline para palpite (novo ou edição) */
                         <div className="flex items-center gap-1.5">
                           <input
                             type="number"
@@ -454,7 +493,12 @@ export default function BetHistory() {
                             value={inp.a}
                             onChange={(e) => setInput(g.id, "a", e.target.value)}
                             placeholder="0"
-                            className="w-12 h-10 text-center text-lg font-bold bg-[#0B0F1A] border border-[#FFB800]/40 rounded-lg text-foreground focus:outline-none focus:border-[#FFB800] focus:ring-1 focus:ring-[#FFB800]/30 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className={cn(
+                              "w-12 h-10 text-center text-lg font-bold bg-[#0B0F1A] rounded-lg text-foreground focus:outline-none focus:ring-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                              isEditing
+                                ? "border border-[#00C2FF]/40 focus:border-[#00C2FF] focus:ring-[#00C2FF]/30"
+                                : "border border-[#FFB800]/40 focus:border-[#FFB800] focus:ring-[#FFB800]/30"
+                            )}
                           />
                           <span className="text-muted-foreground font-bold">×</span>
                           <input
@@ -464,21 +508,27 @@ export default function BetHistory() {
                             value={inp.b}
                             onChange={(e) => setInput(g.id, "b", e.target.value)}
                             placeholder="0"
-                            className="w-12 h-10 text-center text-lg font-bold bg-[#0B0F1A] border border-[#FFB800]/40 rounded-lg text-foreground focus:outline-none focus:border-[#FFB800] focus:ring-1 focus:ring-[#FFB800]/30 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className={cn(
+                              "w-12 h-10 text-center text-lg font-bold bg-[#0B0F1A] rounded-lg text-foreground focus:outline-none focus:ring-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                              isEditing
+                                ? "border border-[#00C2FF]/40 focus:border-[#00C2FF] focus:ring-[#00C2FF]/30"
+                                : "border border-[#FFB800]/40 focus:border-[#FFB800] focus:ring-[#FFB800]/30"
+                            )}
                           />
                         </div>
                       ) : (
-                        /* Palpite registrado */
+                        /* Palpite registrado (somente leitura) */
                         <div className="flex items-center gap-2">
-                          <div className="bg-muted/40 rounded-lg px-3 py-1.5 text-center min-w-[60px]">
-                            <p className="text-[10px] text-muted-foreground mb-0.5">
-                              Palpite
-                            </p>
-                            <p className="font-bold text-sm">
-                              {bet?.predictedScoreA ?? "–"} ×{" "}
-                              {bet?.predictedScoreB ?? "–"}
-                            </p>
-                          </div>
+                          {bet && (
+                            <div className="bg-muted/40 rounded-lg px-3 py-1.5 text-center min-w-[60px]">
+                              <p className="text-[10px] text-muted-foreground mb-0.5">
+                                Palpite
+                              </p>
+                              <p className="font-bold text-sm">
+                                {bet.predictedScoreA} × {bet.predictedScoreB}
+                              </p>
+                            </div>
+                          )}
                           {/* Resultado real (se encerrado) */}
                           {g.status === "finished" &&
                             g.scoreA !== null &&
@@ -492,6 +542,15 @@ export default function BetHistory() {
                                 </p>
                               </div>
                             )}
+                          {/* Missed: sem palpite */}
+                          {classification === "missed" && (
+                            <div className="bg-muted/20 rounded-lg px-3 py-1.5 text-center min-w-[60px]">
+                              <p className="text-[10px] text-muted-foreground mb-0.5">
+                                Palpite
+                              </p>
+                              <p className="font-bold text-sm text-muted-foreground/40">–</p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -512,20 +571,27 @@ export default function BetHistory() {
                   </div>
 
                   {/* Rodapé do card */}
-                  {classification === "pending" ? (
-                    /* Botão Salvar palpite */
+                  {isActionable ? (
+                    /* Botão Salvar / Atualizar palpite */
                     <Button
                       size="sm"
-                      onClick={() => handleSave(g.id)}
+                      onClick={() => handleSave(g)}
                       disabled={isSaving || inp.a === "" || inp.b === ""}
-                      className="w-full bg-gradient-to-r from-[#FFB800] to-[#FF8A00] text-[#0B0F1A] font-bold hover:opacity-90"
+                      className={cn(
+                        "w-full font-bold hover:opacity-90",
+                        isEditing
+                          ? "bg-gradient-to-r from-[#00C2FF] to-[#0080FF] text-white"
+                          : "bg-gradient-to-r from-[#FFB800] to-[#FF8A00] text-[#0B0F1A]"
+                      )}
                     >
                       {isSaving ? (
                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : isEditing ? (
+                        <RefreshCw className="w-4 h-4 mr-2" />
                       ) : (
                         <PenLine className="w-4 h-4 mr-2" />
                       )}
-                      Salvar palpite
+                      {isEditing ? "Atualizar palpite" : "Salvar palpite"}
                     </Button>
                   ) : bet && bet.resultType !== "pending" ? (
                     /* Badge de resultado + pontos */
@@ -538,13 +604,18 @@ export default function BetHistory() {
                       </div>
                       <Badge
                         variant="outline"
-                        className={cn(
-                          "text-xs font-bold border-current/30",
-                          cfg.color
-                        )}
+                        className={cn("text-xs font-bold border-current/30", cfg.color)}
                       >
                         +{bet.pointsEarned ?? 0} pts
                       </Badge>
+                    </div>
+                  ) : classification === "missed" ? (
+                    /* Jogo sem palpite (prazo encerrado) */
+                    <div className="flex items-center gap-1.5 pt-1 border-t border-border/20">
+                      <Ban className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      <span className="text-xs text-muted-foreground/60">
+                        Prazo encerrado sem palpite
+                      </span>
                     </div>
                   ) : (
                     /* Aguardando resultado */
@@ -579,33 +650,19 @@ export default function BetHistory() {
                 <p className="text-2xl font-bold text-[#FFB800]">
                   {summary.totalPoints}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Pontos totais
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">Pontos totais</p>
               </div>
               <div className="bg-[#121826] border border-[#00FF88]/20 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-[#00FF88]">
-                  {summary.exact}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Placares exatos
-                </p>
+                <p className="text-2xl font-bold text-[#00FF88]">{summary.exact}</p>
+                <p className="text-xs text-muted-foreground mt-1">Placares exatos</p>
               </div>
               <div className="bg-[#121826] border border-[#00C2FF]/20 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-[#00C2FF]">
-                  {summary.correct}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Resultados certos
-                </p>
+                <p className="text-2xl font-bold text-[#00C2FF]">{summary.correct}</p>
+                <p className="text-xs text-muted-foreground mt-1">Resultados certos</p>
               </div>
               <div className="bg-[#121826] border border-border/30 rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-foreground">
-                  {summary.hitRate}%
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Taxa de acerto
-                </p>
+                <p className="text-2xl font-bold text-foreground">{summary.hitRate}%</p>
+                <p className="text-xs text-muted-foreground mt-1">Taxa de acerto</p>
               </div>
             </div>
           </div>

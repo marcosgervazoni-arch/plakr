@@ -1889,3 +1889,8 @@
 - [x] Palpite inline no card (campos de placar + botão Salvar) para jogos pendentes
 - [x] Ordenação por urgência dentro de cada filtro
 - [x] Resumo de performance no rodapé
+
+## Sprint 28/03/2026 — Edição de palpite e filtro Jogos sem palpite
+- [x] BetHistory: edição inline de palpite já feito (campos pré-preenchidos + botão "Atualizar palpite")
+- [x] BetHistory: botão "Salvar palpite" apenas para primeiro palpite
+- [x] BetHistory: novo filtro "Jogos sem palpite" (prazo encerrado + sem bet)
