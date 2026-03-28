@@ -122,7 +122,7 @@ export function BadgeCard({ badge, size = "md", showStar = false }: BadgeCardPro
   };
   const emojiSizes = { sm: "text-xl", md: "text-2xl", lg: "text-3xl" };
   const imgSizes = { sm: "w-6 h-6", md: "w-8 h-8", lg: "w-9 h-9" };
-  const nameSizes = { sm: "text-[10px] max-w-[48px]", md: "text-[11px] max-w-[60px]", lg: "text-xs max-w-[64px]" };
+  const nameSizes = { sm: "text-[10px]", md: "text-[11px]", lg: "text-xs" };
 
   // Ícone genérico: emoji da raridade quando não há emoji nem iconUrl
   const RARITY_FALLBACK_EMOJI: Record<BadgeRarity, string> = {
@@ -137,7 +137,7 @@ export function BadgeCard({ badge, size = "md", showStar = false }: BadgeCardPro
     <TooltipPrimitive.Root>
       <TooltipTrigger asChild>
         <div
-          className={`relative flex flex-col items-center gap-1.5 cursor-default transition-all duration-200 group ${
+          className={`relative flex flex-col items-center gap-1 cursor-default transition-all duration-200 group w-full ${
             isEarned ? "opacity-100" : "opacity-30 grayscale"
           }`}
         >
@@ -210,7 +210,7 @@ export function BadgeCard({ badge, size = "md", showStar = false }: BadgeCardPro
 
           {/* Nome do badge */}
           <span
-            className={`font-medium text-center leading-tight line-clamp-2 ${nameSizes[size]} ${
+            className={`font-medium text-center leading-tight line-clamp-2 w-full block ${nameSizes[size]} ${
               isEarned ? "text-foreground" : "text-muted-foreground/60"
             }`}
           >

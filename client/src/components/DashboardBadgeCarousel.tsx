@@ -91,14 +91,16 @@ export default function DashboardBadgeCarousel({ badges }: DashboardBadgeCarouse
       </div>
 
       {/* Grid de 5 colunas — preenche uniformemente a largura do card */}
-      <div className="grid grid-cols-5 gap-2 justify-items-center">
+      <div className="grid grid-cols-5 gap-x-2 gap-y-1 justify-items-center">
         {paginated.map((badge) => (
-          <BadgeCard key={badge.id} badge={badge} size="md" />
+          <div key={badge.id} className="flex flex-col items-center w-full">
+            <BadgeCard badge={badge} size="md" />
+          </div>
         ))}
         {/* Preenche slots vazios para manter o grid alinhado */}
         {paginated.length < PAGE_SIZE &&
           Array.from({ length: PAGE_SIZE - paginated.length }).map((_, i) => (
-            <div key={`empty-${i}`} className="w-14 h-14" />
+            <div key={`empty-${i}`} className="w-14 h-[88px]" />
           ))}
       </div>
 
