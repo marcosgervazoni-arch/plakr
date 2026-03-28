@@ -30,6 +30,7 @@ import {
   Sparkles,
   Swords,
   ChevronDown,
+  Settings,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
@@ -89,7 +90,7 @@ export default function AppShell({ children }: AppShellProps) {
   });
   const unreadCount = notifications?.filter((n) => !n.isRead).length ?? 0;
 
-  // Bolões ativos do usuário para o submenu de Ranking
+  // Bolões do usuário (ativos + concluídos) para o submenu
   const { data: myPools = [] } = trpc.users.myPools.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -100,21 +101,48 @@ export default function AppShell({ children }: AppShellProps) {
   // Detectar se o usuário está dentro de um bolão específico
   const poolSlugMatch = location.match(/^\/pool\/([^/]+)/);
   const activePoolSlug = poolSlugMatch ? poolSlugMatch[1] : null;
+  // Buscar dados do bolão ativo em todos os bolões (não só ativos)
   const activePoolData = activePoolSlug
-    ? activePools.find((p: any) => p.pool?.slug === activePoolSlug)
+    ? (myPools as any[]).find((p: any) => p.pool?.slug === activePoolSlug)
     : null;
   const activePoolName = activePoolData?.pool?.name ?? activePoolSlug;
+  const activePoolStatus = activePoolData?.pool?.status ?? "active";
+  const activePoolIsOrganizer = activePoolData?.member?.role === "organizer" || user?.role === "admin";
+  const activePoolIsConcluded = activePoolStatus === "concluded";
 
-  // Itens de subnavegação do bolão ativo — ordem por prioridade (orquestrador)
+  // Itens de subnavegação do bolão ativo — nova ordem e nomenclatura (orquestrador)
   const poolNavItems = activePoolSlug
     ? [
-        { id: "pool-games",    label: "Jogos & Palpites",  icon: Gamepad2,    href: `/pool/${activePoolSlug}`,                  match: (l: string) => l === `/pool/${activePoolSlug}` || (l.startsWith(`/pool/${activePoolSlug}`) && !l.includes('/history') && !l.includes('/rules') && !l.includes('/bracket') && !l.includes('/retrospectiva') && !l.includes('/player') && !l.includes('/manage')) },
-        { id: "pool-ranking",  label: "Ranking",           icon: Trophy,      href: `/pool/${activePoolSlug}?tab=ranking`,      match: (l: string) => l === `/pool/${activePoolSlug}` && (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'ranking') },
-        { id: "pool-duelos",   label: "Duelos X1",         icon: Swords,      href: `/pool/${activePoolSlug}?tab=duelos`,       match: (l: string) => l === `/pool/${activePoolSlug}` && (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'duelos') },
-        { id: "pool-rules",    label: "Regulamento",       icon: ScrollText,  href: `/pool/${activePoolSlug}/rules`,            match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/rules`) },
-        { id: "pool-bracket",  label: "Chaveamento",       icon: GitBranch,   href: `/pool/${activePoolSlug}/bracket`,          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/bracket`) },
-        { id: "pool-history",  label: "Meus Palpites",     icon: History,     href: `/pool/${activePoolSlug}/history`,          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/history`) },
-        { id: "pool-retro",    label: "Retrospectiva",     icon: Sparkles,    href: `/pool/${activePoolSlug}/retrospectiva`,    match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/retrospectiva`) },
+        // Configurações — apenas para organizadores
+        ...(activePoolIsOrganizer ? [{
+          id: "pool-manage",
+          label: "Configurações",
+          icon: Settings,
+          href: `/pool/${activePoolSlug}/manage`,
+          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/manage`),
+          highlight: false,
+        }] : []),
+        // Meus Palpites — com destaque visual
+        { id: "pool-history",  label: "Meus Palpites",  icon: History,     href: `/pool/${activePoolSlug}/history`,          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/history`),          highlight: true  },
+        // Jogos
+        { id: "pool-games",    label: "Jogos",          icon: Gamepad2,    href: `/pool/${activePoolSlug}`,                  match: (l: string) => l === `/pool/${activePoolSlug}` || (l.startsWith(`/pool/${activePoolSlug}`) && !l.includes('/history') && !l.includes('/rules') && !l.includes('/bracket') && !l.includes('/retrospectiva') && !l.includes('/player') && !l.includes('/manage')), highlight: false },
+        // Ranking
+        { id: "pool-ranking",  label: "Ranking",        icon: Trophy,      href: `/pool/${activePoolSlug}?tab=ranking`,      match: (l: string) => l === `/pool/${activePoolSlug}` && (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'ranking'),  highlight: false },
+        // Duelos
+        { id: "pool-duelos",   label: "Duelos",         icon: Swords,      href: `/pool/${activePoolSlug}?tab=duelos`,       match: (l: string) => l === `/pool/${activePoolSlug}` && (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'duelos'),   highlight: false },
+        // Chaveamento
+        { id: "pool-bracket",  label: "Chaveamento",    icon: GitBranch,   href: `/pool/${activePoolSlug}/bracket`,          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/bracket`),          highlight: false },
+        // Retrospectiva — apenas quando bolão está concluído
+        ...(activePoolIsConcluded ? [{
+          id: "pool-retro",
+          label: "Retrospectiva",
+          icon: Sparkles,
+          href: `/pool/${activePoolSlug}/retrospectiva`,
+          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/retrospectiva`),
+          highlight: false,
+        }] : []),
+        // Regras
+        { id: "pool-rules",    label: "Regras",         icon: ScrollText,  href: `/pool/${activePoolSlug}/rules`,            match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/rules`),            highlight: false },
       ]
     : [];
 
@@ -247,6 +275,7 @@ export default function AppShell({ children }: AppShellProps) {
                 <div className="space-y-0.5">
                   {poolNavItems.map((item) => {
                     const isActive = item.match(location);
+                    const isHighlight = (item as any).highlight === true;
                     return (
                       <Link
                         key={item.id}
@@ -258,10 +287,12 @@ export default function AppShell({ children }: AppShellProps) {
                             "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left",
                             isActive
                               ? "bg-primary/10 text-primary font-medium"
-                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                              : isHighlight
+                                ? "text-primary/90 bg-primary/5 hover:bg-primary/10 font-medium"
+                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                           )}
                         >
-                          <item.icon className="w-4 h-4 shrink-0" />
+                          <item.icon className={cn("w-4 h-4 shrink-0", isHighlight && !isActive && "text-primary")} />
                           <span className="flex-1 truncate">{item.label}</span>
                         </button>
                       </Link>
@@ -446,6 +477,14 @@ export default function AppShell({ children }: AppShellProps) {
         </Link>
 
         <div className="flex items-center gap-1.5 shrink-0" data-tour="notifications">
+          {/* Engrenagem — apenas quando organizador do bolão ativo */}
+          {activePoolSlug && activePoolIsOrganizer && (
+            <Link href={`/pool/${activePoolSlug}/manage`}>
+              <Button variant="ghost" size="icon" className="w-8 h-8" title="Configurações do bolão">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </Link>
+          )}
           <NotificationBell />
         </div>
       </div>

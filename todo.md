@@ -1863,3 +1863,16 @@
 ## Sprint 28/03/2026 — Correções PoolPage Header
 - [x] Remover header duplicado no mobile (PoolPage tem 2 headers: AppShell + header próprio)
 - [x] Adicionar ícone de engrenagem no header do PoolPage (ao lado do sino, visível apenas para organizadores, direciona para /pool/:slug/manage)
+
+## Sprint 28/03/2026 — Reordenação da navegação do bolão
+- [ ] Reordenar e renomear itens do PoolBottomNav: Configurações (organizador), Meus Palpites (destaque), Jogos, Ranking, Duelos, Chaveamento, Retrospectiva (só ao final), Regras
+- [ ] Renomear "Jogos & Palpites" → "Jogos"
+- [ ] Renomear "Regulamento" → "Regras"
+- [ ] "Configurações" visível apenas para organizadores do bolão
+- [ ] "Retrospectiva" visível apenas quando bolão está encerrado (status finished/concluded)
+- [ ] "Meus Palpites" com destaque visual
+- [ ] Atualizar dropdown do header com mesma ordem/nomenclatura
+
+## Sprint 28/03/2026 — Remoção sub-header mobile e engrenagem no top bar
+- [x] Remover sub-header mobile do bolão (div lg:hidden sticky top-14) do PoolPage
+- [x] Adicionar ícone de engrenagem no top bar do AppShell (ao lado do sino), visível apenas quando usuário é organizador do bolão ativo
