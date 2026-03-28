@@ -321,7 +321,7 @@ export default function AdminIntegrations() {
                     />
                     <AdsterraCodeField
                       label="Entre Seções"
-                      size="320×100px — Large Mobile Banner"
+                      size="320×50px — Mobile Banner"
                       value={adBetweenMobile}
                       onChange={setAdBetweenMobile}
                     />

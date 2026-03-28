@@ -47,7 +47,7 @@ const AD_DIMENSIONS: Record<
 > = {
   top:              { desktop: { w: 728, h: 90  }, mobile: { w: 320, h: 50  } },
   sidebar:          { desktop: { w: 300, h: 250 }, mobile: { w: 300, h: 250 } },
-  between_sections: { desktop: { w: 728, h: 90  }, mobile: { w: 320, h: 100 } },
+  between_sections: { desktop: { w: 728, h: 90  }, mobile: { w: 320, h: 50  } },
   bottom:           { desktop: { w: 728, h: 90  }, mobile: { w: 320, h: 50  } },
   popup:            { desktop: { w: 400, h: 300 }, mobile: { w: 320, h: 250 } },
 };
