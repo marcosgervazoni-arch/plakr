@@ -1,24 +1,26 @@
 /**
  * X1ChallengeModal — Modal de criação de desafio "Vem pro X1"
  *
- * Fluxo conforme spec v1.6 — seção 5.4:
+ * Fluxo aprovado (Gerva, 28/03/2026):
  *
- * Passo 1 — Lista única de opções (score_duel + predictions misturadas):
- *   ○ Disputa de palpites — quem pontua mais?
- *   ○ Quem vai ser o campeão?
- *   ○ Quem vai ser o vice-campeão?       (só em cup/groups_knockout)
- *   ○ Quem passa do Grupo G?             (dinâmico, só em cup/groups_knockout)
- *   ○ Quem vai para a semifinal?         (dinâmico, só em cup/groups_knockout)
- *   ○ Quem cai nas quartas?              (dinâmico, só em cup/groups_knockout)
- *   ○ Quem vence o próximo jogo?         (se houver jogo agendado)
+ * Passo 1 — Lista única de opções:
+ *   ○ Disputa de palpites — quem pontua mais?   (sempre)
+ *   ○ Quem vai ser o campeão?                   (sempre)
+ *   ○ Quem classifica no Grupo [X]?             (só em cup/groups_knockout com grupos)
+ *   ○ Quem passa para a fase [X]?               (só em cup/groups_knockout com fases)
  *
  * Passo 2a — Se escolheu "Disputa de palpites":
  *   Escolhe o escopo (próxima rodada, próxima fase, próximos N jogos)
+ *   → Vai direto para confirmação
  *
  * Passo 2b — Se escolheu qualquer previsão:
- *   Escolhe sua resposta (time ou times da lista)
+ *   Escolhe 1 time (champion / phase_qualified) ou 2 times (group_qualified)
+ *   → Vai para confirmação ao completar a seleção
  *
  * Passo 3 — Confirmação e envio
+ *
+ * Regra: desafiado não pode escolher o mesmo palpite que o desafiante
+ *        (validado no backend e exibido na tela de aceitação)
  */
 
 import { useState } from "react";
@@ -32,7 +34,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Swords, Target, ChevronRight, ChevronLeft, Check, Lock } from "lucide-react";
+import { Loader2, Swords, Target, ChevronRight, ChevronLeft, Check, Lock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface X1ChallengeModalProps {
@@ -47,9 +49,9 @@ interface X1ChallengeModalProps {
 type Step = "list" | "scope" | "answer" | "confirm";
 
 type PredictionOption = {
-  type: "champion" | "runner_up" | "group_qualified" | "phase_qualified" | "eliminated_in_phase" | "next_game_winner";
+  type: "champion" | "group_qualified" | "phase_qualified";
   label: string;
-  context?: { phase?: string; groupName?: string; gameId?: number };
+  context?: { phase?: string; groupName?: string };
 };
 
 export default function X1ChallengeModal({
@@ -100,13 +102,11 @@ export default function X1ChallengeModal({
     onClose();
   }
 
-  /** Passo 1 — usuário clicou em "Disputa de palpites" */
   function handlePickScoreDuel() {
     setChallengeType("score_duel");
     setStep("scope");
   }
 
-  /** Passo 1 — usuário clicou em uma opção de previsão */
   function handlePickPrediction(opt: PredictionOption) {
     setChallengeType("prediction");
     setSelectedPrediction(opt);
@@ -114,22 +114,18 @@ export default function X1ChallengeModal({
     setStep("answer");
   }
 
-  /** Passo 2a — usuário escolheu o escopo do duelo de palpites */
   function handlePickScope(type: "next_round" | "next_phase" | "next_n_games", value?: number) {
     setScopeType(type);
     setScopeValue(value ?? null);
     setStep("confirm");
   }
 
-  /** Quantos times o usuário precisa selecionar para este tipo de previsão */
+  /** Quantos times precisam ser selecionados */
   function getRequiredCount(type: string | null): number {
-    if (!type) return 1;
     if (type === "group_qualified") return 2;
-    if (type === "phase_qualified" || type === "eliminated_in_phase") return 2;
     return 1;
   }
 
-  /** Passo 2b — toggle de time na lista de resposta */
   function toggleTeam(teamName: string) {
     const required = getRequiredCount(selectedPrediction?.type ?? null);
     if (selectedTeams.includes(teamName)) {
@@ -137,14 +133,12 @@ export default function X1ChallengeModal({
     } else if (selectedTeams.length < required) {
       const next = [...selectedTeams, teamName];
       setSelectedTeams(next);
-      // Avança automaticamente quando o número de seleções está completo
       if (next.length === required) {
         setStep("confirm");
       }
     }
   }
 
-  /** Passo 3 — confirma e envia o desafio */
   function handleConfirm() {
     if (!challengeType) return;
     const answer =
@@ -257,12 +251,54 @@ export default function X1ChallengeModal({
                     <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </button>
 
-                  {/* Opções de previsão — misturadas na mesma lista */}
-                  {options.predictionOptions.length > 0 && (
-                    <div className="max-h-56 overflow-y-auto space-y-2 pr-0.5">
-                      {options.predictionOptions.map((opt, i) => (
+                  {/* Quem vai ser o campeão? — sempre */}
+                  <button
+                    onClick={() =>
+                      handlePickPrediction({
+                        type: "champion",
+                        label: "Quem vai ser o campeão?",
+                      })
+                    }
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left group"
+                  >
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: "rgba(0,194,255,0.12)" }}
+                    >
+                      <Target className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
+                    </div>
+                    <span className="text-sm font-medium flex-1">Quem vai ser o campeão?</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </button>
+
+                  {/* Quem classifica no Grupo X? — só em cup/groups_knockout com grupos */}
+                  {options.isGroupsKnockout &&
+                    options.predictionOptions
+                      .filter((o) => o.type === "group_qualified")
+                      .map((opt, i) => (
                         <button
-                          key={i}
+                          key={`gq-${i}`}
+                          onClick={() => handlePickPrediction(opt as PredictionOption)}
+                          className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left group"
+                        >
+                          <div
+                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ background: "rgba(0,194,255,0.12)" }}
+                          >
+                            <Users className="w-3.5 h-3.5" style={{ color: "#00C2FF" }} />
+                          </div>
+                          <span className="text-sm font-medium flex-1">{opt.label}</span>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                        </button>
+                      ))}
+
+                  {/* Quem passa para a fase X? — só em cup/groups_knockout com fases */}
+                  {options.isGroupsKnockout &&
+                    options.predictionOptions
+                      .filter((o) => o.type === "phase_qualified")
+                      .map((opt, i) => (
+                        <button
+                          key={`pq-${i}`}
                           onClick={() => handlePickPrediction(opt as PredictionOption)}
                           className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/40 bg-card/60 hover:border-[#00C2FF]/40 hover:bg-[#00C2FF]/5 transition-all text-left group"
                         >
@@ -276,8 +312,6 @@ export default function X1ChallengeModal({
                           <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                         </button>
                       ))}
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -334,8 +368,19 @@ export default function X1ChallengeModal({
                       )}
                     </div>
                   </div>
+
+                  {/* Lista de times filtrada por grupo quando aplicável */}
                   <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
-                    {options.teams.map((team) => {
+                    {(selectedPrediction.context?.groupName
+                      ? options.teams.filter(
+                          (t) => (t as any).groupName === selectedPrediction.context?.groupName
+                        ).length > 0
+                        ? options.teams.filter(
+                            (t) => (t as any).groupName === selectedPrediction.context?.groupName
+                          )
+                        : options.teams
+                      : options.teams
+                    ).map((team) => {
                       const isSelected = selectedTeams.includes(team.name);
                       const required = getRequiredCount(selectedPrediction.type);
                       const isDisabled = !isSelected && selectedTeams.length >= required;
@@ -353,9 +398,9 @@ export default function X1ChallengeModal({
                               : "border-border/30 bg-card/40 hover:border-[#FFB800]/30 hover:bg-[#FFB800]/5"
                           )}
                         >
-                          {team.flagUrl ? (
+                          {(team as any).flagUrl ? (
                             <img
-                              src={team.flagUrl}
+                              src={(team as any).flagUrl}
                               alt={team.name}
                               className="w-6 h-6 rounded-full object-cover shrink-0"
                             />
@@ -450,7 +495,7 @@ export default function X1ChallengeModal({
                     ) : (
                       <Swords className="w-4 h-4 mr-2" />
                     )}
-                    Enviar Desafio ⚔️
+                    Enviar desafio ⚔️
                   </Button>
                 </div>
               )}

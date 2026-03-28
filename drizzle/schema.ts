@@ -786,11 +786,8 @@ export const x1Challenges = mysqlTable("x1_challenges", {
   // Campos específicos de prediction
   predictionType: mysqlEnum("predictionType", [
     "champion",
-    "runner_up",
     "group_qualified",
     "phase_qualified",
-    "eliminated_in_phase",
-    "next_game_winner",
   ]),
   challengerAnswer: json("challengerAnswer").$type<string | string[]>(), // time(s) ou resultado escolhido pelo desafiante
   challengedAnswer: json("challengedAnswer").$type<string | string[]>(),  // time(s) ou resultado escolhido pelo desafiado (preenchido ao aceitar)

@@ -1,0 +1,1 @@
+ALTER TABLE `x1_challenges` MODIFY COLUMN `predictionType` enum('champion','group_qualified','phase_qualified');

@@ -250,40 +250,23 @@ export const x1Router = router({
         predictionOptions: [
           // ── Campeão (sempre disponível) ────────────────────────────────────
           { type: "champion" as const, label: "Quem vai ser o campeão?" },
-          // ── Opções de grupos/fases (apenas cup / groups_knockout) ──────────
-          ...(isGroupsKnockout
-            ? [
-                { type: "runner_up" as const, label: "Quem vai ser o vice-campeão?" },
-                ...groups.map((g) => ({
-                  type: "group_qualified" as const,
-                  label: `Quem passa do Grupo ${g}?`,
-                  context: { groupName: g },
-                })),
-                ...phases
-                  .filter((p) => p !== "group_stage")
-                  .map((p) => ({
-                    type: "phase_qualified" as const,
-                    label: `Quem vai para ${p}?`,
-                    context: { phase: p },
-                  })),
-                ...phases
-                  .filter((p) => p !== "group_stage")
-                  .map((p) => ({
-                    type: "eliminated_in_phase" as const,
-                    label: `Quem cai em ${p}?`,
-                    context: { phase: p },
-                  })),
-              ]
+          // ── Classificação em grupo (apenas cup / groups_knockout com grupos) ─
+          ...(isGroupsKnockout && groups.length > 0
+            ? groups.map((g) => ({
+                type: "group_qualified" as const,
+                label: `Quem classifica no Grupo ${g}?`,
+                context: { groupName: g },
+              }))
             : []),
-          // ── Vencedor do próximo jogo (qualquer formato, se houver jogo) ────
-          ...(nextGame[0]
-            ? [
-                {
-                  type: "next_game_winner" as const,
-                  label: `Quem vence ${nextGame[0].teamAName ?? "Time A"} x ${nextGame[0].teamBName ?? "Time B"}?`,
-                  context: { gameId: nextGame[0].id },
-                },
-              ]
+          // ── Classificação por fase (apenas cup / groups_knockout com fases) ─
+          ...(isGroupsKnockout && phases.filter((p) => p !== "group_stage").length > 0
+            ? phases
+                .filter((p) => p !== "group_stage")
+                .map((p) => ({
+                  type: "phase_qualified" as const,
+                  label: `Quem passa para a fase ${p}?`,
+                  context: { phase: p },
+                }))
             : []),
         ],
       };
@@ -303,11 +286,8 @@ export const x1Router = router({
         predictionType: z
           .enum([
             "champion",
-            "runner_up",
             "group_qualified",
             "phase_qualified",
-            "eliminated_in_phase",
-            "next_game_winner",
           ])
           .optional(),
         challengerAnswer: z.union([z.string(), z.array(z.string())]).optional(),
