@@ -1949,3 +1949,6 @@
 - [x] Popup: AdBanner position="popup" adicionado globalmente no AppShell
 - [x] popupFrequency adicionado no formulário do AdminAds (visível apenas quando posição é popup)
 - [x] Anúncios suprimidos para usuários Pro (isPro) no AppShell
+
+## Bug Navegação Sidebar Desktop (28/03/2026)
+- [x] Links com ?tab= (Jogos, Ranking, Duelos) corrigidos no sidebar — wouter ignorava query string changes; resolvido com CustomEvent + listener na PoolPage

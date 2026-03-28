@@ -125,7 +125,7 @@ export default function AppShell({ children }: AppShellProps) {
         // Meus Palpites — com destaque visual
         { id: "pool-history",  label: "Meus Palpites",  icon: History,     href: `/pool/${activePoolSlug}/history`,          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/history`),          highlight: true  },
         // Jogos
-        { id: "pool-games",    label: "Jogos",          icon: Gamepad2,    href: `/pool/${activePoolSlug}`,                  match: (l: string) => l === `/pool/${activePoolSlug}` || (l.startsWith(`/pool/${activePoolSlug}`) && !l.includes('/history') && !l.includes('/rules') && !l.includes('/bracket') && !l.includes('/retrospectiva') && !l.includes('/player') && !l.includes('/manage')), highlight: false },
+        { id: "pool-games",    label: "Jogos",          icon: Gamepad2,    href: `/pool/${activePoolSlug}?tab=games`,        match: (l: string) => l === `/pool/${activePoolSlug}` || (l.startsWith(`/pool/${activePoolSlug}`) && !l.includes('/history') && !l.includes('/rules') && !l.includes('/bracket') && !l.includes('/retrospectiva') && !l.includes('/player') && !l.includes('/manage')), highlight: false },
         // Ranking
         { id: "pool-ranking",  label: "Ranking",        icon: Trophy,      href: `/pool/${activePoolSlug}?tab=ranking`,      match: (l: string) => l === `/pool/${activePoolSlug}` && (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'ranking'),  highlight: false },
         // Duelos
@@ -276,11 +276,26 @@ export default function AppShell({ children }: AppShellProps) {
                   {poolNavItems.map((item) => {
                     const isActive = item.match(location);
                     const isHighlight = (item as any).highlight === true;
+                    // Detectar se o link usa ?tab= (mesma rota, troca de aba)
+                    const hasTabParam = item.href.includes('?tab=');
+                    const handleClick = (e: React.MouseEvent) => {
+                      if (hasTabParam) {
+                        e.preventDefault();
+                        // Atualizar a URL sem recarregar (wouter ignora query string changes)
+                        const url = new URL(item.href, window.location.origin);
+                        window.history.pushState({}, '', url.pathname + url.search);
+                        // Disparar evento customizado para a PoolPage escutar
+                        window.dispatchEvent(new CustomEvent('pool-tab-change', {
+                          detail: { tab: url.searchParams.get('tab') }
+                        }));
+                      }
+                      setSidebarOpen(false);
+                    };
                     return (
                       <Link
                         key={item.id}
                         href={item.href}
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={handleClick}
                       >
                         <button
                           className={cn(

@@ -84,6 +84,18 @@ export default function PoolPage() {
     }
     return "games";
   });
+
+  // Escutar evento do sidebar para trocar aba via ?tab= sem recarregar a página
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const tab = (e as CustomEvent<{ tab: string }>).detail?.tab;
+      if (tab === "ranking" || tab === "games" || tab === "members" || tab === "duelos" || tab === "rules") {
+        setActiveTab(tab);
+      }
+    };
+    window.addEventListener('pool-tab-change', handler);
+    return () => window.removeEventListener('pool-tab-change', handler);
+  }, []);
   const [betInputs, setBetInputs] = useState<Record<number, { a: string; b: string }>>({});
   // Animações de ranking — pódio (confetti/enter) + subida/descida de posição
   const [podiumAnimation, setPodiumAnimation] = useState<"idle" | "enter" | "confetti" | "rise" | "drop">("idle");
