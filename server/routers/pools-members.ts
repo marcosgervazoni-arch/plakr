@@ -166,16 +166,17 @@ export const poolsMembersRouter = router({
   getMemberProfile: protectedProcedure
     .input(z.object({ poolId: z.number(), userId: z.number() }))
     .query(async ({ input, ctx }) => {
-      const db = await (await import("../db")).getDb();
-      if (!db) throw Err.internal();
-      const { eq, desc, and } = await import("drizzle-orm");
-      const { users: usersT, poolMemberStats, bets: betsT, games: gamesT, userPlans, badges: badgesT, userBadges } = await import("../../drizzle/schema");
+      // Verificar autorização ANTES de usar o banco (para testes de isolamento)
       const requester = await getPoolMember(input.poolId, ctx.user.id);
       const pool = await getPoolById(input.poolId);
       if (!pool) throw Err.notFound("Recurso");
       if (!requester && ctx.user.role !== "admin" && pool.accessType !== "public") {
         throw Err.forbidden();
       }
+      const db = await (await import("../db")).getDb();
+      if (!db) throw Err.internal();
+      const { eq, desc, and } = await import("drizzle-orm");
+      const { users: usersT, poolMemberStats, bets: betsT, games: gamesT, userPlans, badges: badgesT, userBadges } = await import("../../drizzle/schema");
       const userRows = await db.select({
         id: usersT.id, name: usersT.name, avatarUrl: usersT.avatarUrl,
         createdAt: usersT.createdAt, whatsappLink: usersT.whatsappLink, telegramLink: usersT.telegramLink,

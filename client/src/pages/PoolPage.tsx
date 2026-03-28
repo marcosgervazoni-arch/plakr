@@ -9,6 +9,7 @@
  *    - Ranking: pódio visual top-3 + lista compacta
  *    - Membros: lista com avatar e nome clicável
  */
+import AppShell from "@/components/AppShell";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -361,6 +362,7 @@ export default function PoolPage() {
   const INITIAL_GAMES_SHOWN = 5;
 
   return (
+    <AppShell>
     <div className="min-h-screen bg-background">
       {/* Confetes de pódio — apenas para 1º lugar, some em 2.5s */}
       <PodiumConfetti active={podiumAnimation === "confetti"} />
@@ -1093,6 +1095,7 @@ export default function PoolPage() {
         pendingBetsCount={pendingBetsCount}
       />
     </div>
+    </AppShell>
   );
 }
 

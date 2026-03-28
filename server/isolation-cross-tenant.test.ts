@@ -65,6 +65,8 @@ vi.mock("./db", async (importOriginal) => {
     addPoolMember: vi.fn().mockResolvedValue(undefined),
     upsertPoolScoringRules: vi.fn().mockResolvedValue(undefined),
     getOldestMember: vi.fn().mockResolvedValue(undefined),
+    getUserPlanTier: vi.fn().mockResolvedValue("free"),
+    getDb: vi.fn().mockResolvedValue(null),
   };
 });
 

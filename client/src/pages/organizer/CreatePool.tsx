@@ -3,6 +3,7 @@
  * Especificação: formulário único com 4 seções visuais (Identidade, Acesso, Campeonato, Regras).
  * Banner de limite para plano gratuito. Botão sticky no mobile.
  */
+import AppShell from "@/components/AppShell";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -104,6 +105,7 @@ export default function CreatePool() {
   ];
 
   return (
+    <AppShell>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm border-b border-border/30 px-4 h-14 flex items-center gap-3">
@@ -352,5 +354,6 @@ export default function CreatePool() {
         </div>
       </div>
     </div>
+    </AppShell>
   );
 }

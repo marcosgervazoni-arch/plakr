@@ -15,6 +15,7 @@
  *   (pode ter 1 em comum, mas não os 2 iguais)
  */
 
+import AppShell from "@/components/AppShell";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation } from "wouter";
@@ -329,6 +330,7 @@ export default function X1ChallengePage() {
     : null;
 
   return (
+    <AppShell>
     <div className="min-h-screen bg-[#0B0F1A]">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#0B0F1A]/95 backdrop-blur-sm border-b border-border/30 px-4 py-3 flex items-center gap-3">
@@ -671,5 +673,6 @@ export default function X1ChallengePage() {
         )}
       </div>
     </div>
+    </AppShell>
   );
 }

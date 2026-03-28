@@ -1846,3 +1846,16 @@
 - [x] PoolBottomNav ocultado em desktop (lg:hidden na nav e no espaçador)
 - [x] Sidebar fixo no desktop: layout h-screen com overflow-y-auto no aside e no main
 - [x] Item "Notificações" removido da sidebar (mantido no top bar mobile)
+
+## UX: Sidebar em todas as páginas desktop (28/03/2026)
+- [ ] Identificar páginas autenticadas sem AppShell e envolvê-las no layout correto
+
+## Sprint 28/03/2026 — AppShell em todas as páginas autenticadas
+- [x] AppShell adicionado no PoolPage (página principal do bolão)
+- [x] AppShell adicionado no X1ChallengePage (página de duelo X1)
+- [x] AppShell adicionado no organizer/CreatePool (criação de bolão)
+- [x] PoolMemberProfile: já é redirect, não precisa de AppShell
+- [x] PoolRetrospectiva: experiência imersiva tipo Wrapped, mantida sem sidebar por design
+- [x] Bug fix: getMemberProfile reordenado para verificar autorização antes de usar getDb
+- [x] Bug fix: getUserPlanTier adicionado ao mock do teste de isolamento
+- [x] 316 testes passando, 0 erros TypeScript
