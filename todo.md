@@ -1841,3 +1841,8 @@
 - [x] Normalizar campo phase na importação CSV (e Google Sheets) para usar chave via normalizePhaseToKey()
 - [x] Confrontos visuais no cabeçalho das fases de mata-mata (ex: Brasil vs Argentina · França vs Espanha)
 - [x] 316 testes passando, 0 erros de TypeScript
+
+## UX: Sidebar fixo + FAB só mobile (28/03/2026)
+- [x] PoolBottomNav ocultado em desktop (lg:hidden na nav e no espaçador)
+- [x] Sidebar fixo no desktop: layout h-screen com overflow-y-auto no aside e no main
+- [x] Item "Notificações" removido da sidebar (mantido no top bar mobile)

@@ -36,12 +36,12 @@ export default function PoolBottomNav({
 }: PoolBottomNavProps) {
   return (
     <>
-      {/* Espaçador para que o conteúdo não fique atrás da barra */}
-      <div className="h-20" aria-hidden="true" />
+      {/* Espaçador — apenas mobile */}
+      <div className="h-20 lg:hidden" aria-hidden="true" />
 
-      {/* Barra fixa inferior */}
+      {/* Barra fixa inferior — apenas mobile */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex items-end justify-center"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         {/* Container da barra com recorte central para o FAB */}
