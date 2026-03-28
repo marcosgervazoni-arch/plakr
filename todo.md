@@ -1897,3 +1897,7 @@
 
 ## Sprint 28/03/2026 — Consistência de palpites entre telas
 - [x] Palpite feito na Central de Palpites (/history) reflete imediatamente na aba Jogos (/pool/:slug) e vice-versa (invalidação de cache compartilhada via trpc.bets.myBets)
+
+## Sprint 28/03/2026 — Sincronização real de palpites e link Palpites mobile
+- [x] Corrigir sincronização: palpite feito na Central de Palpites deve refletir imediatamente na aba Jogos (invalidação global utils.bets.myBets.invalidate() sem filtro)
+- [x] PoolBottomNav: botão "Palpites" deve navegar para /pool/:slug/history (Central de Palpites)

@@ -124,7 +124,7 @@ export default function PoolPage() {
     onSuccess: (_, vars) => {
       analytics.trackBetSubmitted({ pool_slug: slug ?? undefined, game_id: vars.gameId });
       toast.success("Palpite salvo!");
-      utils.bets.myBets.invalidate({ poolId: data?.pool.id });
+      utils.bets.myBets.invalidate();
       utils.rankings.myPoolPosition.invalidate({ poolId: data?.pool.id });
     },
     onError: (err) => {

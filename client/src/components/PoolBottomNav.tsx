@@ -3,8 +3,8 @@
  *
  * Layout: Regras | Membros | [Palpites FAB dourado] | Jogos | Ranking
  *
- * O botão central (Palpites) é um FAB circular dourado elevado, estilo ação principal.
- * Os 4 itens laterais são abas simples com ícone + label.
+ * O botão central (Palpites) é um FAB circular dourado elevado que navega
+ * diretamente para a Central de Palpites (/pool/:slug/history).
  * "Regras" navega diretamente para /pool/:slug/rules (sem tela intermediária).
  */
 import { cn } from "@/lib/utils";
@@ -76,6 +76,14 @@ export default function PoolBottomNav({
     );
   };
 
+  const fabClass = cn(
+    "absolute left-1/2 -translate-x-1/2 -top-6",
+    "w-16 h-16 rounded-full shadow-xl",
+    "flex flex-col items-center justify-center gap-0.5",
+    "transition-all duration-200 active:scale-95",
+    "bg-yellow-400 text-yellow-900 hover:bg-yellow-300"
+  );
+
   return (
     <>
       {/* Espaçador — apenas mobile */}
@@ -100,29 +108,32 @@ export default function PoolBottomNav({
             {tabItems.slice(2).map(renderItem)}
           </div>
 
-          {/* FAB central — Palpites (elevado acima da barra) */}
-          <button
-            onClick={() => onTabChange("games")}
-            className={cn(
-              "absolute left-1/2 -translate-x-1/2 -top-6",
-              "w-16 h-16 rounded-full shadow-xl",
-              "flex flex-col items-center justify-center gap-0.5",
-              "transition-all duration-200 active:scale-95",
-              activeTab === "games"
-                ? "bg-yellow-400 text-yellow-900 ring-4 ring-yellow-400/30 scale-105"
-                : "bg-yellow-400 text-yellow-900 hover:bg-yellow-300"
-            )}
-            aria-label="Palpites"
-          >
-            <PenLine className="w-6 h-6 stroke-[2.5]" />
-            <span className="text-[9px] font-bold leading-none">Palpites</span>
-            {/* Badge de palpites pendentes */}
-            {pendingBetsCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1 shadow-sm">
-                {pendingBetsCount > 9 ? "9+" : pendingBetsCount}
-              </span>
-            )}
-          </button>
+          {/* FAB central — navega para Central de Palpites (/history) */}
+          {slug ? (
+            <Link href={`/pool/${slug}/history`} className={fabClass} aria-label="Palpites">
+              <PenLine className="w-6 h-6 stroke-[2.5]" />
+              <span className="text-[9px] font-bold leading-none">Palpites</span>
+              {pendingBetsCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1 shadow-sm">
+                  {pendingBetsCount > 9 ? "9+" : pendingBetsCount}
+                </span>
+              )}
+            </Link>
+          ) : (
+            <button
+              onClick={() => onTabChange("games")}
+              className={fabClass}
+              aria-label="Palpites"
+            >
+              <PenLine className="w-6 h-6 stroke-[2.5]" />
+              <span className="text-[9px] font-bold leading-none">Palpites</span>
+              {pendingBetsCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1 shadow-sm">
+                  {pendingBetsCount > 9 ? "9+" : pendingBetsCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </nav>
     </>

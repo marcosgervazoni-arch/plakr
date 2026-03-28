@@ -122,7 +122,7 @@ export default function BetHistory() {
 
   const placeBetMutation = trpc.bets.placeBet.useMutation({
     onSuccess: () => {
-      utils.bets.myBets.invalidate({ poolId: poolId! });
+      utils.bets.myBets.invalidate();
     },
     onError: (err) => {
       toast.error("Erro ao salvar palpite", { description: err.message });
