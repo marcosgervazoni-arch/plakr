@@ -1093,7 +1093,41 @@ export const x1Router = router({
     };
   }),
 
-  // ─── Expirar desafios pendentes vencidos (cron job) ───────────────────────
+  // ─── Admin: disparar resolver de previsões de fase manualmente ────────────────────────
+  adminResolvePhase: protectedProcedure
+    .input(
+      z.object({
+        tournamentId: z.number().optional(),
+        phase: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+
+      const { runX1PredictionResolverJob, resolvePhase: resolvePhaseJob } = await import("../jobs/x1-prediction-resolver");
+
+      if (input.tournamentId && input.phase) {
+        const db = await getDb();
+        const { games } = await getSchema();
+        const { eq, and, ne } = await import("drizzle-orm");
+
+        const allGames = await db
+          .select({ phase: games.phase })
+          .from(games)
+          .where(and(eq(games.tournamentId, input.tournamentId), ne(games.phase, "group_stage")));
+        const allPhases = Array.from(new Set(allGames.map((g) => g.phase)));
+
+        const result = await resolvePhaseJob(input.tournamentId, input.phase, allPhases);
+        logger.info({ adminId: ctx.user.id, ...result }, "[X1][Admin] Manual phase resolution triggered");
+        return { success: true, ...result };
+      }
+
+      const result = await runX1PredictionResolverJob();
+      logger.info({ adminId: ctx.user.id, ...result }, "[X1][Admin] Full prediction resolver triggered");
+      return { success: true, ...result };
+    }),
+
+  // ─── Expirar desafios pendentes vencidos (cron job) ────────────────────────────────────────────
   expireStale: protectedProcedure.mutation(async ({ ctx }) => {
     const db = await getDb();
     const { x1Challenges } = await getSchema();

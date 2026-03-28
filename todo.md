@@ -1788,3 +1788,10 @@
 ## SEO — Página inicial (28/03/2026)
 - [x] Reduzir keywords de 9 para 7 palavras-chave focadas
 - [x] Encurtar meta description de 188 para 150 caracteres (dentro do limite de 160)
+
+## Feature: x1-prediction-resolver (28/03/2026)
+- [x] server/jobs/x1-prediction-resolver.ts — lógica de detecção de fase encerrada e cálculo de acerto
+- [x] Registrar job no startup do servidor (cron a cada 30min)
+- [x] Procedure admin x1.adminResolvePhase para disparo manual (modo cirurgico e modo completo)
+- [x] Notificações ao vencedor e ao perdedor do duelo via createNotification
+- [x] Testes unitários do resolver (11 testes, 316 passando no total)

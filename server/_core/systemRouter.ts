@@ -4,6 +4,7 @@ import { adminProcedure, publicProcedure, router } from "./trpc";
 import { getPlatformSettings } from "../db";
 import { archivalCronHealth } from "../archival";
 import { emailCronHealth } from "../emailCron";
+import { x1PredictionResolverHealth } from "../jobs/x1-prediction-resolver";
 
 export const systemRouter = router({
   health: publicProcedure
@@ -34,6 +35,7 @@ export const systemRouter = router({
   cronHealth: adminProcedure.query(() => ({
     archival: archivalCronHealth,
     email: emailCronHealth,
+    x1PredictionResolver: x1PredictionResolverHealth,
   })),
 
   // Público: retorna apenas os IDs de analytics (sem dados sensíveis)

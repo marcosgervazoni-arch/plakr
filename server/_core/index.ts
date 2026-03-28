@@ -3,6 +3,7 @@ import { startScoringWorker } from "../scoring";
 import { startArchivalCron } from "../archival";
 import { startEmailCrons } from "../emailCron";
 import { registerX1CronJobs } from "../jobs/x1-jobs";
+import { registerX1PredictionResolverCron } from "../jobs/x1-prediction-resolver";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
 import { registerOgRoutes, registerLandingOgRoute } from "../og";
@@ -125,6 +126,7 @@ async function startServer() {
   startArchivalCron();
   startEmailCrons();
   registerX1CronJobs();
+  registerX1PredictionResolverCron();
 }
 
 startServer().catch(console.error);
