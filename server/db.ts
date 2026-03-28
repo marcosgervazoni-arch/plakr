@@ -665,6 +665,15 @@ export async function countUnreadNotifications(userId: number): Promise<number> 
 export async function getActiveAds(position?: string) {
   const db = await getDb();
   if (!db) return [];
+
+  // [S-ADS-1] Verificar se anúncios estão globalmente habilitados na plataforma
+  const settings = await db
+    .select({ adsEnabled: platformSettings.adsEnabled })
+    .from(platformSettings)
+    .where(eq(platformSettings.id, 1))
+    .limit(1);
+  if (settings.length > 0 && settings[0].adsEnabled === false) return [];
+
   const now = new Date();
   const conditions = position
     ? and(

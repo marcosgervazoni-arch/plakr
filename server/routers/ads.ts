@@ -26,7 +26,11 @@ export const adsRouter = router({
       linkUrl: z.string().optional(),
       type: z.enum(["banner", "video", "script"]).default("banner"),
       position: z.enum(["sidebar", "top", "between_sections", "bottom", "popup"]).default("sidebar"),
+      device: z.enum(["all", "desktop", "mobile"]).default("all"),
       isActive: z.boolean().default(true),
+      startAt: z.date().optional().nullable(),
+      endAt: z.date().optional().nullable(),
+      sortOrder: z.number().default(0),
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
@@ -38,7 +42,11 @@ export const adsRouter = router({
         linkUrl: input.linkUrl,
         type: input.type,
         position: input.position,
+        device: input.device,
         isActive: input.isActive,
+        startAt: input.startAt ?? null,
+        endAt: input.endAt ?? null,
+        sortOrder: input.sortOrder,
         createdBy: ctx.user.id,
       });
       return { success: true };

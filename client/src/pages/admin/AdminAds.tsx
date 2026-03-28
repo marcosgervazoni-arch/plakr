@@ -422,7 +422,11 @@ export default function AdminAds() {
           linkUrl: form.linkUrl || undefined,
           type: form.type,
           position: form.position,
+          device: form.device,
           isActive: form.isActive,
+          startAt: form.startAt ? new Date(form.startAt) : undefined,
+          endAt: form.endAt ? new Date(form.endAt) : undefined,
+          sortOrder: form.sortOrder,
         })}
         isPending={createMutation.isPending}
         submitLabel="Criar Anúncio"

@@ -1937,3 +1937,8 @@
 - [x] Criar endpoint seguro de upload de mídia para anúncios (adminProcedure + validações MIME + limite de tamanho)
 - [x] Atualizar AdminAds com componente de upload inline (imagem e vídeo)
 - [x] Garantir que apenas admins autenticados possam fazer upload (pasta ads/ restrita no servidor)
+
+## Bugs de Exibição de Anúncios (28/03/2026)
+- [x] BUG 1: Mutation create não enviava device/startAt/endAt/sortOrder — procedure create expandida com todos os campos
+- [x] BUG 2: getActive não verificava adsEnabled da platformSettings — corrigido em db.ts
+- [x] MELHORIA: AdBanner position="top" adicionado no AppShell (desktop e mobile) — banner de topo aparece em todas as telas

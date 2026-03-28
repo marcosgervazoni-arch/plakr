@@ -518,12 +518,20 @@ export default function AppShell({ children }: AppShellProps) {
         </aside>
 
         {/* Main content — apenas este elemento rola */}
-        <main className="flex-1 min-w-0 overflow-y-auto h-screen">{children}</main>
+        <main className="flex-1 min-w-0 overflow-y-auto h-screen">
+          {/* Banner de topo — exibido globalmente para todos os usuários */}
+          <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0" />
+          {children}
+        </main>
       </div>
 
       {/* Mobile layout — sem flex fixo, scroll natural */}
       <div className="lg:hidden flex-1">
-        <main className="min-w-0">{children}</main>
+        <main className="min-w-0">
+          {/* Banner de topo mobile */}
+          <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0" />
+          {children}
+        </main>
       </div>
     </div>
   );
