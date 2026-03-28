@@ -31,22 +31,27 @@ function filterByDevice(ads: Ad[], isMobile: boolean): Ad[] {
   return ads.filter((a) => a.device === "all" || (isMobile ? a.device === "mobile" : a.device === "desktop"));
 }
 
-function shouldShowPopup(ad: Ad): boolean {
+function canShowPopup(ad: Ad): boolean {
   const key = `popup_shown_${ad.id}`;
   if (ad.popupFrequency === "always") return true;
   if (ad.popupFrequency === "session") {
-    if (sessionStorage.getItem(key)) return false;
-    sessionStorage.setItem(key, "1");
-    return true;
+    return !sessionStorage.getItem(key);
   }
   if (ad.popupFrequency === "daily") {
     const stored = localStorage.getItem(key);
     const today = new Date().toDateString();
-    if (stored === today) return false;
-    localStorage.setItem(key, today);
-    return true;
+    return stored !== today;
   }
   return true;
+}
+
+function markPopupShown(ad: Ad): void {
+  const key = `popup_shown_${ad.id}`;
+  if (ad.popupFrequency === "session") {
+    sessionStorage.setItem(key, "1");
+  } else if (ad.popupFrequency === "daily") {
+    localStorage.setItem(key, new Date().toDateString());
+  }
 }
 
 interface AdBannerProps {
@@ -61,17 +66,20 @@ export function AdBanner({ position, className }: AdBannerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [popupVisible, setPopupVisible] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Ref para garantir que o popup seja avaliado apenas uma vez após os dados chegarem
+  const popupEvaluated = useRef(false);
 
   const ads = allAds ? filterByDevice(allAds as Ad[], isMobile) : [];
 
-  // Popup: check on mount
+  // Popup: avaliar apenas uma vez quando os dados chegarem (evita dupla avaliação)
   useEffect(() => {
-    if (position === "popup" && ads.length > 0) {
-      const ad = ads[0];
-      if (shouldShowPopup(ad)) {
-        const timer = setTimeout(() => setPopupVisible(true), 2000);
-        return () => clearTimeout(timer);
-      }
+    if (position !== "popup" || ads.length === 0 || popupEvaluated.current) return;
+    popupEvaluated.current = true;
+    const ad = ads[0];
+    if (canShowPopup(ad)) {
+      markPopupShown(ad); // marcar antes do timer para evitar race condition
+      const timer = setTimeout(() => setPopupVisible(true), 2000);
+      return () => clearTimeout(timer);
     }
   }, [ads.length, position]);
 

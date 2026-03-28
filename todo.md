@@ -1952,3 +1952,9 @@
 
 ## Bug Navegação Sidebar Desktop (28/03/2026)
 - [x] Links com ?tab= (Jogos, Ranking, Duelos) corrigidos no sidebar — wouter ignorava query string changes; resolvido com CustomEvent + listener na PoolPage
+
+## Bug Navegação Mobile (28/03/2026)
+- [x] Barra mobile: já usa onTabChange callback direto (não usa ?tab=), não precisa de correção
+
+## Bug Popup de Anúncio (28/03/2026)
+- [x] Popup de anúncio não aparecia — bug de dupla avaliação no useEffect; corrigido com ref popupEvaluated + separação de canShowPopup/markPopupShown
