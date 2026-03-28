@@ -1804,3 +1804,6 @@
 
 ## Bug: Conquistas /dashboard — nomes de badges sobrepostos (28/03/2026)
 - [x] Corrigir layout dos badges no carrossel de conquistas: w-full + line-clamp-2 + gap-x/gap-y separados no grid
+
+## Bug: Conquistas /dashboard desktop — card muito estreito (28/03/2026)
+- [x] Coluna esquerda do Dashboard aumentada de 280px para 320px (mais espaço para o grid de badges)

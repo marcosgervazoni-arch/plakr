@@ -294,7 +294,7 @@ export default function Dashboard() {
   return (
     <AppShell>
       <div className="max-w-5xl mx-auto px-4 py-6 lg:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
 
           {/* ── LEFT: Profile card ── */}
           {/* Em mobile: order-1 (perfil primeiro); em desktop: order-none (coluna esquerda) */}
