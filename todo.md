@@ -1812,3 +1812,14 @@
 - [x] Removido NotificationBell absoluto do topo do sidebar desktop (causava sobreposição visual)
 - [x] NotificationBell integrado como item de nav normal no sidebar (com label 'Notificações')
 - [x] Ordem do sidebar: Dashboard → Meu Perfil → Explorar Bolões → Conquistas → Notificações → Meus Bolões → Upgrade → Admin → Sair
+
+## UX: Reorganização do sidebar — hierarquia completa (28/03/2026)
+- [ ] Mapear todas as rotas e páginas existentes
+- [ ] Definir hierarquia e prioridade com orquestrador
+- [ ] Implementar sidebar com todos os itens na ordem correta
+
+## UX: Subnavegação contextual do bolão no sidebar (28/03/2026)
+- [x] Seção contextual aparece no sidebar quando usuário está em /pool/:slug/*
+- [x] Itens: Jogos & Palpites, Ranking, Duelos X1, Regulamento, Chaveamento, Meus Palpites, Retrospectiva
+- [x] Cabeçalho colapsável com nome do bolão ativo (em destaque com cor primária)
+- [x] Hierarquia: seção do bolão ativo fica entre Notificações e Meus Bolões

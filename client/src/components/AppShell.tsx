@@ -23,6 +23,13 @@ import {
   Plus,
   Award,
   UserCircle,
+  Gamepad2,
+  ScrollText,
+  GitBranch,
+  History,
+  Sparkles,
+  Swords,
+  ChevronDown,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
@@ -71,6 +78,7 @@ export default function AppShell({ children }: AppShellProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [poolNavOpen, setPoolNavOpen] = useState(true);
   const { data: userData } = trpc.users.me.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -88,6 +96,27 @@ export default function AppShell({ children }: AppShellProps) {
   const activePools = (myPools as any[]).filter(
     (p: any) => p.pool?.status === "active"
   );
+
+  // Detectar se o usuário está dentro de um bolão específico
+  const poolSlugMatch = location.match(/^\/pool\/([^/]+)/);
+  const activePoolSlug = poolSlugMatch ? poolSlugMatch[1] : null;
+  const activePoolData = activePoolSlug
+    ? activePools.find((p: any) => p.pool?.slug === activePoolSlug)
+    : null;
+  const activePoolName = activePoolData?.pool?.name ?? activePoolSlug;
+
+  // Itens de subnavegação do bolão ativo — ordem por prioridade (orquestrador)
+  const poolNavItems = activePoolSlug
+    ? [
+        { id: "pool-games",    label: "Jogos & Palpites",  icon: Gamepad2,    href: `/pool/${activePoolSlug}`,                  match: (l: string) => l === `/pool/${activePoolSlug}` || (l.startsWith(`/pool/${activePoolSlug}`) && !l.includes('/history') && !l.includes('/rules') && !l.includes('/bracket') && !l.includes('/retrospectiva') && !l.includes('/player') && !l.includes('/manage')) },
+        { id: "pool-ranking",  label: "Ranking",           icon: Trophy,      href: `/pool/${activePoolSlug}?tab=ranking`,      match: (l: string) => l === `/pool/${activePoolSlug}` && (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'ranking') },
+        { id: "pool-duelos",   label: "Duelos X1",         icon: Swords,      href: `/pool/${activePoolSlug}?tab=duelos`,       match: (l: string) => l === `/pool/${activePoolSlug}` && (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'duelos') },
+        { id: "pool-rules",    label: "Regulamento",       icon: ScrollText,  href: `/pool/${activePoolSlug}/rules`,            match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/rules`) },
+        { id: "pool-bracket",  label: "Chaveamento",       icon: GitBranch,   href: `/pool/${activePoolSlug}/bracket`,          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/bracket`) },
+        { id: "pool-history",  label: "Meus Palpites",     icon: History,     href: `/pool/${activePoolSlug}/history`,          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/history`) },
+        { id: "pool-retro",    label: "Retrospectiva",     icon: Sparkles,    href: `/pool/${activePoolSlug}/retrospectiva`,    match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/retrospectiva`) },
+      ]
+    : [];
 
   const isPro =
     userData?.plan?.plan === "pro" && userData?.plan?.isActive;
@@ -198,6 +227,54 @@ export default function AppShell({ children }: AppShellProps) {
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all" data-tour="notifications">
               <NotificationBell />
               <span className="flex-1 truncate">Notificações</span>
+            </div>
+          )}
+
+          {/* ── Subnavegação contextual do bolão ativo ── */}
+          {isAuthenticated && poolNavItems.length > 0 && (
+            <div className="pt-2">
+              {/* Cabeçalho colapsável com nome do bolão */}
+              <button
+                className="w-full flex items-center justify-between px-3 pb-1.5 group"
+                onClick={() => setPoolNavOpen((v) => !v)}
+              >
+                <p className="text-[10px] font-semibold text-primary/70 uppercase tracking-wider truncate max-w-[140px]">
+                  {activePoolName}
+                </p>
+                <ChevronDown
+                  className={cn(
+                    "w-3 h-3 text-muted-foreground/50 shrink-0 transition-transform",
+                    poolNavOpen ? "rotate-0" : "-rotate-90"
+                  )}
+                />
+              </button>
+
+              {poolNavOpen && (
+                <div className="space-y-0.5">
+                  {poolNavItems.map((item) => {
+                    const isActive = item.match(location);
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <button
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left",
+                            isActive
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          )}
+                        >
+                          <item.icon className="w-4 h-4 shrink-0" />
+                          <span className="flex-1 truncate">{item.label}</span>
+                        </button>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
