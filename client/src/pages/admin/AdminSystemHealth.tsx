@@ -1,8 +1,8 @@
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   Shield, Mail, Bell, AlertCircle, CheckCircle2, RefreshCw,
-  Clock, XCircle, Activity,
+  Clock, XCircle, Activity, CreditCard, Megaphone, Zap, Timer,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,76 @@ function StatusBadge({ status }: { status: "ok" | "warning" | "error" }) {
   );
 }
 
+function IntegrationRow({
+  label,
+  ok,
+  detail,
+}: {
+  label: string;
+  ok: boolean;
+  detail?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between text-sm py-1">
+      <div className="flex items-center gap-2">
+        {ok
+          ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+          : <XCircle className="h-3.5 w-3.5 text-red-400 shrink-0" />}
+        <span className={ok ? "text-foreground" : "text-muted-foreground"}>{label}</span>
+      </div>
+      {detail && <span className="text-xs text-muted-foreground font-mono">{detail}</span>}
+    </div>
+  );
+}
+
+function CronJobRow({
+  name,
+  interval,
+  lastRunAt,
+  lastRunSuccess,
+  lastError,
+  runCount,
+}: {
+  name: string;
+  interval: string;
+  lastRunAt: Date | string | null;
+  lastRunSuccess: boolean | null;
+  lastError: string | null;
+  runCount: number;
+}) {
+  const status: "ok" | "warning" | "error" =
+    lastRunSuccess === false ? "error" :
+    lastRunAt === null ? "warning" : "ok";
+
+  const lastRunDate = lastRunAt ? new Date(lastRunAt) : null;
+
+  return (
+    <div className="flex items-start justify-between py-2 border-b border-border/20 last:border-0">
+      <div className="flex items-start gap-2 min-w-0">
+        <StatusDot status={status} />
+        <div className="min-w-0">
+          <p className="text-sm font-medium leading-tight">{name}</p>
+          {lastError && (
+            <p className="text-xs text-red-400 mt-0.5 truncate max-w-[220px]" title={lastError}>{lastError}</p>
+          )}
+          {!lastError && lastRunDate && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Última execução: {formatDistanceToNow(lastRunDate, { addSuffix: true, locale: ptBR })}
+            </p>
+          )}
+          {!lastRunDate && (
+            <p className="text-xs text-muted-foreground mt-0.5">Aguardando primeira execução</p>
+          )}
+        </div>
+      </div>
+      <div className="text-right shrink-0 ml-2">
+        <span className="text-xs font-mono text-muted-foreground">{interval}</span>
+        <p className="text-xs text-muted-foreground">{runCount}x</p>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminSystemHealth() {
   const { data: health, isLoading, refetch } = trpc.adminDashboard.getSystemHealth.useQuery();
 
@@ -40,9 +110,20 @@ export default function AdminSystemHealth() {
     (health?.emailQueue.failed ?? 0) > 0 ? "error" :
     (health?.emailQueue.pending ?? 0) > 20 ? "warning" : "ok";
 
+  const stripeStatus: "ok" | "warning" | "error" =
+    !health?.integrations?.stripe?.keysConfigured ? "error" :
+    !health?.integrations?.stripe?.webhookConfigured ? "warning" :
+    !health?.integrations?.stripe?.pricesConfigured ? "warning" : "ok";
+
+  const adsterraStatus: "ok" | "warning" | "error" =
+    !health?.integrations?.adsterra?.configured ? "warning" :
+    !health?.integrations?.adsterra?.enabled ? "warning" : "ok";
+
   const overallStatus: "ok" | "warning" | "error" =
-    emailStatus === "error" || (health?.recentErrors.length ?? 0) > 5 ? "error" :
-    emailStatus === "warning" || (health?.recentErrors.length ?? 0) > 0 ? "warning" : "ok";
+    emailStatus === "error" || stripeStatus === "error" || (health?.recentErrors.length ?? 0) > 5 ? "error" :
+    emailStatus === "warning" || stripeStatus === "warning" || adsterraStatus === "warning" || (health?.recentErrors.length ?? 0) > 0 ? "warning" : "ok";
+
+  const cronJobs = health?.cronJobs ? Object.values(health.cronJobs) : [];
 
   return (
     <AdminLayout activeSection="system">
@@ -55,7 +136,7 @@ export default function AdminSystemHealth() {
               Saúde do Sistema
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Monitoramento de jobs, filas e erros operacionais
+              Monitoramento de integrações, jobs e erros operacionais
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -72,7 +153,94 @@ export default function AdminSystemHealth() {
           </div>
         </div>
 
-        {/* Cards de status */}
+        {/* ─── Integrações externas ─────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Stripe */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-brand" />
+                  Stripe — Pagamentos
+                </span>
+                {!isLoading && <StatusBadge status={stripeStatus} />}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-2/4" />
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  <IntegrationRow
+                    label="Chaves de API"
+                    ok={health?.integrations?.stripe?.keysConfigured ?? false}
+                    detail={health?.integrations?.stripe?.isLive ? "Produção (pk_live_)" : "Teste (pk_test_)"}
+                  />
+                  <IntegrationRow
+                    label="Webhook Secret"
+                    ok={health?.integrations?.stripe?.webhookConfigured ?? false}
+                    detail={health?.integrations?.stripe?.webhookConfigured ? "whsec_..." : "Não configurado"}
+                  />
+                  <IntegrationRow
+                    label="Price IDs dos planos"
+                    ok={health?.integrations?.stripe?.pricesConfigured ?? false}
+                    detail={health?.integrations?.stripe?.pricesConfigured ? "Pro + Ilimitado" : "Incompleto"}
+                  />
+                  <IntegrationRow
+                    label="Ambiente de produção"
+                    ok={health?.integrations?.stripe?.isLive ?? false}
+                    detail={health?.integrations?.stripe?.isLive ? "Live" : "Modo teste"}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Adsterra */}
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Megaphone className="h-4 w-4 text-brand" />
+                  Adsterra — Anúncios
+                </span>
+                {!isLoading && <StatusBadge status={adsterraStatus} />}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  <IntegrationRow
+                    label="Códigos configurados"
+                    ok={health?.integrations?.adsterra?.configured ?? false}
+                    detail={`${health?.integrations?.adsterra?.positionsConfigured ?? 0} posições`}
+                  />
+                  <IntegrationRow
+                    label="Anúncios ativos"
+                    ok={health?.integrations?.adsterra?.enabled ?? false}
+                    detail={health?.integrations?.adsterra?.enabled ? "Exibindo" : "Desativado"}
+                  />
+                  <div className="pt-2 border-t border-border/20 mt-1">
+                    <p className="text-xs text-muted-foreground">
+                      Aprovação Adsterra: 24-72h após cadastro. Verifique o e-mail de confirmação.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ─── Fila de Email + Push + Jobs ─────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Fila de Email */}
           <Card className="border-border/50">
@@ -100,7 +268,7 @@ export default function AdminSystemHealth() {
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Enviados (24h)</span>
+                    <span className="text-muted-foreground">Enviados (total)</span>
                     <span className="font-mono font-medium text-emerald-400">{health?.emailQueue.sentToday ?? 0}</span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -132,7 +300,6 @@ export default function AdminSystemHealth() {
               {isLoading ? (
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
                 </div>
               ) : (
                 <>
@@ -140,7 +307,6 @@ export default function AdminSystemHealth() {
                     <span className="text-muted-foreground">Assinaturas ativas</span>
                     <span className="font-mono font-medium">{health?.pushSubscriptions ?? 0}</span>
                   </div>
-
                   <p className="text-xs text-muted-foreground pt-1 border-t border-border/30">
                     Enviadas via Web Push API
                   </p>
@@ -149,38 +315,36 @@ export default function AdminSystemHealth() {
             </CardContent>
           </Card>
 
-          {/* Jobs de Cron */}
+          {/* Servidor */}
           <Card className="border-border/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-brand" />
-                  Jobs Agendados
+                  <Zap className="h-4 w-4 text-brand" />
+                  Servidor
                 </span>
                 {!isLoading && <StatusBadge status="ok" />}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {isLoading ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-2/4" />
-                </div>
+                <Skeleton className="h-4 w-full" />
               ) : (
                 <>
-                  {[
-                    { name: "Fila de E-mail", interval: "5 min" },
-                    { name: "Lembretes de Palpite", interval: "1h" },
-                    { name: "Expiração de Planos", interval: "24h" },
-                  ].map((job: {name: string; interval: string}) => (
-                    <div key={job.name} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{job.name}</span>
-                      <span className="text-xs font-mono text-muted-foreground">{job.interval}</span>
-                    </div>
-                  ))}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Hora do servidor</span>
+                    <span className="font-mono text-xs">
+                      {health?.serverTime
+                        ? format(new Date(health.serverTime), "HH:mm:ss", { locale: ptBR })
+                        : "--"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Status</span>
+                    <span className="text-emerald-400 text-xs font-medium">Online</span>
+                  </div>
                   <p className="text-xs text-muted-foreground pt-1 border-t border-border/30">
-                    Todos os jobs em execução
+                    Node.js + tRPC + MySQL
                   </p>
                 </>
               )}
@@ -188,7 +352,40 @@ export default function AdminSystemHealth() {
           </Card>
         </div>
 
-        {/* Erros recentes */}
+        {/* ─── Cron Jobs detalhados ─────────────────────────────────────────── */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Timer className="h-4 w-4 text-brand" />
+              Jobs Agendados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+              </div>
+            ) : cronJobs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum job registrado</p>
+            ) : (
+              <div>
+                {cronJobs.map((job: any) => (
+                  <CronJobRow
+                    key={job.name}
+                    name={job.name}
+                    interval={job.interval}
+                    lastRunAt={job.lastRunAt}
+                    lastRunSuccess={job.lastRunSuccess}
+                    lastError={job.lastError}
+                    runCount={job.runCount}
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ─── Erros recentes ───────────────────────────────────────────────── */}
         <Card className="border-border/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center justify-between">
@@ -239,14 +436,12 @@ export default function AdminSystemHealth() {
           </CardContent>
         </Card>
 
-        {/* Jogos pendentes de resultado */}
+        {/* ─── Jogos pendentes ──────────────────────────────────────────────── */}
         <Card className="border-border/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-brand" />
-                Jogos Pendentes de Resultado
-              </span>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="h-4 w-4 text-brand" />
+              Jogos Pendentes de Resultado
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -255,7 +450,7 @@ export default function AdminSystemHealth() {
             ) : (
               <div className="flex items-center gap-2 text-emerald-400">
                 <CheckCircle2 className="h-4 w-4" />
-                <span className="text-sm">Acesse &quot;Resultados&quot; para ver jogos pendentes</span>
+                <span className="text-sm">Acesse "Resultados" para ver jogos pendentes</span>
               </div>
             )}
           </CardContent>

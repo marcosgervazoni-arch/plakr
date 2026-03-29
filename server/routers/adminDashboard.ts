@@ -275,6 +275,20 @@ export const adminDashboardRouter = router({
       eq(emailQueue.status, "sent")
     );
 
+    // ─── Integrações externas ─────────────────────────────────────────────────
+    const settings = await getPlatformSettings();
+    const stripeConfigured = !!(settings?.stripePublishableKey && settings?.stripeSecretKey);
+    const stripeWebhookConfigured = !!(settings?.stripeWebhookSecret);
+    const stripePricesConfigured = !!(settings?.stripePriceIdPro && settings?.stripePriceIdUnlimited);
+    const adsterraCodes = settings?.adNetworkScripts ?? {};
+    const adsterraConfigured = Object.values(adsterraCodes).some(v => !!v);
+    const adsEnabled = settings?.adsEnabled ?? false;
+
+    // ─── Cron jobs health ─────────────────────────────────────────────────────
+    const { archivalCronHealth } = await import("../archival");
+    const { emailCronHealth } = await import("../emailCron");
+    const { x1PredictionResolverHealth } = await import("../jobs/x1-prediction-resolver");
+
     return {
       emailQueue: {
         pending: Number(pendingEmails?.c ?? 0),
@@ -283,8 +297,64 @@ export const adminDashboardRouter = router({
       },
       pushSubscriptions: Number(pushSubs?.c ?? 0),
       recentErrors,
-      // Status dos cron jobs (inferido pelo timestamp do último log)
       serverTime: now.toISOString(),
+      // ─── Integrações ───────────────────────────────────────────────────────
+      integrations: {
+        stripe: {
+          keysConfigured: stripeConfigured,
+          webhookConfigured: stripeWebhookConfigured,
+          pricesConfigured: stripePricesConfigured,
+          isLive: settings?.stripePublishableKey?.startsWith("pk_live_") ?? false,
+        },
+        adsterra: {
+          configured: adsterraConfigured,
+          enabled: adsEnabled,
+          positionsConfigured: Object.values(adsterraCodes).filter(v => !!v).length,
+        },
+      },
+      // ─── Cron jobs ─────────────────────────────────────────────────────────
+      cronJobs: {
+        archival: {
+          name: "Arquivamento de Bolões",
+          interval: "1h",
+          lastRunAt: archivalCronHealth.lastRunAt,
+          lastRunSuccess: archivalCronHealth.lastRunSuccess,
+          lastError: archivalCronHealth.lastError,
+          runCount: archivalCronHealth.runCount,
+        },
+        emailQueue: {
+          name: "Fila de E-mail",
+          interval: "5 min",
+          lastRunAt: emailCronHealth.queue.lastRunAt,
+          lastRunSuccess: emailCronHealth.queue.lastRunSuccess,
+          lastError: emailCronHealth.queue.lastError,
+          runCount: emailCronHealth.queue.runCount,
+        },
+        betReminder: {
+          name: "Lembretes de Palpite",
+          interval: "15 min",
+          lastRunAt: emailCronHealth.betReminder.lastRunAt,
+          lastRunSuccess: emailCronHealth.betReminder.lastRunSuccess,
+          lastError: emailCronHealth.betReminder.lastError,
+          runCount: emailCronHealth.betReminder.runCount,
+        },
+        planExpiry: {
+          name: "Expiração de Planos",
+          interval: "24h",
+          lastRunAt: emailCronHealth.planExpiry.lastRunAt,
+          lastRunSuccess: emailCronHealth.planExpiry.lastRunSuccess,
+          lastError: emailCronHealth.planExpiry.lastError,
+          runCount: emailCronHealth.planExpiry.runCount,
+        },
+        x1Resolver: {
+          name: "Resolução de Duelos X1",
+          interval: "5 min",
+          lastRunAt: x1PredictionResolverHealth.lastRunAt,
+          lastRunSuccess: x1PredictionResolverHealth.lastRunSuccess,
+          lastError: x1PredictionResolverHealth.lastError,
+          runCount: x1PredictionResolverHealth.runCount,
+        },
+      },
     };
   }),
 
