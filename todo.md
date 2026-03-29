@@ -2093,3 +2093,7 @@
 
 ## Bug — Importação de Campeonato via API-Football
 - [x] Ao importar liga, sincronizar times e fixtures automaticamente (atualmente cria campeonato vazio)
+
+## Melhoria — Exibição de Rodada nos Jogos
+- [x] Exibir número da rodada em cada linha de jogo na tela de detalhes do campeonato
+- [x] Agrupar jogos por rodada na seção "Sem fase" para facilitar navegação com muitos jogos

@@ -605,9 +605,12 @@ export default function AdminTournamentDetail() {
                           <Plus className="h-3.5 w-3.5" /> Adicionar jogo
                         </Button>
                       </div>
-                    ) : (
-                      phase.games.map((g) => (
-                        <div key={g.id}>
+                    ) : (() => {
+                      // Group games by roundNumber when phase has rounds
+                      const hasRounds = phase.games.some(g => g.roundNumber != null);
+                      if (!hasRounds) {
+                        return phase.games.map((g) => (
+                          <div key={g.id}>
                           {editingGameId === g.id ? (
                             /* Inline edit form */
                             <div className="p-3 rounded-lg border border-brand/30 bg-brand/5 space-y-3">
@@ -738,8 +741,81 @@ export default function AdminTournamentDetail() {
                             </div>
                           )}
                         </div>
-                      ))
-                    )}
+                      ));
+                      }
+                      // Group by roundNumber
+                      const roundMap = new Map<number | string, typeof games>();
+                      for (const g of phase.games) {
+                        const rk = g.roundNumber ?? "—";
+                        if (!roundMap.has(rk)) roundMap.set(rk, []);
+                        roundMap.get(rk)!.push(g);
+                      }
+                      const sortedRounds = [...roundMap.keys()].sort((a, b) => {
+                        if (typeof a === "number" && typeof b === "number") return a - b;
+                        return String(a).localeCompare(String(b));
+                      });
+                      return (
+                        <div className="space-y-4">
+                          {sortedRounds.map((rk) => (
+                            <div key={String(rk)}>
+                              <div className="flex items-center gap-2 mb-2 px-1">
+                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                  {typeof rk === "number" ? `Rodada ${rk}` : "Sem rodada"}
+                                </span>
+                                <span className="text-xs text-muted-foreground font-mono">({roundMap.get(rk)!.length} jogos)</span>
+                                <div className="flex-1 h-px bg-border/40" />
+                              </div>
+                              <div className="space-y-1.5">
+                                {roundMap.get(rk)!.map((g) => (
+                                  <div key={g.id}>
+                                    {editingGameId === g.id ? (
+                                      /* Inline edit form (round view) */
+                                      <div className="p-3 rounded-lg border border-brand/30 bg-brand/5 space-y-3">
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div className="space-y-1"><Label className="text-xs">Time A</Label><Input value={editGameForm.teamAName} onChange={(e) => setEditGameForm(f => ({ ...f, teamAName: e.target.value }))} className="h-8 text-sm" /></div>
+                                          <div className="space-y-1"><Label className="text-xs">Time B</Label><Input value={editGameForm.teamBName} onChange={(e) => setEditGameForm(f => ({ ...f, teamBName: e.target.value }))} className="h-8 text-sm" /></div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div className="space-y-1"><Label className="text-xs">Data/Hora</Label><Input type="datetime-local" value={editGameForm.matchDate} onChange={(e) => setEditGameForm(f => ({ ...f, matchDate: e.target.value }))} className="h-8 text-sm" /></div>
+                                          <div className="space-y-1"><Label className="text-xs">Local</Label><Input value={editGameForm.venue} onChange={(e) => setEditGameForm(f => ({ ...f, venue: e.target.value }))} className="h-8 text-sm" placeholder="Estádio" /></div>
+                                        </div>
+                                        <div className="space-y-1"><Label className="text-xs">Rodada</Label><Input type="number" min={1} value={editGameForm.roundNumber} onChange={(e) => setEditGameForm(f => ({ ...f, roundNumber: e.target.value }))} className="h-8 text-sm" /></div>
+                                        <div className="flex gap-2 justify-end">
+                                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingGameId(null)}><X className="h-3.5 w-3.5 mr-1" /> Cancelar</Button>
+                                          <Button size="sm" className="h-7 text-xs bg-brand hover:bg-brand/90 gap-1" disabled={updateGameMutation.isPending} onClick={() => { const rn = editGameForm.roundNumber ? parseInt(editGameForm.roundNumber, 10) : undefined; updateGameMutation.mutate({ gameId: g.id, teamAName: editGameForm.teamAName || undefined, teamBName: editGameForm.teamBName || undefined, matchDate: editGameForm.matchDate ? new Date(editGameForm.matchDate) : undefined, venue: editGameForm.venue || undefined, status: editGameForm.status, roundNumber: rn && rn > 0 ? rn : null }); }}>{updateGameMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Salvar</Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      /* Normal game row (round view) */
+                                      <div className="flex items-center gap-2 p-2.5 sm:p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors group">
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className="font-medium text-sm truncate max-w-[100px] sm:max-w-none">{g.teamAName ?? "A Definir"}</span>
+                                            {g.scoreA !== null && g.scoreB !== null ? (<span className="font-mono text-sm font-bold text-brand shrink-0">{g.scoreA}×{g.scoreB}</span>) : (<span className="text-muted-foreground text-xs font-mono shrink-0">vs</span>)}
+                                            <span className="font-medium text-sm truncate max-w-[100px] sm:max-w-none">{g.teamBName ?? "A Definir"}</span>
+                                          </div>
+                                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0"><Calendar className="h-2.5 w-2.5" />{format(new Date(g.matchDate), "dd/MM/yy HH:mm", { locale: ptBR })}</span>
+                                            {g.venue && (<span className="text-xs text-muted-foreground flex items-center gap-1 truncate max-w-[120px] sm:max-w-none"><MapPin className="h-2.5 w-2.5 shrink-0" /><span className="truncate">{g.venue}</span></span>)}
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          {statusBadge(g.status)}
+                                          <Button size="icon" variant="ghost" className="h-7 w-7 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-foreground" onClick={() => { setEditingGameId(g.id); setEditGameForm({ teamAName: g.teamAName ?? "", teamBName: g.teamBName ?? "", matchDate: g.matchDate ? format(new Date(g.matchDate), "yyyy-MM-dd'T'HH:mm") : "", venue: g.venue ?? "", status: (g.status as GameStatus) ?? "scheduled", roundNumber: g.roundNumber != null ? String(g.roundNumber) : "" }); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                                          {g.status !== "finished" && (<Button size="sm" variant="outline" className="h-7 text-xs gap-1 sm:opacity-0 sm:group-hover:opacity-100 hidden sm:flex" onClick={() => { setResultTarget({ gameId: g.id, teamA: g.teamAName ?? "Time A", teamB: g.teamBName ?? "Time B" }); setResultForm({ scoreA: g.scoreA?.toString() ?? "", scoreB: g.scoreB?.toString() ?? "" }); setShowSetResult(true); }}><CheckCircle2 className="h-3 w-3" /> Resultado</Button>)}
+                                          <Button variant="ghost" size="icon" className="h-7 w-7 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10" onClick={() => setDeleteGameTarget({ id: g.id, teamA: g.teamAName ?? "Time A", teamB: g.teamBName ?? "Time B" })}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()
+                  }
                   </div>
 
                   {/* Generate next phase button — available for any phase with finished games */}
