@@ -743,24 +743,53 @@ export default function AdminTournamentDetail() {
                         </div>
                       ));
                       }
-                      // Group by roundNumber
-                      const roundMap = new Map<number | string, typeof games>();
+                      // Group by phase+roundNumber (chave composta para evitar sobreposição)
+                      // Ex: "1st_phase|1", "2nd_phase|1" são grupos distintos
+                      const phaseLabel = (p: string | null, rn: number | string | null): string => {
+                        const phaseNames: Record<string, string> = {
+                          "1st_phase": "1ª Fase",
+                          "2nd_phase": "2ª Fase",
+                          "3rd_phase": "3ª Fase",
+                          "regular_season": "Temporada Regular",
+                          "apertura": "Apertura",
+                          "clausura": "Clausura",
+                          "group_stage": "Fase de Grupos",
+                          "round_of_16": "Oitavas de Final",
+                          "quarter_finals": "Quartas de Final",
+                          "semi_finals": "Semifinais",
+                          "third_place": "3º Lugar",
+                          "final": "Final",
+                        };
+                        const pName = p ? (phaseNames[p] ?? p) : null;
+                        if (rn == null) return pName ?? "Sem rodada";
+                        if (pName && pName !== "Fase de Grupos") return `${pName} — Rodada ${rn}`;
+                        return `Rodada ${rn}`;
+                      };
+                      const roundMap = new Map<string, typeof games>();
                       for (const g of phase.games) {
-                        const rk = g.roundNumber ?? "—";
+                        const rk = `${g.phase ?? ""}|${g.roundNumber ?? ""}`;
                         if (!roundMap.has(rk)) roundMap.set(rk, []);
                         roundMap.get(rk)!.push(g);
                       }
                       const sortedRounds = [...roundMap.keys()].sort((a, b) => {
-                        if (typeof a === "number" && typeof b === "number") return a - b;
-                        return String(a).localeCompare(String(b));
+                        const [pa, ra] = a.split("|");
+                        const [pb, rb] = b.split("|");
+                        if (pa !== pb) return pa.localeCompare(pb);
+                        const na = parseInt(ra) || 0;
+                        const nb = parseInt(rb) || 0;
+                        return na - nb;
                       });
                       return (
                         <div className="space-y-4">
-                          {sortedRounds.map((rk) => (
-                            <div key={String(rk)}>
+                          {sortedRounds.map((rk) => {
+                            const [phaseKey, roundNum] = rk.split("|");
+                            const firstGame = roundMap.get(rk)![0];
+                            const label = phaseLabel(firstGame.phase ?? null, firstGame.roundNumber ?? null);
+                            return (
+                            <div key={rk}>
                               <div className="flex items-center gap-2 mb-2 px-1">
                                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                  {typeof rk === "number" ? `Rodada ${rk}` : "Sem rodada"}
+                                  {label}
                                 </span>
                                 <span className="text-xs text-muted-foreground font-mono">({roundMap.get(rk)!.length} jogos)</span>
                                 <div className="flex-1 h-px bg-border/40" />
@@ -811,7 +840,8 @@ export default function AdminTournamentDetail() {
                                 ))}
                               </div>
                             </div>
-                          ))}
+                          );
+                          })}
                         </div>
                       );
                     })()

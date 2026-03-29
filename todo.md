@@ -2104,3 +2104,7 @@
 ## Bug — roundNumber incorreto nos jogos importados
 - [x] Corrigir extractRoundNumber para lidar com formato "1st Phase - N", "2nd Phase - N", "Regular Season - N" da API-Football
 - [x] Re-sincronizar os jogos existentes com os roundNumbers corretos via script de migração
+
+## Bug — Agrupamento incorreto de rodadas (1ª Fase vs 2ª Fase com mesmos números)
+- [x] Corrigir campo phase dos jogos para diferenciar "1st_phase" de "2nd_phase" no banco
+- [x] Atualizar UI para agrupar por fase+rodada (ex: "1ª Fase - Rodada 1", "2ª Fase - Rodada 1")

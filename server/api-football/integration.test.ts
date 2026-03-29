@@ -467,3 +467,76 @@ describe("applyGameResult — lógica de idempotência", () => {
     expect(shouldSkip).toBe(false);
   });
 });
+
+// ─── Testes da função roundToPhaseKey (nova lógica com fases distintas) ─────────────────────
+describe("roundToPhaseKey — preservação de fases distintas", () => {
+  // Espelho da função do sync.ts
+  function roundToPhaseKey(round: string): string {
+    const r = round.toLowerCase().trim();
+    if (r.includes("round of 16") || r.includes("last 16")) return "round_of_16";
+    if (r.includes("quarter")) return "quarter_finals";
+    if (r.includes("semi")) return "semi_finals";
+    if (r.includes("3rd place") || r.includes("third place")) return "third_place";
+    if (/^final$/.test(r) || r === "1st phase - final" || r === "2nd phase - final") return "final";
+    if (r.startsWith("1st phase")) return "1st_phase";
+    if (r.startsWith("2nd phase")) return "2nd_phase";
+    if (r.startsWith("3rd phase")) return "3rd_phase";
+    if (r.startsWith("apertura")) return "apertura";
+    if (r.startsWith("clausura")) return "clausura";
+    if (r.startsWith("regular season")) return "regular_season";
+    if (r.startsWith("group")) return "group_stage";
+    return "group_stage";
+  }
+
+  it("deve mapear \"1st Phase - 1\" para \"1st_phase\"", () => {
+    expect(roundToPhaseKey("1st Phase - 1")).toBe("1st_phase");
+  });
+
+  it("deve mapear \"2nd Phase - 14\" para \"2nd_phase\" (não group_stage)", () => {
+    expect(roundToPhaseKey("2nd Phase - 14")).toBe("2nd_phase");
+  });
+
+  it("deve mapear \"Regular Season - 5\" para \"regular_season\"", () => {
+    expect(roundToPhaseKey("Regular Season - 5")).toBe("regular_season");
+  });
+
+  it("deve mapear \"Apertura - 3\" para \"apertura\"", () => {
+    expect(roundToPhaseKey("Apertura - 3")).toBe("apertura");
+  });
+
+  it("deve mapear \"Clausura - 7\" para \"clausura\"", () => {
+    expect(roundToPhaseKey("Clausura - 7")).toBe("clausura");
+  });
+
+  it("deve mapear \"Group Stage - 2\" para \"group_stage\"", () => {
+    expect(roundToPhaseKey("Group Stage - 2")).toBe("group_stage");
+  });
+
+  it("deve mapear \"Round of 16\" para \"round_of_16\"", () => {
+    expect(roundToPhaseKey("Round of 16")).toBe("round_of_16");
+  });
+
+  it("deve mapear \"Quarter-finals\" para \"quarter_finals\"", () => {
+    expect(roundToPhaseKey("Quarter-finals")).toBe("quarter_finals");
+  });
+
+  it("deve mapear \"Semi-finals\" para \"semi_finals\"", () => {
+    expect(roundToPhaseKey("Semi-finals")).toBe("semi_finals");
+  });
+
+  it("deve mapear \"Final\" para \"final\"", () => {
+    expect(roundToPhaseKey("Final")).toBe("final");
+  });
+
+  it("deve mapear \"1st Phase - Final\" para \"final\" (não 1st_phase)", () => {
+    expect(roundToPhaseKey("1st Phase - Final")).toBe("final");
+  });
+
+  it("deve mapear \"1st Phase - Quarter-finals\" para \"quarter_finals\" (não 1st_phase)", () => {
+    expect(roundToPhaseKey("1st Phase - Quarter-finals")).toBe("quarter_finals");
+  });
+
+  it("deve diferenciar 1st_phase de 2nd_phase (chaves distintas)", () => {
+    expect(roundToPhaseKey("1st Phase - 1")).not.toBe(roundToPhaseKey("2nd Phase - 1"));
+  });
+});

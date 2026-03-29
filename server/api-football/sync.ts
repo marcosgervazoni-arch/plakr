@@ -100,16 +100,46 @@ async function getAllLinkedTournaments(): Promise<Array<{ id: number; leagueId: 
 
 // ─── Helper: converter round da API para phase key ────────────────────────────────────
 
+/**
+ * Converte o campo league.round da API-Football em uma chave de fase.
+ *
+ * Preserva fases distintas como "1st Phase" e "2nd Phase" em vez de
+ * colapsar tudo em "group_stage", evitando sobreposição de rodadas com
+ * mesmo número em fases diferentes.
+ *
+ * Exemplos:
+ *  - "1st Phase - 1"       → "1st_phase"
+ *  - "2nd Phase - 14"      → "2nd_phase"
+ *  - "Regular Season - 5"  → "regular_season"
+ *  - "Apertura - 3"        → "apertura"
+ *  - "Clausura - 7"        → "clausura"
+ *  - "Group Stage - 2"     → "group_stage"
+ *  - "Round of 16"         → "round_of_16"
+ *  - "Quarter-finals"      → "quarter_finals"
+ *  - "Semi-finals"         → "semi_finals"
+ *  - "Final"               → "final"
+ */
 function roundToPhaseKey(round: string): string {
-  const r = round.toLowerCase();
-  if (r.includes("group")) return "group_stage";
+  const r = round.toLowerCase().trim();
+
+  // Fases eliminatórias (prioridade máxima)
   if (r.includes("round of 16") || r.includes("last 16")) return "round_of_16";
   if (r.includes("quarter")) return "quarter_finals";
   if (r.includes("semi")) return "semi_finals";
-  if (r.includes("3rd") || r.includes("third")) return "third_place";
-  if (r.includes("final")) return "final";
-  // Ligas com fases numeradas (ex: "1st Phase - 1", "2nd Phase - 14")
-  if (r.includes("phase") || r.includes("regular season") || r.includes("apertura") || r.includes("clausura")) return "group_stage";
+  if (r.includes("3rd place") || r.includes("third place")) return "third_place";
+  // "final" deve vir após "semi" e "quarter" para não capturar "semi-finals"
+  if (/^final$/.test(r) || r === "1st phase - final" || r === "2nd phase - final") return "final";
+
+  // Fases numeradas com nome específico — preservar para evitar sobreposição de rodadas
+  if (r.startsWith("1st phase")) return "1st_phase";
+  if (r.startsWith("2nd phase")) return "2nd_phase";
+  if (r.startsWith("3rd phase")) return "3rd_phase";
+  if (r.startsWith("apertura")) return "apertura";
+  if (r.startsWith("clausura")) return "clausura";
+  if (r.startsWith("regular season")) return "regular_season";
+  if (r.startsWith("group")) return "group_stage";
+
+  // Fallback genérico
   return "group_stage";
 }
 

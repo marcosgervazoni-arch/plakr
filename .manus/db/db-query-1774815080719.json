@@ -1,0 +1,160 @@
+{
+  "query": "SELECT phase, roundNumber, COUNT(*) as total FROM games WHERE tournamentId = 30001 GROUP BY phase, roundNumber ORDER BY phase, CAST(roundNumber AS UNSIGNED) LIMIT 40;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT phase, roundNumber, COUNT(*) as total FROM games WHERE tournamentId = 30001 GROUP BY phase, roundNumber ORDER BY phase, CAST(roundNumber AS UNSIGNED) LIMIT 40;",
+  "rows": [
+    {
+      "phase": "final",
+      "roundNumber": "NULL",
+      "total": "1"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "2",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "3",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "4",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "5",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "6",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "7",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "8",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "9",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "10",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "11",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "12",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "13",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "14",
+      "total": "28"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "15",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "16",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "17",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "18",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "19",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "20",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "21",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "22",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "23",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "24",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "25",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "26",
+      "total": "14"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "27",
+      "total": "14"
+    },
+    {
+      "phase": "quarter_finals",
+      "roundNumber": "NULL",
+      "total": "4"
+    },
+    {
+      "phase": "semi_finals",
+      "roundNumber": "NULL",
+      "total": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "phase\troundNumber\ttotal\nfinal\tNULL\t1\ngroup_stage\t1\t28\ngroup_stage\t2\t28\ngroup_stage\t3\t28\ngroup_stage\t4\t28\ngroup_stage\t5\t28\ngroup_stage\t6\t28\ngroup_stage\t7\t28\ngroup_stage\t8\t28\ngroup_stage\t9\t28\ngroup_stage\t10\t28\ngroup_stage\t11\t28\ngroup_stage\t12\t28\ngroup_stage\t13\t28\ngroup_stage\t14\t28\ngroup_stage\t15\t14\ngroup_stage\t16\t14\ngroup_stage\t17\t14\ngroup_stage\t18\t14\ngroup_stage\t19\t14\ngroup_stage\t20\t14\ngroup_stage\t21\t14\ngroup_stage\t22\t14\ngroup_stage\t23\t14\ngroup_stage\t24\t14\ngroup_stage\t25\t14\ngroup_stage\t26\t14\ngroup_stage\t27\t14\nquarter_finals\tNULL\t4\nsemi_finals\tNULL\t2\n",
+  "stderr": "",
+  "execution_time_ms": 620
+}
