@@ -56,29 +56,46 @@ async function findTournamentForLeague(
   const db = await getDb();
   if (!db) return null;
 
-  // Busca torneio global com externalId correspondente à liga
+  // Busca torneio com apiFootballLeagueId e apiFootballSeason correspondentes
   const [tournament] = await db
     .select({ id: tournaments.id })
     .from(tournaments)
     .where(
       and(
-        eq(tournaments.isGlobal, true),
-        sql`JSON_UNQUOTE(JSON_EXTRACT(${tournaments.slug}, '$')) LIKE ${`%wc${season}%`}`
+        eq(tournaments.apiFootballLeagueId, leagueId),
+        eq(tournaments.apiFootballSeason, season)
       )
     )
     .limit(1);
 
-  // Fallback: busca por slug padrão da Copa do Mundo
-  if (!tournament) {
-    const [bySlug] = await db
-      .select({ id: tournaments.id })
-      .from(tournaments)
-      .where(eq(tournaments.slug, `copa-do-mundo-${season}`))
-      .limit(1);
-    return bySlug?.id ?? null;
-  }
-
   return tournament?.id ?? null;
+}
+
+// ─── Helper: listar todos os torneios vinculados à API-Football ───────────────
+
+async function getAllLinkedTournaments(): Promise<Array<{ id: number; leagueId: number; season: number; name: string }>> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db
+    .select({
+      id: tournaments.id,
+      leagueId: tournaments.apiFootballLeagueId,
+      season: tournaments.apiFootballSeason,
+      name: tournaments.name,
+    })
+    .from(tournaments)
+    .where(
+      and(
+        sql`${tournaments.apiFootballLeagueId} IS NOT NULL`,
+        sql`${tournaments.apiFootballSeason} IS NOT NULL`
+      )
+    );
+
+  return rows.filter(
+    (r): r is { id: number; leagueId: number; season: number; name: string } =>
+      r.leagueId !== null && r.season !== null
+  );
 }
 
 // ─── Helper: converter round da API para phase key ────────────────────────────
@@ -371,8 +388,12 @@ export async function syncFixtures(options: {
     return { gamesCreated: 0, gamesUpdated: 0, requestsUsed: 0 };
   }
 
-  const leagueId = settings.apiFootballLeagueId ?? 1;
-  const season = settings.apiFootballSeason ?? 2026;
+  // Iterar sobre TODOS os torneios vinculados à API-Football
+  const linkedTournaments = await getAllLinkedTournaments();
+  if (linkedTournaments.length === 0) {
+    logger.info("[ApiFootball] syncFixtures: no linked tournaments found");
+    return { gamesCreated: 0, gamesUpdated: 0, requestsUsed: 0 };
+  }
 
   let gamesCreated = 0;
   let gamesUpdated = 0;
@@ -380,33 +401,28 @@ export async function syncFixtures(options: {
   let errorMessage: string | undefined;
   let syncStatus: "success" | "error" | "partial" | "skipped" = "success";
 
-  try {
-    // Buscar jogos dos próximos 14 dias
-    const today = new Date();
-    const in14Days = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
-    const fromStr = today.toISOString().slice(0, 10);
-    const toStr = in14Days.toISOString().slice(0, 10);
+  // Buscar jogos dos próximos 14 dias
+  const today = new Date();
+  const in14Days = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const fromStr = today.toISOString().slice(0, 10);
+  const toStr = in14Days.toISOString().slice(0, 10);
 
-    const fixtures = await fetchFixtures(leagueId, season, {
-      status: SCHEDULED_STATUSES.join("-"),
-      from: fromStr,
-      to: toStr,
-    });
-    requestsUsed = 1;
+  for (const linked of linkedTournaments) {
+    const { leagueId, season, id: tournamentId, name: tournamentName } = linked;
+    try {
+      const fixtures = await fetchFixtures(leagueId, season, {
+        status: SCHEDULED_STATUSES.join("-"),
+        from: fromStr,
+        to: toStr,
+      });
+      requestsUsed++;
 
-    const tournamentId = await findTournamentForLeague(leagueId, season);
-    if (!tournamentId) {
-      logger.warn(`[ApiFootball] No tournament found for league ${leagueId} season ${season}. Create the tournament first in Admin.`);
-      syncStatus = "skipped";
-      errorMessage = `No tournament found for league ${leagueId} season ${season}`;
-    } else {
       for (const fixture of fixtures) {
         const externalId = String(fixture.fixture.id);
         const matchDate = new Date(fixture.fixture.date);
         const phase = roundToPhaseKey(fixture.league.round);
         const roundNumber = extractRoundNumber(fixture.league.round);
 
-        // Verificar se o jogo já existe pelo externalId
         const [existing] = await db
           .select({ id: games.id })
           .from(games)
@@ -414,19 +430,12 @@ export async function syncFixtures(options: {
           .limit(1);
 
         if (existing) {
-          // Atualizar data/horário se mudou (reagendamentos)
           await db
             .update(games)
-            .set({
-              matchDate,
-              venue: fixture.fixture.venue?.name ?? null,
-              phase,
-              roundNumber,
-            })
+            .set({ matchDate, venue: fixture.fixture.venue?.name ?? null, phase, roundNumber })
             .where(eq(games.id, existing.id));
           gamesUpdated++;
         } else {
-          // Criar novo jogo
           await db.insert(games).values({
             tournamentId,
             externalId,
@@ -443,23 +452,24 @@ export async function syncFixtures(options: {
           gamesCreated++;
         }
       }
-    }
-  } catch (err) {
-    errorMessage = err instanceof Error ? err.message : String(err);
-    syncStatus = "error";
-    logger.error({ errorMessage }, "[ApiFootball] syncFixtures error");
-
-    if (errorMessage.includes("Circuit breaker")) {
-      syncStatus = "error";
+      logger.info(`[ApiFootball] syncFixtures[${tournamentName}]: created=${gamesCreated} updated=${gamesUpdated}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error({ err }, `[ApiFootball] syncFixtures[${tournamentName}] error: ${msg}`);
+      errorMessage = msg;
+      syncStatus = "partial";
     }
   }
 
+  if (syncStatus !== "partial") syncStatus = "success";
+
   const durationMs = Date.now() - startTime;
+  const firstLinked = linkedTournaments[0];
   await logSync({
     syncType: options.triggeredBy === "manual" ? "manual" : "fixtures",
     status: syncStatus,
-    leagueId,
-    season,
+    leagueId: firstLinked.leagueId,
+    season: firstLinked.season,
     requestsUsed,
     gamesCreated,
     gamesUpdated,
@@ -479,6 +489,73 @@ export async function syncFixtures(options: {
 
 // ─── JOB 2: Sincronizar Resultados Finais ────────────────────────────────────
 
+// ─── Helper interno: aplicar resultado de um jogo e disparar pontuação ─────────
+
+async function applyGameResult(
+  existingGame: { id: number; status: string | null; scoreA: number | null },
+  scoreA: number,
+  scoreB: number,
+  syncStatusRef: { value: "success" | "error" | "partial" | "skipped" }
+): Promise<boolean> {
+  // Pular se já tem resultado final
+  if (existingGame.status === "finished" && existingGame.scoreA !== null) return false;
+
+  // Aplicar resultado final (NUNCA parcial)
+  await updateGameResult(existingGame.id, scoreA, scoreB, false);
+
+  // Disparar motor de pontuação para todos os bolões com palpites neste jogo
+  try {
+    const allBets = await getBetsByGameAllPools(existingGame.id);
+    const affectedPoolsSet = new Set(allBets.map((b) => b.poolId));
+    const defaultSettings = await getPlatformSettings();
+
+    for (const poolId of Array.from(affectedPoolsSet)) {
+      const rulesRow = await getPoolScoringRules(poolId);
+      const effectiveRules = buildEffectiveRules(rulesRow, defaultSettings);
+      const poolBets = allBets.filter((b) => b.poolId === poolId);
+      const zebraCtx = calculateZebraContext(poolBets, scoreA, scoreB);
+      const affectedUsersSet = new Set<number>();
+
+      for (const bet of poolBets) {
+        const breakdown = calculateBetScore(
+          bet.predictedScoreA,
+          bet.predictedScoreB,
+          scoreA,
+          scoreB,
+          effectiveRules,
+          zebraCtx
+        );
+        await updateBetScore(bet.id, {
+          pointsEarned: breakdown.total,
+          pointsExactScore: breakdown.pointsExactScore,
+          pointsCorrectResult: breakdown.pointsCorrectResult,
+          pointsTotalGoals: breakdown.pointsTotalGoals,
+          pointsGoalDiff: breakdown.pointsGoalDiff,
+          pointsZebra: breakdown.pointsZebra,
+          resultType: breakdown.resultType,
+        });
+        affectedUsersSet.add(bet.userId);
+      }
+
+      for (const userId of Array.from(affectedUsersSet)) {
+        await recalculateMemberStats(poolId, userId);
+        import("../badges")
+          .then(({ calculateAndAssignBadges }) =>
+            calculateAndAssignBadges(userId).catch((e: unknown) =>
+              logger.error({ err: e }, "[Badges] Error calculating badges")
+            )
+          )
+          .catch(() => {});
+      }
+    }
+  } catch (scoringErr) {
+    logger.error({ err: scoringErr, gameId: existingGame.id }, "[ApiFootball] Scoring error for game");
+    syncStatusRef.value = "partial";
+  }
+
+  return true;
+}
+
 export async function syncResults(options: {
   triggeredBy?: "cron" | "manual";
   triggeredByUserId?: number;
@@ -497,29 +574,36 @@ export async function syncResults(options: {
     return { resultsApplied: 0, requestsUsed: 0 };
   }
 
-  const leagueId = settings.apiFootballLeagueId ?? 1;
-  const season = settings.apiFootballSeason ?? 2026;
+  // Iterar sobre TODOS os torneios vinculados à API-Football
+  const linkedTournaments = await getAllLinkedTournaments();
+  if (linkedTournaments.length === 0) {
+    logger.info("[ApiFootball] syncResults: no linked tournaments found");
+    return { resultsApplied: 0, requestsUsed: 0 };
+  }
 
   let resultsApplied = 0;
   let requestsUsed = 0;
   let errorMessage: string | undefined;
-  let syncStatus: "success" | "error" | "partial" | "skipped" = "success";
+  const syncStatusRef = { value: "success" as "success" | "error" | "partial" | "skipped" };
 
-  try {
-    // Buscar apenas jogos encerrados hoje (para economizar quota)
-    const today = new Date().toISOString().slice(0, 10);
-    const fixtures = await fetchFixtures(leagueId, season, {
-      status: FINISHED_STATUSES.join("-"),
-      from: today,
-      to: today,
-    });
-    requestsUsed = 1;
+  // Janela de busca: jogos que já deveriam ter terminado (até 2h atrás) até hoje
+  // Isso garante que jogos de ontem que não foram sincronizados também sejam capturados
+  const now = new Date();
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const fromStr = yesterday.toISOString().slice(0, 10);
+  const toStr = now.toISOString().slice(0, 10);
 
-    const tournamentId = await findTournamentForLeague(leagueId, season);
-    if (!tournamentId) {
-      syncStatus = "skipped";
-      errorMessage = `No tournament found for league ${leagueId} season ${season}`;
-    } else {
+  for (const linked of linkedTournaments) {
+    const { leagueId, season, id: tournamentId, name: tournamentName } = linked;
+    try {
+      // Buscar jogos encerrados nos últimos 2 dias (captura jogos de ontem não sincronizados)
+      const fixtures = await fetchFixtures(leagueId, season, {
+        status: FINISHED_STATUSES.join("-"),
+        from: fromStr,
+        to: toStr,
+      });
+      requestsUsed++;
+
       for (const fixture of fixtures) {
         const externalId = String(fixture.fixture.id);
         const scoreA = fixture.score.fulltime.home;
@@ -536,7 +620,7 @@ export async function syncResults(options: {
           .limit(1);
 
         if (!existingGame) {
-          // Jogo não existe ainda — criar antes de aplicar resultado
+          // Jogo não existe ainda — criar e aplicar resultado
           await db.insert(games).values({
             tournamentId,
             externalId,
@@ -556,78 +640,28 @@ export async function syncResults(options: {
           continue;
         }
 
-        // Pular se já tem resultado e não foi editado manualmente
-        if (existingGame.status === "finished" && existingGame.scoreA !== null) continue;
-
-        // Aplicar resultado final (NUNCA parcial)
-        await updateGameResult(existingGame.id, scoreA, scoreB, false);
-
-        // Disparar motor de pontuação para todos os bolões com palpites neste jogo
-        try {
-          const allBets = await getBetsByGameAllPools(existingGame.id);
-          const affectedPoolsSet = new Set(allBets.map((b) => b.poolId));
-          const defaultSettings = await getPlatformSettings();
-
-          for (const poolId of Array.from(affectedPoolsSet)) {
-            const rulesRow = await getPoolScoringRules(poolId);
-            const effectiveRules = buildEffectiveRules(rulesRow, defaultSettings);
-            const poolBets = allBets.filter((b) => b.poolId === poolId);
-            const zebraCtx = calculateZebraContext(poolBets, scoreA, scoreB);
-            const affectedUsersSet = new Set<number>();
-
-            for (const bet of poolBets) {
-              const breakdown = calculateBetScore(
-                bet.predictedScoreA,
-                bet.predictedScoreB,
-                scoreA,
-                scoreB,
-                effectiveRules,
-                zebraCtx
-              );
-              await updateBetScore(bet.id, {
-                pointsEarned: breakdown.total,
-                pointsExactScore: breakdown.pointsExactScore,
-                pointsCorrectResult: breakdown.pointsCorrectResult,
-                pointsTotalGoals: breakdown.pointsTotalGoals,
-                pointsGoalDiff: breakdown.pointsGoalDiff,
-                pointsZebra: breakdown.pointsZebra,
-                resultType: breakdown.resultType,
-              });
-              affectedUsersSet.add(bet.userId);
-            }
-
-            for (const userId of Array.from(affectedUsersSet)) {
-              await recalculateMemberStats(poolId, userId);
-              // Recalcular badges de forma assíncrona (não bloqueia o sync)
-              import("../badges")
-                .then(({ calculateAndAssignBadges }) =>
-                  calculateAndAssignBadges(userId).catch((e: unknown) =>
-                    logger.error({ err: e }, "[Badges] Error calculating badges")
-                  )
-                )
-                .catch(() => {});
-            }
-          }
-        } catch (scoringErr) {
-          logger.error({ err: scoringErr, gameId: existingGame.id }, "[ApiFootball] Scoring error for game");
-          syncStatus = "partial";
-        }
-
-        resultsApplied++;
+        const applied = await applyGameResult(existingGame, scoreA, scoreB, syncStatusRef);
+        if (applied) resultsApplied++;
       }
+
+      logger.info(`[ApiFootball] syncResults[${tournamentName}]: applied=${resultsApplied} req=${requestsUsed}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error({ err }, `[ApiFootball] syncResults[${tournamentName}] error: ${msg}`);
+      errorMessage = msg;
+      syncStatusRef.value = "partial";
     }
-  } catch (err) {
-    errorMessage = err instanceof Error ? err.message : String(err);
-    syncStatus = "error";
-    logger.error({ errorMessage }, "[ApiFootball] syncResults error");
   }
 
+  if (syncStatusRef.value !== "partial") syncStatusRef.value = "success";
+
   const durationMs = Date.now() - startTime;
+  const firstLinked = linkedTournaments[0];
   await logSync({
     syncType: options.triggeredBy === "manual" ? "manual" : "results",
-    status: syncStatus,
-    leagueId,
-    season,
+    status: syncStatusRef.value,
+    leagueId: firstLinked.leagueId,
+    season: firstLinked.season,
     requestsUsed,
     gamesCreated: 0,
     gamesUpdated: 0,

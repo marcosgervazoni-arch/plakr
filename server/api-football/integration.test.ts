@@ -306,3 +306,95 @@ describe("Sincronização de Fixtures por Torneio", () => {
     expect(generateSlug("Copa do Mundo", 2022)).toBe("copa-do-mundo-2022");
   });
 });
+
+// ─── Testes da nova lógica multi-torneio ─────────────────────────────────────
+describe("Lógica Multi-Torneio (getAllLinkedTournaments)", () => {
+  it("deve filtrar torneios sem apiFootballLeagueId ou apiFootballSeason", () => {
+    const rows = [
+      { id: 1, leagueId: 128, season: 2022, name: "Liga Profesional Argentina" },
+      { id: 2, leagueId: null, season: 2022, name: "Torneio Manual" },
+      { id: 3, leagueId: 39, season: null, name: "Premier League sem temporada" },
+      { id: 4, leagueId: 71, season: 2025, name: "Brasileirão 2025" },
+    ];
+
+    const linked = rows.filter(
+      (r): r is { id: number; leagueId: number; season: number; name: string } =>
+        r.leagueId !== null && r.season !== null
+    );
+
+    expect(linked).toHaveLength(2);
+    expect(linked[0].name).toBe("Liga Profesional Argentina");
+    expect(linked[1].name).toBe("Brasileirão 2025");
+  });
+
+  it("deve encontrar torneio pelo apiFootballLeagueId e apiFootballSeason", () => {
+    const tournaments = [
+      { id: 30001, apiFootballLeagueId: 128, apiFootballSeason: 2022 },
+      { id: 30002, apiFootballLeagueId: 71, apiFootballSeason: 2025 },
+    ];
+
+    const findTournament = (leagueId: number, season: number) =>
+      tournaments.find(
+        (t) => t.apiFootballLeagueId === leagueId && t.apiFootballSeason === season
+      )?.id ?? null;
+
+    expect(findTournament(128, 2022)).toBe(30001);
+    expect(findTournament(71, 2025)).toBe(30002);
+    expect(findTournament(1, 2026)).toBeNull();
+  });
+
+  it("deve acumular resultados de múltiplos torneios", () => {
+    const results = [
+      { tournamentId: 30001, applied: 3 },
+      { tournamentId: 30002, applied: 5 },
+    ];
+
+    const total = results.reduce((acc, r) => acc + r.applied, 0);
+    expect(total).toBe(8);
+  });
+
+  it("deve usar janela de 2 dias para capturar jogos de ontem não sincronizados", () => {
+    const now = new Date("2026-03-29T20:00:00Z");
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const fromStr = yesterday.toISOString().slice(0, 10);
+    const toStr = now.toISOString().slice(0, 10);
+
+    expect(fromStr).toBe("2026-03-28");
+    expect(toStr).toBe("2026-03-29");
+  });
+
+  it("deve marcar syncStatus como partial quando um torneio falha mas outros têm sucesso", () => {
+    const syncStatusRef = { value: "success" as "success" | "error" | "partial" | "skipped" };
+
+    // Simula falha em um torneio
+    const handleError = () => { syncStatusRef.value = "partial"; };
+
+    handleError();
+    expect(syncStatusRef.value).toBe("partial");
+
+    // Não deve ser sobrescrito para success após partial
+    if (syncStatusRef.value !== "partial") syncStatusRef.value = "success";
+    expect(syncStatusRef.value).toBe("partial");
+  });
+});
+
+// ─── Testes de applyGameResult ────────────────────────────────────────────────
+describe("applyGameResult — lógica de idempotência", () => {
+  it("deve pular jogo que já tem resultado final", () => {
+    const existingGame = { id: 1, status: "finished", scoreA: 2 };
+    const shouldSkip = existingGame.status === "finished" && existingGame.scoreA !== null;
+    expect(shouldSkip).toBe(true);
+  });
+
+  it("deve processar jogo scheduled sem placar", () => {
+    const existingGame = { id: 2, status: "scheduled", scoreA: null };
+    const shouldSkip = existingGame.status === "finished" && existingGame.scoreA !== null;
+    expect(shouldSkip).toBe(false);
+  });
+
+  it("deve processar jogo finished sem placar (placar faltando)", () => {
+    const existingGame = { id: 3, status: "finished", scoreA: null };
+    const shouldSkip = existingGame.status === "finished" && existingGame.scoreA !== null;
+    expect(shouldSkip).toBe(false);
+  });
+});

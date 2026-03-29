@@ -2097,3 +2097,6 @@
 ## Melhoria — Exibição de Rodada nos Jogos
 - [x] Exibir número da rodada em cada linha de jogo na tela de detalhes do campeonato
 - [x] Agrupar jogos por rodada na seção "Sem fase" para facilitar navegação com muitos jogos
+
+## Melhoria — Cron de Atualização Automática de Resultados
+- [x] Garantir que o cron de sync de resultados atualize status e placar dos jogos automaticamente (scheduled → live → finished) sem intervenção manual
