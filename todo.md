@@ -2022,3 +2022,8 @@
 - [ ] Adicionar coluna stripeWebhookSecret no schema e banco
 - [ ] Adicionar campo no AdminSettings (card Stripe)
 - [ ] Servidor usa stripeWebhookSecret do banco como prioridade no stripe-webhook.ts
+
+## Bugs Ativos — Sprint 29/03/2026
+- [x] BUG: Push in-app exibindo tags HTML cruas (ex: `<p>texto</p>`) em vez de texto puro na lista de notificações
+- [ ] BUG: E-mail de broadcast não está sendo entregue — aguardando integração com provedor externo (Resend/SendGrid)
+- [ ] BUG: Push Web (browser push) de broadcast não está sendo entregue — depende de VAPID keys configuradas

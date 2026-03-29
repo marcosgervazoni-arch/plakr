@@ -1,0 +1,16 @@
+{
+  "query": "SELECT vapidEmail, pushEnabled, LENGTH(vapidPublicKey) as pubKeyLen, LENGTH(vapidPrivateKey) as privKeyLen FROM platform_settings WHERE id = 1",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT vapidEmail, pushEnabled, LENGTH(vapidPublicKey) as pubKeyLen, LENGTH(vapidPrivateKey) as privKeyLen FROM platform_settings WHERE id = 1",
+  "rows": [
+    {
+      "vapidEmail": "mailto:admin@plakr.io",
+      "pushEnabled": "1",
+      "pubKeyLen": "87",
+      "privKeyLen": "43"
+    }
+  ],
+  "messages": [],
+  "stdout": "vapidEmail\tpushEnabled\tpubKeyLen\tprivKeyLen\nmailto:admin@plakr.io\t1\t87\t43\n",
+  "stderr": "",
+  "execution_time_ms": 488
+}

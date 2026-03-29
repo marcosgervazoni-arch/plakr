@@ -204,13 +204,24 @@ export const notificationsRouter = router({
       };
       const notifType = notifTypeMap[input.category] ?? "system";
       const titleWithEmoji = input.emoji ? `${input.emoji} ${input.title}` : input.title;
+      // Strip HTML tags for plain-text channels (in-app, push)
+      const plainTextContent = input.content
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'")
+        .replace(/\s{2,}/g, " ")
+        .trim();
       if (input.channels.inApp) {
         for (const uid of userIds) {
           await createNotification({
             userId: uid,
             type: notifType,
             title: titleWithEmoji,
-            message: input.content,
+            message: plainTextContent,
             imageUrl: input.imageUrl || undefined,
             actionUrl: input.actionUrl || undefined,
             actionLabel: input.actionLabel || undefined,
@@ -222,7 +233,7 @@ export const notificationsRouter = router({
       }
       if (input.channels.push) {
         const { broadcastPush } = await import("../push");
-        const result = await broadcastPush(userIds, { title: titleWithEmoji, body: input.content, url: input.actionUrl || "/notifications" }, "pushSystem");
+        const result = await broadcastPush(userIds, { title: titleWithEmoji, body: plainTextContent, url: input.actionUrl || "/notifications" }, "pushSystem");
         pushSent = result.sent;
       }
       if (input.channels.email) {
@@ -242,7 +253,7 @@ export const notificationsRouter = router({
     <div style="padding:24px;">
       ${input.emoji ? `<div style="font-size:32px;margin-bottom:12px;">${esc(input.emoji)}</div>` : ''}
       <h2 style="margin:0 0 12px;color:#fff;font-size:20px;">${esc(input.title)}</h2>
-      <p style="margin:0 0 20px;color:#ccc;line-height:1.6;">${esc(input.content)}</p>
+      <div style="margin:0 0 20px;color:#ccc;line-height:1.6;">${input.content}</div>
       ${input.actionUrl ? `<a href="${esc(input.actionUrl)}" style="display:inline-block;background:#f59e0b;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">${esc(input.actionLabel ?? 'Ver mais')}</a>` : ''}
     </div>
   </div>
