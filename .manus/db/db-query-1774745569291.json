@@ -1,0 +1,19 @@
+{
+  "query": "\nSELECT COUNT(*) as test_notifications FROM notifications WHERE userId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n\nSELECT COUNT(*) as test_pool_members FROM pool_members WHERE userId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT COUNT(*) as test_notifications FROM notifications WHERE userId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n\nSELECT COUNT(*) as test_pool_members FROM pool_members WHERE userId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n",
+  "rows": [
+    {
+      "test_notifications": "5112"
+    },
+    {
+      "test_notifications": "test_pool_members"
+    },
+    {
+      "test_notifications": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "test_notifications\n5112\ntest_pool_members\n0\n",
+  "stderr": "",
+  "execution_time_ms": 405
+}

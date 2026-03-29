@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Deletar logs de admin vinculados aos usuários de teste\nDELETE FROM admin_logs WHERE adminId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n\n-- Agora deletar os usuários de teste\nDELETE FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \n-- Deletar logs de admin vinculados aos usuários de teste\nDELETE FROM admin_logs WHERE adminId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n\n-- Agora deletar os usuários de teste\nDELETE FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%';\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1982
+}

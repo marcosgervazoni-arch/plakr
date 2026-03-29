@@ -33,6 +33,8 @@ import { eq } from "drizzle-orm";
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const TEST_PREFIX = "it" + Date.now().toString().slice(-8); // max 10 chars para caber nos campos
+const INTEGRATION_USER_PATTERN = "Integration User";
+const TEST_ADMIN_PATTERN = "Test Admin";
 
 function makeCtxFromUser(user: NonNullable<TrpcContext["user"]>): TrpcContext {
   return {
@@ -57,6 +59,28 @@ beforeAll(async () => {
     console.warn("[Integration] DB não disponível — testes de integração serão pulados");
     return;
   }
+
+  // Limpar dados órfãos de execuções anteriores que não foram limpos pelo afterAll
+  try {
+    const { like, or, inArray } = await import("drizzle-orm");
+    const { notifications, userBadges, notificationPreferences, userPlans, adminLogs } = await import("../drizzle/schema");
+    const orphanUsers = await db.select({ id: users.id })
+      .from(users)
+      .where(or(
+        like(users.name, `%${INTEGRATION_USER_PATTERN}%`),
+        like(users.name, `%${TEST_ADMIN_PATTERN}%`)
+      ));
+    if (orphanUsers.length > 0) {
+      const orphanIds = orphanUsers.map(u => u.id);
+      await db.delete(notifications).where(inArray(notifications.userId, orphanIds));
+      await db.delete(userBadges).where(inArray(userBadges.userId, orphanIds));
+      await db.delete(poolMembers).where(inArray(poolMembers.userId, orphanIds));
+      await db.delete(notificationPreferences).where(inArray(notificationPreferences.userId, orphanIds));
+      await db.delete(userPlans).where(inArray(userPlans.userId, orphanIds));
+      await db.delete(adminLogs).where(inArray(adminLogs.adminId, orphanIds));
+      await db.delete(users).where(inArray(users.id, orphanIds));
+    }
+  } catch { /* limpeza best-effort */ }
 
   // Criar dois usuários de teste
   await upsertUser({

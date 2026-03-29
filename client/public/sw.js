@@ -1,9 +1,9 @@
 /**
- * ApostAI — Service Worker para Web Push
+ * Plakr! — Service Worker para Web Push
  * Gerencia notificações push recebidas do servidor VAPID.
  */
 
-const CACHE_NAME = "apostai-sw-v2";
+const CACHE_NAME = "plakr-sw-v1";
 
 // ─── Push recebido ────────────────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
@@ -13,15 +13,15 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "ApostAI", body: event.data.text() };
+    payload = { title: "Plakr!", body: event.data.text() };
   }
 
-  const title = payload.title || "ApostAI";
+  const title = payload.title || "Plakr!";
   const options = {
     body: payload.body || "",
     icon: payload.icon || "/favicon.ico",
     badge: payload.badge || "/favicon.ico",
-    tag: payload.tag || "apostai-notif",
+    tag: payload.tag || "plakr-notif",
     data: {
       url: payload.url || "/",
       ...payload.data,

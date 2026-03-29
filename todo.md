@@ -2002,3 +2002,10 @@
 - [ ] Mapear todos os badges do banco vs criterionTypes implementados
 - [ ] Corrigir disparadores ausentes
 - [ ] Reprocessar badges retroativos para todos os usuários
+
+## Go to Market — Limpeza e Preparação (29/03/2026)
+- [x] Limpar usuários de teste do banco (142 usuários removidos — Integration User, Test Admin)
+- [x] Limpar notificações de teste (5112 registros removidos)
+- [x] Garantir que testes automatizados limpam dados órfãos no beforeAll (auto-cleanup)
+- [x] Service Worker: nome do cache atualizado de apostai-sw-v2 para plakr-sw-v1
+- [x] SEO/meta tags: já estão corretos (og:image, twitter:card, structured data, robots.txt, sitemap.xml)

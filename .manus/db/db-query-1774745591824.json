@@ -1,0 +1,38 @@
+{
+  "query": "\nSELECT id, name, email, role, createdAt FROM users ORDER BY id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT id, name, email, role, createdAt FROM users ORDER BY id;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Marcos Gervazoni",
+      "email": "marcos.gervazoni@gmail.com",
+      "role": "admin",
+      "createdAt": "2026-03-21 22:08:50"
+    },
+    {
+      "id": "150121",
+      "name": "Filipe Postai",
+      "email": "postairech@gmail.com",
+      "role": "user",
+      "createdAt": "2026-03-23 14:04:29"
+    },
+    {
+      "id": "210136",
+      "name": "Eduardo Souza",
+      "email": "eduardoadmss8@gmail.com",
+      "role": "user",
+      "createdAt": "2026-03-24 12:30:50"
+    },
+    {
+      "id": "480070",
+      "name": "Pessoa Teste ApostAI",
+      "email": "user.teste.01.apostai@gmail.com",
+      "role": "user",
+      "createdAt": "2026-03-27 21:07:25"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\tcreatedAt\n1\tMarcos Gervazoni\tmarcos.gervazoni@gmail.com\tadmin\t2026-03-21 22:08:50\n150121\tFilipe Postai\tpostairech@gmail.com\tuser\t2026-03-23 14:04:29\n210136\tEduardo Souza\teduardoadmss8@gmail.com\tuser\t2026-03-24 12:30:50\n480070\tPessoa Teste ApostAI\tuser.teste.01.apostai@gmail.com\tuser\t2026-03-27 21:07:25\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

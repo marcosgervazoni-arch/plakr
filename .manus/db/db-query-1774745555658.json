@@ -1,0 +1,31 @@
+{
+  "query": "\n-- Contar usuários de teste\nSELECT COUNT(*) as test_users FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%';\n\n-- Contar bolões de teste (dos usuários de teste)\nSELECT COUNT(*) as test_pools FROM pools WHERE ownerId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n\n-- Contar palpites de teste\nSELECT COUNT(*) as test_bets FROM bets WHERE userId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n\n-- Contar badges de teste\nSELECT COUNT(*) as test_badges FROM user_badges WHERE userId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \n-- Contar usuários de teste\nSELECT COUNT(*) as test_users FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%';\n\n-- Contar bolões de teste (dos usuários de teste)\nSELECT COUNT(*) as test_pools FROM pools WHERE ownerId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n\n-- Contar palpites de teste\nSELECT COUNT(*) as test_bets FROM bets WHERE userId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n\n-- Contar badges de teste\nSELECT COUNT(*) as test_badges FROM user_badges WHERE userId IN (\n  SELECT id FROM users WHERE name LIKE 'Integration User%' OR name LIKE 'Test Admin%'\n);\n",
+  "rows": [
+    {
+      "test_users": "142"
+    },
+    {
+      "test_users": "test_pools"
+    },
+    {
+      "test_users": "0"
+    },
+    {
+      "test_users": "test_bets"
+    },
+    {
+      "test_users": "0"
+    },
+    {
+      "test_users": "test_badges"
+    },
+    {
+      "test_users": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "test_users\n142\ntest_pools\n0\ntest_bets\n0\ntest_badges\n0\n",
+  "stderr": "",
+  "execution_time_ms": 532
+}
