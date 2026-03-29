@@ -56,6 +56,7 @@ export const platformSettings = mysqlTable("platform_settings", {
   adNetworkScripts: json("adNetworkScripts").$type<Record<string, string>>(),
   stripePublishableKey: varchar("stripePublishableKey", { length: 256 }),
   stripeSecretKey: varchar("stripeSecretKey", { length: 256 }),
+  stripeWebhookSecret: varchar("stripeWebhookSecret", { length: 256 }),
   stripePriceIdPro: varchar("stripePriceIdPro", { length: 128 }),
   stripePriceIdProAnnual: varchar("stripePriceIdProAnnual", { length: 128 }),
   stripePriceIdUnlimited: varchar("stripePriceIdUnlimited", { length: 128 }),

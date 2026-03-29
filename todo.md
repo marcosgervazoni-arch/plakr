@@ -2017,3 +2017,8 @@
 - [x] Botão Mostrar/Ocultar para a chave secreta
 - [x] Instruções inline com link direto para dashboard.stripe.com
 - [x] Servidor usa chave do banco como prioridade sobre env var (stripe.ts + stripe-webhook.ts)
+
+## Webhook Secret Stripe no Admin (29/03/2026)
+- [ ] Adicionar coluna stripeWebhookSecret no schema e banco
+- [ ] Adicionar campo no AdminSettings (card Stripe)
+- [ ] Servidor usa stripeWebhookSecret do banco como prioridade no stripe-webhook.ts

@@ -1,0 +1,98 @@
+{
+  "query": "SHOW COLUMNS FROM platform_settings LIKE 'stripe%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW COLUMNS FROM platform_settings LIKE 'stripe%';",
+  "rows": [
+    {
+      "Field": "stripePriceIdPro",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripeMonthlyPrice",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "3990",
+      "Extra": ""
+    },
+    {
+      "Field": "stripePriceIdProAnnual",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripePriceIdUnlimited",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripePriceIdUnlimitedAnnual",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripeProAnnualPrice",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "39900",
+      "Extra": ""
+    },
+    {
+      "Field": "stripeUnlimitedMonthlyPrice",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "8990",
+      "Extra": ""
+    },
+    {
+      "Field": "stripeUnlimitedAnnualPrice",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "89900",
+      "Extra": ""
+    },
+    {
+      "Field": "stripePublishableKey",
+      "Type": "varchar(256)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripeSecretKey",
+      "Type": "varchar(256)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "stripe_webhook_secret",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nstripePriceIdPro\tvarchar(128)\tYES\t\tNULL\t\nstripeMonthlyPrice\tint\tYES\t\t3990\t\nstripePriceIdProAnnual\tvarchar(128)\tYES\t\tNULL\t\nstripePriceIdUnlimited\tvarchar(128)\tYES\t\tNULL\t\nstripePriceIdUnlimitedAnnual\tvarchar(128)\tYES\t\tNULL\t\nstripeProAnnualPrice\tint\tYES\t\t39900\t\nstripeUnlimitedMonthlyPrice\tint\tYES\t\t8990\t\nstripeUnlimitedAnnualPrice\tint\tYES\t\t89900\t\nstripePublishableKey\tvarchar(256)\tYES\t\tNULL\t\nstripeSecretKey\tvarchar(256)\tYES\t\tNULL\t\nstripe_webhook_secret\ttext\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}

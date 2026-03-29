@@ -93,6 +93,7 @@ export const platformRouter = router({
       fbPixelId: z.string().optional(),
       stripePublishableKey: z.string().optional(),
       stripeSecretKey: z.string().optional(),
+      stripeWebhookSecret: z.string().optional(),
       stripePriceIdPro: z.string().optional(),
       stripePriceIdProAnnual: z.string().optional(),
       stripePriceIdUnlimited: z.string().optional(),
