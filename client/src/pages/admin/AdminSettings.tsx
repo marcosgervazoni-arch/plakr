@@ -32,8 +32,9 @@ export default function AdminSettings() {
 
   const [restrictedInviteMessage, setRestrictedInviteMessage] = useState("");
   const [cobaiaPoolId, setCobaiaPoolId] = useState<string>("");
-  const [stripeKeys, setStripeKeys] = useState({ publishableKey: "", secretKey: "" });
+  const [stripeKeys, setStripeKeys] = useState({ publishableKey: "", secretKey: "", webhookSecret: "" });
   const [showStripeSecret, setShowStripeSecret] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
 
   const [form, setForm] = useState({
     // Limites do plano gratuito
@@ -108,6 +109,7 @@ export default function AdminSettings() {
       setStripeKeys({
         publishableKey: (settings as any).stripePublishableKey ?? "",
         secretKey: (settings as any).stripeSecretKey ? "••••••••••••••••••••" : "",
+        webhookSecret: (settings as any).stripeWebhookSecret ? "••••••••••••••••••••" : "",
       });
     }
   }, [settings]);
@@ -126,6 +128,7 @@ export default function AdminSettings() {
   // Salva form principal + pushForm + campos extras juntos
   const handleSaveAll = () => {
     const secretToSave = stripeKeys.secretKey && !stripeKeys.secretKey.startsWith("•") ? stripeKeys.secretKey : undefined;
+    const webhookSecretToSave = stripeKeys.webhookSecret && !stripeKeys.webhookSecret.startsWith("•") ? stripeKeys.webhookSecret : undefined;
     updateMutation.mutate({
       ...form,
       ...pushForm,
@@ -133,6 +136,7 @@ export default function AdminSettings() {
       cobaiaPoolId: cobaiaPoolId.trim() ? parseInt(cobaiaPoolId.trim(), 10) : null,
       stripePublishableKey: stripeKeys.publishableKey || undefined,
       stripeSecretKey: secretToSave,
+      stripeWebhookSecret: webhookSecretToSave,
     });
   };
 
@@ -270,12 +274,33 @@ export default function AdminSettings() {
                         {showStripeSecret ? "Ocultar" : "Mostrar"}
                       </Button>
                     </div>
-                    <p className="text-xs text-muted-foreground">Usada no servidor para criar sessões de pagamento. Nunca compartilhe esta chave.</p>
+                     <p className="text-xs text-muted-foreground">Usada no servidor para criar sessões de pagamento. Nunca compartilhe esta chave.</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Webhook Secret <span className="text-muted-foreground font-normal">(whsec_...)</span></Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type={showWebhookSecret ? "text" : "password"}
+                        value={stripeKeys.webhookSecret}
+                        onChange={e => setStripeKeys(k => ({ ...k, webhookSecret: e.target.value }))}
+                        placeholder="whsec_..."
+                        className="font-mono text-xs flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowWebhookSecret(s => !s)}
+                        className="shrink-0"
+                      >
+                        {showWebhookSecret ? "Ocultar" : "Mostrar"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Obtido em Stripe → Desenvolvedores → Webhooks → seu endpoint → <strong>Signing secret</strong>. Necessário para validar eventos de pagamento.</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-
             {/* ─── LIMITES DO PLANO GRATUITO ────────────────────────────────── */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
