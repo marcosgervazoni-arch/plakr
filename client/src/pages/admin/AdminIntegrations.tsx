@@ -1030,7 +1030,7 @@ export default function AdminIntegrations() {
                               <p className="text-xs text-muted-foreground">Nenhuma fase encontrada.</p>
                             ) : (
                               <>
-                                <p className="text-[10px] text-muted-foreground">Selecione as competições que deseja importar. Cada uma gera um campeonato independente.</p>
+                                <p className="text-[10px] text-muted-foreground">Selecione as fases que deseja importar. Todas as fases selecionadas serão importadas para <strong className="text-foreground">um único campeonato</strong>, com os jogos agrupados por fase internamente.</p>
                                 <div className="space-y-1.5">
                                   {availablePhases.map((phase) => (
                                     <label key={phase.phaseKey} className="flex items-center gap-2 cursor-pointer">
@@ -1058,34 +1058,32 @@ export default function AdminIntegrations() {
                                   disabled={selectedPhases.size === 0 || importLeagueMutation.isPending}
                                   onClick={() => {
                                     const phasesToImport = availablePhases.filter(p => selectedPhases.has(p.phaseKey));
-                                    // Importar cada fase como campeonato separado
-                                    const importNext = (idx: number) => {
-                                      if (idx >= phasesToImport.length) {
+                                    // Importar todas as fases selecionadas para UM único campeonato
+                                    importLeagueMutation.mutate({
+                                      leagueId: phaseSelectionLeague!.leagueId,
+                                      name: phaseSelectionLeague!.name,
+                                      country: phaseSelectionLeague!.country,
+                                      logoUrl: phaseSelectionLeague!.logoUrl,
+                                      season: phaseSelectionLeague!.season ?? integrationSettings?.apiFootballSeason ?? 2022,
+                                      makeAvailable: true,
+                                      selectedPhases: phasesToImport.map(p => ({
+                                        phaseKey: p.phaseKey,
+                                        rounds: p.rounds,
+                                      })),
+                                    }, {
+                                      onSuccess: () => {
                                         setPhaseSelectionLeague(null);
                                         setAvailablePhases([]);
                                         setApiLeagues([]);
-                                        return;
-                                      }
-                                      const phase = phasesToImport[idx];
-                                      importLeagueMutation.mutate({
-                                        leagueId: phaseSelectionLeague!.leagueId,
-                                        name: phaseSelectionLeague!.name,
-                                        country: phaseSelectionLeague!.country,
-                                        logoUrl: phaseSelectionLeague!.logoUrl,
-                                        season: phaseSelectionLeague!.season ?? integrationSettings?.apiFootballSeason ?? 2022,
-                                        makeAvailable: true,
-                                        phaseKey: phase.phaseKey,
-                                        phaseRounds: phase.rounds,
-                                      }, {
-                                        onSuccess: () => importNext(idx + 1),
-                                      });
-                                    };
-                                    importNext(0);
+                                      },
+                                    });
                                   }}
                                 >
                                   {importLeagueMutation.isPending
                                     ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Importando...</>
-                                    : `Importar ${selectedPhases.size} competição${selectedPhases.size > 1 ? "ões" : ""}`
+                                    : selectedPhases.size === availablePhases.length
+                                      ? `Importar campeonato completo (${selectedPhases.size} fases)`
+                                      : `Importar campeonato com ${selectedPhases.size} fase${selectedPhases.size > 1 ? "s" : ""} selecionada${selectedPhases.size > 1 ? "s" : ""}`
                                   }
                                 </Button>
                               </>

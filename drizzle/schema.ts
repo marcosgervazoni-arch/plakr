@@ -128,6 +128,7 @@ export const tournaments = mysqlTable("tournaments", {
   isAvailable: boolean("isAvailable").default(false).notNull(),    // visível para usuários criarem bolões
   apiFootballLeagueId: int("apiFootballLeagueId"),                  // ID da liga na API-Football (null = manual)
   apiFootballSeason: int("apiFootballSeason"),                      // temporada na API-Football
+  apiFootballPhaseKey: varchar("apiFootballPhaseKey", { length: 64 }), // chave da fase importada (ex: 1st_phase, 2nd_phase) — null = todos os rounds
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

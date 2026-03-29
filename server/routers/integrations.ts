@@ -345,9 +345,10 @@ export const integrationsRouter = router({
     }),
 
   /**
-   * Importa uma liga da API-Football como campeonato global no Plakr.
-   * Aceita phaseKey e rounds opcionais para importar apenas uma fase/competição específica.
-   * Se phaseKey não for informado, importa todos os rounds (comportamento legado).
+   * Importa uma liga da API-Football como um único campeonato global no Plakr.
+   * Aceita selectedPhases (array de {phaseKey, rounds}) para importar fases específicas.
+   * Todas as fases selecionadas são importadas para o MESMO campeonato — um campeonato = um torneio.
+   * Se selectedPhases não for informado, importa todos os rounds (comportamento legado).
    */
   importLeagueFromApi: adminProcedure
     .input(z.object({
@@ -357,24 +358,30 @@ export const integrationsRouter = router({
       logoUrl: z.string().optional(),
       season: z.number(),
       makeAvailable: z.boolean().default(true),
-      phaseKey: z.string().optional(),       // ex: "1st_phase", "2nd_phase"
-      phaseRounds: z.array(z.string()).optional(), // rounds específicos dessa fase
+      // Novo: array de fases selecionadas (todas vão para o mesmo torneio)
+      selectedPhases: z.array(z.object({
+        phaseKey: z.string(),
+        rounds: z.array(z.string()),
+      })).optional(),
+      // Legado (mantido para compatibilidade): phaseKey e phaseRounds únicos
+      phaseKey: z.string().optional(),
+      phaseRounds: z.array(z.string()).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw Err.internal("DB não disponível");
 
-      // Verifica se já existe campeonato com esse leagueId + phaseKey
-      const existingQuery = db
+      // Verificar se já existe campeonato com esse leagueId (sem distinção de fase)
+      // No novo modelo, um campeonato = um torneio (independente de quantas fases)
+      const existingAll = await db
         .select()
         .from(tournaments)
         .where(eq(tournaments.apiFootballLeagueId, input.leagueId));
-      const existingAll = await existingQuery;
 
-      // Se phaseKey fornecido, verifica duplicata por leagueId + phaseKey
-      const existing = input.phaseKey
-        ? existingAll.filter(t => (t as any).apiFootballPhaseKey === input.phaseKey)
-        : existingAll.filter(t => !(t as any).apiFootballPhaseKey);
+      // Verificar duplicata: existe torneio com mesmo leagueId + season?
+      const existing = existingAll.filter(
+        t => (t as any).apiFootballSeason === input.season
+      );
 
       if (existing.length > 0) {
         await db
@@ -384,15 +391,21 @@ export const integrationsRouter = router({
         return { created: false, tournamentId: existing[0].id, message: "Campeonato já existe — disponibilidade atualizada" };
       }
 
-      // Cria novo campeonato global
-      // Se phaseKey fornecido, incluir no nome e slug para diferenciar fases
-      const phaseSuffix = input.phaseKey ? `-${input.phaseKey.replace(/_/g, "-")}` : "";
-      const displayName = input.phaseKey
-        ? `${input.name} — ${phaseKeyToName(input.phaseKey)}`
-        : input.name;
-      const slug = `${displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${input.season}`;
+      // Cria novo campeonato global (nome simples, sem sufixo de fase)
+      const slug = `${input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${input.season}`;
+
+      // Determinar formato: se há fases de grupos + mata-mata, usar groups_knockout
+      const hasGroupPhase = input.selectedPhases?.some(p =>
+        p.phaseKey.includes("phase") || p.phaseKey === "group_stage"
+      );
+      const hasKnockout = input.selectedPhases?.some(p =>
+        ["round_of_16", "quarter_finals", "semi_finals", "final"].includes(p.phaseKey)
+      );
+      const format = (hasGroupPhase && hasKnockout) ? "groups_knockout" :
+                     hasKnockout ? "cup" : "league";
+
       const result = await db.insert(tournaments).values({
-        name: displayName,
+        name: input.name,
         slug,
         logoUrl: input.logoUrl ?? null,
         isGlobal: true,
@@ -400,18 +413,25 @@ export const integrationsRouter = router({
         status: "active",
         country: input.country?.slice(0, 10) ?? null,
         season: String(input.season),
-        format: input.phaseKey?.includes("phase") ? "groups_knockout" : "league",
+        format,
         isAvailable: input.makeAvailable,
         apiFootballLeagueId: input.leagueId,
         apiFootballSeason: input.season,
+        apiFootballPhaseKey: null, // Não mais usado — torneio único por campeonato
       });
       const tournamentId = (result[0] as any).insertId;
 
-      // Capturar phaseRounds para o sync (imutável após criado)
-      const phaseRoundsToSync = input.phaseRounds ?? null;
+      // Consolidar todos os rounds das fases selecionadas em uma única lista
+      // Legado: se selectedPhases não fornecido, usar phaseRounds direto
+      let allRoundsToSync: string[] | undefined;
+      if (input.selectedPhases && input.selectedPhases.length > 0) {
+        allRoundsToSync = input.selectedPhases.flatMap(p => p.rounds);
+      } else if (input.phaseRounds && input.phaseRounds.length > 0) {
+        allRoundsToSync = input.phaseRounds;
+      }
+      // Se nenhum round especificado, syncFixturesForTournament importa tudo
 
       // Disparar sync automático de times e fixtures em background
-      // Usamos setImmediate para não bloquear a resposta HTTP
       setImmediate(async () => {
         try {
           const teamsResult = await syncTeamsForTournament({
@@ -434,7 +454,7 @@ export const integrationsRouter = router({
             season: input.season,
             triggeredBy: "manual",
             triggeredByUserId: ctx.user.id,
-            phaseRounds: phaseRoundsToSync ?? undefined,
+            phaseRounds: allRoundsToSync,
           });
           logger.info(
             `[ImportLeague] Fixtures sincronizados: created=${fixturesResult.gamesCreated} updated=${fixturesResult.gamesUpdated} req=${fixturesResult.requestsUsed}`
@@ -444,10 +464,11 @@ export const integrationsRouter = router({
         }
       });
 
+      const phaseNames = input.selectedPhases?.map(p => phaseKeyToName(p.phaseKey)).join(", ") ?? "todas as fases";
       return {
         created: true,
         tournamentId,
-        message: "Campeonato importado com sucesso — times e jogos sendo sincronizados em background (pode levar alguns segundos)",
+        message: `Campeonato importado com sucesso (${phaseNames}) — times e jogos sendo sincronizados em background`,
       };
     }),
 

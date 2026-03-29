@@ -106,9 +106,19 @@ beforeAll(async () => {
   userA = { ...rawA, role: rawA.role as "user" | "admin" };
   userB = { ...rawB, role: rawB.role as "user" | "admin" };
 
-  // Buscar um torneio existente para criar bolões
+  // Buscar um torneio existente ou criar um para os testes
   const [firstTournament] = await db.select().from(tournaments).limit(1);
-  tournamentId = firstTournament?.id ?? 1;
+  if (firstTournament) {
+    tournamentId = firstTournament.id;
+  } else {
+    // Nenhum torneio no banco — criar um temporário para os testes
+    const insertResult = await db.insert(tournaments).values({
+      name: "Torneio de Teste",
+      slug: `${TEST_PREFIX}-tournament`,
+      isAvailable: true,
+    });
+    tournamentId = (insertResult as any)[0]?.insertId ?? 1;
+  }
 
   // Criar um bolão para userA
   poolAId = await createPool({

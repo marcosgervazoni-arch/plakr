@@ -302,6 +302,13 @@
       "when": 1774807218098,
       "tag": "0042_high_yellowjacket",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1774822000157,
+      "tag": "0043_giant_jack_power",
+      "breakpoints": true
     }
   ]
 }

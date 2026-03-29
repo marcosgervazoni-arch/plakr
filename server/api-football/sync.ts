@@ -70,10 +70,9 @@ async function findTournamentForLeague(
 
   return tournament?.id ?? null;
 }
+// ─── Helper: listar todos os torneios vinculados à API-Football ────────────────────
 
-// ─── Helper: listar todos os torneios vinculados à API-Football ───────────────
-
-async function getAllLinkedTournaments(): Promise<Array<{ id: number; leagueId: number; season: number; name: string }>> {
+async function getAllLinkedTournaments(): Promise<Array<{ id: number; leagueId: number; season: number; name: string; phaseKey: string | null }>> {
   const db = await getDb();
   if (!db) return [];
 
@@ -83,6 +82,7 @@ async function getAllLinkedTournaments(): Promise<Array<{ id: number; leagueId: 
       leagueId: tournaments.apiFootballLeagueId,
       season: tournaments.apiFootballSeason,
       name: tournaments.name,
+      phaseKey: tournaments.apiFootballPhaseKey,
     })
     .from(tournaments)
     .where(
@@ -93,7 +93,7 @@ async function getAllLinkedTournaments(): Promise<Array<{ id: number; leagueId: 
     );
 
   return rows.filter(
-    (r): r is { id: number; leagueId: number; season: number; name: string } =>
+    (r): r is { id: number; leagueId: number; season: number; name: string; phaseKey: string | null } =>
       r.leagueId !== null && r.season !== null
   );
 }
@@ -477,14 +477,19 @@ export async function syncFixtures(options: {
   const toStr = in14Days.toISOString().slice(0, 10);
 
   for (const linked of linkedTournaments) {
-    const { leagueId, season, id: tournamentId, name: tournamentName } = linked;
+    const { leagueId, season, id: tournamentId, name: tournamentName, phaseKey } = linked;
     try {
-      const fixtures = await fetchFixtures(leagueId, season, {
+      const allFixtures = await fetchFixtures(leagueId, season, {
         status: SCHEDULED_STATUSES.join("-"),
         from: fromStr,
         to: toStr,
       });
       requestsUsed++;
+
+      // Filtrar por fase se o torneio foi importado com uma fase específica
+      const fixtures = phaseKey
+        ? allFixtures.filter(f => roundToPhaseKey(f.league.round) === phaseKey)
+        : allFixtures;
 
       for (const fixture of fixtures) {
         const externalId = String(fixture.fixture.id);
@@ -663,15 +668,20 @@ export async function syncResults(options: {
   const toStr = now.toISOString().slice(0, 10);
 
   for (const linked of linkedTournaments) {
-    const { leagueId, season, id: tournamentId, name: tournamentName } = linked;
+    const { leagueId, season, id: tournamentId, name: tournamentName, phaseKey } = linked;
     try {
       // Buscar jogos encerrados nos últimos 2 dias (captura jogos de ontem não sincronizados)
-      const fixtures = await fetchFixtures(leagueId, season, {
+      const allFixtures = await fetchFixtures(leagueId, season, {
         status: FINISHED_STATUSES.join("-"),
         from: fromStr,
         to: toStr,
       });
       requestsUsed++;
+
+      // Filtrar por fase se o torneio foi importado com uma fase específica
+      const fixtures = phaseKey
+        ? allFixtures.filter(f => roundToPhaseKey(f.league.round) === phaseKey)
+        : allFixtures;
 
       for (const fixture of fixtures) {
         const externalId = String(fixture.fixture.id);

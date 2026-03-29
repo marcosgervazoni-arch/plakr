@@ -2127,3 +2127,17 @@
 - [ ] Cada fase selecionada gera um campeonato independente com nome correto
 - [ ] Cron sincroniza cada campeonato de forma independente e automática
 - [ ] Zerar banco e reimportar campeonato argentino com nova lógica
+
+## Correção — Importação de Campeonatos: Um Torneio por Campeonato (29/03/2026)
+
+- [x] Decisão de produto: um campeonato (ex: Gaúcho) = um único torneio, fases são agrupamentos internos dos jogos
+- [x] Backend: `importLeagueFromApi` refatorado para aceitar `selectedPhases` (array de `{phaseKey, rounds}`) em vez de um único `phaseKey`
+- [x] Backend: todas as fases selecionadas são importadas para o MESMO torneio (rounds consolidados em uma única lista)
+- [x] Backend: verificação de duplicata agora usa `leagueId + season` (não mais `leagueId + phaseKey`)
+- [x] Backend: nome do torneio é o nome da liga sem sufixo de fase (ex: "Campeonato Gaúcho 2025", não "Campeonato Gaúcho 2025 — 1ª Fase")
+- [x] Backend: formato automático detectado pelas fases selecionadas (groups_knockout, cup, league)
+- [x] Backend: campo `apiFootballPhaseKey` mantido no schema mas sempre null no novo modelo (compatibilidade)
+- [x] Frontend: botão de importação chama `importLeagueFromApi` uma única vez com todas as fases selecionadas
+- [x] Frontend: texto explicativo atualizado ("um único campeonato, jogos agrupados por fase internamente")
+- [x] Frontend: label do botão dinâmico ("Importar campeonato completo (N fases)" ou "Importar campeonato com N fase(s) selecionada(s)")
+- [x] QA: 376 testes passando, 0 erros TypeScript
