@@ -1,6 +1,7 @@
 /**
  * AdminRetrospectivas — Painel de Configuração de Templates
  * Permite upload de fundos personalizados para os 5 slides e cards de compartilhamento.
+ * Inclui toggles para ativar/desativar Slides PNG e Vídeo MP4, e botão de teste de vídeo.
  */
 import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   ImageIcon,
@@ -20,6 +22,10 @@ import {
   Trash2,
   Save,
   Upload,
+  Video,
+  PlayCircle,
+  ExternalLink,
+  Clapperboard,
 } from "lucide-react";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -307,14 +313,29 @@ export default function AdminRetrospectivas() {
   const [ctaText, setCtaText] = useState("");
   const [ctaUrl, setCtaUrl] = useState("");
   const [autoCloseDays, setAutoCloseDays] = useState("3");
+  const [enableSlides, setEnableSlides] = useState(true);
+  const [enableVideo, setEnableVideo] = useState(false);
+  const [videoQuality, setVideoQuality] = useState<"low" | "medium" | "high">("medium");
   const [configLoaded, setConfigLoaded] = useState(false);
+  const [testVideoUrl, setTestVideoUrl] = useState<string | null>(null);
 
   if (config && !configLoaded) {
     setCtaText(config.closingCtaText ?? "Crie seu bolão no Plakr! →");
     setCtaUrl(config.closingCtaUrl ?? "");
     setAutoCloseDays(String(config.autoCloseDays ?? 3));
+    setEnableSlides((config as any).enableSlides !== false);
+    setEnableVideo(!!(config as any).enableVideo);
+    setVideoQuality((config as any).videoQuality ?? "medium");
     setConfigLoaded(true);
   }
+
+  const generateTestVideo = trpc.pools.generateTestVideo.useMutation({
+    onSuccess: (data: { videoUrl: string }) => {
+      setTestVideoUrl(data.videoUrl);
+      toast.success("Vídeo de teste gerado! Clique em 'Assistir' para visualizar.");
+    },
+    onError: (err: { message?: string }) => toast.error(err.message || "Erro ao gerar vídeo de teste."),
+  });
 
   const getUrl = (slot: SlotKey): string | null | undefined => {
     if (!config) return undefined;
@@ -341,6 +362,9 @@ export default function AdminRetrospectivas() {
       closingCtaText: ctaText,
       closingCtaUrl: ctaUrl || null,
       autoCloseDays: parseInt(autoCloseDays) || 3,
+      enableSlides,
+      enableVideo,
+      videoQuality,
     });
   };
 
@@ -373,6 +397,139 @@ export default function AdminRetrospectivas() {
           </div>
         ) : (
           <>
+            {/* ── Formatos de Geração ── */}
+            <Card className="border-brand/30 bg-brand/5">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Clapperboard className="h-4 w-4 text-brand" />
+                  Formatos de Geração
+                </CardTitle>
+                <CardDescription>
+                  Escolha quais formatos serão gerados automaticamente ao encerrar um bolão. Você pode ativar ambos simultaneamente.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Slides PNG */}
+                <div className="flex items-start justify-between gap-4 p-4 rounded-lg border border-border/50 bg-background">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 p-2 rounded-lg bg-brand/10">
+                      <Layers className="h-5 w-5 text-brand" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm">Slides PNG</p>
+                        <Badge variant="outline" className="text-xs border-green-500/30 text-green-400 px-1.5 h-4">Recomendado</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                        5 slides em formato Stories (9:16) gerados como imagens. Leves, rápidos e ideais para compartilhar no WhatsApp e Instagram.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={enableSlides}
+                    onCheckedChange={setEnableSlides}
+                    className="shrink-0 mt-1"
+                  />
+                </div>
+
+                {/* Vídeo MP4 */}
+                <div className="flex items-start justify-between gap-4 p-4 rounded-lg border border-border/50 bg-background">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 p-2 rounded-lg bg-purple-500/10">
+                      <Video className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm">Vídeo MP4</p>
+                        <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-400 px-1.5 h-4">Novo</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                        Vídeo animado de ~22 segundos com identidade visual do Plakr. Gerado em background após o bolão encerrar. Ideal para Reels e TikTok.
+                      </p>
+                      {enableVideo && (
+                        <div className="mt-3 space-y-2">
+                          <Label className="text-xs">Qualidade do vídeo</Label>
+                          <div className="flex gap-2">
+                            {(["low", "medium", "high"] as const).map((q) => (
+                              <button
+                                key={q}
+                                onClick={() => setVideoQuality(q)}
+                                className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
+                                  videoQuality === q
+                                    ? "bg-purple-500 border-purple-500 text-white"
+                                    : "border-border text-muted-foreground hover:border-purple-500/50"
+                                }`}
+                              >
+                                {q === "low" ? "Baixa" : q === "medium" ? "Média" : "Alta"}
+                              </button>
+                            ))}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {videoQuality === "low" && "Geração rápida (~1 min). Menor arquivo, ideal para testes."}
+                            {videoQuality === "medium" && "Geração em ~2 min. Equilíbrio entre qualidade e velocidade."}
+                            {videoQuality === "high" && "Geração em ~3-5 min. Máxima qualidade para compartilhamento."}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Switch
+                    checked={enableVideo}
+                    onCheckedChange={setEnableVideo}
+                    className="shrink-0 mt-1"
+                  />
+                </div>
+
+                {/* Botão Gerar vídeo teste */}
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                  <div>
+                    <p className="text-sm font-medium">Testar geração de vídeo</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Gera um vídeo com dados fictícios para validar o funcionamento antes de ativar em produção.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {testVideoUrl && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-xs"
+                        onClick={() => window.open(testVideoUrl, "_blank")}
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        Assistir
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 border-purple-500/40 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300"
+                      onClick={() => generateTestVideo.mutate()}
+                      disabled={generateTestVideo.isPending}
+                    >
+                      {generateTestVideo.isPending ? (
+                        <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando...</>
+                      ) : (
+                        <><PlayCircle className="h-3.5 w-3.5" /> Gerar vídeo teste</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Salvar formatos */}
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSaveBehavior}
+                    disabled={updateConfig.isPending}
+                    className="bg-brand hover:bg-brand/90 gap-2"
+                  >
+                    {updateConfig.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Salvar Configurações
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Slides */}
             <Card className="border-border/50">
               <CardHeader className="pb-4">

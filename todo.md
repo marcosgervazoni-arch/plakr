@@ -2027,3 +2027,16 @@
 - [x] BUG: Push in-app exibindo tags HTML cruas (ex: `<p>texto</p>`) em vez de texto puro na lista de notificações
 - [ ] BUG: E-mail de broadcast não está sendo entregue — aguardando integração com provedor externo (Resend/SendGrid)
 - [ ] BUG: Push Web (browser push) de broadcast não está sendo entregue — depende de VAPID keys configuradas
+
+## Retrospectiva em Vídeo — Remotion (sprint 29/03/2026)
+- [ ] Instalar Remotion + @remotion/renderer + @remotion/bundler no projeto Plakr
+- [ ] Criar tabela `retrospectivas` no banco (userId, poolId, videoUrl, status, createdAt)
+- [ ] Criar template de vídeo da retrospectiva em server/retrospectiva/ (componente React/Remotion)
+- [ ] Criar job BullMQ retrospectivaQueue para geração de vídeo por usuário
+- [ ] Integrar gatilho de encerramento do bolão ao disparo do job para cada membro
+- [ ] Salvar URL do vídeo gerado no S3 na tabela retrospectivas
+- [ ] Enviar notificação in-app quando vídeo estiver pronto
+- [ ] Criar página /retrospectiva/:poolId no frontend com player e botão compartilhar/baixar
+- [ ] Adicionar link para retrospectiva na página do bolão encerrado
+- [ ] Adicionar logs de geração de vídeo (retrospectivaQueue) no AdminSystemHealth
+- [ ] Admin Retrospectivas: botão "Gerar vídeo teste" para validar o worker Remotion com dados fictícios

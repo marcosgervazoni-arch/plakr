@@ -664,6 +664,10 @@ export const poolRetrospectives = mysqlTable("pool_retrospectives", {
   badgeEarnedId: int("badgeEarnedId").references(() => badges.id),
   // Frase de encerramento gerada por IA
   closingPhrase: text("closingPhrase"),
+  // Vídeo MP4 gerado pelo Remotion (opcional — depende do toggle enableVideo)
+  videoUrl: text("videoUrl"),
+  videoKey: varchar("videoKey", { length: 255 }),
+  videoStatus: mysqlEnum("videoStatus", ["pending", "processing", "done", "failed"]).default("pending").notNull(),
   generatedAt: timestamp("generatedAt").defaultNow().notNull(),
 });
 
@@ -715,6 +719,10 @@ export const retrospectiveConfig = mysqlTable("retrospective_config", {
   autoCloseDays: int("autoCloseDays").default(3).notNull(), // dias para auto-conclusão
   closingCtaText: varchar("closingCtaText", { length: 128 }).default("Crie seu bolão no Plakr! →"),
   closingCtaUrl: text("closingCtaUrl"),
+  // Toggles de formato de saída
+  enableSlides: boolean("enableSlides").default(true).notNull(), // true = ativo
+  enableVideo: boolean("enableVideo").default(false).notNull(),   // true = ativo
+  videoQuality: mysqlEnum("videoQuality", ["low", "medium", "high"]).default("medium").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 export type RetrospectiveConfig = typeof retrospectiveConfig.$inferSelect;

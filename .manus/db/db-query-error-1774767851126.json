@@ -1,0 +1,8 @@
+{
+  "query": "\n-- Colunas de vídeo MP4 na tabela de retrospectivas por usuário\nALTER TABLE pool_retrospectives\n  ADD COLUMN videoUrl TEXT NULL AFTER closingPhrase,\n  ADD COLUMN videoKey VARCHAR(255) NULL AFTER videoUrl,\n  ADD COLUMN videoStatus ENUM('pending','processing','done','failed') NOT NULL DEFAULT 'pending' AFTER videoKey;\n\n-- Toggles de formato e configurações de vídeo na tabela de configuração global\nALTER TABLE retrospective_config\n  ADD COLUMN enableSlides TINYINT(1) NOT NULL DEFAULT 1 AFTER closingCtaUrl,\n  ADD COLUMN enableVideo TINYINT(1) NOT NULL DEFAULT 0 AFTER enableSlides,\n  ADD COLUMN videoQuality ENUM('low','medium','high') NOT NULL DEFAULT 'medium' AFTER enableVideo;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \n-- Colunas de vídeo MP4 na tabela de retrospectivas por usuário\nALTER TABLE pool_retrospectives\n  ADD COLUMN videoUrl TEXT NULL AFTER closingPhrase,\n  ADD COLUMN videoKey VARCHAR(255) NULL AFTER videoUrl,\n  ADD COLUMN videoStatus ENUM('pending','processing','done','failed') NOT NULL DEFAULT 'pending' AFTER videoKey;\n\n-- Toggles de formato e configurações de vídeo na tabela de configuração global\nALTER TABLE retrospective_config\n  ADD COLUMN enableSlides TINYINT(1) NOT NULL DEFAULT 1 AFTER closingCtaUrl,\n  ADD COLUMN enableVideo TINYINT(1) NOT NULL DEFAULT 0 AFTER enableSlides,\n  ADD COLUMN videoQuality ENUM('low','medium','high') NOT NULL DEFAULT 'medium' AFTER enableVideo;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 3: Unknown column 'videourl' in 'pool_retrospectives'"
+  ]
+}

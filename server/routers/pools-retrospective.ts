@@ -1,7 +1,8 @@
 /**
  * Plakr! — Sub-router: Bolões (Retrospectiva)
  * Procedures: getRetrospective, adminGetRetrospectives, adminReprocessRetrospective,
- *             getRetrospectiveConfig, updateRetrospectiveConfig, uploadRetrospectiveTemplate
+ *             getRetrospectiveConfig, updateRetrospectiveConfig, uploadRetrospectiveTemplate,
+ *             generateTestVideo
  */
 import { z } from "zod";
 import {
@@ -194,6 +195,9 @@ export const poolsRetrospectiveRouter = router({
       autoCloseDays: z.number().min(1).max(30).optional(),
       closingCtaText: z.string().max(128).optional(),
       closingCtaUrl: z.string().optional().nullable(),
+      enableSlides: z.boolean().optional(),
+      enableVideo: z.boolean().optional(),
+      videoQuality: z.enum(["low", "medium", "high"]).optional(),
       slide1Url: z.string().optional().nullable(),
       slide1Key: z.string().optional().nullable(),
       slide2Url: z.string().optional().nullable(),
@@ -226,6 +230,15 @@ export const poolsRetrospectiveRouter = router({
       }
       await createAdminLog(ctx.user.id, "retrospectiveConfig.update", "platform", 1, updateData);
       return { success: true };
+    }),
+
+  // ── Admin: gerar vídeo de teste (dados fictícios) ─────────────────────────
+  generateTestVideo: adminProcedure
+    .mutation(async () => {
+      const { generateTestVideo } = await import("../retrospective-video");
+      const result = await generateTestVideo();
+      if (!result) throw Err.internal();
+      return { videoUrl: result.videoUrl };
     }),
 
   uploadRetrospectiveTemplate: adminProcedure

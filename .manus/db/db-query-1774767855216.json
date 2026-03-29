@@ -1,0 +1,330 @@
+{
+  "query": "DESCRIBE pool_retrospectives; DESCRIBE retrospective_config;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute DESCRIBE pool_retrospectives; DESCRIBE retrospective_config;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "poolId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "userId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "poolName",
+      "Type": "varchar(255)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "tournamentName",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "poolStartDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "poolEndDate",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "totalParticipants",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "totalBets",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "exactScoreCount",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "correctResultCount",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "zebraCount",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "totalPoints",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "finalPosition",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "accuracyPct",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "bestMomentType",
+      "Type": "enum('exact_score','rank_jump','badge','zebra')",
+      "Null": "YES",
+      "Key": "",
+      "Default": "exact_score",
+      "Extra": ""
+    },
+    {
+      "Field": "bestMomentData",
+      "Type": "json",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "badgeEarnedId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "MUL",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "closingPhrase",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "generatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "Field",
+      "Type": "Type",
+      "Null": "Null",
+      "Key": "Key",
+      "Default": "Default",
+      "Extra": "Extra"
+    },
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "slide1Url",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "slide1Key",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "slide2Url",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "slide2Key",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "slide3Url",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "slide3Key",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "slide4Url",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "slide4Key",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "slide5Url",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "slide5Key",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "cardPodiumUrl",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "cardPodiumKey",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "cardParticipantUrl",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "cardParticipantKey",
+      "Type": "varchar(255)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "autoCloseDays",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "3",
+      "Extra": ""
+    },
+    {
+      "Field": "closingCtaText",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "Crie seu bolão no ApostAI →",
+      "Extra": ""
+    },
+    {
+      "Field": "closingCtaUrl",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\npoolId\tint\tNO\tMUL\tNULL\t\nuserId\tint\tNO\tMUL\tNULL\t\npoolName\tvarchar(255)\tNO\t\tNULL\t\ntournamentName\tvarchar(255)\tYES\t\tNULL\t\npoolStartDate\ttimestamp\tYES\t\tNULL\t\npoolEndDate\ttimestamp\tYES\t\tNULL\t\ntotalParticipants\tint\tNO\t\t0\t\ntotalBets\tint\tNO\t\t0\t\nexactScoreCount\tint\tNO\t\t0\t\ncorrectResultCount\tint\tNO\t\t0\t\nzebraCount\tint\tNO\t\t0\t\ntotalPoints\tint\tNO\t\t0\t\nfinalPosition\tint\tNO\t\tNULL\t\naccuracyPct\tint\tNO\t\t0\t\nbestMomentType\tenum('exact_score','rank_jump','badge','zebra')\tYES\t\texact_score\t\nbestMomentData\tjson\tYES\t\tNULL\t\nbadgeEarnedId\tint\tYES\tMUL\tNULL\t\nclosingPhrase\ttext\tYES\t\tNULL\t\ngeneratedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\t1\t\nslide1Url\ttext\tYES\t\tNULL\t\nslide1Key\tvarchar(255)\tYES\t\tNULL\t\nslide2Url\ttext\tYES\t\tNULL\t\nslide2Key\tvarchar(255)\tYES\t\tNULL\t\nslide3Url\ttext\tYES\t\tNULL\t\nslide3Key\tvarchar(255)\tYES\t\tNULL\t\nslide4Url\ttext\tYES\t\tNULL\t\nslide4Key\tvarchar(255)\tYES\t\tNULL\t\nslide5Url\ttext\tYES\t\tNULL\t\nslide5Key\tvarchar(255)\tYES\t\tNULL\t\ncardPodiumUrl\ttext\tYES\t\tNULL\t\ncardPodiumKey\tvarchar(255)\tYES\t\tNULL\t\ncardParticipantUrl\ttext\tYES\t\tNULL\t\ncardParticipantKey\tvarchar(255)\tYES\t\tNULL\t\nautoCloseDays\tint\tNO\t\t3\t\nclosingCtaText\tvarchar(128)\tYES\t\tCrie seu bolão no ApostAI →\t\nclosingCtaUrl\ttext\tYES\t\tNULL\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\n",
+  "stderr": "",
+  "execution_time_ms": 396
+}
