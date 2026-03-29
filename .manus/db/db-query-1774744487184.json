@@ -1,0 +1,118 @@
+{
+  "query": "SELECT id, name, criterionType, criterionValue, category, rarity, isManual\nFROM badges\nWHERE isActive = 1\nORDER BY criterionType, criterionValue\nLIMIT 32 OFFSET 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, name, criterionType, criterionValue, category, rarity, isManual\nFROM badges\nWHERE isActive = 1\nORDER BY criterionType, criterionValue\nLIMIT 32 OFFSET 20;",
+  "rows": [
+    {
+      "id": "30011",
+      "name": "Rei da Ultrapassagem",
+      "criterionType": "rank_jump",
+      "criterionValue": "5",
+      "category": "ranking",
+      "rarity": "epic",
+      "isManual": "0"
+    },
+    {
+      "id": "90006",
+      "name": "Não Foge da Briga",
+      "criterionType": "x1_challenges_sent",
+      "criterionValue": "3",
+      "category": "x1",
+      "rarity": "common",
+      "isManual": "0"
+    },
+    {
+      "id": "90007",
+      "name": "Era o Líder? Nem Vi!",
+      "criterionType": "x1_win_vs_higher_rank",
+      "criterionValue": "1",
+      "category": "x1",
+      "rarity": "rare",
+      "isManual": "0"
+    },
+    {
+      "id": "90005",
+      "name": "Derrubei Golias",
+      "criterionType": "x1_win_vs_leader",
+      "criterionValue": "1",
+      "category": "x1",
+      "rarity": "epic",
+      "isManual": "0"
+    },
+    {
+      "id": "90001",
+      "name": "Duelista",
+      "criterionType": "x1_wins_career",
+      "criterionValue": "1",
+      "category": "x1",
+      "rarity": "common",
+      "isManual": "0"
+    },
+    {
+      "id": "90002",
+      "name": "Joga Duro",
+      "criterionType": "x1_wins_career",
+      "criterionValue": "5",
+      "category": "x1",
+      "rarity": "uncommon",
+      "isManual": "0"
+    },
+    {
+      "id": "90003",
+      "name": "Carrasco",
+      "criterionType": "x1_wins_career",
+      "criterionValue": "10",
+      "category": "x1",
+      "rarity": "rare",
+      "isManual": "0"
+    },
+    {
+      "id": "90004",
+      "name": "Lenda do X1",
+      "criterionType": "x1_wins_career",
+      "criterionValue": "25",
+      "category": "x1",
+      "rarity": "legendary",
+      "isManual": "0"
+    },
+    {
+      "id": "30016",
+      "name": "Foi na Sorte",
+      "criterionType": "zebra_exact_score",
+      "criterionValue": "1",
+      "category": "zebra",
+      "rarity": "epic",
+      "isManual": "0"
+    },
+    {
+      "id": "30015",
+      "name": "Nem Eu Acreditava",
+      "criterionType": "zebra_in_pool",
+      "criterionValue": "3",
+      "category": "zebra",
+      "rarity": "rare",
+      "isManual": "0"
+    },
+    {
+      "id": "30013",
+      "name": "Só Eu Acreditei",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "1",
+      "category": "zebra",
+      "rarity": "uncommon",
+      "isManual": "0"
+    },
+    {
+      "id": "30014",
+      "name": "Sou do Contra",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "5",
+      "category": "zebra",
+      "rarity": "rare",
+      "isManual": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcriterionType\tcriterionValue\tcategory\trarity\tisManual\n30011\tRei da Ultrapassagem\trank_jump\t5\tranking\tepic\t0\n90006\tNão Foge da Briga\tx1_challenges_sent\t3\tx1\tcommon\t0\n90007\tEra o Líder? Nem Vi!\tx1_win_vs_higher_rank\t1\tx1\trare\t0\n90005\tDerrubei Golias\tx1_win_vs_leader\t1\tx1\tepic\t0\n90001\tDuelista\tx1_wins_career\t1\tx1\tcommon\t0\n90002\tJoga Duro\tx1_wins_career\t5\tx1\tuncommon\t0\n90003\tCarrasco\tx1_wins_career\t10\tx1\trare\t0\n90004\tLenda do X1\tx1_wins_career\t25\tx1\tlegendary\t0\n30016\tFoi na Sorte\tzebra_exact_score\t1\tzebra\tepic\t0\n30015\tNem Eu Acreditava\tzebra_in_pool\t3\tzebra\trare\t0\n30013\tSó Eu Acreditei\tzebra_scores_career\t1\tzebra\tuncommon\t0\n30014\tSou do Contra\tzebra_scores_career\t5\tzebra\trare\t0\n",
+  "stderr": "",
+  "execution_time_ms": 344
+}

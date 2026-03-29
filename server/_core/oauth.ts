@@ -91,6 +91,20 @@ export function registerOAuthRoutes(app: Express) {
         }
       } catch { /* não bloquear o login em caso de falha no log */ }
 
+      // [Badges] Verificar badges para novos usuários (early_user, etc.)
+      if (isNewUser) {
+        try {
+          const loggedUserForBadge = await db.getUserByOpenId(userInfo.openId);
+          if (loggedUserForBadge) {
+            import("../badges")
+              .then(({ calculateAndAssignBadges }) =>
+                calculateAndAssignBadges(loggedUserForBadge.id).catch(() => {})
+              )
+              .catch(() => {});
+          }
+        } catch { /* não bloquear o login */ }
+      }
+
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",
         expiresInMs: THIRTY_DAYS_MS,

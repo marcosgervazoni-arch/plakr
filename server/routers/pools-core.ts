@@ -71,6 +71,10 @@ export const poolsCoreRouter = router({
           tournamentId: input.tournamentId,
         }, poolId, { level: "info" });
       }
+      // [Badges] Verificar badges após criar bolão (ex: Desbravador, Presida)
+      import("../badges")
+        .then(({ calculateAndAssignBadges }) => calculateAndAssignBadges(ctx.user.id).catch(() => {}))
+        .catch(() => {});
       return { poolId, slug, inviteToken };
     }),
 
@@ -195,6 +199,10 @@ export const poolsCoreRouter = router({
       await createAdminLog(ctx.user.id, "pool_joined", "pool", pool.id, {
         poolName: pool.name, channel: "invite_link",
       }, pool.id, { level: "info" });
+      // [Badges] Verificar badges após entrar em bolão (ex: Veterano, Barra Brava)
+      import("../badges")
+        .then(({ calculateAndAssignBadges }) => calculateAndAssignBadges(ctx.user.id).catch(() => {}))
+        .catch(() => {});
       return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
     }),
 
@@ -228,6 +236,10 @@ export const poolsCoreRouter = router({
       await createAdminLog(ctx.user.id, "pool_joined", "pool", pool.id, {
         poolName: pool.name, channel: "public",
       }, pool.id, { level: "info" });
+      // [Badges] Verificar badges após entrar em bolão público (ex: Veterano, Barra Brava)
+      import("../badges")
+        .then(({ calculateAndAssignBadges }) => calculateAndAssignBadges(ctx.user.id).catch(() => {}))
+        .catch(() => {});
       return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
     }),
 

@@ -784,6 +784,12 @@ export const x1Router = router({
         priority: "high",
       });
 
+      // [Badges] Verificar badges para ambos os jogadores após X1 (ex: Duelista, Joga Duro, Carrasco, Lenda do X1)
+      for (const uid of [c.challengerId, c.challengedId]) {
+        import("../badges")
+          .then(({ calculateAndAssignBadges }) => calculateAndAssignBadges(uid).catch(() => {}))
+          .catch(() => {});
+      }
       return { winnerId, challengerPoints, challengedPoints };
     }),
 

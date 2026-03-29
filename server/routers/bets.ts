@@ -5,7 +5,7 @@
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { logger } from "../logger";
+import logger from "../logger";
 import {
   getGameById,
   getPoolById,

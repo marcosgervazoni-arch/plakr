@@ -1,0 +1,740 @@
+{
+  "query": "\nSELECT u.id, u.name, COUNT(ub.id) as badge_count\nFROM users u\nLEFT JOIN user_badges ub ON u.id = ub.userId\nGROUP BY u.id, u.name\nORDER BY u.id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT u.id, u.name, COUNT(ub.id) as badge_count\nFROM users u\nLEFT JOIN user_badges ub ON u.id = ub.userId\nGROUP BY u.id, u.name\nORDER BY u.id;\n",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Marcos Gervazoni",
+      "badge_count": "3"
+    },
+    {
+      "id": "150121",
+      "name": "Filipe Postai",
+      "badge_count": "2"
+    },
+    {
+      "id": "210136",
+      "name": "Eduardo Souza",
+      "badge_count": "0"
+    },
+    {
+      "id": "390554",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390555",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390595",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390596",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390598",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390599",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390601",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390602",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390604",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390605",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390607",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390608",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390610",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390611",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390613",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390614",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390616",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390617",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390619",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390620",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390622",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390623",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390625",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390626",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390628",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390629",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390631",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390632",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390634",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390635",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390637",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390638",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390659",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390660",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "390673",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "390674",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "420018",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "420019",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "420033",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "420034",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "420036",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "420037",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "420050",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "420051",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "420082",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "420083",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "420086",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "420087",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "480051",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "480052",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "480070",
+      "name": "Pessoa Teste ApostAI",
+      "badge_count": "0"
+    },
+    {
+      "id": "480197",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "480198",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600002",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600003",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600005",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600006",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600039",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600040",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600047",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600048",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600067",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600068",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600090",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600091",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600120",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600121",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600144",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600145",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600147",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600148",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "600172",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "600173",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "601664",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "601670",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603106",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603107",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603110",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603111",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603117",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603118",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603120",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603121",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603123",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603125",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603129",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603130",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603278",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603279",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603415",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603416",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603496",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603497",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603574",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603575",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603637",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603638",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603640",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603641",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603670",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603671",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603737",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603738",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603809",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603810",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603817",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603818",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603875",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603876",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603903",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603904",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603909",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603910",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "603964",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "603965",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604048",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604049",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604079",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604080",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604112",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604113",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604161",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604162",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604187",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604188",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604190",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604191",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604196",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604197",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604207",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604208",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604235",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604237",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604253",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604254",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604256",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604257",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604374",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604375",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604423",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604424",
+      "name": "Test Admin",
+      "badge_count": "0"
+    },
+    {
+      "id": "604426",
+      "name": "Integration User B",
+      "badge_count": "0"
+    },
+    {
+      "id": "604427",
+      "name": "Test Admin",
+      "badge_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tbadge_count\n1\tMarcos Gervazoni\t3\n150121\tFilipe Postai\t2\n210136\tEduardo Souza\t0\n390554\tIntegration User B\t0\n390555\tTest Admin\t0\n390595\tIntegration User B\t0\n390596\tTest Admin\t0\n390598\tIntegration User B\t0\n390599\tTest Admin\t0\n390601\tIntegration User B\t0\n390602\tTest Admin\t0\n390604\tIntegration User B\t0\n390605\tTest Admin\t0\n390607\tIntegration User B\t0\n390608\tTest Admin\t0\n390610\tIntegration User B\t0\n390611\tTest Admin\t0\n390613\tIntegration User B\t0\n390614\tTest Admin\t0\n390616\tIntegration User B\t0\n390617\tTest Admin\t0\n390619\tIntegration User B\t0\n390620\tTest Admin\t0\n390622\tIntegration User B\t0\n390623\tTest Admin\t0\n390625\tIntegration User B\t0\n390626\tTest Admin\t0\n390628\tIntegration User B\t0\n390629\tTest Admin\t0\n390631\tIntegration User B\t0\n390632\tTest Admin\t0\n390634\tIntegration User B\t0\n390635\tTest Admin\t0\n390637\tIntegration User B\t0\n390638\tTest Admin\t0\n390659\tIntegration User B\t0\n390660\tTest Admin\t0\n390673\tIntegration User B\t0\n390674\tTest Admin\t0\n420018\tIntegration User B\t0\n420019\tTest Admin\t0\n420033\tIntegration User B\t0\n420034\tTest Admin\t0\n420036\tIntegration User B\t0\n420037\tTest Admin\t0\n420050\tIntegration User B\t0\n420051\tTest Admin\t0\n420082\tIntegration User B\t0\n420083\tTest Admin\t0\n420086\tIntegration User B\t0\n420087\tTest Admin\t0\n480051\tIntegration User B\t0\n480052\tTest Admin\t0\n480070\tPessoa Teste ApostAI\t0\n480197\tIntegration User B\t0\n480198\tTest Admin\t0\n600002\tIntegration User B\t0\n600003\tTest Admin\t0\n600005\tIntegration User B\t0\n600006\tTest Admin\t0\n600039\tIntegration User B\t0\n600040\tTest Admin\t0\n600047\tIntegration User B\t0\n600048\tTest Admin\t0\n600067\tIntegration User B\t0\n600068\tTest Admin\t0\n600090\tIntegration User B\t0\n600091\tTest Admin\t0\n600120\tIntegration User B\t0\n600121\tTest Admin\t0\n600144\tIntegration User B\t0\n600145\tTest Admin\t0\n600147\tIntegration User B\t0\n600148\tTest Admin\t0\n600172\tIntegration User B\t0\n600173\tTest Admin\t0\n601664\tIntegration User B\t0\n601670\tTest Admin\t0\n603106\tIntegration User B\t0\n603107\tTest Admin\t0\n603110\tIntegration User B\t0\n603111\tTest Admin\t0\n603117\tIntegration User B\t0\n603118\tTest Admin\t0\n603120\tIntegration User B\t0\n603121\tTest Admin\t0\n603123\tIntegration User B\t0\n603125\tTest Admin\t0\n603129\tIntegration User B\t0\n603130\tTest Admin\t0\n603278\tIntegration User B\t0\n603279\tTest Admin\t0\n603415\tIntegration User B\t0\n603416\tTest Admin\t0\n603496\tIntegration User B\t0\n603497\tTest Admin\t0\n603574\tIntegration User B\t0\n603575\tTest Admin\t0\n603637\tIntegration User B\t0\n603638\tTest Admin\t0\n603640\tIntegration User B\t0\n603641\tTest Admin\t0\n603670\tIntegration User B\t0\n603671\tTest Admin\t0\n603737\tIntegration User B\t0\n603738\tTest Admin\t0\n603809\tIntegration User B\t0\n603810\tTest Admin\t0\n603817\tIntegration User B\t0\n603818\tTest Admin\t0\n603875\tIntegration User B\t0\n603876\tTest Admin\t0\n603903\tIntegration User B\t0\n603904\tTest Admin\t0\n603909\tIntegration User B\t0\n603910\tTest Admin\t0\n603964\tIntegration User B\t0\n603965\tTest Admin\t0\n604048\tIntegration User B\t0\n604049\tTest Admin\t0\n604079\tIntegration User B\t0\n604080\tTest Admin\t0\n604112\tIntegration User B\t0\n604113\tTest Admin\t0\n604161\tIntegration User B\t0\n604162\tTest Admin\t0\n604187\tIntegration User B\t0\n604188\tTest Admin\t0\n604190\tIntegration User B\t0\n604191\tTest Admin\t0\n604196\tIntegration User B\t0\n604197\tTest Admin\t0\n604207\tIntegration User B\t0\n604208\tTest Admin\t0\n604235\tIntegration User B\t0\n604237\tTest Admin\t0\n604253\tIntegration User B\t0\n604254\tTest Admin\t0\n604256\tIntegration User B\t0\n604257\tTest Admin\t0\n604374\tIntegration User B\t0\n604375\tTest Admin\t0\n604423\tIntegration User B\t0\n604424\tTest Admin\t0\n604426\tIntegration User B\t0\n604427\tTest Admin\t0\n",
+  "stderr": "",
+  "execution_time_ms": 361
+}

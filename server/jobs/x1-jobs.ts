@@ -226,6 +226,12 @@ export async function x1ScoreUpdateJob(gameId: number): Promise<{ updated: numbe
       } catch (e) {
         logger.warn({ err: e }, `[X1][ScoreUpdateJob] Failed to send conclusion notifications for challenge ${challenge.id}`);
       }
+      // [Badges] Verificar badges para ambos após X1 concluído pelo job
+      for (const uid of [challenge.challengerId, challenge.challengedId]) {
+        import("../../server/badges")
+          .then(({ calculateAndAssignBadges }) => calculateAndAssignBadges(uid).catch(() => {}))
+          .catch(() => {});
+      }
     }
   }
 

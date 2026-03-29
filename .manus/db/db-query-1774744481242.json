@@ -1,0 +1,330 @@
+{
+  "query": "SELECT id, name, criterionType, criterionValue, category, rarity, isActive, isManual\nFROM badges\nWHERE isActive = 1\nORDER BY criterionType, criterionValue;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, name, criterionType, criterionValue, category, rarity, isActive, isManual\nFROM badges\nWHERE isActive = 1\nORDER BY criterionType, criterionValue;",
+  "rows": [
+    {
+      "id": "30018",
+      "name": "Levou a Sério",
+      "criterionType": "all_bets_in_pool",
+      "criterionValue": "1",
+      "category": "comunidade",
+      "rarity": "uncommon",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30019",
+      "name": "Desbravador",
+      "criterionType": "created_pool",
+      "criterionValue": "1",
+      "category": "comunidade",
+      "rarity": "common",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30022",
+      "name": "Ansioso Competitivo",
+      "criterionType": "early_bet",
+      "criterionValue": "10",
+      "category": "comunidade",
+      "rarity": "uncommon",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30025",
+      "name": "Chegou Cedo",
+      "criterionType": "early_user",
+      "criterionValue": "100",
+      "category": "exclusivo",
+      "rarity": "legendary",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30001",
+      "name": "Chute Certo",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "1",
+      "category": "precisao",
+      "rarity": "common",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30002",
+      "name": "Manja Muito",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "10",
+      "category": "precisao",
+      "rarity": "uncommon",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30003",
+      "name": "Profeta",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "50",
+      "category": "precisao",
+      "rarity": "rare",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30004",
+      "name": "Mafioso das Apostas",
+      "criterionType": "exact_scores_career",
+      "criterionValue": "100",
+      "category": "precisao",
+      "rarity": "epic",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30005",
+      "name": "Fiz de Novo",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "2",
+      "category": "precisao",
+      "rarity": "uncommon",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30006",
+      "name": "Cola na Minha",
+      "criterionType": "exact_scores_in_pool",
+      "criterionValue": "5",
+      "category": "precisao",
+      "rarity": "rare",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30017",
+      "name": "Boas-Vindas",
+      "criterionType": "first_bet",
+      "criterionValue": "1",
+      "category": "comunidade",
+      "rarity": "common",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30010",
+      "name": "1/20",
+      "criterionType": "first_place_large_pool",
+      "criterionValue": "20",
+      "category": "ranking",
+      "rarity": "epic",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30009",
+      "name": "Intocável",
+      "criterionType": "first_place_margin",
+      "criterionValue": "20",
+      "category": "ranking",
+      "rarity": "rare",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30007",
+      "name": "É Campeão",
+      "criterionType": "first_place_pools",
+      "criterionValue": "1",
+      "category": "ranking",
+      "rarity": "uncommon",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30008",
+      "name": "Dinastia",
+      "criterionType": "first_place_pools",
+      "criterionValue": "3",
+      "category": "ranking",
+      "rarity": "rare",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30024",
+      "name": "Cobaia",
+      "criterionType": "manual",
+      "criterionValue": "0",
+      "category": "exclusivo",
+      "rarity": "legendary",
+      "isActive": "1",
+      "isManual": "1"
+    },
+    {
+      "id": "30021",
+      "name": "Presida",
+      "criterionType": "organized_pools",
+      "criterionValue": "5",
+      "category": "comunidade",
+      "rarity": "rare",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30023",
+      "name": "Veterano",
+      "criterionType": "participated_pools",
+      "criterionValue": "10",
+      "category": "comunidade",
+      "rarity": "uncommon",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30020",
+      "name": "Barra Brava",
+      "criterionType": "pool_members_via_invite",
+      "criterionValue": "10",
+      "category": "comunidade",
+      "rarity": "uncommon",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30012",
+      "name": "Ninguém Me Tira",
+      "criterionType": "rank_hold_1st",
+      "criterionValue": "3",
+      "category": "ranking",
+      "rarity": "epic",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30011",
+      "name": "Rei da Ultrapassagem",
+      "criterionType": "rank_jump",
+      "criterionValue": "5",
+      "category": "ranking",
+      "rarity": "epic",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "90006",
+      "name": "Não Foge da Briga",
+      "criterionType": "x1_challenges_sent",
+      "criterionValue": "3",
+      "category": "x1",
+      "rarity": "common",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "90007",
+      "name": "Era o Líder? Nem Vi!",
+      "criterionType": "x1_win_vs_higher_rank",
+      "criterionValue": "1",
+      "category": "x1",
+      "rarity": "rare",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "90005",
+      "name": "Derrubei Golias",
+      "criterionType": "x1_win_vs_leader",
+      "criterionValue": "1",
+      "category": "x1",
+      "rarity": "epic",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "90001",
+      "name": "Duelista",
+      "criterionType": "x1_wins_career",
+      "criterionValue": "1",
+      "category": "x1",
+      "rarity": "common",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "90002",
+      "name": "Joga Duro",
+      "criterionType": "x1_wins_career",
+      "criterionValue": "5",
+      "category": "x1",
+      "rarity": "uncommon",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "90003",
+      "name": "Carrasco",
+      "criterionType": "x1_wins_career",
+      "criterionValue": "10",
+      "category": "x1",
+      "rarity": "rare",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "90004",
+      "name": "Lenda do X1",
+      "criterionType": "x1_wins_career",
+      "criterionValue": "25",
+      "category": "x1",
+      "rarity": "legendary",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30016",
+      "name": "Foi na Sorte",
+      "criterionType": "zebra_exact_score",
+      "criterionValue": "1",
+      "category": "zebra",
+      "rarity": "epic",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30015",
+      "name": "Nem Eu Acreditava",
+      "criterionType": "zebra_in_pool",
+      "criterionValue": "3",
+      "category": "zebra",
+      "rarity": "rare",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30013",
+      "name": "Só Eu Acreditei",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "1",
+      "category": "zebra",
+      "rarity": "uncommon",
+      "isActive": "1",
+      "isManual": "0"
+    },
+    {
+      "id": "30014",
+      "name": "Sou do Contra",
+      "criterionType": "zebra_scores_career",
+      "criterionValue": "5",
+      "category": "zebra",
+      "rarity": "rare",
+      "isActive": "1",
+      "isManual": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcriterionType\tcriterionValue\tcategory\trarity\tisActive\tisManual\n30018\tLevou a Sério\tall_bets_in_pool\t1\tcomunidade\tuncommon\t1\t0\n30019\tDesbravador\tcreated_pool\t1\tcomunidade\tcommon\t1\t0\n30022\tAnsioso Competitivo\tearly_bet\t10\tcomunidade\tuncommon\t1\t0\n30025\tChegou Cedo\tearly_user\t100\texclusivo\tlegendary\t1\t0\n30001\tChute Certo\texact_scores_career\t1\tprecisao\tcommon\t1\t0\n30002\tManja Muito\texact_scores_career\t10\tprecisao\tuncommon\t1\t0\n30003\tProfeta\texact_scores_career\t50\tprecisao\trare\t1\t0\n30004\tMafioso das Apostas\texact_scores_career\t100\tprecisao\tepic\t1\t0\n30005\tFiz de Novo\texact_scores_in_pool\t2\tprecisao\tuncommon\t1\t0\n30006\tCola na Minha\texact_scores_in_pool\t5\tprecisao\trare\t1\t0\n30017\tBoas-Vindas\tfirst_bet\t1\tcomunidade\tcommon\t1\t0\n30010\t1/20\tfirst_place_large_pool\t20\tranking\tepic\t1\t0\n30009\tIntocável\tfirst_place_margin\t20\tranking\trare\t1\t0\n30007\tÉ Campeão\tfirst_place_pools\t1\tranking\tuncommon\t1\t0\n30008\tDinastia\tfirst_place_pools\t3\tranking\trare\t1\t0\n30024\tCobaia\tmanual\t0\texclusivo\tlegendary\t1\t1\n30021\tPresida\torganized_pools\t5\tcomunidade\trare\t1\t0\n30023\tVeterano\tparticipated_pools\t10\tcomunidade\tuncommon\t1\t0\n30020\tBarra Brava\tpool_members_via_invite\t10\tcomunidade\tuncommon\t1\t0\n30012\tNinguém Me Tira\trank_hold_1st\t3\tranking\tepic\t1\t0\n30011\tRei da Ultrapassagem\trank_jump\t5\tranking\tepic\t1\t0\n90006\tNão Foge da Briga\tx1_challenges_sent\t3\tx1\tcommon\t1\t0\n90007\tEra o Líder? Nem Vi!\tx1_win_vs_higher_rank\t1\tx1\trare\t1\t0\n90005\tDerrubei Golias\tx1_win_vs_leader\t1\tx1\tepic\t1\t0\n90001\tDuelista\tx1_wins_career\t1\tx1\tcommon\t1\t0\n90002\tJoga Duro\tx1_wins_career\t5\tx1\tuncommon\t1\t0\n90003\tCarrasco\tx1_wins_career\t10\tx1\trare\t1\t0\n90004\tLenda do X1\tx1_wins_career\t25\tx1\tlegendary\t1\t0\n30016\tFoi na Sorte\tzebra_exact_score\t1\tzebra\tepic\t1\t0\n30015\tNem Eu Acreditava\tzebra_in_pool\t3\tzebra\trare\t1\t0\n30013\tSó Eu Acreditei\tzebra_scores_career\t1\tzebra\tuncommon\t1\t0\n30014\tSou do Contra\tzebra_scores_career\t5\tzebra\trare\t1\t0\n",
+  "stderr": "",
+  "execution_time_ms": 377
+}

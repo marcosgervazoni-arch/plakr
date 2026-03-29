@@ -338,6 +338,12 @@ export async function resolvePhase(
           "[X1][Resolver] Notification failed (non-critical)"
         );
       }
+      // [Badges] Verificar badges para ambos os jogadores após X1 resolvido
+      for (const uid of [challenge.challengerId, challenge.challengedId]) {
+        import("../../server/badges")
+          .then(({ calculateAndAssignBadges }) => calculateAndAssignBadges(uid).catch(() => {}))
+          .catch(() => {});
+      }
     } catch (err) {
       logger.error({ challengeId: challenge.id, err }, "[X1][Resolver] Failed to resolve challenge");
       skipped++;
