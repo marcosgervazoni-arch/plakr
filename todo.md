@@ -2108,3 +2108,22 @@
 ## Bug — Agrupamento incorreto de rodadas (1ª Fase vs 2ª Fase com mesmos números)
 - [x] Corrigir campo phase dos jogos para diferenciar "1st_phase" de "2nd_phase" no banco
 - [x] Atualizar UI para agrupar por fase+rodada (ex: "1ª Fase - Rodada 1", "2ª Fase - Rodada 1")
+
+## Bug — Importação traz jogos demais (581 vs ~378 esperados)
+- [ ] Diagnosticar por que a API retorna 581 jogos para a liga argentina 2022
+- [ ] Implementar filtro para importar apenas jogos da competição principal (Regular Season)
+- [ ] Zerar banco e refazer sync com filtro correto
+- [ ] Garantir que após importação nenhuma ação manual seja necessária
+
+## Melhoria — Nomes amigáveis de fase na UI
+- [ ] Criar mapa de nomes legíveis para fases (1st_phase → "Copa da Liga", 2nd_phase → "Liga Profesional", etc.)
+- [ ] Atualizar AdminTournamentDetail para exibir nomes amigáveis nos cabeçalhos de grupo
+- [ ] Aplicar o mesmo mapa na tela de bolão (PoolPage) para participantes
+
+## Feature — Importação inteligente por fase/competição
+- [ ] Criar procedure getLeaguePhases que busca fases disponíveis de uma liga na API-Football
+- [ ] Atualizar UI de importação para exibir seleção de fases antes de confirmar importação
+- [ ] Atualizar importLeagueFromApi para importar apenas os rounds da fase selecionada
+- [ ] Cada fase selecionada gera um campeonato independente com nome correto
+- [ ] Cron sincroniza cada campeonato de forma independente e automática
+- [ ] Zerar banco e reimportar campeonato argentino com nova lógica

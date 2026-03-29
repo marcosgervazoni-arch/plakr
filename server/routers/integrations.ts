@@ -38,6 +38,50 @@ async function getIntegrationSettings() {
   return settings;
 }
 
+// ─── Helpers de fase ────────────────────────────────────────────────────────
+
+/** Converte o round string da API para uma chave de fase normalizada */
+function roundToPhaseKeyLocal(round: string): string {
+  const r = round.toLowerCase().trim();
+  if (r.includes("round of 16") || r.includes("last 16")) return "round_of_16";
+  if (r.includes("quarter")) return "quarter_finals";
+  if (r.includes("semi")) return "semi_finals";
+  if (r.includes("3rd place") || r.includes("third place")) return "third_place";
+  if (/^final$/.test(r) || r === "1st phase - final" || r === "2nd phase - final") return "final";
+  if (r.startsWith("1st phase")) return "1st_phase";
+  if (r.startsWith("2nd phase")) return "2nd_phase";
+  if (r.startsWith("3rd phase")) return "3rd_phase";
+  if (r.startsWith("apertura")) return "apertura";
+  if (r.startsWith("clausura")) return "clausura";
+  if (r.startsWith("regular season")) return "regular_season";
+  if (r.startsWith("group")) return "group_stage";
+  return "group_stage";
+}
+
+/** Converte a chave de fase em nome legível para exibição */
+function phaseKeyToName(phaseKey: string, sampleRound?: string): string {
+  const map: Record<string, string> = {
+    "1st_phase": "1ª Fase",
+    "2nd_phase": "2ª Fase",
+    "3rd_phase": "3ª Fase",
+    "regular_season": "Temporada Regular",
+    "group_stage": "Fase de Grupos",
+    "apertura": "Apertura",
+    "clausura": "Clausura",
+    "round_of_16": "Oitavas de Final",
+    "quarter_finals": "Quartas de Final",
+    "semi_finals": "Semifinais",
+    "third_place": "3º Lugar",
+    "final": "Final",
+  };
+  // Tentar extrair nome original do round para fases genéricas
+  if (!map[phaseKey] && sampleRound) {
+    const parts = sampleRound.split(" - ");
+    return parts[0] || phaseKey;
+  }
+  return map[phaseKey] ?? phaseKey;
+}
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export const integrationsRouter = router({
@@ -260,7 +304,50 @@ export const integrationsRouter = router({
     }),
 
   /**
+   * Busca as fases disponíveis de uma liga na API-Football.
+   * Agrupa os rounds por fase (1st Phase, 2nd Phase, Regular Season, etc.)
+   * para que o admin possa escolher qual fase/competição importar.
+   * Consome 1 requisição da quota.
+   */
+  getLeaguePhases: adminProcedure
+    .input(z.object({ leagueId: z.number(), season: z.number() }))
+    .mutation(async ({ input }) => {
+      const data = await apiFootballRequest<{ league: { round: string } }>(
+        `/fixtures/rounds`,
+        { league: input.leagueId, season: input.season }
+      );
+
+      const rounds: string[] = (data?.response ?? []) as unknown as string[];
+
+      // Agrupar rounds por fase
+      const phaseMap = new Map<string, { phaseKey: string; phaseName: string; rounds: string[]; roundCount: number; gameCount: number }>();
+
+      for (const round of rounds) {
+        const phaseKey = roundToPhaseKeyLocal(round);
+        const phaseName = phaseKeyToName(phaseKey, round);
+        if (!phaseMap.has(phaseKey)) {
+          phaseMap.set(phaseKey, { phaseKey, phaseName, rounds: [], roundCount: 0, gameCount: 0 });
+        }
+        const entry = phaseMap.get(phaseKey)!;
+        entry.rounds.push(round);
+        entry.roundCount++;
+        // Estimativa: ligas com 28 times têm 14 jogos por rodada, com 20 times têm 10 jogos
+        entry.gameCount += 14; // estimativa conservadora
+      }
+
+      return Array.from(phaseMap.values()).map(p => ({
+        phaseKey: p.phaseKey,
+        phaseName: p.phaseName,
+        roundCount: p.roundCount,
+        rounds: p.rounds,
+        estimatedGames: p.gameCount,
+      }));
+    }),
+
+  /**
    * Importa uma liga da API-Football como campeonato global no Plakr.
+   * Aceita phaseKey e rounds opcionais para importar apenas uma fase/competição específica.
+   * Se phaseKey não for informado, importa todos os rounds (comportamento legado).
    */
   importLeagueFromApi: adminProcedure
     .input(z.object({
@@ -270,17 +357,24 @@ export const integrationsRouter = router({
       logoUrl: z.string().optional(),
       season: z.number(),
       makeAvailable: z.boolean().default(true),
+      phaseKey: z.string().optional(),       // ex: "1st_phase", "2nd_phase"
+      phaseRounds: z.array(z.string()).optional(), // rounds específicos dessa fase
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw Err.internal("DB não disponível");
 
-      // Verifica se já existe campeonato com esse leagueId
-      const existing = await db
+      // Verifica se já existe campeonato com esse leagueId + phaseKey
+      const existingQuery = db
         .select()
         .from(tournaments)
-        .where(eq(tournaments.apiFootballLeagueId, input.leagueId))
-        .limit(1);
+        .where(eq(tournaments.apiFootballLeagueId, input.leagueId));
+      const existingAll = await existingQuery;
+
+      // Se phaseKey fornecido, verifica duplicata por leagueId + phaseKey
+      const existing = input.phaseKey
+        ? existingAll.filter(t => (t as any).apiFootballPhaseKey === input.phaseKey)
+        : existingAll.filter(t => !(t as any).apiFootballPhaseKey);
 
       if (existing.length > 0) {
         await db
@@ -291,9 +385,14 @@ export const integrationsRouter = router({
       }
 
       // Cria novo campeonato global
-      const slug = `${input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${input.season}`;
+      // Se phaseKey fornecido, incluir no nome e slug para diferenciar fases
+      const phaseSuffix = input.phaseKey ? `-${input.phaseKey.replace(/_/g, "-")}` : "";
+      const displayName = input.phaseKey
+        ? `${input.name} — ${phaseKeyToName(input.phaseKey)}`
+        : input.name;
+      const slug = `${displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${input.season}`;
       const result = await db.insert(tournaments).values({
-        name: input.name,
+        name: displayName,
         slug,
         logoUrl: input.logoUrl ?? null,
         isGlobal: true,
@@ -301,12 +400,15 @@ export const integrationsRouter = router({
         status: "active",
         country: input.country?.slice(0, 10) ?? null,
         season: String(input.season),
-        format: "groups_knockout",
+        format: input.phaseKey?.includes("phase") ? "groups_knockout" : "league",
         isAvailable: input.makeAvailable,
         apiFootballLeagueId: input.leagueId,
         apiFootballSeason: input.season,
       });
       const tournamentId = (result[0] as any).insertId;
+
+      // Capturar phaseRounds para o sync (imutável após criado)
+      const phaseRoundsToSync = input.phaseRounds ?? null;
 
       // Disparar sync automático de times e fixtures em background
       // Usamos setImmediate para não bloquear a resposta HTTP
@@ -332,6 +434,7 @@ export const integrationsRouter = router({
             season: input.season,
             triggeredBy: "manual",
             triggeredByUserId: ctx.user.id,
+            phaseRounds: phaseRoundsToSync ?? undefined,
           });
           logger.info(
             `[ImportLeague] Fixtures sincronizados: created=${fixturesResult.gamesCreated} updated=${fixturesResult.gamesUpdated} req=${fixturesResult.requestsUsed}`

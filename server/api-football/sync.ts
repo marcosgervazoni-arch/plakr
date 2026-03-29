@@ -334,6 +334,7 @@ export async function syncFixturesForTournament(options: {
   season: number;
   triggeredBy?: "cron" | "manual";
   triggeredByUserId?: number;
+  phaseRounds?: string[]; // Se fornecido, importa apenas os rounds desta lista
 }): Promise<{ gamesCreated: number; gamesUpdated: number; requestsUsed: number; error?: string }> {
   const startTime = Date.now();
   const db = await getDb();
@@ -347,8 +348,13 @@ export async function syncFixturesForTournament(options: {
 
   try {
     // Buscar TODOS os jogos da temporada (sem filtro de data)
-    const fixtures = await fetchFixtures(options.leagueId, options.season);
+    const allFixtures = await fetchFixtures(options.leagueId, options.season);
     requestsUsed = 1;
+
+    // Filtrar por rounds específicos da fase, se fornecido
+    const fixtures = options.phaseRounds && options.phaseRounds.length > 0
+      ? allFixtures.filter(f => options.phaseRounds!.includes(f.league.round))
+      : allFixtures;
 
     for (const fixture of fixtures) {
       const externalId = String(fixture.fixture.id);

@@ -128,6 +128,22 @@ export default function AdminIntegrations() {
   const { data: managedTournaments, refetch: refetchTournaments } = trpc.integrations.listTournaments.useQuery();
   const [apiLeagues, setApiLeagues] = useState<Array<{leagueId: number; name: string; country: string; logoUrl: string; season: number}>>([]);
   const [leagueSearch, setLeagueSearch] = useState("");
+
+  // Seleção de fases antes de importar
+  type PhaseOption = { phaseKey: string; phaseName: string; roundCount: number; rounds: string[]; estimatedGames: number };
+  const [phaseSelectionLeague, setPhaseSelectionLeague] = useState<{leagueId: number; name: string; country: string; logoUrl: string; season: number} | null>(null);
+  const [availablePhases, setAvailablePhases] = useState<PhaseOption[]>([]);
+  const [selectedPhases, setSelectedPhases] = useState<Set<string>>(new Set());
+
+  const getLeaguePhasesMutation = trpc.integrations.getLeaguePhases.useMutation({
+    onSuccess: (data) => {
+      const phases = data as PhaseOption[];
+      setAvailablePhases(phases);
+      // Pré-selecionar todas as fases
+      setSelectedPhases(new Set(phases.map(p => p.phaseKey)));
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
   const toggleAvailabilityMutation = trpc.integrations.toggleTournamentAvailability.useMutation({
     onSuccess: (_data, vars) => {
       toast.success((vars as {isAvailable: boolean}).isAvailable ? "Campeonato ativado para os usuários!" : "Campeonato desativado.");
@@ -958,6 +974,7 @@ export default function AdminIntegrations() {
                             )
                             .map((league) => {
                               const alreadyImported = managedTournaments?.some((t) => (t as {apiFootballLeagueId?: number}).apiFootballLeagueId === league.leagueId);
+                              const isLoadingPhases = getLeaguePhasesMutation.isPending && phaseSelectionLeague?.leagueId === league.leagueId;
                               return (
                                 <div key={league.leagueId} className="flex items-center justify-between p-2 rounded border border-border/30 hover:bg-muted/20">
                                   <div className="flex items-center gap-2 min-w-0">
@@ -974,23 +991,107 @@ export default function AdminIntegrations() {
                                       size="sm"
                                       variant="ghost"
                                       className="h-6 text-[10px] px-2 shrink-0"
-                                      onClick={() => importLeagueMutation.mutate({
-                                        leagueId: league.leagueId,
-                                        name: league.name,
-                                        country: league.country,
-                                        logoUrl: league.logoUrl,
-                                        season: league.season ?? integrationSettings?.apiFootballSeason ?? 2022,
-                                        makeAvailable: true,
-                                      })}
-                                      disabled={importLeagueMutation.isPending}
+                                      onClick={() => {
+                                        setPhaseSelectionLeague(league);
+                                        setAvailablePhases([]);
+                                        setSelectedPhases(new Set());
+                                        getLeaguePhasesMutation.mutate({
+                                          leagueId: league.leagueId,
+                                          season: league.season ?? integrationSettings?.apiFootballSeason ?? 2022,
+                                        });
+                                      }}
+                                      disabled={isLoadingPhases}
                                     >
-                                      + Importar
+                                      {isLoadingPhases ? <Loader2 className="h-3 w-3 animate-spin" /> : "+ Selecionar"}
                                     </Button>
                                   )}
                                 </div>
                               );
                             })}
                         </div>
+
+                        {/* Painel de seleção de fases */}
+                        {phaseSelectionLeague && (
+                          <div className="mt-3 p-3 rounded-lg border border-brand/30 bg-brand/5 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                {phaseSelectionLeague.logoUrl && <img src={phaseSelectionLeague.logoUrl} alt="" className="w-4 h-4 object-contain" />}
+                                <p className="text-xs font-semibold">{phaseSelectionLeague.name}</p>
+                              </div>
+                              <button onClick={() => setPhaseSelectionLeague(null)} className="text-muted-foreground hover:text-foreground text-xs">×</button>
+                            </div>
+
+                            {getLeaguePhasesMutation.isPending ? (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                Buscando fases disponíveis...
+                              </div>
+                            ) : availablePhases.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">Nenhuma fase encontrada.</p>
+                            ) : (
+                              <>
+                                <p className="text-[10px] text-muted-foreground">Selecione as competições que deseja importar. Cada uma gera um campeonato independente.</p>
+                                <div className="space-y-1.5">
+                                  {availablePhases.map((phase) => (
+                                    <label key={phase.phaseKey} className="flex items-center gap-2 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedPhases.has(phase.phaseKey)}
+                                        onChange={(e) => {
+                                          const next = new Set(selectedPhases);
+                                          if (e.target.checked) next.add(phase.phaseKey);
+                                          else next.delete(phase.phaseKey);
+                                          setSelectedPhases(next);
+                                        }}
+                                        className="rounded border-border"
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-xs font-medium">{phase.phaseName}</span>
+                                        <span className="text-[10px] text-muted-foreground ml-1.5">{phase.roundCount} rodadas · ~{phase.estimatedGames} jogos</span>
+                                      </div>
+                                    </label>
+                                  ))}
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="w-full h-7 text-xs bg-brand hover:bg-brand/90"
+                                  disabled={selectedPhases.size === 0 || importLeagueMutation.isPending}
+                                  onClick={() => {
+                                    const phasesToImport = availablePhases.filter(p => selectedPhases.has(p.phaseKey));
+                                    // Importar cada fase como campeonato separado
+                                    const importNext = (idx: number) => {
+                                      if (idx >= phasesToImport.length) {
+                                        setPhaseSelectionLeague(null);
+                                        setAvailablePhases([]);
+                                        setApiLeagues([]);
+                                        return;
+                                      }
+                                      const phase = phasesToImport[idx];
+                                      importLeagueMutation.mutate({
+                                        leagueId: phaseSelectionLeague!.leagueId,
+                                        name: phaseSelectionLeague!.name,
+                                        country: phaseSelectionLeague!.country,
+                                        logoUrl: phaseSelectionLeague!.logoUrl,
+                                        season: phaseSelectionLeague!.season ?? integrationSettings?.apiFootballSeason ?? 2022,
+                                        makeAvailable: true,
+                                        phaseKey: phase.phaseKey,
+                                        phaseRounds: phase.rounds,
+                                      }, {
+                                        onSuccess: () => importNext(idx + 1),
+                                      });
+                                    };
+                                    importNext(0);
+                                  }}
+                                >
+                                  {importLeagueMutation.isPending
+                                    ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Importando...</>
+                                    : `Importar ${selectedPhases.size} competição${selectedPhases.size > 1 ? "ões" : ""}`
+                                  }
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </>
                     )}
                   </>
