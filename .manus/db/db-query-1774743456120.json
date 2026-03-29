@@ -1,0 +1,22 @@
+{
+  "query": "\nSELECT COUNT(*) as total_bets FROM bets WHERE userId = 1;\n\nSELECT ub.badgeId, b.name FROM user_badges ub\nJOIN badges b ON b.id = ub.badgeId\nWHERE ub.userId = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT COUNT(*) as total_bets FROM bets WHERE userId = 1;\n\nSELECT ub.badgeId, b.name FROM user_badges ub\nJOIN badges b ON b.id = ub.badgeId\nWHERE ub.userId = 1;\n",
+  "rows": [
+    {
+      "total_bets": "2"
+    },
+    {
+      "total_bets": "badgeId\tname"
+    },
+    {
+      "total_bets": "30019\tDesbravador"
+    },
+    {
+      "total_bets": "30025\tChegou Cedo"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_bets\n2\nbadgeId\tname\n30019\tDesbravador\n30025\tChegou Cedo\n",
+  "stderr": "",
+  "execution_time_ms": 406
+}

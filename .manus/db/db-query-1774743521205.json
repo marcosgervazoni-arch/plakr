@@ -1,0 +1,25 @@
+{
+  "query": "SELECT ub.badgeId, b.name, ub.earnedAt FROM user_badges ub\nJOIN badges b ON b.id = ub.badgeId\nWHERE ub.userId = 1\nORDER BY ub.earnedAt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT ub.badgeId, b.name, ub.earnedAt FROM user_badges ub\nJOIN badges b ON b.id = ub.badgeId\nWHERE ub.userId = 1\nORDER BY ub.earnedAt DESC;",
+  "rows": [
+    {
+      "badgeId": "30017",
+      "name": "Boas-Vindas",
+      "earnedAt": "2026-03-29 00:18:36"
+    },
+    {
+      "badgeId": "30025",
+      "name": "Chegou Cedo",
+      "earnedAt": "2026-03-26 15:59:19"
+    },
+    {
+      "badgeId": "30019",
+      "name": "Desbravador",
+      "earnedAt": "2026-03-26 15:59:18"
+    }
+  ],
+  "messages": [],
+  "stdout": "badgeId\tname\tearnedAt\n30017\tBoas-Vindas\t2026-03-29 00:18:36\n30025\tChegou Cedo\t2026-03-26 15:59:19\n30019\tDesbravador\t2026-03-26 15:59:18\n",
+  "stderr": "",
+  "execution_time_ms": 366
+}

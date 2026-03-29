@@ -1993,3 +1993,7 @@
 
 ## Correção sidebar Upgrade CTA (28/03/2026)
 - [x] Card "Upgrade para Pro" não aparecia corretamente para admins — condição corrigida para !isPro && !isAdmin
+
+## Correção badge Boas-Vindas (28/03/2026)
+- [x] placeBet não chamava calculateAndAssignBadges — corrigido, badge agora é verificado após cada palpite
+- [x] Badge Boas-Vindas concedido retroativamente ao usuário Gerva (userId=1) via SQL

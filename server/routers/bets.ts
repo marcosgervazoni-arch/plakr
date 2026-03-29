@@ -5,6 +5,7 @@
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { logger } from "../logger";
 import {
   getGameById,
   getPoolById,
@@ -92,6 +93,15 @@ export const betsRouter = router({
         predictedScoreA: input.predictedScoreA,
         predictedScoreB: input.predictedScoreB,
       });
+
+      // [Badges] Verificar e conceder badges após palpite (ex: Boas-Vindas)
+      import("../badges")
+        .then(({ calculateAndAssignBadges }) =>
+          calculateAndAssignBadges(ctx.user.id).catch((e: unknown) =>
+            logger.warn({ err: e }, "[Badges] Erro ao calcular badges após palpite")
+          )
+        )
+        .catch(() => {});
 
       return { success: true };
     }),

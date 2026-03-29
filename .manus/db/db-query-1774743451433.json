@@ -1,0 +1,35 @@
+{
+  "query": "\nSELECT b.id, b.name, b.criterionType, b.criterionValue, b.isActive\nFROM badges b\nWHERE b.name LIKE '%Boas%' OR b.name LIKE '%boas%' OR b.criterionType = 'first_bet';\n\nSELECT ub.id, ub.userId, ub.badgeId, ub.earnedAt\nFROM user_badges ub\nJOIN users u ON u.id = ub.userId\nWHERE u.name LIKE '%Gerva%' OR u.name LIKE '%Marcos%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nSELECT b.id, b.name, b.criterionType, b.criterionValue, b.isActive\nFROM badges b\nWHERE b.name LIKE '%Boas%' OR b.name LIKE '%boas%' OR b.criterionType = 'first_bet';\n\nSELECT ub.id, ub.userId, ub.badgeId, ub.earnedAt\nFROM user_badges ub\nJOIN users u ON u.id = ub.userId\nWHERE u.name LIKE '%Gerva%' OR u.name LIKE '%Marcos%';\n",
+  "rows": [
+    {
+      "id": "30017",
+      "name": "Boas-Vindas",
+      "criterionType": "first_bet",
+      "criterionValue": "1",
+      "isActive": "1"
+    },
+    {
+      "id": "60001",
+      "name": "Clicou no Anúncio",
+      "criterionType": "first_bet",
+      "criterionValue": "1",
+      "isActive": "0"
+    },
+    {
+      "id": "60002",
+      "name": "Parceiro da Casa",
+      "criterionType": "first_bet",
+      "criterionValue": "1",
+      "isActive": "0"
+    }
+  ],
+  "messages": [
+    "id\tuserId\tbadgeId\tearnedAt",
+    "7\t1\t30025\t2026-03-26 15:59:19",
+    "6\t1\t30019\t2026-03-26 15:59:18"
+  ],
+  "stdout": "id\tname\tcriterionType\tcriterionValue\tisActive\n30017\tBoas-Vindas\tfirst_bet\t1\t1\n60001\tClicou no Anúncio\tfirst_bet\t1\t0\n60002\tParceiro da Casa\tfirst_bet\t1\t0\nid\tuserId\tbadgeId\tearnedAt\n7\t1\t30025\t2026-03-26 15:59:19\n6\t1\t30019\t2026-03-26 15:59:18\n",
+  "stderr": "",
+  "execution_time_ms": 405
+}
