@@ -124,6 +124,34 @@ export default function AdminIntegrations() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
+  // ─── Curadoria de Campeonatos ───────────────────────────────────────────────
+  const { data: managedTournaments, refetch: refetchTournaments } = trpc.integrations.listTournaments.useQuery();
+  const [apiLeagues, setApiLeagues] = useState<Array<{leagueId: number; name: string; country: string; logoUrl: string; season: number}>>([]);
+  const [leagueSearch, setLeagueSearch] = useState("");
+  const toggleAvailabilityMutation = trpc.integrations.toggleTournamentAvailability.useMutation({
+    onSuccess: (_data, vars) => {
+      toast.success((vars as {isAvailable: boolean}).isAvailable ? "Campeonato ativado para os usuários!" : "Campeonato desativado.");
+      refetchTournaments();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+  const fetchLeaguesMutation = trpc.integrations.fetchLeaguesFromApi.useMutation({
+    onSuccess: (data) => {
+      const leagues = data as Array<{leagueId: number; name: string; country: string; logoUrl: string; season: number}>;
+      setApiLeagues(leagues);
+      toast.success(`${leagues.length} ligas encontradas na API-Football`);
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+  const importLeagueMutation = trpc.integrations.importLeagueFromApi.useMutation({
+    onSuccess: (data) => {
+      toast.success((data as {message: string}).message);
+      refetchTournaments();
+      setApiLeagues([]);
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
   return (
     <AdminLayout activeSection="integrations">
       <div className="space-y-6">
@@ -769,6 +797,163 @@ export default function AdminIntegrations() {
           </div>
 
         )}
+
+        {/* SEÇÃO: Curadoria de Campeonatos */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-500/10 shrink-0">
+              <Globe className="h-5 w-5 text-green-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold font-display">Campeonatos Disponíveis</h2>
+              <p className="text-sm text-muted-foreground">Controle quais campeonatos os usuários podem vincular aos seus bolões.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {/* Card: Campeonatos Cadastrados */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <BarChart2 className="h-4 w-4 text-muted-foreground" />
+                    Campeonatos Cadastrados
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => refetchTournaments()}>
+                    <RefreshCw className="h-3 w-3" /> Atualizar
+                  </Button>
+                </div>
+                <CardDescription className="text-sm">Ative ou desative a visibilidade para os usuários.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!managedTournaments || managedTournaments.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Globe className="h-8 w-8 mb-2 opacity-30" />
+                    <p className="text-sm">Nenhum campeonato global cadastrado.</p>
+                    <p className="text-xs mt-1">Importe da API-Football ou crie manualmente em Campeonatos.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {managedTournaments.map((t) => (
+                      <div key={t.id} className="flex items-center justify-between p-2.5 rounded-md border border-border/40 hover:bg-muted/20 transition-colors">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {t.logoUrl ? (
+                            <img src={t.logoUrl} alt={t.name} className="w-6 h-6 object-contain shrink-0" />
+                          ) : (
+                            <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
+                              <Globe className="h-3 w-3 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{t.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(t as {country?: string}).country ?? "Global"}
+                              {(t as {apiFootballLeagueId?: number}).apiFootballLeagueId ? (
+                                <span className="ml-1.5 text-[10px] bg-brand/10 text-brand px-1 rounded">API ID {(t as {apiFootballLeagueId?: number}).apiFootballLeagueId}</span>
+                              ) : (
+                                <span className="ml-1.5 text-[10px] bg-muted text-muted-foreground px-1 rounded">Manual</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={(t as {isAvailable?: boolean}).isAvailable ?? false}
+                          onCheckedChange={(v) => toggleAvailabilityMutation.mutate({ tournamentId: t.id, isAvailable: v })}
+                          className="shrink-0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Card: Importar da API-Football */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-brand" />
+                  Importar da API-Football
+                </CardTitle>
+                <CardDescription className="text-sm">Busque ligas disponíveis e importe para o Plakr com 1 clique. Consome 1 req da quota.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {!integrationSettings?.apiFootballEnabled ? (
+                  <div className="flex items-center gap-2 p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20">
+                    <AlertTriangle className="h-4 w-4 text-yellow-400 shrink-0" />
+                    <p className="text-xs text-yellow-300">Ative a integração API-Football acima para importar ligas.</p>
+                  </div>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={() => fetchLeaguesMutation.mutate({ season: integrationSettings?.apiFootballSeason ?? 2026 })}
+                      disabled={fetchLeaguesMutation.isPending}
+                    >
+                      {fetchLeaguesMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                      Buscar Ligas da API-Football
+                    </Button>
+                    {apiLeagues.length > 0 && (
+                      <>
+                        <Input
+                          placeholder="Filtrar por nome ou país..."
+                          value={leagueSearch}
+                          onChange={(e) => setLeagueSearch(e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                        <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                          {apiLeagues
+                            .filter((l) =>
+                              leagueSearch === "" ||
+                              l.name.toLowerCase().includes(leagueSearch.toLowerCase()) ||
+                              l.country.toLowerCase().includes(leagueSearch.toLowerCase())
+                            )
+                            .map((league) => {
+                              const alreadyImported = managedTournaments?.some((t) => (t as {apiFootballLeagueId?: number}).apiFootballLeagueId === league.leagueId);
+                              return (
+                                <div key={league.leagueId} className="flex items-center justify-between p-2 rounded border border-border/30 hover:bg-muted/20">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    {league.logoUrl && <img src={league.logoUrl} alt={league.name} className="w-5 h-5 object-contain shrink-0" />}
+                                    <div className="min-w-0">
+                                      <p className="text-xs font-medium truncate">{league.name}</p>
+                                      <p className="text-[10px] text-muted-foreground">{league.country}</p>
+                                    </div>
+                                  </div>
+                                  {alreadyImported ? (
+                                    <Badge variant="outline" className="text-[10px] border-green-500/40 text-green-400 shrink-0">Importado</Badge>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 text-[10px] px-2 shrink-0"
+                                      onClick={() => importLeagueMutation.mutate({
+                                        leagueId: league.leagueId,
+                                        name: league.name,
+                                        country: league.country,
+                                        logoUrl: league.logoUrl,
+                                        season: league.season ?? integrationSettings?.apiFootballSeason ?? 2026,
+                                        makeAvailable: true,
+                                      })}
+                                      disabled={importLeagueMutation.isPending}
+                                    >
+                                      + Importar
+                                    </Button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );

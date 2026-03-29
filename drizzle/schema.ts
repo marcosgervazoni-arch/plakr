@@ -125,6 +125,9 @@ export const tournaments = mysqlTable("tournaments", {
   startDate: timestamp("startDate"),
   endDate: timestamp("endDate"),
   format: mysqlEnum("format", ["league", "cup", "groups_knockout", "custom"]).default("custom"),
+  isAvailable: boolean("isAvailable").default(false).notNull(),    // visível para usuários criarem bolões
+  apiFootballLeagueId: int("apiFootballLeagueId"),                  // ID da liga na API-Football (null = manual)
+  apiFootballSeason: int("apiFootballSeason"),                      // temporada na API-Football
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

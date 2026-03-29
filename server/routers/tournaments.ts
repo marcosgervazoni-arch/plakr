@@ -70,7 +70,8 @@ function buildEffectiveRules(
 }
 export const tournamentsRouter = router({
   listGlobal: publicProcedure.query(async () => {
-    return getGlobalTournaments();
+    // Apenas campeonatos marcados como disponíveis pelo Super Admin
+    return getGlobalTournaments(true);
   }),
 
   getById: publicProcedure
@@ -85,7 +86,8 @@ export const tournamentsRouter = router({
     }),
 
   list: adminProcedure.query(async () => {
-    return getGlobalTournaments();
+    // Admin vê todos os campeonatos globais (disponíveis ou não)
+    return getGlobalTournaments(false);
   }),
 
   create: protectedProcedure

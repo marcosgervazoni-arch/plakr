@@ -7,10 +7,10 @@
 import { z } from "zod";
 import { adminProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
-import { platformSettings, apiSyncLog, apiQuotaTracker } from "../../drizzle/schema";
+import { platformSettings, apiSyncLog, apiQuotaTracker, tournaments } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { syncFixtures, syncResults } from "../api-football/sync";
-import { fetchAccountStatus } from "../api-football/client";
+import { fetchAccountStatus, apiFootballRequest } from "../api-football/client";
 import { Err } from "../errors";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -199,4 +199,113 @@ export const integrationsRouter = router({
       .limit(30);
     return history;
   }),
+
+  /**
+   * Lista todos os campeonatos globais com status de disponibilidade (curadoria).
+   */
+  listTournaments: adminProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+    return db
+      .select()
+      .from(tournaments)
+      .where(eq(tournaments.isGlobal, true))
+      .orderBy(desc(tournaments.createdAt));
+  }),
+
+  /**
+   * Ativa ou desativa a visibilidade de um campeonato para os usuários.
+   */
+  toggleTournamentAvailability: adminProcedure
+    .input(z.object({ tournamentId: z.number(), isAvailable: z.boolean() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw Err.internal("DB não disponível");
+      await db
+        .update(tournaments)
+        .set({ isAvailable: input.isAvailable })
+        .where(eq(tournaments.id, input.tournamentId));
+      return { success: true };
+    }),
+
+  /**
+   * Busca ligas disponíveis na API-Football para uma temporada.
+   * Consome 1 requisição da quota diária.
+   */
+  fetchLeaguesFromApi: adminProcedure
+    .input(z.object({ season: z.number().default(2026) }))
+    .mutation(async () => {
+      const db = await getDb();
+      if (!db) throw Err.internal("DB não disponível");
+      const settings = await db.select().from(platformSettings).limit(1);
+      const cfg = settings[0];
+      if (!cfg?.apiFootballKey) throw Err.badRequest("Chave da API-Football não configurada");
+      if (!cfg.apiFootballEnabled) throw Err.badRequest("Integração API-Football está desativada");
+
+      // Busca ligas mais populares — filtra por popularidade (top 50)
+      const data = await apiFootballRequest(
+        `/leagues`,
+        { season: cfg.apiFootballSeason, type: "league" }
+      );
+      const leagues = (data?.response ?? []).slice(0, 80).map((item: any) => ({
+        leagueId: item.league.id as number,
+        name: item.league.name as string,
+        country: item.country.name as string,
+        logoUrl: item.league.logo as string,
+        season: cfg.apiFootballSeason,
+        type: item.league.type as string,
+      }));
+      return leagues;
+    }),
+
+  /**
+   * Importa uma liga da API-Football como campeonato global no Plakr.
+   */
+  importLeagueFromApi: adminProcedure
+    .input(z.object({
+      leagueId: z.number(),
+      name: z.string(),
+      country: z.string().optional(),
+      logoUrl: z.string().optional(),
+      season: z.number(),
+      makeAvailable: z.boolean().default(true),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw Err.internal("DB não disponível");
+
+      // Verifica se já existe campeonato com esse leagueId
+      const existing = await db
+        .select()
+        .from(tournaments)
+        .where(eq(tournaments.apiFootballLeagueId, input.leagueId))
+        .limit(1);
+
+      if (existing.length > 0) {
+        await db
+          .update(tournaments)
+          .set({ isAvailable: input.makeAvailable })
+          .where(eq(tournaments.id, existing[0].id));
+        return { created: false, tournamentId: existing[0].id, message: "Campeonato já existe — disponibilidade atualizada" };
+      }
+
+      // Cria novo campeonato global
+      const slug = `${input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${input.season}`;
+      const result = await db.insert(tournaments).values({
+        name: input.name,
+        slug,
+        logoUrl: input.logoUrl ?? null,
+        isGlobal: true,
+        createdBy: ctx.user.id,
+        status: "active",
+        country: input.country?.slice(0, 10) ?? null,
+        season: String(input.season),
+        format: "groups_knockout",
+        isAvailable: input.makeAvailable,
+        apiFootballLeagueId: input.leagueId,
+        apiFootballSeason: input.season,
+      });
+      const tournamentId = (result[0] as any).insertId;
+      return { created: true, tournamentId, message: "Campeonato importado com sucesso" };
+    }),
 });

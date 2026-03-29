@@ -2075,3 +2075,12 @@
 - [x] Router tRPC integrations (server/routers/integrations.ts): getSettings, saveSettings, testConnection, manualSyncFixtures, manualSyncResults, getSyncLogs, getQuotaHistory, resetCircuitBreaker
 - [x] Seção API-Football no painel Super Admin (AdminIntegrations.tsx): configurar chave via input seguro, toggles de ativação, ID de campeonato/temporada, barra de quota, circuit breaker, log de sincronizações, sync manual
 - [x] 18 testes unitários passando (client, circuit breaker, mapeamento de fixtures, controle de quota, retry exponencial)
+
+## Curadoria de Campeonatos — Super Admin (sprint 29/03/2026)
+- [ ] Campo isAvailable (visível para usuários) na tabela tournaments + migração
+- [ ] Campo apiFootballLeagueId e apiFootballSeason na tabela tournaments (para vincular ao sync)
+- [ ] Endpoint integrations.listAvailableLeagues — busca campeonatos disponíveis na API-Football
+- [ ] Endpoint integrations.importLeague — importa campeonato da API-Football para tournaments
+- [ ] Endpoint tournaments.toggleAvailability — ativa/desativa visibilidade para usuários
+- [ ] Painel Admin: seção "Campeonatos Disponíveis" com toggle por campeonato, badge de origem (API/Manual), botão importar da API-Football
+- [ ] Fluxo de criação de bolão: listar apenas campeonatos com isAvailable=true

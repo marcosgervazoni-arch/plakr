@@ -206,10 +206,13 @@ export async function canAddMember(poolId: number, ownerId: number): Promise<{ a
 
 // ─── TOURNAMENTS ──────────────────────────────────────────────────────────────
 
-export async function getGlobalTournaments(): Promise<Tournament[]> {
+export async function getGlobalTournaments(onlyAvailable = true): Promise<Tournament[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(tournaments).where(eq(tournaments.isGlobal, true)).orderBy(desc(tournaments.createdAt));
+  const condition = onlyAvailable
+    ? and(eq(tournaments.isGlobal, true), eq(tournaments.isAvailable, true))
+    : eq(tournaments.isGlobal, true);
+  return db.select().from(tournaments).where(condition).orderBy(desc(tournaments.createdAt));
 }
 
 export async function getTournamentById(id: number): Promise<Tournament | undefined> {

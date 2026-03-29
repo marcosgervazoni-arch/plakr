@@ -295,6 +295,13 @@
       "when": 1774805337793,
       "tag": "0041_square_deadpool",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1774807218098,
+      "tag": "0042_high_yellowjacket",
+      "breakpoints": true
     }
   ]
 }
