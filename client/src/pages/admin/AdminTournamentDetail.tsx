@@ -321,61 +321,65 @@ export default function AdminTournamentDetail() {
           </Button>
         </div>
 
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
-            {tournament.logoUrl ? (
-              <img src={tournament.logoUrl} alt={tournament.name} className="w-10 h-10 object-contain rounded" />
-            ) : (
-              <Trophy className="h-7 w-7 text-brand" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold font-display">{tournament.name}</h1>
-              {tournament.isGlobal && (
-                <Badge variant="outline" className="text-xs border-blue-400/30 text-blue-400">
-                  <Globe className="h-2.5 w-2.5 mr-1" />Global
-                </Badge>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          {/* Logo + Info */}
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
+              {tournament.logoUrl ? (
+                <img src={tournament.logoUrl} alt={tournament.name} className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded" />
+              ) : (
+                <Trophy className="h-6 w-6 sm:h-7 sm:w-7 text-brand" />
               )}
             </div>
-            <p className="text-sm text-muted-foreground font-mono mt-0.5">
-              {tournament.slug}
-              {tournament.country && ` · ${tournament.country}`}
-              {tournament.season && ` · ${tournament.season}`}
-            </p>
-            {(tournament.startDate || tournament.endDate) && (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {tournament.startDate && format(new Date(tournament.startDate), "dd/MM/yyyy", { locale: ptBR })}
-                {tournament.startDate && tournament.endDate && " → "}
-                {tournament.endDate && format(new Date(tournament.endDate), "dd/MM/yyyy", { locale: ptBR })}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-bold font-display leading-tight">{tournament.name}</h1>
+                {tournament.isGlobal && (
+                  <Badge variant="outline" className="text-xs border-blue-400/30 text-blue-400">
+                    <Globe className="h-2.5 w-2.5 mr-1" />Global
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground font-mono mt-0.5 break-all">
+                {tournament.slug}
+                {tournament.country && ` · ${tournament.country}`}
+                {tournament.season && ` · ${tournament.season}`}
               </p>
-            )}
+              {(tournament.startDate || tournament.endDate) && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {tournament.startDate && format(new Date(tournament.startDate), "dd/MM/yyyy", { locale: ptBR })}
+                  {tournament.startDate && tournament.endDate && " → "}
+                  {tournament.endDate && format(new Date(tournament.endDate), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+              )}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2 shrink-0">
-            <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowAddTeam(true)}>
-              <Shield className="h-4 w-4" /> Time
+          {/* Action buttons — full width on mobile, inline on desktop */}
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5 flex-1 sm:flex-none" onClick={() => setShowAddTeam(true)}>
+              <Shield className="h-3.5 w-3.5" /> <span className="sm:inline">Time</span>
             </Button>
-            <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowAddPhase(true)}>
-              <Layers className="h-4 w-4" /> Fase
+            <Button size="sm" variant="outline" className="gap-1.5 flex-1 sm:flex-none" onClick={() => setShowAddPhase(true)}>
+              <Layers className="h-3.5 w-3.5" /> <span className="sm:inline">Fase</span>
             </Button>
-            <Button size="sm" variant="outline" className="gap-2" onClick={() => setShowSheetsModal(true)}>
-              <FileSpreadsheet className="h-4 w-4" /> Sheets
+            <Button size="sm" variant="outline" className="gap-1.5 flex-1 sm:flex-none" onClick={() => setShowSheetsModal(true)}>
+              <FileSpreadsheet className="h-3.5 w-3.5" /> <span className="sm:inline">Sheets</span>
             </Button>
-            <Button size="sm" variant="outline" className="gap-2 text-primary border-primary/30 hover:bg-primary/10"
+            <Button size="sm" variant="outline" className="gap-1.5 flex-1 sm:flex-none text-primary border-primary/30 hover:bg-primary/10"
               disabled={recalculateMutation.isPending}
               onClick={() => recalculateMutation.mutate({ tournamentId })}>
-              {recalculateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              Recalcular
+              {recalculateMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              <span className="sm:inline">Recalcular</span>
             </Button>
-            <Button size="sm" className="gap-2 bg-brand hover:bg-brand/90" onClick={() => setShowAddGame(true)}>
-              <Plus className="h-4 w-4" /> Jogo
+            <Button size="sm" className="gap-1.5 flex-1 sm:flex-none bg-brand hover:bg-brand/90" onClick={() => setShowAddGame(true)}>
+              <Plus className="h-3.5 w-3.5" /> <span className="sm:inline">Jogo</span>
             </Button>
           </div>
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Card className="border-border/50">
             <CardContent className="p-4 flex items-center gap-3">
               <Shield className="h-5 w-5 text-brand shrink-0" />
@@ -426,21 +430,21 @@ export default function AdminTournamentDetail() {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-4">
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
                   {teams.map((team) => (
-                    <div key={team.id} className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-1.5 group">
+                    <div key={team.id} className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2 group">
                       {team.flagUrl ? (
-                        <img src={team.flagUrl} alt={team.name} className="w-5 h-5 object-contain rounded-sm" />
+                        <img src={team.flagUrl} alt={team.name} className="w-5 h-5 object-contain rounded-sm shrink-0" />
                       ) : (
-                        <Flag className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Flag className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       )}
-                      <span className="text-sm font-medium">{team.name}</span>
-                      {team.code && <span className="text-xs text-muted-foreground font-mono">({team.code})</span>}
-                      {team.groupName && <span className="text-xs text-muted-foreground">Gr.{team.groupName}</span>}
+                      <span className="text-sm font-medium truncate flex-1">{team.name}</span>
+                      {team.code && <span className="text-xs text-muted-foreground font-mono shrink-0">({team.code})</span>}
+                      {team.groupName && <span className="text-xs text-muted-foreground shrink-0">Gr.{team.groupName}</span>}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ml-1"
+                        className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
                         onClick={() => setDeleteTeamTarget({ id: team.id, name: team.name })}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -663,25 +667,27 @@ export default function AdminTournamentDetail() {
                             </div>
                           ) : (
                             /* Normal game row */
-                            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors group">
+                            <div className="flex items-center gap-2 p-2.5 sm:p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors group">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-sm">{g.teamAName ?? "A Definir"}</span>
+                                {/* Teams + score */}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-medium text-sm truncate max-w-[100px] sm:max-w-none">{g.teamAName ?? "A Definir"}</span>
                                   {g.scoreA !== null && g.scoreB !== null ? (
-                                    <span className="font-mono text-sm font-bold text-brand">{g.scoreA} × {g.scoreB}</span>
+                                    <span className="font-mono text-sm font-bold text-brand shrink-0">{g.scoreA}×{g.scoreB}</span>
                                   ) : (
-                                    <span className="text-muted-foreground text-xs font-mono">vs</span>
+                                    <span className="text-muted-foreground text-xs font-mono shrink-0">vs</span>
                                   )}
-                                  <span className="font-medium text-sm">{g.teamBName ?? "A Definir"}</span>
+                                  <span className="font-medium text-sm truncate max-w-[100px] sm:max-w-none">{g.teamBName ?? "A Definir"}</span>
                                 </div>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                {/* Date + venue */}
+                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
                                     <Calendar className="h-2.5 w-2.5" />
-                                    {format(new Date(g.matchDate), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                                    {format(new Date(g.matchDate), "dd/MM/yy HH:mm", { locale: ptBR })}
                                   </span>
                                   {g.venue && (
-                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                      <MapPin className="h-2.5 w-2.5" />{g.venue}
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1 truncate max-w-[120px] sm:max-w-none">
+                                      <MapPin className="h-2.5 w-2.5 shrink-0" /><span className="truncate">{g.venue}</span>
                                     </span>
                                   )}
                                 </div>
@@ -691,7 +697,7 @@ export default function AdminTournamentDetail() {
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                                  className="h-7 w-7 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-foreground"
                                   onClick={() => {
                                     setEditingGameId(g.id);
                                     setEditGameForm({
@@ -710,7 +716,7 @@ export default function AdminTournamentDetail() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="h-7 text-xs gap-1 opacity-0 group-hover:opacity-100"
+                                    className="h-7 text-xs gap-1 sm:opacity-0 sm:group-hover:opacity-100 hidden sm:flex"
                                     onClick={() => {
                                       setResultTarget({ gameId: g.id, teamA: g.teamAName ?? "Time A", teamB: g.teamBName ?? "Time B" });
                                       setResultForm({ scoreA: g.scoreA?.toString() ?? "", scoreB: g.scoreB?.toString() ?? "" });
@@ -723,7 +729,7 @@ export default function AdminTournamentDetail() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+                                  className="h-7 w-7 sm:opacity-0 sm:group-hover:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
                                   onClick={() => setDeleteGameTarget({ id: g.id, teamA: g.teamAName ?? "Time A", teamB: g.teamBName ?? "Time B" })}
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
