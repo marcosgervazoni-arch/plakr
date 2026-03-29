@@ -233,12 +233,39 @@ export const poolsRetrospectiveRouter = router({
     }),
 
   // ── Admin: gerar vídeo de teste (dados fictícios) ─────────────────────────
+  // Roda em background para evitar timeout HTTP (renderização leva 2-5 min)
   generateTestVideo: adminProcedure
-    .mutation(async () => {
-      const { generateTestVideo } = await import("../retrospective-video");
-      const result = await generateTestVideo();
-      if (!result) throw Err.internal();
-      return { videoUrl: result.videoUrl };
+    .mutation(async ({ ctx }) => {
+      const adminUserId = ctx.user.id;
+      // Disparar em background sem await — responde imediatamente
+      setImmediate(async () => {
+        try {
+          const { generateTestVideo } = await import("../retrospective-video");
+          const result = await generateTestVideo();
+          // Notificar admin via in-app quando pronto
+          const { createNotification } = await import("../db");
+          if (result?.videoUrl) {
+            await createNotification({
+              userId: adminUserId,
+              type: "system",
+              title: "🎬 Vídeo teste gerado!",
+              message: `Seu vídeo de retrospectiva de teste está pronto. Clique para assistir.`,
+              actionUrl: result.videoUrl,
+            });
+          } else {
+            await createNotification({
+              userId: adminUserId,
+              type: "system",
+              title: "❌ Falha ao gerar vídeo teste",
+              message: "Ocorreu um erro ao gerar o vídeo de teste. Verifique os logs do servidor.",
+            });
+          }
+        } catch (err) {
+          const logger = (await import("../logger")).default;
+          logger.error({ err }, "[Video] Background test video generation failed");
+        }
+      });
+      return { queued: true, message: "Gerando vídeo em background. Você receberá uma notificação quando estiver pronto (2-5 minutos)." };
     }),
 
   uploadRetrospectiveTemplate: adminProcedure

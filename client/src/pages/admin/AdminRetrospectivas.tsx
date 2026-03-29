@@ -317,7 +317,6 @@ export default function AdminRetrospectivas() {
   const [enableVideo, setEnableVideo] = useState(false);
   const [videoQuality, setVideoQuality] = useState<"low" | "medium" | "high">("medium");
   const [configLoaded, setConfigLoaded] = useState(false);
-  const [testVideoUrl, setTestVideoUrl] = useState<string | null>(null);
 
   if (config && !configLoaded) {
     setCtaText(config.closingCtaText ?? "Crie seu bolão no Plakr! →");
@@ -330,11 +329,10 @@ export default function AdminRetrospectivas() {
   }
 
   const generateTestVideo = trpc.pools.generateTestVideo.useMutation({
-    onSuccess: (data: { videoUrl: string }) => {
-      setTestVideoUrl(data.videoUrl);
-      toast.success("Vídeo de teste gerado! Clique em 'Assistir' para visualizar.");
+    onSuccess: () => {
+      toast.success("🎬 Gerando vídeo em background! Você receberá uma notificação quando estiver pronto (2-5 minutos).", { duration: 7000 });
     },
-    onError: (err: { message?: string }) => toast.error(err.message || "Erro ao gerar vídeo de teste."),
+    onError: (err: { message?: string }) => toast.error(err.message || "Erro ao iniciar geração do vídeo."),
   });
 
   const getUrl = (slot: SlotKey): string | null | undefined => {
@@ -489,17 +487,6 @@ export default function AdminRetrospectivas() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {testVideoUrl && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs"
-                        onClick={() => window.open(testVideoUrl, "_blank")}
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        Assistir
-                      </Button>
-                    )}
                     <Button
                       variant="outline"
                       size="sm"
