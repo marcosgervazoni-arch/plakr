@@ -32,6 +32,8 @@ export default function AdminSettings() {
 
   const [restrictedInviteMessage, setRestrictedInviteMessage] = useState("");
   const [cobaiaPoolId, setCobaiaPoolId] = useState<string>("");
+  const [stripeKeys, setStripeKeys] = useState({ publishableKey: "", secretKey: "" });
+  const [showStripeSecret, setShowStripeSecret] = useState(false);
 
   const [form, setForm] = useState({
     // Limites do plano gratuito
@@ -103,6 +105,10 @@ export default function AdminSettings() {
       });
       setRestrictedInviteMessage((settings as any).restrictedInviteMessage ?? "");
       setCobaiaPoolId((settings as any).cobaiaPoolId?.toString() ?? "");
+      setStripeKeys({
+        publishableKey: (settings as any).stripePublishableKey ?? "",
+        secretKey: (settings as any).stripeSecretKey ? "••••••••••••••••••••" : "",
+      });
     }
   }, [settings]);
 
@@ -119,11 +125,14 @@ export default function AdminSettings() {
 
   // Salva form principal + pushForm + campos extras juntos
   const handleSaveAll = () => {
+    const secretToSave = stripeKeys.secretKey && !stripeKeys.secretKey.startsWith("•") ? stripeKeys.secretKey : undefined;
     updateMutation.mutate({
       ...form,
       ...pushForm,
       restrictedInviteMessage: restrictedInviteMessage.trim() || null,
       cobaiaPoolId: cobaiaPoolId.trim() ? parseInt(cobaiaPoolId.trim(), 10) : null,
+      stripePublishableKey: stripeKeys.publishableKey || undefined,
+      stripeSecretKey: secretToSave,
     });
   };
 
@@ -200,21 +209,69 @@ export default function AdminSettings() {
 
             {/* ─── STRIPE / MONETIZAÇÃO ─────────────────────────────────────── */}
             <Card className="border-brand/30 bg-brand/5">
-              <CardContent className="pt-4">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <CreditCard className="h-5 w-5 text-brand shrink-0" />
                     <div>
-                      <p className="font-semibold text-sm">Stripe — Price IDs e Preços</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Gerencie Price IDs e valores exibidos na tela de upgrade.</p>
+                      <CardTitle className="text-base">Stripe — Chaves de API</CardTitle>
+                      <CardDescription className="text-sm mt-0.5">Configure as chaves de produção para ativar pagamentos reais.</CardDescription>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href="/admin/pricing">
-                      Gerenciar preços
-                      <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                    </a>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {stripeKeys.publishableKey.startsWith("pk_live_") ? (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">Produção ativa</Badge>
+                    ) : stripeKeys.publishableKey.startsWith("pk_test_") ? (
+                      <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 text-xs">Modo teste</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground text-xs">Não configurado</Badge>
+                    )}
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="/admin/pricing">
+                        Price IDs
+                        <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
+                  <strong>Como obter as chaves:</strong> Acesse <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="underline">dashboard.stripe.com → Desenvolvedores → Chaves da API</a>. Use as <strong>Chaves padrão</strong> (não as restritas). A chave publicável começa com <code>pk_live_</code> e a secreta com <code>sk_live_</code>.
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Chave Publicável <span className="text-muted-foreground font-normal">(pk_live_...)</span></Label>
+                    <Input
+                      value={stripeKeys.publishableKey}
+                      onChange={e => setStripeKeys(k => ({ ...k, publishableKey: e.target.value }))}
+                      placeholder="pk_live_..."
+                      className="font-mono text-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">Usada no frontend para inicializar o Stripe.js</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Chave Secreta <span className="text-muted-foreground font-normal">(sk_live_...)</span></Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type={showStripeSecret ? "text" : "password"}
+                        value={stripeKeys.secretKey}
+                        onChange={e => setStripeKeys(k => ({ ...k, secretKey: e.target.value }))}
+                        placeholder="sk_live_..."
+                        className="font-mono text-xs flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowStripeSecret(s => !s)}
+                        className="shrink-0"
+                      >
+                        {showStripeSecret ? "Ocultar" : "Mostrar"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Usada no servidor para criar sessões de pagamento. Nunca compartilhe esta chave.</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

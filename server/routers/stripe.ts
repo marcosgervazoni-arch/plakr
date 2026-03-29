@@ -31,12 +31,12 @@ export const stripeRouter = router({
       }
 
       const Stripe = (await import("stripe")).default;
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+      // Ler configurações do banco (chave secreta e Price IDs configuráveis via painel Admin → Configurações)
+      const platformConfig = await getPlatformSettings();
+      const stripeSecretKey = (platformConfig as any)?.stripeSecretKey || process.env.STRIPE_SECRET_KEY || "";
+      const stripe = new Stripe(stripeSecretKey, {
         apiVersion: "2026-02-25.clover" as "2026-02-25.clover",
       });
-
-      // Ler Price IDs do banco (configuráveis via painel Admin → Configurações)
-      const platformConfig = await getPlatformSettings();
 
       // Selecionar Price ID conforme tier e billing
       let priceId: string | null | undefined;
@@ -98,7 +98,9 @@ export const stripeRouter = router({
       }
 
       const Stripe = (await import("stripe")).default;
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+      const platformConfigPortal = await getPlatformSettings();
+      const stripeSecretKeyPortal = (platformConfigPortal as any)?.stripeSecretKey || process.env.STRIPE_SECRET_KEY || "";
+      const stripe = new Stripe(stripeSecretKeyPortal, {
         apiVersion: "2026-02-25.clover" as "2026-02-25.clover",
       });
 

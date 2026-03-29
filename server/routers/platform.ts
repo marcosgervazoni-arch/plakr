@@ -91,6 +91,8 @@ export const platformRouter = router({
       defaultZebraThreshold: z.number().min(50).max(100).optional(),
       gaMeasurementId: z.string().optional(),
       fbPixelId: z.string().optional(),
+      stripePublishableKey: z.string().optional(),
+      stripeSecretKey: z.string().optional(),
       stripePriceIdPro: z.string().optional(),
       stripePriceIdProAnnual: z.string().optional(),
       stripePriceIdUnlimited: z.string().optional(),

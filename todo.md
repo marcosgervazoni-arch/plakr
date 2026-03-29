@@ -2009,3 +2009,11 @@
 - [x] Garantir que testes automatizados limpam dados órfãos no beforeAll (auto-cleanup)
 - [x] Service Worker: nome do cache atualizado de apostai-sw-v2 para plakr-sw-v1
 - [x] SEO/meta tags: já estão corretos (og:image, twitter:card, structured data, robots.txt, sitemap.xml)
+
+## Chaves Stripe no painel Admin (29/03/2026)
+- [x] Colunas stripePublishableKey e stripeSecretKey adicionadas ao schema e ao banco
+- [x] Card "Stripe — Chaves de API" adicionado no AdminSettings com badge de status (Produção ativa / Modo teste / Não configurado)
+- [x] Chave secreta mascarada (••••) ao carregar — só atualiza se o admin digitar um novo valor
+- [x] Botão Mostrar/Ocultar para a chave secreta
+- [x] Instruções inline com link direto para dashboard.stripe.com
+- [x] Servidor usa chave do banco como prioridade sobre env var (stripe.ts + stripe-webhook.ts)

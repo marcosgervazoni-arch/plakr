@@ -54,6 +54,8 @@ export const platformSettings = mysqlTable("platform_settings", {
   gaMeasurementId: varchar("gaMeasurementId", { length: 64 }),
   fbPixelId: varchar("fbPixelId", { length: 64 }),
   adNetworkScripts: json("adNetworkScripts").$type<Record<string, string>>(),
+  stripePublishableKey: varchar("stripePublishableKey", { length: 256 }),
+  stripeSecretKey: varchar("stripeSecretKey", { length: 256 }),
   stripePriceIdPro: varchar("stripePriceIdPro", { length: 128 }),
   stripePriceIdProAnnual: varchar("stripePriceIdProAnnual", { length: 128 }),
   stripePriceIdUnlimited: varchar("stripePriceIdUnlimited", { length: 128 }),
