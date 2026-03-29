@@ -1,0 +1,102 @@
+{
+  "query": "SELECT roundNumber, COUNT(*) as total FROM games WHERE tournamentId = 30001 GROUP BY roundNumber ORDER BY CAST(roundNumber AS UNSIGNED) LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT roundNumber, COUNT(*) as total FROM games WHERE tournamentId = 30001 GROUP BY roundNumber ORDER BY CAST(roundNumber AS UNSIGNED) LIMIT 30;",
+  "rows": [
+    {
+      "roundNumber": "1",
+      "total": "91"
+    },
+    {
+      "roundNumber": "2",
+      "total": "112"
+    },
+    {
+      "roundNumber": "3",
+      "total": "14"
+    },
+    {
+      "roundNumber": "4",
+      "total": "28"
+    },
+    {
+      "roundNumber": "5",
+      "total": "28"
+    },
+    {
+      "roundNumber": "6",
+      "total": "28"
+    },
+    {
+      "roundNumber": "7",
+      "total": "28"
+    },
+    {
+      "roundNumber": "8",
+      "total": "28"
+    },
+    {
+      "roundNumber": "9",
+      "total": "28"
+    },
+    {
+      "roundNumber": "10",
+      "total": "14"
+    },
+    {
+      "roundNumber": "11",
+      "total": "14"
+    },
+    {
+      "roundNumber": "12",
+      "total": "14"
+    },
+    {
+      "roundNumber": "13",
+      "total": "14"
+    },
+    {
+      "roundNumber": "15",
+      "total": "14"
+    },
+    {
+      "roundNumber": "16",
+      "total": "14"
+    },
+    {
+      "roundNumber": "17",
+      "total": "14"
+    },
+    {
+      "roundNumber": "18",
+      "total": "14"
+    },
+    {
+      "roundNumber": "19",
+      "total": "14"
+    },
+    {
+      "roundNumber": "20",
+      "total": "14"
+    },
+    {
+      "roundNumber": "21",
+      "total": "14"
+    },
+    {
+      "roundNumber": "22",
+      "total": "14"
+    },
+    {
+      "roundNumber": "23",
+      "total": "14"
+    },
+    {
+      "roundNumber": "24",
+      "total": "14"
+    }
+  ],
+  "messages": [],
+  "stdout": "roundNumber\ttotal\n1\t91\n2\t112\n3\t14\n4\t28\n5\t28\n6\t28\n7\t28\n8\t28\n9\t28\n10\t14\n11\t14\n12\t14\n13\t14\n15\t14\n16\t14\n17\t14\n18\t14\n19\t14\n20\t14\n21\t14\n22\t14\n23\t14\n24\t14\n",
+  "stderr": "",
+  "execution_time_ms": 355
+}

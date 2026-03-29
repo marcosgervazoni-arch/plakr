@@ -1,0 +1,35 @@
+{
+  "query": "SELECT phase, roundNumber, COUNT(*) as total FROM games WHERE tournamentId = 30001 GROUP BY phase, roundNumber ORDER BY roundNumber, phase LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT phase, roundNumber, COUNT(*) as total FROM games WHERE tournamentId = 30001 GROUP BY phase, roundNumber ORDER BY roundNumber, phase LIMIT 30;",
+  "rows": [
+    {
+      "phase": "final",
+      "roundNumber": "1",
+      "total": "1"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "total": "196"
+    },
+    {
+      "phase": "quarter_finals",
+      "roundNumber": "1",
+      "total": "4"
+    },
+    {
+      "phase": "semi_finals",
+      "roundNumber": "1",
+      "total": "2"
+    },
+    {
+      "phase": "group_stage",
+      "roundNumber": "2",
+      "total": "378"
+    }
+  ],
+  "messages": [],
+  "stdout": "phase\troundNumber\ttotal\nfinal\t1\t1\ngroup_stage\t1\t196\nquarter_finals\t1\t4\nsemi_finals\t1\t2\ngroup_stage\t2\t378\n",
+  "stderr": "",
+  "execution_time_ms": 368
+}

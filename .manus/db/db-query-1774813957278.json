@@ -1,0 +1,18 @@
+{
+  "query": "SELECT roundNumber, COUNT(*) as total FROM games WHERE tournamentId = 30001 GROUP BY roundNumber ORDER BY CAST(roundNumber AS UNSIGNED) LIMIT 40;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT roundNumber, COUNT(*) as total FROM games WHERE tournamentId = 30001 GROUP BY roundNumber ORDER BY CAST(roundNumber AS UNSIGNED) LIMIT 40;",
+  "rows": [
+    {
+      "roundNumber": "1",
+      "total": "203"
+    },
+    {
+      "roundNumber": "2",
+      "total": "378"
+    }
+  ],
+  "messages": [],
+  "stdout": "roundNumber\ttotal\n1\t203\n2\t378\n",
+  "stderr": "",
+  "execution_time_ms": 352
+}

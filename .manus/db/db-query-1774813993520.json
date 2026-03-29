@@ -1,0 +1,13 @@
+{
+  "query": "SELECT apiFootballKey FROM platform_settings LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT apiFootballKey FROM platform_settings LIMIT 1;",
+  "rows": [
+    {
+      "apiFootballKey": "08ec7ad27e5760cc8f1f0eca15412038"
+    }
+  ],
+  "messages": [],
+  "stdout": "apiFootballKey\n08ec7ad27e5760cc8f1f0eca15412038\n",
+  "stderr": "",
+  "execution_time_ms": 347
+}

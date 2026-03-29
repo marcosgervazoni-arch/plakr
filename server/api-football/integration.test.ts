@@ -139,6 +139,75 @@ describe("Mapeamento de Fixtures da API-Football", () => {
   });
 });
 
+// ─── Testes da função extractRoundNumber (nova lógica) ────────────────────────────────────────────
+describe("extractRoundNumber — formatos da API-Football", () => {
+  // Replica a lógica do sync.ts para testar isoladamente
+  function extractRoundNumber(round: string): number | null {
+    const afterDash = round.match(/-\s*(\d+)\s*$/);
+    if (afterDash) return parseInt(afterDash[1]);
+    const afterRound = round.match(/round\s+(\d+)/i);
+    if (afterRound) return parseInt(afterRound[1]);
+    const allNumbers = Array.from(round.matchAll(/(\d+)(?!\s*(?:st|nd|rd|th))/gi));
+    if (allNumbers.length > 0) {
+      const last = allNumbers[allNumbers.length - 1];
+      return parseInt(last[1]);
+    }
+    return null;
+  }
+
+  it("deve extrair rodada de \"1st Phase - 1\" como 1", () => {
+    expect(extractRoundNumber("1st Phase - 1")).toBe(1);
+  });
+
+  it("deve extrair rodada de \"1st Phase - 14\" como 14 (não 1 do ordinal)", () => {
+    expect(extractRoundNumber("1st Phase - 14")).toBe(14);
+  });
+
+  it("deve extrair rodada de \"2nd Phase - 27\" como 27 (não 2 do ordinal)", () => {
+    expect(extractRoundNumber("2nd Phase - 27")).toBe(27);
+  });
+
+  it("deve extrair rodada de \"Regular Season - 14\" como 14", () => {
+    expect(extractRoundNumber("Regular Season - 14")).toBe(14);
+  });
+
+  it("deve extrair rodada de \"Apertura - 3\" como 3", () => {
+    expect(extractRoundNumber("Apertura - 3")).toBe(3);
+  });
+
+  it("deve extrair rodada de \"Clausura - 15\" como 15", () => {
+    expect(extractRoundNumber("Clausura - 15")).toBe(15);
+  });
+
+  it("deve extrair rodada de \"Group Stage - 2\" como 2", () => {
+    expect(extractRoundNumber("Group Stage - 2")).toBe(2);
+  });
+
+  it("deve extrair rodada de \"Round 5\" como 5", () => {
+    expect(extractRoundNumber("Round 5")).toBe(5);
+  });
+
+  it("deve retornar null para \"Semi-finals\" (sem número)", () => {
+    expect(extractRoundNumber("Semi-finals")).toBeNull();
+  });
+
+  it("deve retornar null para \"Final\" (sem número)", () => {
+    expect(extractRoundNumber("Final")).toBeNull();
+  });
+
+  it("deve retornar null para \"1st Phase - Quarter-finals\" (sem número após hífen)", () => {
+    expect(extractRoundNumber("1st Phase - Quarter-finals")).toBeNull();
+  });
+
+  it("deve retornar null para \"1st Phase - Semi-finals\" (sem número após hífen)", () => {
+    expect(extractRoundNumber("1st Phase - Semi-finals")).toBeNull();
+  });
+
+  it("deve retornar null para \"1st Phase - Final\" (sem número após hífen)", () => {
+    expect(extractRoundNumber("1st Phase - Final")).toBeNull();
+  });
+});
+
 // ─── Testes de controle de quota ──────────────────────────────────────────────
 describe("Controle de Quota Diária", () => {
   it("deve bloquear requisição quando quota está esgotada", () => {

@@ -1,0 +1,90 @@
+{
+  "query": "SELECT id, externalId, phase, roundNumber, teamAName, teamBName FROM games WHERE tournamentId = 30001 LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, externalId, phase, roundNumber, teamAName, teamBName FROM games WHERE tournamentId = 30001 LIMIT 10;",
+  "rows": [
+    {
+      "id": "60001",
+      "externalId": "831664",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Patronato",
+      "teamBName": "Argentinos JRS"
+    },
+    {
+      "id": "60002",
+      "externalId": "831665",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Sarmiento Junin",
+      "teamBName": "Atletico Tucuman"
+    },
+    {
+      "id": "60003",
+      "externalId": "831666",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Newells Old Boys",
+      "teamBName": "Defensa Y Justicia"
+    },
+    {
+      "id": "60004",
+      "externalId": "831667",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Central Cordoba de Santiago",
+      "teamBName": "Barracas Central"
+    },
+    {
+      "id": "60005",
+      "externalId": "831668",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Arsenal Sarandi",
+      "teamBName": "Rosario Central"
+    },
+    {
+      "id": "60006",
+      "externalId": "831669",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Velez Sarsfield",
+      "teamBName": "Aldosivi"
+    },
+    {
+      "id": "60007",
+      "externalId": "831670",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Godoy Cruz",
+      "teamBName": "Tigre"
+    },
+    {
+      "id": "60008",
+      "externalId": "831671",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Banfield",
+      "teamBName": "San Lorenzo"
+    },
+    {
+      "id": "60009",
+      "externalId": "831672",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Huracan",
+      "teamBName": "Lanus"
+    },
+    {
+      "id": "60010",
+      "externalId": "831673",
+      "phase": "group_stage",
+      "roundNumber": "1",
+      "teamAName": "Union Santa Fe",
+      "teamBName": "River Plate"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tphase\troundNumber\tteamAName\tteamBName\n60001\t831664\tgroup_stage\t1\tPatronato\tArgentinos JRS\n60002\t831665\tgroup_stage\t1\tSarmiento Junin\tAtletico Tucuman\n60003\t831666\tgroup_stage\t1\tNewells Old Boys\tDefensa Y Justicia\n60004\t831667\tgroup_stage\t1\tCentral Cordoba de Santiago\tBarracas Central\n60005\t831668\tgroup_stage\t1\tArsenal Sarandi\tRosario Central\n60006\t831669\tgroup_stage\t1\tVelez Sarsfield\tAldosivi\n60007\t831670\tgroup_stage\t1\tGodoy Cruz\tTigre\n60008\t831671\tgroup_stage\t1\tBanfield\tSan Lorenzo\n60009\t831672\tgroup_stage\t1\tHuracan\tLanus\n60010\t831673\tgroup_stage\t1\tUnion Santa Fe\tRiver Plate\n",
+  "stderr": "",
+  "execution_time_ms": 391
+}

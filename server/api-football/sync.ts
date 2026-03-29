@@ -98,7 +98,7 @@ async function getAllLinkedTournaments(): Promise<Array<{ id: number; leagueId: 
   );
 }
 
-// ─── Helper: converter round da API para phase key ────────────────────────────
+// ─── Helper: converter round da API para phase key ────────────────────────────────────
 
 function roundToPhaseKey(round: string): string {
   const r = round.toLowerCase();
@@ -108,18 +108,51 @@ function roundToPhaseKey(round: string): string {
   if (r.includes("semi")) return "semi_finals";
   if (r.includes("3rd") || r.includes("third")) return "third_place";
   if (r.includes("final")) return "final";
+  // Ligas com fases numeradas (ex: "1st Phase - 1", "2nd Phase - 14")
+  if (r.includes("phase") || r.includes("regular season") || r.includes("apertura") || r.includes("clausura")) return "group_stage";
   return "group_stage";
 }
 
-// ─── Helper: extrair número da rodada ────────────────────────────────────────
+// ─── Helper: extrair número da rodada ────────────────────────────────────────────
 
+/**
+ * Extrai o número da rodada de uma string da API-Football.
+ *
+ * Formatos suportados:
+ *  - "Regular Season - 14"   → 14
+ *  - "1st Phase - 7"         → 7
+ *  - "2nd Phase - 27"        → 27
+ *  - "Apertura - 3"          → 3
+ *  - "Clausura - 15"         → 15
+ *  - "Group Stage - 2"       → 2
+ *  - "Round 5"               → 5
+ *  - "Semi-finals"           → null
+ *  - "Final"                 → null
+ *
+ * Estratégia: extrai o último número após o último hífen ou espaço,
+ * ignorando ordinais como "1st", "2nd", "3rd".
+ */
 function extractRoundNumber(round: string): number | null {
-  const match = round.match(/(\d+)/);
-  return match ? parseInt(match[1]) : null;
+  // Tenta extrair número após o último hífen: "1st Phase - 14" → 14
+  const afterDash = round.match(/-\s*(\d+)\s*$/);
+  if (afterDash) return parseInt(afterDash[1]);
+
+  // Tenta extrair número após "Round ": "Round 5" → 5
+  const afterRound = round.match(/round\s+(\d+)/i);
+  if (afterRound) return parseInt(afterRound[1]);
+
+  // Tenta extrair o último número isolado na string (não ordinal)
+  // Ignora números seguidos de "st", "nd", "rd", "th" (ordinais)
+  const allNumbers = [...round.matchAll(/(\d+)(?!\s*(?:st|nd|rd|th))/gi)];
+  if (allNumbers.length > 0) {
+    const last = allNumbers[allNumbers.length - 1];
+    return parseInt(last[1]);
+  }
+
+  return null;
 }
 
-// ─── Helper: registrar log de sincronização ──────────────────────────────────
-
+// ─── Helper: registrar log de sincronização ────────────────────────────────────────────
 async function logSync(data: {
   syncType: "fixtures" | "results" | "manual";
   status: "success" | "error" | "partial" | "skipped";
