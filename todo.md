@@ -2040,3 +2040,4 @@
 - [ ] Adicionar link para retrospectiva na página do bolão encerrado
 - [ ] Adicionar logs de geração de vídeo (retrospectivaQueue) no AdminSystemHealth
 - [ ] Admin Retrospectivas: botão "Gerar vídeo teste" para validar o worker Remotion com dados fictícios
+- [ ] Admin Retrospectivas: salvar URL do vídeo teste no banco e exibir player/link de download na página após geração em background

@@ -479,28 +479,67 @@ export default function AdminRetrospectivas() {
                 </div>
 
                 {/* Botão Gerar vídeo teste */}
-                <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                  <div>
-                    <p className="text-sm font-medium">Testar geração de vídeo</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Gera um vídeo com dados fictícios para validar o funcionamento antes de ativar em produção.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 border-purple-500/40 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300"
-                      onClick={() => generateTestVideo.mutate()}
-                      disabled={generateTestVideo.isPending}
-                    >
-                      {generateTestVideo.isPending ? (
-                        <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando...</>
-                      ) : (
-                        <><PlayCircle className="h-3.5 w-3.5" /> Gerar vídeo teste</>
+                <div className="space-y-3 pt-2 border-t border-border/50">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium">Testar geração de vídeo</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Gera um vídeo com dados fictícios para validar o funcionamento antes de ativar em produção.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {(config as any)?.testVideoUrl && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-xs border-green-500/40 text-green-400 hover:bg-green-500/10"
+                          onClick={() => window.open((config as any).testVideoUrl, "_blank")}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Assistir
+                        </Button>
                       )}
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 border-purple-500/40 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300"
+                        onClick={() => generateTestVideo.mutate()}
+                        disabled={generateTestVideo.isPending}
+                      >
+                        {generateTestVideo.isPending ? (
+                          <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando...</>
+                        ) : (
+                          <><PlayCircle className="h-3.5 w-3.5" /> Gerar vídeo teste</>
+                        )}
+                      </Button>
+                    </div>
                   </div>
+
+                  {/* Player embutido do vídeo teste */}
+                  {(config as any)?.testVideoUrl && (
+                    <div className="rounded-lg overflow-hidden border border-green-500/20 bg-black">
+                      <div className="flex items-center justify-between px-3 py-2 bg-green-500/10 border-b border-green-500/20">
+                        <div className="flex items-center gap-2">
+                          <Video className="h-3.5 w-3.5 text-green-400" />
+                          <span className="text-xs text-green-400 font-medium">Último vídeo teste gerado</span>
+                        </div>
+                        <a
+                          href={(config as any).testVideoUrl}
+                          download="plakr-retrospectiva-teste.mp4"
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                        >
+                          <ExternalLink className="h-3 w-3" /> Baixar MP4
+                        </a>
+                      </div>
+                      <video
+                        src={(config as any).testVideoUrl}
+                        controls
+                        playsInline
+                        className="w-full max-h-[400px] object-contain"
+                        style={{ maxWidth: "100%" }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Salvar formatos */}

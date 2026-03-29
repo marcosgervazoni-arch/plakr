@@ -242,15 +242,23 @@ export const poolsRetrospectiveRouter = router({
         try {
           const { generateTestVideo } = await import("../retrospective-video");
           const result = await generateTestVideo();
-          // Notificar admin via in-app quando pronto
           const { createNotification } = await import("../db");
           if (result?.videoUrl) {
+            // Salvar URL no banco para exibir na página Admin
+            const db2 = await getDb();
+            if (db2) {
+              const { retrospectiveConfig } = await import("../../drizzle/schema");
+              const { eq: eqFn } = await import("drizzle-orm");
+              await db2.update(retrospectiveConfig)
+                .set({ testVideoUrl: result.videoUrl })
+                .where(eqFn(retrospectiveConfig.id, 1));
+            }
             await createNotification({
               userId: adminUserId,
               type: "system",
               title: "🎬 Vídeo teste gerado!",
-              message: `Seu vídeo de retrospectiva de teste está pronto. Clique para assistir.`,
-              actionUrl: result.videoUrl,
+              message: `Seu vídeo de retrospectiva de teste está pronto. Acesse Admin → Retrospectivas para assistir.`,
+              actionUrl: "/admin/retrospectivas",
             });
           } else {
             await createNotification({

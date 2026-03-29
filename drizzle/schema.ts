@@ -723,6 +723,7 @@ export const retrospectiveConfig = mysqlTable("retrospective_config", {
   enableSlides: boolean("enableSlides").default(true).notNull(), // true = ativo
   enableVideo: boolean("enableVideo").default(false).notNull(),   // true = ativo
   videoQuality: mysqlEnum("videoQuality", ["low", "medium", "high"]).default("medium").notNull(),
+  testVideoUrl: text("testVideoUrl"),  // URL do último vídeo de teste gerado pelo admin
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 export type RetrospectiveConfig = typeof retrospectiveConfig.$inferSelect;
