@@ -1,0 +1,16 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM bets b JOIN games g ON b.gameId = g.id WHERE g.tournamentId = 30001) as bets_count,\n  (SELECT COUNT(*) FROM pools WHERE tournamentId = 30001) as pools_count,\n  (SELECT COUNT(*) FROM games WHERE tournamentId = 30001) as games_count,\n  (SELECT COUNT(*) FROM teams WHERE tournamentId = 30001) as teams_count;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT \n  (SELECT COUNT(*) FROM bets b JOIN games g ON b.gameId = g.id WHERE g.tournamentId = 30001) as bets_count,\n  (SELECT COUNT(*) FROM pools WHERE tournamentId = 30001) as pools_count,\n  (SELECT COUNT(*) FROM games WHERE tournamentId = 30001) as games_count,\n  (SELECT COUNT(*) FROM teams WHERE tournamentId = 30001) as teams_count;",
+  "rows": [
+    {
+      "bets_count": "0",
+      "pools_count": "0",
+      "games_count": "581",
+      "teams_count": "28"
+    }
+  ],
+  "messages": [],
+  "stdout": "bets_count\tpools_count\tgames_count\tteams_count\n0\t0\t581\t28\n",
+  "stderr": "",
+  "execution_time_ms": 391
+}
