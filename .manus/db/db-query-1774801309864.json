@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE platform_settings\nSET\n  adsEnabled = 1,\n  adNetworkScripts = JSON_SET(\n    adNetworkScripts,\n    '$.between_mobile',\n    '<script>\\n  atOptions = {\\n    ''key'' : ''7974ca0bcb4aeb169af6bf58cce85767'',\\n    ''format'' : ''iframe'',\\n    ''height'' : 100,\\n    ''width'' : 320,\\n    ''params'' : {}\\n  };\\n</script>\\n<script src=\\\"https://www.highperformanceformat.com/7974ca0bcb4aeb169af6bf58cce85767/invoke.js\\\"></script>\\n'\n  )\nWHERE id = 1;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute \nUPDATE platform_settings\nSET\n  adsEnabled = 1,\n  adNetworkScripts = JSON_SET(\n    adNetworkScripts,\n    '$.between_mobile',\n    '<script>\\n  atOptions = {\\n    ''key'' : ''7974ca0bcb4aeb169af6bf58cce85767'',\\n    ''format'' : ''iframe'',\\n    ''height'' : 100,\\n    ''width'' : 320,\\n    ''params'' : {}\\n  };\\n</script>\\n<script src=\\\"https://www.highperformanceformat.com/7974ca0bcb4aeb169af6bf58cce85767/invoke.js\\\"></script>\\n'\n  )\nWHERE id = 1;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 383
+}

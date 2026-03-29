@@ -281,6 +281,20 @@
       "when": 1774703311210,
       "tag": "0039_free_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1774802810308,
+      "tag": "0040_fluffy_raider",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1774805337793,
+      "tag": "0041_square_deadpool",
+      "breakpoints": true
     }
   ]
 }

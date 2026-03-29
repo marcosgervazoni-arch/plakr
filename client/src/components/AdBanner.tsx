@@ -7,7 +7,7 @@
  * ├──────────────────┼──────────────────────┼────────────────────┤
  * │ top              │ 728×90 (Leaderboard) │ 320×50 (Banner)    │
  * │ sidebar          │ 300×250 (Med. Rect.) │ — (oculto)         │
- * │ between_sections │ 728×90 (Leaderboard) │ 320×100 (Lg Banner)│
+ * │ between_sections │ 728×90 (Leaderboard) │ 320×100 (Lg Banner) │
  * │ bottom           │ 728×90 (Leaderboard) │ 320×50 (Banner)    │
  * │ popup            │ 400×300 (overlay)    │ 320×250 (overlay)  │
  * └──────────────────┴──────────────────────┴────────────────────┘
@@ -47,7 +47,7 @@ const AD_DIMENSIONS: Record<
 > = {
   top:              { desktop: { w: 728, h: 90  }, mobile: { w: 320, h: 50  } },
   sidebar:          { desktop: { w: 300, h: 250 }, mobile: { w: 300, h: 250 } },
-  between_sections: { desktop: { w: 728, h: 90  }, mobile: { w: 320, h: 50  } },
+  between_sections: { desktop: { w: 728, h: 90  }, mobile: { w: 320, h: 100 } },
   bottom:           { desktop: { w: 728, h: 90  }, mobile: { w: 320, h: 50  } },
   popup:            { desktop: { w: 300, h: 250 }, mobile: { w: 300, h: 250 } },
 };

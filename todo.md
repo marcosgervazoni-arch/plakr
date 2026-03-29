@@ -2041,3 +2041,37 @@
 - [ ] Adicionar logs de geração de vídeo (retrospectivaQueue) no AdminSystemHealth
 - [ ] Admin Retrospectivas: botão "Gerar vídeo teste" para validar o worker Remotion com dados fictícios
 - [ ] Admin Retrospectivas: salvar URL do vídeo teste no banco e exibir player/link de download na página após geração em background
+
+## API Pública v1 — Fase 1 (29/03/2026)
+
+- [ ] Tabela api_keys no schema + migração SQL
+- [ ] Middleware de autenticação por API Key (X-API-Key header)
+- [ ] GET /api/v1/tournaments — listar campeonatos
+- [ ] GET /api/v1/tournaments/:id — detalhar campeonato
+- [ ] POST /api/v1/pools — criar bolão
+- [ ] GET /api/v1/pools/:slug — detalhar bolão
+- [ ] PUT /api/v1/games/:id/result — lançar resultado
+- [ ] Swagger UI em /api/v1/docs
+- [ ] Painel Admin /admin/integrations — gerar/revogar API Keys
+- [ ] Testes da API pública
+
+## Integração API-Football — Copa do Mundo 2026
+
+- [ ] Armazenar API Key com segurança via secrets (API_FOOTBALL_KEY)
+- [ ] Criar tabelas api_sync_log e api_quota_tracker no schema
+- [ ] Aplicar migração SQL das novas tabelas
+- [ ] Implementar cliente HTTP com circuit breaker, retry exponencial e controle de quota
+- [ ] Implementar cron: sincronizador de fixtures da Copa do Mundo (2x/dia)
+- [ ] Implementar cron: atualizador de resultados finais (a cada 2h nos dias de jogo)
+- [ ] Criar painel Admin /admin/integrations com status, quota e log
+- [ ] Escrever testes da integração
+
+## Integração API-Football — Copa do Mundo 2026 (sprint 29/03/2026)
+- [x] Campos de integração adicionados na tabela platform_settings (apiFootballKey, apiFootballEnabled, syncFixtures, syncResults, leagueId, season, lastSync, circuitBreaker, quotaLimit)
+- [x] Tabelas api_sync_log e api_quota_tracker criadas e migradas
+- [x] Cliente HTTP (server/api-football/client.ts) com circuit breaker, retry exponencial (3x), controle de quota e mascaramento de chave
+- [x] Módulo de sincronização (server/api-football/sync.ts): syncFixtures e syncResults com scoring automático
+- [x] Cron jobs (server/api-football/cron.ts): fixtures 2x/dia (06h e 18h UTC), resultados a cada 2h nos dias de jogo
+- [x] Router tRPC integrations (server/routers/integrations.ts): getSettings, saveSettings, testConnection, manualSyncFixtures, manualSyncResults, getSyncLogs, getQuotaHistory, resetCircuitBreaker
+- [x] Seção API-Football no painel Super Admin (AdminIntegrations.tsx): configurar chave via input seguro, toggles de ativação, ID de campeonato/temporada, barra de quota, circuit breaker, log de sincronizações, sync manual
+- [x] 18 testes unitários passando (client, circuit breaker, mapeamento de fixtures, controle de quota, retry exponencial)

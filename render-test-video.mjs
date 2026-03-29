@@ -39,10 +39,10 @@ const testData = {
   closingPhrase: "Que jornada épica! Você provou que entende de futebol. Até a próxima Copa!",
 };
 
-const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "plakr-retro-v2-"));
-const outputPath = path.join(tmpDir, "retro-v2-test.mp4");
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "plakr-retro-v3-"));
+const outputPath = path.join(tmpDir, "retro-v3-test.mp4");
 
-console.log("[Render] Iniciando renderização do vídeo v2...");
+console.log("[Render] Iniciando renderização do vídeo v3...");
 console.log("[Render] Output:", outputPath);
 
 try {
@@ -96,7 +96,7 @@ try {
   console.log("[Render] Tamanho:", Math.round(fs.statSync(outputPath).size / 1024 / 1024 * 10) / 10, "MB");
 
   // Copiar para local acessível
-  const finalPath = path.join(os.homedir(), "retro-v2-final.mp4");
+  const finalPath = path.join(os.homedir(), "retro-v3-final.mp4");
   fs.copyFileSync(outputPath, finalPath);
   console.log("[Render] Copiado para:", finalPath);
 

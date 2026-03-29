@@ -1,9 +1,12 @@
 import "dotenv/config";
+import path from "path";
+import fs from "fs";
 import { startScoringWorker } from "../scoring";
 import { startArchivalCron } from "../archival";
 import { startEmailCrons } from "../emailCron";
 import { registerX1CronJobs } from "../jobs/x1-jobs";
 import { registerX1PredictionResolverCron } from "../jobs/x1-prediction-resolver";
+import { registerApiFootballCronJobs } from "../api-football/cron";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
 import { registerOgRoutes, registerLandingOgRoute } from "../og";
@@ -94,6 +97,21 @@ async function startServer() {
     })
   );
 
+  // Rota de streaming do vídeo de retrospectiva demo
+  app.get("/retro-demo.mp4", (_req, res) => {
+    const videoPath = path.join(process.cwd(), "client", "public", "retro-demo.mp4");
+    if (!fs.existsSync(videoPath)) {
+      res.status(404).send("Video not found");
+      return;
+    }
+    const stat = fs.statSync(videoPath);
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Content-Length", stat.size);
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    fs.createReadStream(videoPath).pipe(res);
+  });
+
   // Open Graph SSR — must be before Vite/static so bots get OG HTML
   registerOgRoutes(app);
 
@@ -127,6 +145,7 @@ async function startServer() {
   startEmailCrons();
   registerX1CronJobs();
   registerX1PredictionResolverCron();
+  registerApiFootballCronJobs();
 }
 
 startServer().catch(console.error);

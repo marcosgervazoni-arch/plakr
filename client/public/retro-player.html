@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plakr! — Retrospectiva Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0B0F1A;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .header { text-align: center; margin-bottom: 28px; }
+    .logo {
+      font-size: 52px; font-weight: 900; color: #FFB800;
+      letter-spacing: -2px;
+      text-shadow: 0 0 40px #FFB80088;
+    }
+    .subtitle {
+      color: #6B7280; font-size: 15px; margin-top: 8px;
+      letter-spacing: 3px; text-transform: uppercase;
+    }
+    .player-wrapper {
+      position: relative; width: 100%; max-width: 360px;
+      border-radius: 24px; overflow: hidden;
+      box-shadow:
+        0 0 0 2px #FFB80044,
+        0 0 60px #FFB80022,
+        0 32px 80px rgba(0,0,0,0.7);
+    }
+    video { width: 100%; display: block; background: #0B0F1A; }
+    .controls {
+      display: flex; gap: 12px; margin-top: 22px;
+      width: 100%; max-width: 360px;
+    }
+    .btn {
+      flex: 1; padding: 14px 20px; border-radius: 50px; border: none;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: all 0.2s; text-decoration: none; text-align: center;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #FF8A00, #FFB800);
+      color: #0B0F1A;
+      box-shadow: 0 4px 20px #FFB80066;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px #FFB80088; }
+    .btn-secondary {
+      background: #FFB80018; color: #FFB800; border: 2px solid #FFB80055;
+    }
+    .btn-secondary:hover { background: #FFB80028; transform: translateY(-2px); }
+    .info { margin-top: 20px; text-align: center; color: #6B7280; font-size: 13px; line-height: 1.7; }
+    .badge {
+      display: inline-block; background: #FFB80018; border: 1px solid #FFB80044;
+      border-radius: 20px; padding: 4px 14px; color: #FFB800;
+      font-size: 12px; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px;
+    }
+    .scenes {
+      margin-top: 20px; width: 100%; max-width: 360px;
+      background: #121826; border-radius: 16px; padding: 16px 20px;
+      border: 1px solid #FFB80022;
+    }
+    .scenes-title { color: #FFB800; font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+    .scene-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #ffffff08; }
+    .scene-item:last-child { border-bottom: none; }
+    .scene-time { color: #6B7280; font-size: 12px; width: 36px; flex-shrink: 0; }
+    .scene-name { color: #9CA3AF; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🏆 Plakr!</div>
+    <div class="subtitle">Retrospectiva do Bolão — Demo v3</div>
+  </div>
+
+  <div class="player-wrapper">
+    <video id="vid" controls playsinline preload="metadata">
+      <source src="https://d2xsxph8kpxj0f.cloudfront.net/310419663029677047/dJv8mGehu4r2vn8N2SWpLW/retro-demo_c44ad1ae.mp4" type="video/mp4" />
+      Seu navegador não suporta vídeo HTML5.
+    </video>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-primary" onclick="document.getElementById('vid').play()">
+      ▶ Assistir
+    </button>
+    <a class="btn btn-secondary" href="https://d2xsxph8kpxj0f.cloudfront.net/310419663029677047/dJv8mGehu4r2vn8N2SWpLW/retro-demo_c44ad1ae.mp4" download="plakr-retrospectiva-v3.mp4">
+      ⬇ Baixar
+    </a>
+  </div>
+
+  <div class="info">
+    <div class="badge">DEMO — DADOS FICTÍCIOS — v3 Viral Edition</div><br/>
+    Marcos Gervazoni · Copa do Mundo 2026<br/>
+    #3 de 24 · 187 pts · 8 cenas · 32 segundos · BPM 140
+  </div>
+
+  <div class="scenes">
+    <div class="scenes-title">📋 Roteiro</div>
+    <div class="scene-item"><span class="scene-time">0:00</span><span class="scene-name">🏆 Abertura energética</span></div>
+    <div class="scene-item"><span class="scene-time">0:04</span><span class="scene-name">🥉 Posição final #3 — Top 13%</span></div>
+    <div class="scene-item"><span class="scene-time">0:09</span><span class="scene-name">⚡ Seus números</span></div>
+    <div class="scene-item"><span class="scene-time">0:14</span><span class="scene-name">⭐ Melhor momento — placar exato</span></div>
+    <div class="scene-item"><span class="scene-time">0:19</span><span class="scene-name">🔮 Badge Lendário "Vidente"</span></div>
+    <div class="scene-item"><span class="scene-time">0:23</span><span class="scene-name">⚔️ Duelo acirrado vs. Carlos Lima</span></div>
+    <div class="scene-item"><span class="scene-time">0:28</span><span class="scene-name">📊 Você vs. todos — Top 13%</span></div>
+    <div class="scene-item"><span class="scene-time">0:31</span><span class="scene-name">🎉 Encerramento + CTA</span></div>
+  </div>
+</body>
+</html>

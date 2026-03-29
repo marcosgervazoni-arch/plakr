@@ -15,9 +15,22 @@ import {
   Save,
   XCircle,
   Code2,
+  Zap,
+  RefreshCw,
+  AlertTriangle,
+  Activity,
+  Eye,
+  EyeOff,
+  Play,
+  RotateCcw,
+  BarChart2,
+  Clock,
+  CheckCircle,
+  XOctagon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 export default function AdminIntegrations() {
   const { data: settings, isLoading } = trpc.platform.getSettings.useQuery();
@@ -66,6 +79,50 @@ export default function AdminIntegrations() {
 
   // Conta quantos campos Adsterra estão preenchidos
   const adsterraCount = [adTopDesktop, adTopMobile, adSidebar, adBetweenDesktop, adBetweenMobile, adBottomDesktop, adBottomMobile, adPopup].filter(Boolean).length;
+
+  // ─── API-Football ─────────────────────────────────────────────────────────
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState("");
+  const [activeTab, setActiveTab] = useState<"analytics" | "ads" | "apifootball">("analytics");
+
+  const { data: integrationSettings, refetch: refetchIntegration } =
+    trpc.integrations.getSettings.useQuery();
+  const { data: syncLogs, refetch: refetchLogs } = trpc.integrations.getSyncLogs.useQuery({ limit: 20 });
+  const { data: quotaHistory } = trpc.integrations.getQuotaHistory.useQuery();
+
+  const saveIntegrationMutation = trpc.integrations.saveSettings.useMutation({
+    onSuccess: () => { toast.success("Configurações salvas!"); refetchIntegration(); },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+  const testConnectionMutation = trpc.integrations.testConnection.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(`Conexão OK! Plano: ${data.plan} · ${data.requestsRemaining} req restantes`);
+      } else {
+        toast.error(`Falha: ${data.error}`);
+      }
+      refetchIntegration();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+  const manualSyncFixturesMutation = trpc.integrations.manualSyncFixtures.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Fixtures: ${data.gamesCreated} criados, ${data.gamesUpdated} atualizados`);
+      refetchLogs();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+  const manualSyncResultsMutation = trpc.integrations.manualSyncResults.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Resultados: ${data.resultsApplied} aplicados`);
+      refetchLogs();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+  const resetCircuitMutation = trpc.integrations.resetCircuitBreaker.useMutation({
+    onSuccess: () => { toast.success("Circuit breaker resetado!"); refetchIntegration(); },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
 
   return (
     <AdminLayout activeSection="integrations">
@@ -118,6 +175,7 @@ export default function AdminIntegrations() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
+          <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* Google Analytics 4 */}
@@ -373,6 +431,343 @@ export default function AdminIntegrations() {
               </CardContent>
             </Card>
           </div>
+
+          {/* SEÇÃO: API-Football — Resultados Automáticos */}
+          <div className="pt-4 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10 shrink-0">
+                <Zap className="h-5 w-5 text-green-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold font-display">API-Football — Resultados Automáticos</h2>
+                <p className="text-muted-foreground text-sm">Sincronização automática de jogos e resultados. Plano gratuito: 100 req/dia.</p>
+              </div>
+              {integrationSettings?.apiFootballEnabled ? (
+                <Badge className="ml-auto bg-green-500/20 text-green-400 border-green-500/30">Ativo</Badge>
+              ) : integrationSettings?.apiFootballKeyConfigured ? (
+                <Badge className="ml-auto bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Desativado</Badge>
+              ) : (
+                <Badge className="ml-auto bg-muted text-muted-foreground">Não configurado</Badge>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Card: Configuração da Chave */}
+              <Card className="border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-green-400" />
+                    Configuração da Chave
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Insira a chave obtida em{" "}
+                    <a href="https://dashboard.api-football.com" target="_blank" rel="noreferrer" className="text-brand underline">
+                      dashboard.api-football.com
+                    </a>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {integrationSettings?.apiFootballKeyConfigured && (
+                    <div className="flex items-center gap-2 p-2 rounded-md bg-green-500/10 border border-green-500/20">
+                      <CheckCircle className="h-3.5 w-3.5 text-green-400 shrink-0" />
+                      <span className="text-xs text-green-400 font-mono">{integrationSettings.apiFootballKeyMasked}</span>
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Nova chave de API</Label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type={showApiKey ? "text" : "password"}
+                          value={apiKeyInput}
+                          onChange={(e) => setApiKeyInput(e.target.value)}
+                          placeholder="Cole sua chave aqui..."
+                          className="font-mono text-xs pr-8"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={!apiKeyInput || saveIntegrationMutation.isPending}
+                        onClick={() => saveIntegrationMutation.mutate({ apiFootballKey: apiKeyInput })}
+                      >
+                        {saveIntegrationMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-1">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Integração ativa</p>
+                        <p className="text-xs text-muted-foreground">Liga/desliga toda a sincronização automática</p>
+                      </div>
+                      <Switch
+                        checked={integrationSettings?.apiFootballEnabled ?? false}
+                        onCheckedChange={(v) => saveIntegrationMutation.mutate({ apiFootballEnabled: v })}
+                        disabled={!integrationSettings?.apiFootballKeyConfigured}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Sincronizar fixtures</p>
+                        <p className="text-xs text-muted-foreground">Busca jogos agendados 2x por dia (06h e 18h UTC)</p>
+                      </div>
+                      <Switch
+                        checked={integrationSettings?.apiFootballSyncFixtures ?? false}
+                        onCheckedChange={(v) => saveIntegrationMutation.mutate({ apiFootballSyncFixtures: v })}
+                        disabled={!integrationSettings?.apiFootballEnabled}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Sincronizar resultados</p>
+                        <p className="text-xs text-muted-foreground">Aplica resultado final a cada 2h (apenas dias com jogos)</p>
+                      </div>
+                      <Switch
+                        checked={integrationSettings?.apiFootballSyncResults ?? false}
+                        onCheckedChange={(v) => saveIntegrationMutation.mutate({ apiFootballSyncResults: v })}
+                        disabled={!integrationSettings?.apiFootballEnabled}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">ID do Campeonato</Label>
+                      <Input
+                        type="number"
+                        defaultValue={integrationSettings?.apiFootballLeagueId ?? 1}
+                        onBlur={(e) => saveIntegrationMutation.mutate({ apiFootballLeagueId: Number(e.target.value) })}
+                        className="text-xs"
+                        placeholder="1 = Copa do Mundo"
+                      />
+                      <p className="text-[10px] text-muted-foreground">Copa do Mundo 2026 = ID 1</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Temporada</Label>
+                      <Input
+                        type="number"
+                        defaultValue={integrationSettings?.apiFootballSeason ?? 2026}
+                        onBlur={(e) => saveIntegrationMutation.mutate({ apiFootballSeason: Number(e.target.value) })}
+                        className="text-xs"
+                        placeholder="2026"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    disabled={!integrationSettings?.apiFootballKeyConfigured || testConnectionMutation.isPending}
+                    onClick={() => testConnectionMutation.mutate()}
+                  >
+                    {testConnectionMutation.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    )}
+                    Testar Conexão (consome 1 req)
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Card: Quota e Status */}
+              <Card className="border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <BarChart2 className="h-4 w-4 text-brand" />
+                    Quota e Status
+                  </CardTitle>
+                  <CardDescription className="text-sm">Consumo diário de requisições (limite: 100/dia)</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Hoje</span>
+                      <span className="font-mono font-medium">
+                        {integrationSettings?.quotaUsedToday ?? 0} / {integrationSettings?.quotaLimit ?? 100} req
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, ((integrationSettings?.quotaUsedToday ?? 0) / (integrationSettings?.quotaLimit ?? 100)) * 100)}%`,
+                          backgroundColor:
+                            (integrationSettings?.quotaUsedToday ?? 0) > 80
+                              ? "#ef4444"
+                              : (integrationSettings?.quotaUsedToday ?? 0) > 60
+                              ? "#f59e0b"
+                              : "#22c55e",
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {integrationSettings?.apiFootballCircuitOpen && (
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-red-500/10 border border-red-500/20">
+                      <XOctagon className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-red-400">Circuit Breaker Aberto</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Sincronização pausada após erros consecutivos.</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2 h-7 text-xs gap-1.5 border-red-500/30 text-red-400 hover:bg-red-500/10"
+                          onClick={() => resetCircuitMutation.mutate()}
+                          disabled={resetCircuitMutation.isPending}
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          Resetar Circuit Breaker
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Última sync:{" "}
+                      {integrationSettings?.apiFootballLastSync
+                        ? new Date(integrationSettings.apiFootballLastSync).toLocaleString("pt-BR")
+                        : "Nunca"}
+                    </span>
+                  </div>
+
+                  {quotaHistory && quotaHistory.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Histórico (7 dias)</p>
+                      <div className="space-y-1">
+                        {quotaHistory.slice(0, 7).map((q) => (
+                          <div key={q.date} className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground w-20 shrink-0">{q.date}</span>
+                            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-brand"
+                                style={{ width: `${Math.min(100, (q.requestsUsed / (integrationSettings?.quotaLimit ?? 100)) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-mono w-8 text-right shrink-0">{q.requestsUsed}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2 pt-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sincronização Manual</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-xs"
+                        disabled={!integrationSettings?.apiFootballEnabled || manualSyncFixturesMutation.isPending}
+                        onClick={() => manualSyncFixturesMutation.mutate()}
+                      >
+                        {manualSyncFixturesMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+                        Fixtures
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-xs"
+                        disabled={!integrationSettings?.apiFootballEnabled || manualSyncResultsMutation.isPending}
+                        onClick={() => manualSyncResultsMutation.mutate()}
+                      >
+                        {manualSyncResultsMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+                        Resultados
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card: Log de Sincronizações */}
+              <Card className="border-border/50 md:col-span-2">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                      Log de Sincronizações
+                    </CardTitle>
+                    <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => refetchLogs()}>
+                      <RefreshCw className="h-3 w-3" />
+                      Atualizar
+                    </Button>
+                  </div>
+                  <CardDescription className="text-sm">Histórico das últimas 20 sincronizações automáticas e manuais</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!syncLogs || syncLogs.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                      <Activity className="h-8 w-8 mb-2 opacity-30" />
+                      <p className="text-sm">Nenhuma sincronização registrada ainda.</p>
+                      <p className="text-xs mt-1">Os logs aparecerão aqui após a primeira sincronização.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {syncLogs.map((log) => (
+                        <div
+                          key={log.id}
+                          className="flex items-start gap-3 p-2.5 rounded-md hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="shrink-0 mt-0.5">
+                            {log.status === "success" ? (
+                              <CheckCircle className="h-4 w-4 text-green-400" />
+                            ) : log.status === "partial" ? (
+                              <AlertTriangle className="h-4 w-4 text-yellow-400" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-medium">
+                                {log.syncType === "fixtures" ? "Fixtures" : "Resultados"}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] px-1.5 py-0 ${
+                                  log.triggeredBy === "manual"
+                                    ? "border-brand/40 text-brand"
+                                    : "border-muted-foreground/30 text-muted-foreground"
+                                }`}
+                              >
+                                {log.triggeredBy === "manual" ? "Manual" : "Automático"}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground ml-auto">
+                                {new Date(log.createdAt!).toLocaleString("pt-BR")}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {log.syncType === "fixtures"
+                                ? `${log.gamesCreated ?? 0} criados · ${log.gamesUpdated ?? 0} atualizados · ${log.requestsUsed ?? 0} req`
+                                : `${log.resultsApplied ?? 0} resultados aplicados · ${log.requestsUsed ?? 0} req · ${log.durationMs ?? 0}ms`}
+                            </p>
+                            {log.errorMessage && (
+                              <p className="text-xs text-red-400 mt-0.5 truncate">{log.errorMessage}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+            </div>
+          </div>
+          </div>
+
         )}
       </div>
     </AdminLayout>

@@ -73,6 +73,17 @@ export const platformSettings = mysqlTable("platform_settings", {
   adsEnabled: boolean("adsEnabled").default(true).notNull(),
   restrictedInviteMessage: text("restrictedInviteMessage"), // mensagem exibida ao participante quando convite é restrito ao organizador
   cobaiaPoolId: int("cobaiaPoolId"), // ID do primeiro bolão válido após lançamento — participantes ganham o badge Cobaia
+  // ─── INTEGRAÇÃO API-FOOTBALL (configurada pelo Super Admin) ─────────────────────────────────
+  apiFootballKey: varchar("apiFootballKey", { length: 64 }),                      // chave de API inserida pelo Super Admin
+  apiFootballEnabled: boolean("apiFootballEnabled").default(false).notNull(),      // liga/desliga integração
+  apiFootballQuotaLimit: int("apiFootballQuotaLimit").default(100).notNull(),      // limite diário (plano free = 100)
+  apiFootballSyncFixtures: boolean("apiFootballSyncFixtures").default(true).notNull(),  // sincronizar jogos agendados
+  apiFootballSyncResults: boolean("apiFootballSyncResults").default(true).notNull(),    // atualizar resultados finais
+  apiFootballLeagueId: int("apiFootballLeagueId").default(1).notNull(),            // ID da liga (1 = Copa do Mundo)
+  apiFootballSeason: int("apiFootballSeason").default(2026).notNull(),             // temporada
+  apiFootballLastSync: timestamp("apiFootballLastSync"),                           // última sync bem-sucedida
+  apiFootballCircuitOpen: boolean("apiFootballCircuitOpen").default(false).notNull(), // circuit breaker aberto?
+  apiFootballCircuitOpenAt: timestamp("apiFootballCircuitOpenAt"),                 // quando o circuit abriu
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").references(() => users.id),
 });
@@ -833,3 +844,49 @@ export const x1GameScores = mysqlTable("x1_game_scores", {
 });
 export type X1GameScore = typeof x1GameScores.$inferSelect;
 export type InsertX1GameScore = typeof x1GameScores.$inferInsert;
+
+// ─── API KEYS — INTEGRAÇÃO EXTERNA ────────────────────────────────────────────
+export const apiKeys = mysqlTable("api_keys", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),          // nome descritivo (ex: "Integração Sheets")
+  keyHash: varchar("keyHash", { length: 64 }).notNull(),     // SHA-256 da chave (nunca armazenar em texto claro)
+  keyPrefix: varchar("keyPrefix", { length: 16 }).notNull(), // prefixo visível (ex: plakr_live_abc1)
+  scopes: json("scopes").$type<string[]>().notNull(),        // ex: ["pools:write","results:write"]
+  createdBy: int("createdBy").notNull().references(() => users.id),
+  lastUsedAt: timestamp("lastUsedAt"),
+  expiresAt: timestamp("expiresAt"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type InsertApiKey = typeof apiKeys.$inferInsert;
+
+// ─── API-FOOTBALL: LOG DE SINCRONIZAÇÃO ──────────────────────────────────────
+export const apiSyncLog = mysqlTable("api_sync_log", {
+  id: int("id").autoincrement().primaryKey(),
+  syncType: mysqlEnum("syncType", ["fixtures", "results", "manual"]).notNull(), // tipo de sync
+  status: mysqlEnum("status", ["success", "error", "partial", "skipped"]).notNull(),
+  leagueId: int("leagueId").notNull(),
+  season: int("season").notNull(),
+  requestsUsed: int("requestsUsed").default(0).notNull(),   // req consumidas nesta execução
+  gamesCreated: int("gamesCreated").default(0).notNull(),   // novos jogos criados
+  gamesUpdated: int("gamesUpdated").default(0).notNull(),   // jogos atualizados
+  resultsApplied: int("resultsApplied").default(0).notNull(), // resultados lançados
+  errorMessage: text("errorMessage"),                        // mensagem de erro se houver
+  circuitBreakerTripped: boolean("circuitBreakerTripped").default(false).notNull(),
+  triggeredBy: mysqlEnum("triggeredBy", ["cron", "manual"]).default("cron").notNull(),
+  triggeredByUserId: int("triggeredByUserId").references(() => users.id), // preenchido em sync manual
+  durationMs: int("durationMs"),                             // tempo de execução em ms
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ApiSyncLog = typeof apiSyncLog.$inferSelect;
+
+// ─── API-FOOTBALL: CONTROLE DE QUOTA DIÁRIA ──────────────────────────────────
+export const apiQuotaTracker = mysqlTable("api_quota_tracker", {
+  id: int("id").autoincrement().primaryKey(),
+  date: varchar("date", { length: 10 }).notNull().unique(), // formato YYYY-MM-DD
+  requestsUsed: int("requestsUsed").default(0).notNull(),  // total de req no dia
+  quotaLimit: int("quotaLimit").default(100).notNull(),     // limite do dia (copiado de platform_settings)
+  lastUpdated: timestamp("lastUpdated").defaultNow().onUpdateNow().notNull(),
+});
+export type ApiQuotaTracker = typeof apiQuotaTracker.$inferSelect;

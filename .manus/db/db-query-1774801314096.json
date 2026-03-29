@@ -1,0 +1,14 @@
+{
+  "query": "SELECT adsEnabled, JSON_EXTRACT(adNetworkScripts, '$.between_mobile') as between_mobile FROM platform_settings WHERE id = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT adsEnabled, JSON_EXTRACT(adNetworkScripts, '$.between_mobile') as between_mobile FROM platform_settings WHERE id = 1;",
+  "rows": [
+    {
+      "adsEnabled": "1",
+      "between_mobile": "\"<script>\\n  atOptions = {\\n    'key' : '7974ca0bcb4aeb169af6bf58cce85767',\\n    'format' : 'iframe',\\n    'height' : 100,\\n    'width' : 320,\\n    'params' : {}\\n  };\\n</script>\\n<script src=\\\"https://www.highperformanceformat.com/7974ca0bcb4aeb169af6bf58cce85767/invoke.js\\\"></script>\\n\""
+    }
+  ],
+  "messages": [],
+  "stdout": "adsEnabled\tbetween_mobile\n1\t\"<script>\\n  atOptions = {\\n    'key' : '7974ca0bcb4aeb169af6bf58cce85767',\\n    'format' : 'iframe',\\n    'height' : 100,\\n    'width' : 320,\\n    'params' : {}\\n  };\\n</script>\\n<script src=\\\"https://www.highperformanceformat.com/7974ca0bcb4aeb169af6bf58cce85767/invoke.js\\\"></script>\\n\"\n",
+  "stderr": "",
+  "execution_time_ms": 389
+}
