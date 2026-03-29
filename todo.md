@@ -2084,3 +2084,9 @@
 - [ ] Endpoint tournaments.toggleAvailability — ativa/desativa visibilidade para usuários
 - [ ] Painel Admin: seção "Campeonatos Disponíveis" com toggle por campeonato, badge de origem (API/Manual), botão importar da API-Football
 - [ ] Fluxo de criação de bolão: listar apenas campeonatos com isAvailable=true
+
+## Correção API-Football — Limitação Plano Free
+- [ ] Ajustar temporada padrão para 2022 (plano free não acessa 2026)
+- [ ] Exibir aviso de limitação do plano free no painel Admin
+- [ ] Tratar erro "Free plans do not have access to this season" com mensagem amigável
+- [ ] Corrigir campo de temporada no painel para aceitar 2022 como padrão

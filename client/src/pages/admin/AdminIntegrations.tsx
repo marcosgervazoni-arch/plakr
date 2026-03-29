@@ -577,16 +577,16 @@ export default function AdminIntegrations() {
                         className="text-xs"
                         placeholder="1 = Copa do Mundo"
                       />
-                      <p className="text-[10px] text-muted-foreground">Copa do Mundo 2026 = ID 1</p>
+                      <p className="text-[10px] text-muted-foreground">Copa do Mundo 2022 = ID 1 · Copa do Mundo 2026 requer plano pago</p>
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Temporada</Label>
                       <Input
                         type="number"
-                        defaultValue={integrationSettings?.apiFootballSeason ?? 2026}
+                        defaultValue={integrationSettings?.apiFootballSeason ?? 2022}
                         onBlur={(e) => saveIntegrationMutation.mutate({ apiFootballSeason: Number(e.target.value) })}
                         className="text-xs"
-                        placeholder="2026"
+                        placeholder="2022"
                       />
                     </div>
                   </div>
@@ -885,11 +885,19 @@ export default function AdminIntegrations() {
                   </div>
                 ) : (
                   <>
+                    {/* Aviso de limitação do plano free */}
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-blue-500/10 border border-blue-500/20">
+                      <AlertTriangle className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <p className="text-xs text-blue-300 font-medium">Plano Free — Temporadas 2022 a 2024</p>
+                        <p className="text-[10px] text-blue-300/70">O plano gratuito da API-Football não acessa a temporada 2026. Use a temporada 2022 para testes (Copa do Mundo 2022 disponível). Para acessar 2026, faça upgrade em dashboard.api-football.com.</p>
+                      </div>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full gap-2"
-                      onClick={() => fetchLeaguesMutation.mutate({ season: integrationSettings?.apiFootballSeason ?? 2026 })}
+                      onClick={() => fetchLeaguesMutation.mutate({ season: integrationSettings?.apiFootballSeason ?? 2022 })}
                       disabled={fetchLeaguesMutation.isPending}
                     >
                       {fetchLeaguesMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
@@ -933,7 +941,7 @@ export default function AdminIntegrations() {
                                         name: league.name,
                                         country: league.country,
                                         logoUrl: league.logoUrl,
-                                        season: league.season ?? integrationSettings?.apiFootballSeason ?? 2026,
+                                        season: league.season ?? integrationSettings?.apiFootballSeason ?? 2022,
                                         makeAvailable: true,
                                       })}
                                       disabled={importLeagueMutation.isPending}
