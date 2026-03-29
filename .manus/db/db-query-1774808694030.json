@@ -1,0 +1,58 @@
+{
+  "query": "SELECT id, name, email, role FROM users LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, name, email, role FROM users LIMIT 10;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Marcos Gervazoni",
+      "email": "marcos.gervazoni@gmail.com",
+      "role": "admin"
+    },
+    {
+      "id": "150121",
+      "name": "Filipe Postai",
+      "email": "postairech@gmail.com",
+      "role": "user"
+    },
+    {
+      "id": "210136",
+      "name": "Eduardo Souza",
+      "email": "eduardoadmss8@gmail.com",
+      "role": "user"
+    },
+    {
+      "id": "480070",
+      "name": "Pessoa Teste ApostAI",
+      "email": "user.teste.01.apostai@gmail.com",
+      "role": "user"
+    },
+    {
+      "id": "630084",
+      "name": "Integration User B",
+      "email": "it62245891-b@test.com",
+      "role": "user"
+    },
+    {
+      "id": "630085",
+      "name": "Test Admin",
+      "email": "it62245891-adm@test.com",
+      "role": "admin"
+    },
+    {
+      "id": "630168",
+      "name": "Integration User B",
+      "email": "it64209594-b@test.com",
+      "role": "user"
+    },
+    {
+      "id": "630169",
+      "name": "Test Admin",
+      "email": "it64209594-adm@test.com",
+      "role": "admin"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\temail\trole\n1\tMarcos Gervazoni\tmarcos.gervazoni@gmail.com\tadmin\n150121\tFilipe Postai\tpostairech@gmail.com\tuser\n210136\tEduardo Souza\teduardoadmss8@gmail.com\tuser\n480070\tPessoa Teste ApostAI\tuser.teste.01.apostai@gmail.com\tuser\n630084\tIntegration User B\tit62245891-b@test.com\tuser\n630085\tTest Admin\tit62245891-adm@test.com\tadmin\n630168\tIntegration User B\tit64209594-b@test.com\tuser\n630169\tTest Admin\tit64209594-adm@test.com\tadmin\n",
+  "stderr": "",
+  "execution_time_ms": 378
+}

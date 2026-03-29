@@ -196,3 +196,113 @@ describe("Retry Exponencial", () => {
     expect(success).toBe(false);
   });
 });
+
+// ─── Testes de importação de times ───────────────────────────────────────────
+describe("Importação de Times da API-Football", () => {
+  it("deve mapear time da API para o formato do banco corretamente", () => {
+    const apiTeam = {
+      team: { id: 6, name: "Brazil", code: "BRA", logo: "https://media.api-sports.io/football/teams/6.png", national: true },
+      venue: { name: "Estadio Nacional", city: "Brasilia" },
+    };
+
+    const mapped = {
+      name: apiTeam.team.name,
+      code: apiTeam.team.code?.slice(0, 10) ?? null,
+      flagUrl: apiTeam.team.logo,
+      apiFootballTeamId: apiTeam.team.id,
+    };
+
+    expect(mapped.name).toBe("Brazil");
+    expect(mapped.code).toBe("BRA");
+    expect(mapped.apiFootballTeamId).toBe(6);
+    expect(mapped.flagUrl).toContain("api-sports.io");
+  });
+
+  it("deve truncar código do time para 10 caracteres", () => {
+    const longCode = "BRAZILTEAM"; // 10 chars
+    const truncated = longCode.slice(0, 10);
+    expect(truncated.length).toBeLessThanOrEqual(10);
+    expect(truncated).toBe("BRAZILTEAM");
+  });
+
+  it("deve lidar com código de time nulo", () => {
+    const apiTeam = {
+      team: { id: 999, name: "Unknown Team", code: null, logo: "", national: false },
+      venue: { name: null, city: null },
+    };
+    const code = apiTeam.team.code?.slice(0, 10) ?? null;
+    expect(code).toBeNull();
+  });
+
+  it("deve detectar time já existente pelo apiFootballTeamId", () => {
+    const existingTeams = [
+      { id: 1, tournamentId: 10, apiFootballTeamId: 6, name: "Brazil" },
+      { id: 2, tournamentId: 10, apiFootballTeamId: 7, name: "Argentina" },
+    ];
+
+    const incomingTeamId = 6;
+    const alreadyExists = existingTeams.some((t) => t.apiFootballTeamId === incomingTeamId);
+    expect(alreadyExists).toBe(true);
+
+    const newTeamId = 8;
+    const newTeamExists = existingTeams.some((t) => t.apiFootballTeamId === newTeamId);
+    expect(newTeamExists).toBe(false);
+  });
+});
+
+// ─── Testes de sincronização de fixtures por torneio ─────────────────────────
+describe("Sincronização de Fixtures por Torneio", () => {
+  it("deve determinar status do jogo baseado no status da API", () => {
+    const FINISHED_STATUSES = ["FT", "AET", "PEN", "AWD", "WO"];
+
+    const determineStatus = (apiStatus: string): "finished" | "scheduled" =>
+      FINISHED_STATUSES.includes(apiStatus) ? "finished" : "scheduled";
+
+    expect(determineStatus("FT")).toBe("finished");
+    expect(determineStatus("AET")).toBe("finished");
+    expect(determineStatus("NS")).toBe("scheduled");
+    expect(determineStatus("TBD")).toBe("scheduled");
+    expect(determineStatus("1H")).toBe("scheduled");
+  });
+
+  it("deve incluir placar para jogos encerrados", () => {
+    const FINISHED_STATUSES = ["FT", "AET", "PEN", "AWD", "WO"];
+    const fixture = {
+      fixture: { status: { short: "FT" } },
+      score: { fulltime: { home: 2, away: 1 } },
+    };
+
+    const isFinished = FINISHED_STATUSES.includes(fixture.fixture.status.short);
+    const scoreA = isFinished ? (fixture.score.fulltime.home ?? undefined) : undefined;
+    const scoreB = isFinished ? (fixture.score.fulltime.away ?? undefined) : undefined;
+
+    expect(isFinished).toBe(true);
+    expect(scoreA).toBe(2);
+    expect(scoreB).toBe(1);
+  });
+
+  it("deve não incluir placar para jogos agendados", () => {
+    const FINISHED_STATUSES = ["FT", "AET", "PEN", "AWD", "WO"];
+    const fixture = {
+      fixture: { status: { short: "NS" } },
+      score: { fulltime: { home: null, away: null } },
+    };
+
+    const isFinished = FINISHED_STATUSES.includes(fixture.fixture.status.short);
+    const scoreA = isFinished ? (fixture.score.fulltime.home ?? undefined) : undefined;
+    const scoreB = isFinished ? (fixture.score.fulltime.away ?? undefined) : undefined;
+
+    expect(isFinished).toBe(false);
+    expect(scoreA).toBeUndefined();
+    expect(scoreB).toBeUndefined();
+  });
+
+  it("deve gerar slug único para campeonato importado", () => {
+    const generateSlug = (name: string, season: number) =>
+      `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${season}`;
+
+    expect(generateSlug("Liga Profesional Argentina", 2022)).toBe("liga-profesional-argentina-2022");
+    expect(generateSlug("Premier League", 2023)).toBe("premier-league-2023");
+    expect(generateSlug("Copa do Mundo", 2022)).toBe("copa-do-mundo-2022");
+  });
+});

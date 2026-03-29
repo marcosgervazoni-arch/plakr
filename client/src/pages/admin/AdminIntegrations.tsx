@@ -152,6 +152,24 @@ export default function AdminIntegrations() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
+  const [syncingTournamentId, setSyncingTournamentId] = useState<number | null>(null);
+  const manualSyncTournamentMutation = trpc.integrations.manualSyncTournament.useMutation({
+    onSuccess: (data) => {
+      const d = data as { teamsCreated: number; teamsUpdated: number; gamesCreated: number; gamesUpdated: number; requestsUsed: number; teamsError?: string; fixturesError?: string };
+      if (d.teamsError || d.fixturesError) {
+        toast.warning(`Sync parcial — Times: ${d.teamsCreated} criados | Jogos: ${d.gamesCreated} criados. Erro: ${d.teamsError ?? d.fixturesError}`);
+      } else {
+        toast.success(`Sync concluído — ${d.teamsCreated} times, ${d.gamesCreated} jogos criados (${d.requestsUsed} req usadas)`);
+      }
+      setSyncingTournamentId(null);
+      refetchTournaments();
+    },
+    onError: (e: { message: string }) => {
+      toast.error(e.message);
+      setSyncingTournamentId(null);
+    },
+  });
+
   return (
     <AdminLayout activeSection="integrations">
       <div className="space-y-6">
@@ -856,11 +874,31 @@ export default function AdminIntegrations() {
                             </p>
                           </div>
                         </div>
-                        <Switch
-                          checked={(t as {isAvailable?: boolean}).isAvailable ?? false}
-                          onCheckedChange={(v) => toggleAvailabilityMutation.mutate({ tournamentId: t.id, isAvailable: v })}
-                          className="shrink-0"
-                        />
+                        <div className="flex items-center gap-2 shrink-0">
+                          {(t as {apiFootballLeagueId?: number}).apiFootballLeagueId && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-brand"
+                              title="Re-sincronizar times e jogos da API-Football"
+                              disabled={syncingTournamentId === t.id || manualSyncTournamentMutation.isPending}
+                              onClick={() => {
+                                setSyncingTournamentId(t.id);
+                                manualSyncTournamentMutation.mutate({ tournamentId: t.id });
+                              }}
+                            >
+                              {syncingTournamentId === t.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-3 w-3" />
+                              )}
+                            </Button>
+                          )}
+                          <Switch
+                            checked={(t as {isAvailable?: boolean}).isAvailable ?? false}
+                            onCheckedChange={(v) => toggleAvailabilityMutation.mutate({ tournamentId: t.id, isAvailable: v })}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>

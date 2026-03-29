@@ -258,6 +258,38 @@ export async function fetchFixtures(
   return data.response;
 }
 
+// ─── Interface de Time da API-Football ───────────────────────────────────────
+
+export interface ApiFootballTeam {
+  team: {
+    id: number;
+    name: string;
+    code: string | null;
+    logo: string;
+    national: boolean;
+  };
+  venue: {
+    name: string | null;
+    city: string | null;
+  };
+}
+
+/**
+ * Busca os times participantes de uma liga/temporada.
+ * Endpoint: /teams?league={leagueId}&season={season}
+ * Consome 1 requisição.
+ */
+export async function fetchTeams(
+  leagueId: number,
+  season: number
+): Promise<ApiFootballTeam[]> {
+  const data = await apiFootballRequest<ApiFootballTeam>("/teams", {
+    league: leagueId,
+    season,
+  });
+  return data.response;
+}
+
 /**
  * Busca o status atual da quota da conta na API-Football.
  * Consome 1 requisição mas retorna os limites reais da conta.

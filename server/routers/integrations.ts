@@ -6,10 +6,11 @@
 
 import { z } from "zod";
 import { adminProcedure, router } from "../_core/trpc";
+import logger from "../logger";
 import { getDb } from "../db";
 import { platformSettings, apiSyncLog, apiQuotaTracker, tournaments } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
-import { syncFixtures, syncResults } from "../api-football/sync";
+import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament } from "../api-football/sync";
 import { fetchAccountStatus, apiFootballRequest } from "../api-football/client";
 import { Err } from "../errors";
 
@@ -306,6 +307,98 @@ export const integrationsRouter = router({
         apiFootballSeason: input.season,
       });
       const tournamentId = (result[0] as any).insertId;
-      return { created: true, tournamentId, message: "Campeonato importado com sucesso" };
+
+      // Disparar sync automático de times e fixtures em background
+      // Usamos setImmediate para não bloquear a resposta HTTP
+      setImmediate(async () => {
+        try {
+          const teamsResult = await syncTeamsForTournament({
+            tournamentId,
+            leagueId: input.leagueId,
+            season: input.season,
+            triggeredByUserId: ctx.user.id,
+          });
+          logger.info(
+            `[ImportLeague] Times sincronizados: created=${teamsResult.teamsCreated} updated=${teamsResult.teamsUpdated} req=${teamsResult.requestsUsed}`
+          );
+        } catch (err) {
+          logger.error({ err }, "[ImportLeague] Erro ao sincronizar times");
+        }
+
+        try {
+          const fixturesResult = await syncFixturesForTournament({
+            tournamentId,
+            leagueId: input.leagueId,
+            season: input.season,
+            triggeredBy: "manual",
+            triggeredByUserId: ctx.user.id,
+          });
+          logger.info(
+            `[ImportLeague] Fixtures sincronizados: created=${fixturesResult.gamesCreated} updated=${fixturesResult.gamesUpdated} req=${fixturesResult.requestsUsed}`
+          );
+        } catch (err) {
+          logger.error({ err }, "[ImportLeague] Erro ao sincronizar fixtures");
+        }
+      });
+
+      return {
+        created: true,
+        tournamentId,
+        message: "Campeonato importado com sucesso — times e jogos sendo sincronizados em background (pode levar alguns segundos)",
+      };
+    }),
+
+  /**
+   * Re-sincroniza times e fixtures de um campeonato específico.
+   * Útil para atualizar campeonatos já importados.
+   * Consome 2 requisições da quota.
+   */
+  manualSyncTournament: adminProcedure
+    .input(z.object({ tournamentId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw Err.internal("DB não disponível");
+
+      const [tournament] = await db
+        .select()
+        .from(tournaments)
+        .where(eq(tournaments.id, input.tournamentId))
+        .limit(1);
+
+      if (!tournament) throw Err.notFound("Campeonato");
+      if (!tournament.apiFootballLeagueId || !tournament.apiFootballSeason) {
+        throw Err.badRequest("Este campeonato não possui vínculo com a API-Football");
+      }
+
+      const leagueId = tournament.apiFootballLeagueId;
+      const season = tournament.apiFootballSeason;
+
+      // Sincronizar times
+      const teamsResult = await syncTeamsForTournament({
+        tournamentId: input.tournamentId,
+        leagueId,
+        season,
+        triggeredByUserId: ctx.user.id,
+      });
+
+      // Sincronizar fixtures
+      const fixturesResult = await syncFixturesForTournament({
+        tournamentId: input.tournamentId,
+        leagueId,
+        season,
+        triggeredBy: "manual",
+        triggeredByUserId: ctx.user.id,
+      });
+
+      return {
+        success: true,
+        teamsCreated: teamsResult.teamsCreated,
+        teamsUpdated: teamsResult.teamsUpdated,
+        gamesCreated: fixturesResult.gamesCreated,
+        gamesUpdated: fixturesResult.gamesUpdated,
+        requestsUsed: teamsResult.requestsUsed + fixturesResult.requestsUsed,
+        teamsError: teamsResult.error,
+        fixturesError: fixturesResult.error,
+      };
     }),
 });

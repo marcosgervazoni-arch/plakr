@@ -164,6 +164,7 @@ export const teams = mysqlTable("teams", {
   code: varchar("code", { length: 10 }), // ex: BRA, ARG
   flagUrl: text("flagUrl"),
   groupName: varchar("groupName", { length: 10 }), // ex: A, B, ... L
+  apiFootballTeamId: int("apiFootballTeamId"),         // ID do time na API-Football (null = manual)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

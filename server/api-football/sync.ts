@@ -17,11 +17,12 @@
  */
 
 import logger from "../logger";
-import { fetchFixtures, ApiFootballFixture } from "./client";
+import { fetchFixtures, fetchTeams, ApiFootballFixture } from "./client";
 import { getDb } from "../db";
 import {
   platformSettings,
   games,
+  teams,
   tournaments,
   apiSyncLog,
 } from "../../drizzle/schema";
@@ -162,6 +163,191 @@ function buildEffectiveRules(
     enableBonusOneTeam: rulesRow?.enableBonusOneTeam ?? true,
     enableBonusLandslide: rulesRow?.enableBonusLandslide ?? true,
   };
+}
+
+// ─── Sincronizar Times de um Torneio Específico ─────────────────────────────
+
+/**
+ * Importa os times de uma liga/temporada para um torneio específico.
+ * Evita duplicatas usando apiFootballTeamId.
+ * Consome 1 requisição.
+ */
+export async function syncTeamsForTournament(options: {
+  tournamentId: number;
+  leagueId: number;
+  season: number;
+  triggeredByUserId?: number;
+}): Promise<{ teamsCreated: number; teamsUpdated: number; requestsUsed: number; error?: string }> {
+  const startTime = Date.now();
+  const db = await getDb();
+  if (!db) return { teamsCreated: 0, teamsUpdated: 0, requestsUsed: 0, error: "DB unavailable" };
+
+  let teamsCreated = 0;
+  let teamsUpdated = 0;
+  let requestsUsed = 0;
+  let errorMessage: string | undefined;
+
+  try {
+    const apiTeams = await fetchTeams(options.leagueId, options.season);
+    requestsUsed = 1;
+
+    for (const apiTeam of apiTeams) {
+      const apiTeamId = apiTeam.team.id;
+
+      // Verificar se o time já existe para esse torneio pelo apiFootballTeamId
+      const [existing] = await db
+        .select({ id: teams.id })
+        .from(teams)
+        .where(
+          and(
+            eq(teams.tournamentId, options.tournamentId),
+            eq(teams.apiFootballTeamId, apiTeamId)
+          )
+        )
+        .limit(1);
+
+      if (existing) {
+        // Atualizar nome e logo caso tenham mudado
+        await db
+          .update(teams)
+          .set({
+            name: apiTeam.team.name,
+            code: apiTeam.team.code?.slice(0, 10) ?? null,
+            flagUrl: apiTeam.team.logo,
+          })
+          .where(eq(teams.id, existing.id));
+        teamsUpdated++;
+      } else {
+        // Criar novo time
+        await db.insert(teams).values({
+          tournamentId: options.tournamentId,
+          name: apiTeam.team.name,
+          code: apiTeam.team.code?.slice(0, 10) ?? null,
+          flagUrl: apiTeam.team.logo,
+          apiFootballTeamId: apiTeamId,
+        });
+        teamsCreated++;
+      }
+    }
+  } catch (err) {
+    errorMessage = err instanceof Error ? err.message : String(err);
+    logger.error({ errorMessage }, "[ApiFootball] syncTeamsForTournament error");
+  }
+
+  const durationMs = Date.now() - startTime;
+  logger.info(
+    `[ApiFootball] syncTeamsForTournament done: created=${teamsCreated} updated=${teamsUpdated} req=${requestsUsed} duration=${durationMs}ms`
+  );
+  return { teamsCreated, teamsUpdated, requestsUsed, error: errorMessage };
+}
+
+// ─── Sincronizar Fixtures de um Torneio Específico ───────────────────────────
+
+/**
+ * Importa todos os fixtures (jogos) de uma liga/temporada para um torneio específico.
+ * Usado na importação inicial e no re-sync manual por campeonato.
+ * Consome 1 requisição.
+ */
+export async function syncFixturesForTournament(options: {
+  tournamentId: number;
+  leagueId: number;
+  season: number;
+  triggeredBy?: "cron" | "manual";
+  triggeredByUserId?: number;
+}): Promise<{ gamesCreated: number; gamesUpdated: number; requestsUsed: number; error?: string }> {
+  const startTime = Date.now();
+  const db = await getDb();
+  if (!db) return { gamesCreated: 0, gamesUpdated: 0, requestsUsed: 0, error: "DB unavailable" };
+
+  let gamesCreated = 0;
+  let gamesUpdated = 0;
+  let requestsUsed = 0;
+  let errorMessage: string | undefined;
+  let syncStatus: "success" | "error" | "partial" | "skipped" = "success";
+
+  try {
+    // Buscar TODOS os jogos da temporada (sem filtro de data)
+    const fixtures = await fetchFixtures(options.leagueId, options.season);
+    requestsUsed = 1;
+
+    for (const fixture of fixtures) {
+      const externalId = String(fixture.fixture.id);
+      const matchDate = new Date(fixture.fixture.date);
+      const phase = roundToPhaseKey(fixture.league.round);
+      const roundNumber = extractRoundNumber(fixture.league.round);
+
+      // Verificar se o jogo já existe pelo externalId
+      const [existing] = await db
+        .select({ id: games.id })
+        .from(games)
+        .where(and(eq(games.externalId, externalId), eq(games.tournamentId, options.tournamentId)))
+        .limit(1);
+
+      if (existing) {
+        await db
+          .update(games)
+          .set({
+            matchDate,
+            venue: fixture.fixture.venue?.name ?? null,
+            phase,
+            roundNumber,
+            teamAName: fixture.teams.home.name,
+            teamBName: fixture.teams.away.name,
+            teamAFlag: fixture.teams.home.logo,
+            teamBFlag: fixture.teams.away.logo,
+          })
+          .where(eq(games.id, existing.id));
+        gamesUpdated++;
+      } else {
+        // Determinar status do jogo
+        const fixtureStatus = fixture.fixture.status.short;
+        const isFinished = FINISHED_STATUSES.includes(fixtureStatus);
+        const gameStatus = isFinished ? "finished" : "scheduled";
+
+        await db.insert(games).values({
+          tournamentId: options.tournamentId,
+          externalId,
+          teamAName: fixture.teams.home.name,
+          teamBName: fixture.teams.away.name,
+          teamAFlag: fixture.teams.home.logo,
+          teamBFlag: fixture.teams.away.logo,
+          matchDate,
+          venue: fixture.fixture.venue?.name ?? null,
+          phase,
+          roundNumber,
+          status: gameStatus,
+          scoreA: isFinished ? (fixture.score.fulltime.home ?? undefined) : undefined,
+          scoreB: isFinished ? (fixture.score.fulltime.away ?? undefined) : undefined,
+        });
+        gamesCreated++;
+      }
+    }
+  } catch (err) {
+    errorMessage = err instanceof Error ? err.message : String(err);
+    syncStatus = "error";
+    logger.error({ errorMessage }, "[ApiFootball] syncFixturesForTournament error");
+  }
+
+  const durationMs = Date.now() - startTime;
+  await logSync({
+    syncType: "manual",
+    status: syncStatus,
+    leagueId: options.leagueId,
+    season: options.season,
+    requestsUsed,
+    gamesCreated,
+    gamesUpdated,
+    resultsApplied: 0,
+    errorMessage,
+    triggeredBy: options.triggeredBy ?? "manual",
+    triggeredByUserId: options.triggeredByUserId,
+    durationMs,
+  });
+
+  logger.info(
+    `[ApiFootball] syncFixturesForTournament done: created=${gamesCreated} updated=${gamesUpdated} req=${requestsUsed} duration=${durationMs}ms`
+  );
+  return { gamesCreated, gamesUpdated, requestsUsed, error: errorMessage };
 }
 
 // ─── JOB 1: Sincronizar Fixtures (jogos agendados) ───────────────────────────

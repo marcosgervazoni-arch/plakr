@@ -2090,3 +2090,6 @@
 - [ ] Exibir aviso de limitação do plano free no painel Admin
 - [ ] Tratar erro "Free plans do not have access to this season" com mensagem amigável
 - [ ] Corrigir campo de temporada no painel para aceitar 2022 como padrão
+
+## Bug — Importação de Campeonato via API-Football
+- [x] Ao importar liga, sincronizar times e fixtures automaticamente (atualmente cria campeonato vazio)
