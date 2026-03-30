@@ -2158,3 +2158,9 @@
 - [x] Ordenar rodadas numericamente dentro de cada fase
 - [x] Manter ações de editar/excluir em cada jogo
 - [x] Fases dinâmicas: quando tournament_phases está vazio, constrói acordeons a partir dos valores de phase dos jogos
+
+## Bug — OAuth callback failed (30/03/2026)
+
+- [x] Corrigir incompatibilidade entre state JSON (novo formato) e decodeState do SDK (formato legado)
+- [x] SDK.decodeState agora suporta ambos os formatos: JSON {redirectUri, returnPath} e legado (string pura)
+- [x] getTokenByCode extrai corretamente a redirectUri do JSON antes de enviar ao servidor OAuth
