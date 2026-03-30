@@ -2194,3 +2194,8 @@
 - [x] Super admins devem ver os anúncios para validar que estão funcionando
 - [x] Reverter isPro no AppShell: admin não é tratado como Pro para fins de exibição de anúncios
 - [x] isPro = apenas usuários com plano Pro ativo (admins continuam vendo ads)
+
+## Bug — Anúncios não aparecem para Super Admin (30/03/2026)
+
+- [x] Causa: usuário admin tinha plano Pro ativo no banco, fazendo isPro=true e ocultando ads
+- [x] Corrigido: isPro agora inclui !isAdmin — admins sempre vêem anúncios independente do plano
