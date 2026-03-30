@@ -95,28 +95,22 @@ function markPopupShown(ad: Ad): void {
   else if (ad.popupFrequency === "daily") localStorage.setItem(key, new Date().toDateString());
 }
 
-// ─── Componente Adsterra: injeta código HTML completo via iframe ──────────────
+// ─── Componente Adsterra: injeta código HTML completo via iframe ──────────────────────
+// Usa srcdoc em vez de doc.write() para compatibilidade com Chrome mobile (Xiaomi/MIUI)
+// srcdoc é suportado em todos os browsers modernos e não depende de contentDocument estar pronto
 function AdsterraSlot({ htmlCode, width, height }: { htmlCode: string; width: number; height: number }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    if (!iframeRef.current) return;
-    const doc = iframeRef.current.contentDocument;
-    if (!doc) return;
-    doc.open();
-    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><style>*{margin:0;padding:0;overflow:hidden;}</style></head><body>${htmlCode}</body></html>`);
-    doc.close();
-  }, [htmlCode]);
+  const srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><style>*{margin:0;padding:0;overflow:hidden;body{background:transparent;}}</style></head><body>${htmlCode}</body></html>`;
 
   return (
     <iframe
-      ref={iframeRef}
+      srcDoc={srcdoc}
       width={width}
       height={height}
-      style={{ border: "none", display: "block" }}
+      style={{ border: "none", display: "block", maxWidth: "100%" }}
       title="Publicidade"
-      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation"
       scrolling="no"
+      loading="lazy"
     />
   );
 }

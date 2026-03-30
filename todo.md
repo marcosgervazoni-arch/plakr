@@ -2180,3 +2180,11 @@
 - [x] isPro no Dashboard inclui admins (sem CTA de upgrade, sem banners de limite)
 - [x] Badge de plano no perfil exibe "Super Admin" (amber) para admins
 - [x] AppShell já ocultava o CTA de upgrade para isAdmin (sem alteração necessária)
+
+## Bug — Adsterra não aparece no Chrome mobile (Xiaomi) (30/03/2026)
+
+- [x] Investigar implementação atual do Adsterra (componente, script, posicionamento)
+- [x] Causa identificada: AdsterraSlot usava doc.write() que falha no Chrome mobile (Xiaomi/MIUI) quando contentDocument é null
+- [x] Corrigido: AdsterraSlot agora usa srcDoc em vez de doc.write() — compatível com todos os browsers modernos
+- [x] Adicionado allow-top-navigation-by-user-activation no sandbox do iframe
+- [x] Corrigido isPro no AppShell: super admins também não veem anúncios (antes viam por engano)
