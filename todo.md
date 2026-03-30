@@ -2172,3 +2172,11 @@
 - [x] Remover botão do WelcomeCard (substituído por "Explorar bolões" → /pools/public)
 - [x] Remover import e rota /enter-pool do App.tsx (página já era um redirect vazio)
 - [x] Nenhuma outra ocorrência encontrada no frontend
+
+## Super Admin — Bypass de Limites de Plano (30/03/2026)
+
+- [x] Mapear verificações de limite de plano no backend (createPool, maxPools, maxParticipants)
+- [x] canCreatePool e canAddMember agora retornam allowed=true imediatamente para role=admin
+- [x] isPro no Dashboard inclui admins (sem CTA de upgrade, sem banners de limite)
+- [x] Badge de plano no perfil exibe "Super Admin" (amber) para admins
+- [x] AppShell já ocultava o CTA de upgrade para isAdmin (sem alteração necessária)

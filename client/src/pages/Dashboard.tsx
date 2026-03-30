@@ -285,7 +285,8 @@ export default function Dashboard() {
     );
   }
 
-  const isPro = userData?.plan?.plan === "pro" && userData?.plan?.isActive;
+  const isAdmin = userData?.user?.role === "admin";
+  const isPro = isAdmin || (userData?.plan?.plan === "pro" && userData?.plan?.isActive) || (userData?.plan?.plan === "unlimited" && userData?.plan?.isActive);
   const avatarUrl = (userData?.user as any)?.avatarUrl as string | null | undefined;
   const initials = user?.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
   const activePools = (pools as any[]).filter((p: any) => p.pool?.status === "active" || p.pool?.status === "finished" || p.pool?.status === "awaiting_conclusion");
@@ -327,7 +328,11 @@ export default function Dashboard() {
                       ? new Date(userData.user.createdAt).getFullYear()
                       : new Date().getFullYear()}
                   </p>
-                  {isPro ? (
+                  {isAdmin ? (
+                    <Badge className="mt-1.5 bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs">
+                      <Crown className="w-3 h-3 mr-1" /> Super Admin
+                    </Badge>
+                  ) : isPro ? (
                     <Badge className="mt-1.5 bg-primary/10 text-primary border-primary/20 text-xs">
                       <Crown className="w-3 h-3 mr-1" /> Plano Pro
                     </Badge>

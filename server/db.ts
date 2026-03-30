@@ -169,6 +169,9 @@ export async function getUserPlanTier(userId: number): Promise<"free" | "pro" | 
  * Retorna { allowed: true } ou { allowed: false, reason, limit }
  */
 export async function canCreatePool(userId: number): Promise<{ allowed: boolean; reason?: string; limit?: number }> {
+  // Super admins não têm limites de plano
+  const user = await getUserById(userId);
+  if (user?.role === "admin") return { allowed: true };
   const { PLAN_LIMITS } = await import("../shared/plans");
   const tier = await getUserPlanTier(userId);
   const limits = PLAN_LIMITS[tier];
@@ -189,6 +192,9 @@ export async function canCreatePool(userId: number): Promise<{ allowed: boolean;
  * Retorna { allowed: true } ou { allowed: false, reason, limit }
  */
 export async function canAddMember(poolId: number, ownerId: number): Promise<{ allowed: boolean; reason?: string; limit?: number }> {
+  // Super admins não têm limites de plano
+  const owner = await getUserById(ownerId);
+  if (owner?.role === "admin") return { allowed: true };
   const { PLAN_LIMITS } = await import("../shared/plans");
   const tier = await getUserPlanTier(ownerId);
   const limits = PLAN_LIMITS[tier];
