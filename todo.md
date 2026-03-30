@@ -2206,3 +2206,29 @@
 - [x] Inspecionar implementação atual completa do AdBanner.tsx
 - [x] Implementar correção definitiva (script direto no DOM, sem iframe)
 - [ ] Validar no Chrome mobile Android (requer deploy + teste no dispositivo real)
+
+## Feature — Banner between_sections na PoolPage (30/03/2026)
+
+- [ ] Inspecionar PoolPage para identificar onde inserir o banner entre Jogos e Ranking
+- [ ] Implementar AdBanner position="between_sections" na PoolPage (apenas para usuários free)
+- [ ] Garantir que o banner não aparece para usuários Pro
+- [ ] Validar layout mobile e desktop
+
+## Feature — Banners em toda a aplicação (30/03/2026)
+
+- [ ] Mapear todas as páginas fora do admin que usam AppShell ou layouts próprios
+- [ ] Adicionar banner between_sections no meio do ranking da PoolPage (após top 3)
+- [ ] Garantir que AppShell já cobre top/bottom em todas as páginas com AppShell
+- [ ] Verificar páginas com layout próprio (OrganizerLayout, PoolSettings, etc.) e adicionar banners
+- [ ] Adicionar between_sections nas páginas de conteúdo longo (PublicPools, Dashboard, etc.)
+- [ ] Garantir que nenhum banner aparece no painel super admin (AdminLayout)
+- [ ] Validar que usuários Pro não veem nenhum banner em nenhuma página
+
+## Feature — AdInterleaved dinâmico (between_sections por quantidade de conteúdo)
+
+- [x] Criar componente AdInterleaved com lógica de intervalo configurável (padrão: a cada 5 itens)
+- [x] Aplicar em PoolPage ranking
+- [x] Aplicar em OrganizerMembers
+- [x] Aplicar em OrganizerDashboard
+- [x] Aplicar em OrganizerAccess
+- [x] Aplicar em PoolSettings

@@ -4,6 +4,8 @@
  * botões copiar (feedback 2s) e regenerar (AlertDialog), estatísticas de ingresso.
  */
 import OrganizerLayout from "@/components/OrganizerLayout";
+import { AdBanner } from "@/components/AdBanner";
+import { AdInterleaved } from "@/components/AdInterleaved";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import {
@@ -320,6 +322,9 @@ export default function OrganizerAccess() {
           ) : null}
         </div>
       </div>
+
+      {/* Banner between_sections — apenas para usuários free */}
+      {!isPro && <AdBanner position="between_sections" className="w-full mt-4" />}
 
       {/* Regen AlertDialog */}
       <AlertDialog open={regenConfirm} onOpenChange={(o) => !o && setRegenConfirm(false)}>

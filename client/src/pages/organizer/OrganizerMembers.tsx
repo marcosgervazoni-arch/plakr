@@ -5,6 +5,8 @@ import { useUserPlan } from "@/hooks/useUserPlan";
  * AlertDialogs destrutivos com texto explicativo completo sobre consequências.
  */
 import OrganizerLayout from "@/components/OrganizerLayout";
+import { AdBanner } from "@/components/AdBanner";
+import { AdInterleaved } from "@/components/AdInterleaved";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -190,7 +192,12 @@ export default function OrganizerMembers() {
               </div>
 
               <div className="divide-y divide-border/20">
-                {filtered.map((m: any, idx: number) => {
+                <AdInterleaved
+                  items={filtered as any[]}
+                  showAds={!isPro}
+                  interval={5}
+                  adClassName="w-full my-2"
+                  renderItem={(m: any, idx: number) => {
                   const member = m.member ?? m;
                   const memberUser = m.user ?? m;
                   const isMe = memberUser.id === user?.id;
@@ -278,13 +285,13 @@ export default function OrganizerMembers() {
                       )}
                     </div>
                   );
-                })}
+                  }}
+                />
               </div>
             </>
           )}
         </div>
       </div>
-
       {/* Remove AlertDialog */}
       <AlertDialog open={!!removeTarget} onOpenChange={(o) => !o && setRemoveTarget(null)}>
         <AlertDialogContent>

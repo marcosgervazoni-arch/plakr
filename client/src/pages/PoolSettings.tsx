@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import { AdBanner } from "@/components/AdBanner";
+import { AdInterleaved } from "@/components/AdInterleaved";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -281,7 +283,12 @@ export default function PoolSettings() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {members?.map(({ member, user: memberUser }) => (
+                <AdInterleaved
+                  items={(members ?? []) as any[]}
+                  showAds={!isPro}
+                  interval={5}
+                  adClassName="w-full my-2"
+                  renderItem={({ member, user: memberUser }: any) => (
                   <div key={member.id} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-xs font-semibold text-brand-400">
@@ -306,7 +313,8 @@ export default function PoolSettings() {
                       </Button>
                     )}
                   </div>
-                ))}
+                )}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -380,3 +388,4 @@ export default function PoolSettings() {
     </div>
   );
 }
+

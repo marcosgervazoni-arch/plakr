@@ -63,6 +63,7 @@ import X1DuelsTab from "@/components/X1DuelsTab";
 import PoolBottomNav from "@/components/PoolBottomNav";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { AdBanner } from "@/components/AdBanner";
+import { AdInterleaved } from "@/components/AdInterleaved";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -783,7 +784,12 @@ export default function PoolPage() {
                   const leaderPts = ranking[0]?.stats.totalPoints ?? 0;
                   return (
                     <div className="space-y-1">
-                      {ranking.map((rankItem, idx) => {
+                      <AdInterleaved
+                        items={ranking}
+                        showAds={!isPro}
+                        interval={5}
+                        adClassName="w-full my-2"
+                        renderItem={(rankItem, idx) => {
                         const { stats, user: rankUser } = rankItem;
                         const hasStats = (rankItem as typeof rankItem & { hasStats?: boolean }).hasStats !== false;
                         const isMe = rankUser.id === user?.id;
@@ -953,15 +959,20 @@ export default function PoolPage() {
                             </div>
                             {/* Separador visual após top-3 */}
                             {showSeparator && (
-                              <div className="flex items-center gap-2 py-1 px-1">
-                                <div className="flex-1 h-px bg-border/30" />
-                                <span className="text-[10px] text-muted-foreground/50 shrink-0">demais participantes</span>
-                                <div className="flex-1 h-px bg-border/30" />
-                              </div>
+                              <>
+                                <div className="flex items-center gap-2 py-1 px-1">
+                                  <div className="flex-1 h-px bg-border/30" />
+                                  <span className="text-[10px] text-muted-foreground/50 shrink-0">demais participantes</span>
+                                  <div className="flex-1 h-px bg-border/30" />
+                                </div>
+                                {/* Banner between_sections após top-3 — apenas para usuários free */}
+                                {!isPro && <AdBanner position="between_sections" className="w-full my-1" />}
+                              </>
                             )}
                           </>
                         );
-                      })}
+                        }}
+                      />
                     </div>
                   );
                 })()}

@@ -5,6 +5,8 @@ import { useUserPlan } from "@/hooks/useUserPlan";
  * Layout: sidebar fixa + conteúdo principal.
  */
 import OrganizerLayout from "@/components/OrganizerLayout";
+import { AdBanner } from "@/components/AdBanner";
+import { AdInterleaved } from "@/components/AdInterleaved";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -252,6 +254,9 @@ export default function OrganizerDashboard() {
           />
         </div>
 
+        {/* Banner between_sections entre métricas e ranking — apenas para usuários free */}
+        {!isPro && <AdBanner position="between_sections" className="w-full" />}
+
         {/* Two-column: inactive + top 5 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Inactive members */}
@@ -273,7 +278,12 @@ export default function OrganizerDashboard() {
               </div>
             ) : (
               <div className="divide-y divide-border/20">
-                {inactiveMembers.map((m: any) => (
+                <AdInterleaved
+                  items={inactiveMembers as any[]}
+                  showAds={!isPro}
+                  interval={5}
+                  adClassName="w-full my-2"
+                  renderItem={(m: any) => (
                   <div key={m.id} className="px-4 py-2.5 flex items-center gap-3">
                     <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold shrink-0">
                       {m.userName?.[0]?.toUpperCase() ?? "?"}
@@ -288,7 +298,8 @@ export default function OrganizerDashboard() {
                       Inativo
                     </Badge>
                   </div>
-                ))}
+                )}
+                />
               </div>
             )}
           </div>
@@ -312,7 +323,12 @@ export default function OrganizerDashboard() {
               </div>
             ) : (
               <div className="divide-y divide-border/20">
-                {top5.map((r: any, i: number) => (
+                <AdInterleaved
+                  items={top5 as any[]}
+                  showAds={!isPro}
+                  interval={3}
+                  adClassName="w-full my-1"
+                  renderItem={(r: any, i: number) => (
                   <div key={r.userId} className="px-4 py-2.5 flex items-center gap-3">
                     <span
                       className={`w-6 text-center font-bold text-sm shrink-0 ${i === 0 ? "text-primary" : i === 1 ? "text-[#E5E5E5]" : i === 2 ? "text-[#CD7F32]" : "text-muted-foreground"}`}
@@ -336,7 +352,8 @@ export default function OrganizerDashboard() {
                       {r.totalPoints} pts
                     </span>
                   </div>
-                ))}
+                )}
+                />
               </div>
             )}
           </div>

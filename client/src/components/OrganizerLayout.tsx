@@ -24,6 +24,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { AdBanner } from "@/components/AdBanner";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
@@ -307,18 +308,36 @@ export default function OrganizerLayout({
         </div>
       )}
 
+      {/* Mobile content — apenas para telas pequenas */}
+      <div className="lg:hidden flex-1 flex flex-col">
+        <main className="min-w-0 flex-1">
+          {!isPro && <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0" />}
+          {children}
+          {!isPro && <AdBanner position="bottom" className="w-full rounded-none border-x-0" />}
+        </main>
+      </div>
+
       {/* Desktop layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="hidden lg:flex flex-1 overflow-hidden">
         {/* Sidebar — desktop only */}
-        <aside className="hidden lg:flex flex-col w-60 shrink-0 bg-card border-r border-border/30 sticky top-0 h-screen overflow-y-auto">
+        <aside className="flex flex-col w-60 shrink-0 bg-card border-r border-border/30 sticky top-0 h-screen overflow-y-auto">
           <SidebarContent />
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 overflow-y-auto">
-          {children}
+        <main className="flex-1 min-w-0 overflow-hidden h-screen flex flex-col">
+          {/* Banner de topo — apenas para usuários free */}
+          {!isPro && <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0 shrink-0" />}
+          {/* Área de conteúdo scrollável */}
+          <div className="flex-1 overflow-y-auto flex flex-col">
+            <div className="flex-1">{children}</div>
+            {/* Banner de rodapé — apenas para usuários free */}
+            {!isPro && <AdBanner position="bottom" className="w-full rounded-none border-x-0 border-b-0 shrink-0" />}
+          </div>
         </main>
       </div>
+      {/* Popup global — apenas para usuários free */}
+      {!isPro && <AdBanner position="popup" />}
     </div>
   );
 }
