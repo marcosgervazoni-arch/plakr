@@ -19,7 +19,9 @@
  * - O código HTML completo (copiado do painel Adsterra → GET CODE) é salvo
  *   no banco via AdminIntegrations → campo adNetworkScripts
  * - Quando não há banner próprio cadastrado na posição, o código Adsterra
- *   é injetado via iframe para isolamento de scripts
+ *   é injetado diretamente no DOM via useRef + useEffect (sem iframe)
+ * - Esta abordagem garante compatibilidade com Chrome mobile Android (Xiaomi/MIUI)
+ *   onde iframes com srcdoc bloqueiam execução de scripts
  * - Adsterra é exibido independente do toggle adsEnabled (que controla só banners próprios)
  */
 import { trpc } from "@/lib/trpc";
@@ -95,22 +97,76 @@ function markPopupShown(ad: Ad): void {
   else if (ad.popupFrequency === "daily") localStorage.setItem(key, new Date().toDateString());
 }
 
-// ─── Componente Adsterra: injeta código HTML completo via iframe ──────────────────────
-// Usa srcdoc em vez de doc.write() para compatibilidade com Chrome mobile (Xiaomi/MIUI)
-// srcdoc é suportado em todos os browsers modernos e não depende de contentDocument estar pronto
+// ─── Componente Adsterra: injeta scripts diretamente no DOM ──────────────────
+// Abordagem: useRef + useEffect para criar e anexar tags <script> ao container.
+// Esta é a única abordagem confiável em React SPAs para scripts de terceiros
+// que usam document.write() ou carregam scripts externos dinamicamente.
+// Funciona em Chrome mobile Android (Xiaomi/MIUI), Safari iOS e todos os browsers modernos.
+//
+// Por que NÃO usar iframe:
+// - Chrome mobile Android bloqueia scripts em iframes com srcdoc mesmo com sandbox="allow-scripts"
+// - Chromium issue #40303108: allow-scripts em sandbox não é honrado consistentemente no Android
+// - iframes com blob URL também não funcionam no Chromium mobile (Reddit r/webdev 2024)
 function AdsterraSlot({ htmlCode, width, height }: { htmlCode: string; width: number; height: number }) {
-  const srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><style>*{margin:0;padding:0;overflow:hidden;body{background:transparent;}}</style></head><body>${htmlCode}</body></html>`;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const injected = useRef(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || injected.current || !htmlCode.trim()) return;
+    injected.current = true;
+
+    // Limpar container antes de injetar
+    container.innerHTML = "";
+
+    // Parsear o HTML para extrair scripts e conteúdo estático
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlCode, "text/html");
+    const elements = Array.from(doc.body.childNodes);
+
+    elements.forEach((node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as Element;
+        if (el.tagName === "SCRIPT") {
+          // Scripts precisam ser recriados para executar (innerHTML não executa scripts)
+          const script = document.createElement("script");
+          if ((el as HTMLScriptElement).src) {
+            script.src = (el as HTMLScriptElement).src;
+            script.type = "text/javascript";
+            script.async = true;
+          } else {
+            script.type = "text/javascript";
+            script.textContent = el.textContent || "";
+          }
+          container.appendChild(script);
+        } else {
+          // Outros elementos (divs, etc.) podem ser clonados diretamente
+          container.appendChild(el.cloneNode(true));
+        }
+      } else if (node.nodeType === Node.TEXT_NODE) {
+        container.appendChild(node.cloneNode(true));
+      }
+    });
+
+    // Cleanup: ao desmontar, limpar o container
+    return () => {
+      if (container) container.innerHTML = "";
+      injected.current = false;
+    };
+  }, [htmlCode]);
 
   return (
-    <iframe
-      srcDoc={srcdoc}
-      width={width}
-      height={height}
-      style={{ border: "none", display: "block", maxWidth: "100%" }}
-      title="Publicidade"
-      sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation"
-      scrolling="no"
-      loading="lazy"
+    <div
+      ref={containerRef}
+      style={{
+        width: width,
+        height: height,
+        maxWidth: "100%",
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
     />
   );
 }

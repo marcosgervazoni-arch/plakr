@@ -2199,3 +2199,10 @@
 
 - [x] Causa: usuário admin tinha plano Pro ativo no banco, fazendo isPro=true e ocultando ads
 - [x] Corrigido: isPro agora inclui !isAdmin — admins sempre vêem anúncios independente do plano
+
+## Bug Crítico — Adsterra não aparece no Chrome mobile Android (investigação aprofundada)
+
+- [x] Pesquisar causas reais: iframe sandbox, CSP headers, script injection, ad blocker nativo
+- [x] Inspecionar implementação atual completa do AdBanner.tsx
+- [x] Implementar correção definitiva (script direto no DOM, sem iframe)
+- [ ] Validar no Chrome mobile Android (requer deploy + teste no dispositivo real)
