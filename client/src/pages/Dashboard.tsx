@@ -466,17 +466,16 @@ export default function Dashboard() {
                   <WelcomeCard
                     name={userData?.user?.name ?? user?.name ?? ""}
                     onCreatePool={() => setShowCreateModal(true)}
-                    onEnterPool={() => navigate("/enter-pool")}
                   />
                 ) : (
                 <EmptyState
                   icon={Trophy}
                   title="Nenhum bolão ainda"
-                  description="Crie seu primeiro bolão ou entre em um existente com código de convite."
+                  description="Crie seu primeiro bolão e convide seus amigos para participar."
                   actionLabel="Criar bolão"
                   onAction={() => setShowCreateModal(true)}
-                  secondaryLabel="Entrar por código"
-                  onSecondary={() => navigate("/enter-pool")}
+                  secondaryLabel="Explorar bolões"
+                  onSecondary={() => navigate("/pools/public")}
                 />
                 )
               ) : (
@@ -793,11 +792,9 @@ export default function Dashboard() {
 function WelcomeCard({
   name,
   onCreatePool,
-  onEnterPool,
 }: {
   name: string;
   onCreatePool: () => void;
-  onEnterPool: () => void;
 }) {
   const firstName = name.split(" ")[0] || "Apostador";
   return (
@@ -841,8 +838,8 @@ function WelcomeCard({
         <Button onClick={onCreatePool} className="gap-2" size="lg">
           <Plus className="w-4 h-4" /> Criar meu primeiro bolão
         </Button>
-        <Button onClick={onEnterPool} variant="outline" className="gap-2" size="lg">
-          <Search className="w-4 h-4" /> Entrar com código
+        <Button onClick={() => window.location.href = '/pools/public'} variant="outline" className="gap-2" size="lg">
+          <Search className="w-4 h-4" /> Explorar bolões
         </Button>
       </div>
 

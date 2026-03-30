@@ -2164,3 +2164,11 @@
 - [x] Corrigir incompatibilidade entre state JSON (novo formato) e decodeState do SDK (formato legado)
 - [x] SDK.decodeState agora suporta ambos os formatos: JSON {redirectUri, returnPath} e legado (string pura)
 - [x] getTokenByCode extrai corretamente a redirectUri do JSON antes de enviar ao servidor OAuth
+
+## Remoção — "Entrar por código" (30/03/2026)
+
+- [x] Mapear todos os locais onde "Entrar por código" aparece no frontend
+- [x] Remover botão do Dashboard EmptyState (substituído por "Explorar bolões" → /pools/public)
+- [x] Remover botão do WelcomeCard (substituído por "Explorar bolões" → /pools/public)
+- [x] Remover import e rota /enter-pool do App.tsx (página já era um redirect vazio)
+- [x] Nenhuma outra ocorrência encontrada no frontend

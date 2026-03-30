@@ -10,7 +10,6 @@ import PoolPage from "./pages/PoolPage";
 import PoolSettings from "./pages/PoolSettings";
 import JoinPool from "./pages/JoinPool";
 
-import EnterPool from "./pages/EnterPool";
 import PublicPools from "./pages/PublicPools";
 import PublicProfile from "./pages/PublicProfile";
 import UpgradePage from "./pages/UpgradePage";
@@ -70,7 +69,6 @@ function Router() {
       {/* Public routes */}
       <Route path="/" component={Home} />
       <Route path="/join/:token" component={JoinPool} />
-      <Route path="/enter-pool" component={EnterPool} />
       <Route path="/pools/public" component={PublicPools} />
       <Route path="/profile/:userId" component={PublicProfile} />
       <Route path="/upgrade" component={UpgradePage} />
