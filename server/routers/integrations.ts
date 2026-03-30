@@ -13,6 +13,7 @@ import { eq, desc } from "drizzle-orm";
 import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament } from "../api-football/sync";
 import { fetchAccountStatus, apiFootballRequest } from "../api-football/client";
 import { Err } from "../errors";
+import { getPhaseLabel } from "../../shared/phaseNames";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -59,27 +60,16 @@ function roundToPhaseKeyLocal(round: string): string {
 }
 
 /** Converte a chave de fase em nome legível para exibição */
+// phaseKeyToName agora usa o utilitário compartilhado getPhaseLabel
+// Mantido como alias para compatibilidade com código existente
 function phaseKeyToName(phaseKey: string, sampleRound?: string): string {
-  const map: Record<string, string> = {
-    "1st_phase": "1ª Fase",
-    "2nd_phase": "2ª Fase",
-    "3rd_phase": "3ª Fase",
-    "regular_season": "Temporada Regular",
-    "group_stage": "Fase de Grupos",
-    "apertura": "Apertura",
-    "clausura": "Clausura",
-    "round_of_16": "Oitavas de Final",
-    "quarter_finals": "Quartas de Final",
-    "semi_finals": "Semifinais",
-    "third_place": "3º Lugar",
-    "final": "Final",
-  };
-  // Tentar extrair nome original do round para fases genéricas
-  if (!map[phaseKey] && sampleRound) {
+  const label = getPhaseLabel(phaseKey);
+  // Se não reconheceu a chave e temos o round original, usar a primeira parte do round
+  if (label === phaseKey && sampleRound) {
     const parts = sampleRound.split(" - ");
     return parts[0] || phaseKey;
   }
-  return map[phaseKey] ?? phaseKey;
+  return label;
 }
 
 // ─── Router ───────────────────────────────────────────────────────────────────

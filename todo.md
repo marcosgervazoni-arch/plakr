@@ -2141,3 +2141,11 @@
 - [x] Frontend: texto explicativo atualizado ("um único campeonato, jogos agrupados por fase internamente")
 - [x] Frontend: label do botão dinâmico ("Importar campeonato completo (N fases)" ou "Importar campeonato com N fase(s) selecionada(s)")
 - [x] QA: 376 testes passando, 0 erros TypeScript
+
+## Sugestão 2 — Nomes amigáveis de fase na UI (29/03/2026)
+
+- [x] Criar utilitário compartilhado `shared/phaseNames.ts` com mapa de chaves → nomes legíveis
+- [x] Aplicar nomes amigáveis no AdminTournamentDetail (via criação automática de tournament_phases durante o sync)
+- [x] Aplicar nomes amigáveis na PoolPage (fallback para getPhaseLabel quando tournament_phases está vazio)
+- [x] Aplicar nomes amigáveis no painel de seleção de fases (AdminIntegrations — phaseKeyToName refatorado para usar getPhaseLabel)
+- [x] syncFixturesForTournament agora cria automaticamente entradas em tournament_phases com nomes legíveis durante a importação

@@ -24,8 +24,10 @@ import {
   games,
   teams,
   tournaments,
+  tournamentPhases,
   apiSyncLog,
 } from "../../drizzle/schema";
+import { getPhaseLabel, getPhaseOrder, isKnockoutPhase } from "../../shared/phaseNames";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import {
   getBetsByGameAllPools,
@@ -355,6 +357,34 @@ export async function syncFixturesForTournament(options: {
     const fixtures = options.phaseRounds && options.phaseRounds.length > 0
       ? allFixtures.filter(f => options.phaseRounds!.includes(f.league.round))
       : allFixtures;
+
+    // Coletar as fases únicas presentes nos fixtures para criar tournament_phases
+    const phaseKeysFound = new Set<string>();
+    for (const f of fixtures) {
+      phaseKeysFound.add(roundToPhaseKey(f.league.round));
+    }
+
+    // Criar entradas em tournament_phases para cada fase encontrada (se ainda não existir)
+    const existingPhases = await db
+      .select({ key: tournamentPhases.key })
+      .from(tournamentPhases)
+      .where(eq(tournamentPhases.tournamentId, options.tournamentId));
+    const existingPhaseKeys = new Set(existingPhases.map((p) => p.key));
+
+    for (const phaseKey of phaseKeysFound) {
+      if (!existingPhaseKeys.has(phaseKey)) {
+        await db.insert(tournamentPhases).values({
+          tournamentId: options.tournamentId,
+          key: phaseKey,
+          label: getPhaseLabel(phaseKey),
+          enabled: true,
+          order: getPhaseOrder(phaseKey),
+          isKnockout: isKnockoutPhase(phaseKey),
+        });
+        existingPhaseKeys.add(phaseKey);
+        logger.info(`[ApiFootball] Fase criada: ${phaseKey} → "${getPhaseLabel(phaseKey)}" (torneio ${options.tournamentId})`);
+      }
+    }
 
     for (const fixture of fixtures) {
       const externalId = String(fixture.fixture.id);

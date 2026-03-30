@@ -10,6 +10,7 @@
  *    - Membros: lista com avatar e nome clicável
  */
 import AppShell from "@/components/AppShell";
+import { getPhaseLabel } from "@shared/phaseNames";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -616,7 +617,7 @@ export default function PoolPage() {
                 {gamesByPhase.map(([phaseKey, phaseGames]) => {
                   const label = allGamesHaveRound && phaseKey.startsWith("round_")
                     ? `Rodada ${phaseKey.replace("round_", "")}`
-                    : (phaseLabels.get(phaseKey) ?? phaseKey);
+                    : (phaseLabels.get(phaseKey) ?? getPhaseLabel(phaseKey));
                   const isExpanded = expandedPhases.has(phaseKey);
                   const hasLive = phaseGames.some((g) => g.status === "live");
                   const hasOpen = phaseGames.some((g) => g.status === "scheduled" && isGameOpen(g.matchDate));
