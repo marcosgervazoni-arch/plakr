@@ -148,9 +148,9 @@ export default function AppShell({ children }: AppShellProps) {
 
   const isAdmin =
     userData?.user?.role === "admin" || user?.role === "admin";
-  // Admins e usuários Pro não veem anúncios
+  // Usuários Pro não veem anúncios. Admins veem para validar que estão funcionando.
   const isPro =
-    isAdmin || (userData?.plan?.plan === "pro" && userData?.plan?.isActive === true);
+    userData?.plan?.plan === "pro" && userData?.plan?.isActive === true;
   const isBlocked = userData?.user?.isBlocked === true;
 
   // Redirecionar usuários bloqueados

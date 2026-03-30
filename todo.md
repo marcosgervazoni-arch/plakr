@@ -2188,3 +2188,9 @@
 - [x] Corrigido: AdsterraSlot agora usa srcDoc em vez de doc.write() — compatível com todos os browsers modernos
 - [x] Adicionado allow-top-navigation-by-user-activation no sandbox do iframe
 - [x] Corrigido isPro no AppShell: super admins também não veem anúncios (antes viam por engano)
+
+## Decisão — Super Admin vê anúncios (30/03/2026)
+
+- [x] Super admins devem ver os anúncios para validar que estão funcionando
+- [x] Reverter isPro no AppShell: admin não é tratado como Pro para fins de exibição de anúncios
+- [x] isPro = apenas usuários com plano Pro ativo (admins continuam vendo ads)
