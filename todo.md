@@ -2149,3 +2149,12 @@
 - [x] Aplicar nomes amigáveis na PoolPage (fallback para getPhaseLabel quando tournament_phases está vazio)
 - [x] Aplicar nomes amigáveis no painel de seleção de fases (AdminIntegrations — phaseKeyToName refatorado para usar getPhaseLabel)
 - [x] syncFixturesForTournament agora cria automaticamente entradas em tournament_phases com nomes legíveis durante a importação
+
+## Acordeons de Fase no AdminTournamentDetail (30/03/2026)
+
+- [x] Agrupar jogos por fase em acordeons expansíveis no AdminTournamentDetail
+- [x] Dentro de cada fase, subgrupar por rodada (ex: "1ª FASE — RODADA 1")
+- [x] Ordenar fases pela ordem canônica do shared/phaseNames.ts
+- [x] Ordenar rodadas numericamente dentro de cada fase
+- [x] Manter ações de editar/excluir em cada jogo
+- [x] Fases dinâmicas: quando tournament_phases está vazio, constrói acordeons a partir dos valores de phase dos jogos

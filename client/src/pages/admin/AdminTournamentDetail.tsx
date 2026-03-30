@@ -50,6 +50,7 @@ import {
   GitBranch,
 } from "lucide-react";
 import { useState } from "react";
+import { getPhaseLabel, getPhaseOrder, isKnockoutPhase } from "@shared/phaseNames";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 
@@ -229,7 +230,7 @@ export default function AdminTournamentDetail() {
   // Map games to phases — indexed by the game's phase value (e.g. "group_a" or "Grupo A")
   const gamesByPhaseKey: Record<string, typeof games> = {};
   for (const g of games) {
-    const key = g.phase ?? "Sem fase";
+    const key = g.phase ?? "__no_phase__";
     if (!gamesByPhaseKey[key]) gamesByPhaseKey[key] = [];
     gamesByPhaseKey[key].push(g);
   }
@@ -244,11 +245,32 @@ export default function AdminTournamentDetail() {
     slots: p.slots,
     games: gamesByPhaseKey[p.key] ?? gamesByPhaseKey[p.label] ?? [],
   }));
-  // Orphan games not matched to any phase key or label
-  const knownKeys = new Set(phases.flatMap((p) => [p.key, p.label]));
-  const orphanGames = games.filter((g) => !knownKeys.has(g.phase ?? ""));
-  if (orphanGames.length > 0) {
-    orderedPhases.push({ id: -1, key: "orphan", label: "Sem fase", isKnockout: false, slots: null, games: orphanGames });
+
+  // Se não há tournament_phases cadastradas, construir fases dinamicamente a partir dos valores
+  // únicos de `phase` dos jogos, usando getPhaseLabel/getPhaseOrder para nome e ordenação.
+  if (phases.length === 0 && games.length > 0) {
+    const uniquePhaseKeys = Array.from(new Set(games.map((g) => g.phase ?? "__no_phase__")));
+    uniquePhaseKeys
+      .sort((a, b) => getPhaseOrder(a) - getPhaseOrder(b))
+      .forEach((phaseKey) => {
+        orderedPhases.push({
+          id: -2,
+          key: phaseKey,
+          label: phaseKey === "__no_phase__" ? "Sem fase" : getPhaseLabel(phaseKey),
+          isKnockout: isKnockoutPhase(phaseKey),
+          slots: null,
+          games: gamesByPhaseKey[phaseKey] ?? [],
+        });
+      });
+  }
+
+  // Orphan games not matched to any phase key or label (apenas quando há tournament_phases)
+  if (phases.length > 0) {
+    const knownKeys = new Set(phases.flatMap((p) => [p.key, p.label]));
+    const orphanGames = games.filter((g) => !knownKeys.has(g.phase ?? ""));
+    if (orphanGames.length > 0) {
+      orderedPhases.push({ id: -1, key: "orphan", label: "Sem fase", isKnockout: false, slots: null, games: orphanGames });
+    }
   }
 
   const statusBadge = (status: GameStatus | string | null) => {
@@ -745,22 +767,8 @@ export default function AdminTournamentDetail() {
                       }
                       // Group by phase+roundNumber (chave composta para evitar sobreposição)
                       // Ex: "1st_phase|1", "2nd_phase|1" são grupos distintos
-                      const phaseLabel = (p: string | null, rn: number | string | null): string => {
-                        const phaseNames: Record<string, string> = {
-                          "1st_phase": "1ª Fase",
-                          "2nd_phase": "2ª Fase",
-                          "3rd_phase": "3ª Fase",
-                          "regular_season": "Temporada Regular",
-                          "apertura": "Apertura",
-                          "clausura": "Clausura",
-                          "group_stage": "Fase de Grupos",
-                          "round_of_16": "Oitavas de Final",
-                          "quarter_finals": "Quartas de Final",
-                          "semi_finals": "Semifinais",
-                          "third_place": "3º Lugar",
-                          "final": "Final",
-                        };
-                        const pName = p ? (phaseNames[p] ?? p) : null;
+                      const phaseLabelFn = (p: string | null, rn: number | string | null): string => {
+                        const pName = p ? getPhaseLabel(p) : null;
                         if (rn == null) return pName ?? "Sem rodada";
                         if (pName && pName !== "Fase de Grupos") return `${pName} — Rodada ${rn}`;
                         return `Rodada ${rn}`;
@@ -784,7 +792,7 @@ export default function AdminTournamentDetail() {
                           {sortedRounds.map((rk) => {
                             const [phaseKey, roundNum] = rk.split("|");
                             const firstGame = roundMap.get(rk)![0];
-                            const label = phaseLabel(firstGame.phase ?? null, firstGame.roundNumber ?? null);
+                            const label = phaseLabelFn(firstGame.phase ?? null, firstGame.roundNumber ?? null);
                             return (
                             <div key={rk}>
                               <div className="flex items-center gap-2 mb-2 px-1">
