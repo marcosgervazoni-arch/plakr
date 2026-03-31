@@ -10,6 +10,7 @@
  *    - Membros: lista com avatar e nome clicável
  */
 import AppShell from "@/components/AppShell";
+import { useShareCard, ShareCardVisual } from "@/components/ShareCard";
 import { getPhaseLabel } from "@shared/phaseNames";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -1205,16 +1206,33 @@ function GameCard({
   game, myBet, open, finished, live, betA, betB, hasBet, poolId,
   betInputs, setBetInputs, handleBetSubmit, placeBetPending,
 }: GameCardProps) {
-  const [analysisOpen, setAnalysisOpen] = useState(false);
+   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-
+  const [isCapturing, setIsCapturing] = useState(false);
   // Busca análise do palpite apenas quando o painel é aberto e o jogo está finalizado
   const { data: betAnalysisText, isLoading: betAnalysisLoading } = trpc.pools.getBetAnalysis.useQuery(
     { gameId: game.id, poolId },
     { enabled: analysisOpen && finished && hasBet, staleTime: 10 * 60 * 1000 }
   );
-
-  // Calcula urgência do prazo
+  // Hook de compartilhamento com imagem
+  const { cardRef: shareCardRef, downloadImage, shareToInstagram, shareToWhatsApp } = useShareCard();
+  const shareCardData = {
+    teamAName: game.teamAName ?? "Time A",
+    teamBName: game.teamBName ?? "Time B",
+    teamAFlag: game.teamAFlag,
+    teamBFlag: game.teamBFlag,
+    scoreA: game.scoreA,
+    scoreB: game.scoreB,
+    matchDate: game.matchDate,
+    status: finished ? "finished" : live ? "live" : "scheduled",
+    roundName: game.phase,
+    aiSummary: game.aiSummary,
+    goalsTimeline: game.goalsTimeline as Array<{ min: number; player: string; team: "home" | "away" }> | null,
+    predictedScoreA: myBet?.predictedScoreA,
+    predictedScoreB: myBet?.predictedScoreB,
+    pointsEarned: myBet?.pointsEarned,
+  };
+  // Calcula urgência do prazoo
   const minutesUntilDeadline = open && !finished
     ? Math.floor((new Date(game.matchDate).getTime() - Date.now()) / 60000)
     : null;
@@ -1232,17 +1250,21 @@ function GameCard({
     ? `Jogo: ${game.teamAName} ${game.scoreA} × ${game.scoreB} ${game.teamBName}\nMeu palpite: ${myBet?.predictedScoreA} × ${myBet?.predictedScoreB} (+${myBet?.pointsEarned ?? 0} pts)\nPlakr — plataforma de bolões esportivos`
     : `Meu palpite: ${game.teamAName} ${myBet?.predictedScoreA} × ${myBet?.predictedScoreB} ${game.teamBName}\nPlakr — plataforma de bolões esportivos`;
 
-  const handleShareWhatsApp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
+  const handleShareWhatsApp = async () => {
+    setIsCapturing(true);
+    try { await shareToWhatsApp(shareText); } finally { setIsCapturing(false); }
   };
-  const handleShareInstagram = () => {
-    // Instagram não tem deep link direto para stories via URL; abrimos o app
-    if (navigator.share) {
-      navigator.share({ text: shareText }).catch(() => {});
-    } else {
-      toast.info("Copie o texto e cole nos Stories do Instagram");
-      navigator.clipboard?.writeText(shareText);
-    }
+  const handleShareInstagram = async () => {
+    setIsCapturing(true);
+    try { await shareToInstagram(); } finally { setIsCapturing(false); }
+  };
+  const handleDownloadImage = async () => {
+    setIsCapturing(true);
+    try {
+      const filename = `plakr-${(game.teamAName ?? "time-a").toLowerCase().replace(/\s+/g, "-")}-vs-${(game.teamBName ?? "time-b").toLowerCase().replace(/\s+/g, "-")}.png`;
+      await downloadImage(filename);
+      toast.success("Imagem salva!");
+    } finally { setIsCapturing(false); }
   };
   const handleCopyLink = () => {
     navigator.clipboard?.writeText(shareText);
@@ -1459,10 +1481,12 @@ function GameCard({
                 <span>💬</span> WhatsApp
               </button>
               <button
-                onClick={handleCopyLink}
-                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-muted/50 border border-border/40 text-foreground hover:bg-muted/70 transition-colors"
+                onClick={handleDownloadImage}
+                disabled={isCapturing}
+                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-muted/50 border border-border/40 text-foreground hover:bg-muted/70 transition-colors disabled:opacity-50"
               >
-                <Copy className="w-3.5 h-3.5" /> Copiar texto
+                {isCapturing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                Baixar imagem
               </button>
               <button
                 onClick={handleShareOthers}
@@ -1570,6 +1594,8 @@ function GameCard({
             )}
           </div>
         )}
+      {/* Card visual oculto para captura html2canvas */}
+      {hasBet && <ShareCardVisual data={shareCardData} cardRef={shareCardRef} />}
       </div>
     </div>
   );

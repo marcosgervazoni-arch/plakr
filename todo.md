@@ -2297,6 +2297,6 @@
 
 ## Feature — Inteligência Esportiva no GameCard (Sprint 3: Compartilhamento)
 - [x] Botão Compartilhar: Instagram Stories, WhatsApp, Copiar texto, Outros apps
-- [ ] Baixar imagem (html2canvas) — pendente próximo sprint
+- [x] Baixar imagem (html2canvas) — implementado via ShareCard + useShareCard hook
 - [x] Card pré-jogo: texto com palpite do usuário para compartilhamento
 - [x] Card pós-jogo: placar + pontos + texto de compartilhamento
