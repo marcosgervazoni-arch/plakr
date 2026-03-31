@@ -2451,3 +2451,10 @@
 - [x] Painel de análise pré-jogo: últimos 5 jogos de cada time (W/D/L badges coloridos)
 - [x] Painel de análise pré-jogo: caixa "Análise da IA" com texto e disclaimer
 - [x] Download: File System Access API (diálogo nativo "Salvar como" no Chrome desktop) + fallback window.open (nova aba) + fallback link.click()
+
+## Bug — Quota API-Football hardcoded em 100
+- [x] Atualizar default do schema para 7500 (plano Pro)
+- [x] Atualizar banco: platform_settings.apiFootballQuotaLimit = 7500
+- [x] Atualizar banco: api_quota_tracker.quotaLimit = 7500 (registro de hoje)
+- [x] Corrigir INSERT hardcoded com 7500 no client.ts
+- [x] Corrigir fallbacks hardcoded com 7500 nas linhas 337-338 do client.ts

@@ -70,7 +70,7 @@ async function getSettings() {
 
 async function getTodayQuota(): Promise<{ used: number; limit: number }> {
   const db = await getDb();
-  if (!db) return { used: 0, limit: 100 };
+  if (!db) return { used: 0, limit: 7500 };
 
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const [row] = await db
@@ -80,7 +80,7 @@ async function getTodayQuota(): Promise<{ used: number; limit: number }> {
     .limit(1);
 
   const settings = await getSettings();
-  const limit = settings?.apiFootballQuotaLimit ?? 100;
+  const limit = settings?.apiFootballQuotaLimit ?? 7500;
 
   if (!row) {
     await db.insert(apiQuotaTracker).values({ date: today, requestsUsed: 0, quotaLimit: limit });
@@ -96,7 +96,7 @@ async function incrementQuota(count: number = 1): Promise<void> {
   // Upsert: cria o registro do dia se não existir, senão incrementa
   await db.execute(
     `INSERT INTO api_quota_tracker (date, requestsUsed, quotaLimit)
-     VALUES ('${today}', ${count}, 100)
+     VALUES ('${today}', ${count}, 7500)
      ON DUPLICATE KEY UPDATE requestsUsed = requestsUsed + ${count}`
   );
 }
@@ -334,8 +334,8 @@ export async function fetchAccountStatus(): Promise<{
 
   const resp = data.response[0] as any;
   return {
-    requestsLimit: resp?.requests?.limit ?? 100,
-    requestsRemaining: (resp?.requests?.limit ?? 100) - (resp?.requests?.current ?? 0),
+    requestsLimit: resp?.requests?.limit ?? 7500,
+    requestsRemaining: (resp?.requests?.limit ?? 7500) - (resp?.requests?.current ?? 0),
     plan: resp?.subscription?.plan ?? "Free",
   };
 }

@@ -78,7 +78,7 @@ export const platformSettings = mysqlTable("platform_settings", {
   // ─── INTEGRAÇÃO API-FOOTBALL (configurada pelo Super Admin) ─────────────────────────────────
   apiFootballKey: varchar("apiFootballKey", { length: 64 }),                      // chave de API inserida pelo Super Admin
   apiFootballEnabled: boolean("apiFootballEnabled").default(false).notNull(),      // liga/desliga integração
-  apiFootballQuotaLimit: int("apiFootballQuotaLimit").default(100).notNull(),      // limite diário (plano free = 100)
+  apiFootballQuotaLimit: int("apiFootballQuotaLimit").default(7500).notNull(),     // limite diário (plano pro = 7500, free = 100)
   apiFootballSyncFixtures: boolean("apiFootballSyncFixtures").default(true).notNull(),  // sincronizar jogos agendados
   apiFootballSyncResults: boolean("apiFootballSyncResults").default(true).notNull(),    // atualizar resultados finais
   apiFootballLeagueId: int("apiFootballLeagueId").default(1).notNull(),            // ID da liga (1 = Copa do Mundo)
