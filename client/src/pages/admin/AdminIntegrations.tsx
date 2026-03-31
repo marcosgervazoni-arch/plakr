@@ -55,6 +55,7 @@ export default function AdminIntegrations() {
   const [adBottomMobile, setAdBottomMobile] = useState("");
   const [adPopup, setAdPopup] = useState("");
   const [adPopupFrequency, setAdPopupFrequency] = useState<"session" | "daily" | "always">("session");
+  const [adNative, setAdNative] = useState("");
 
   useEffect(() => {
     if (settings) {
@@ -70,6 +71,7 @@ export default function AdminIntegrations() {
       setAdBottomDesktop(str(scripts["bottom_desktop"]));
       setAdBottomMobile(str(scripts["bottom_mobile"]));
       setAdPopup(str(scripts["popup"]));
+      setAdNative(str(scripts["native"]));
       const freq = scripts["popup_frequency"];
       if (freq === "daily" || freq === "always" || freq === "session") {
         setAdPopupFrequency(freq);
@@ -90,7 +92,7 @@ export default function AdminIntegrations() {
   const adsterraConfigured = !!(adTopDesktop || adTopMobile || adSidebar || adBetweenDesktop || adPopup);
 
   // Conta quantos campos Adsterra estão preenchidos
-  const adsterraCount = [adTopDesktop, adTopMobile, adSidebar, adBetweenDesktop, adBetweenMobile, adBottomDesktop, adBottomMobile, adPopup].filter(Boolean).length;
+  const adsterraCount = [adTopDesktop, adTopMobile, adSidebar, adBetweenDesktop, adBetweenMobile, adBottomDesktop, adBottomMobile, adPopup, adNative].filter(Boolean).length;
 
   // ─── API-Football ─────────────────────────────────────────────────────────
   const [showApiKey, setShowApiKey] = useState(false);
@@ -228,6 +230,7 @@ export default function AdminIntegrations() {
                 bottom_desktop: adBottomDesktop,
                 bottom_mobile: adBottomMobile,
                 popup: adPopup,
+                native: adNative,
                 popup_frequency: adPopupFrequency,
               },
             })}
@@ -420,7 +423,7 @@ export default function AdminIntegrations() {
                     />
                     <AdsterraCodeField
                       label="Sidebar"
-                      size="300×250px — Medium Rectangle"
+                      size="160×600px — Wide Skyscraper"
                       value={adSidebar}
                       onChange={setAdSidebar}
                     />
@@ -463,6 +466,23 @@ export default function AdminIntegrations() {
                       size="320×50px — Mobile Banner"
                       value={adBottomMobile}
                       onChange={setAdBottomMobile}
+                    />
+                  </div>
+                </div>
+
+                {/* Native Banner */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Native Banner</p>
+                    <Separator className="flex-1" />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <AdsterraCodeField
+                      label="Native Banner"
+                      size="Formato nativo — adapta ao layout"
+                      value={adNative}
+                      onChange={setAdNative}
+                      hint="O Native Banner se integra visualmente ao conteúdo da página. Cole o código &lt;script async&gt; gerado pelo Adsterra."
                     />
                   </div>
                 </div>

@@ -1,0 +1,26 @@
+{
+  "query": "SHOW COLUMNS FROM platform_settings WHERE Field IN ('adsEnabled', 'adsLocalEnabled', 'ads_enabled', 'ads_local_enabled');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SHOW COLUMNS FROM platform_settings WHERE Field IN ('adsEnabled', 'adsLocalEnabled', 'ads_enabled', 'ads_local_enabled');",
+  "rows": [
+    {
+      "Field": "adsEnabled",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    },
+    {
+      "Field": "adsLocalEnabled",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "1",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nadsEnabled\ttinyint(1)\tNO\t\t1\t\nadsLocalEnabled\ttinyint(1)\tNO\t\t1\t\n",
+  "stderr": "",
+  "execution_time_ms": 352
+}
