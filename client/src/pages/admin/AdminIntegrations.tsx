@@ -1102,14 +1102,17 @@ export default function AdminIntegrations() {
                           onChange={(e) => setLeagueSearch(e.target.value)}
                           className="h-8 text-sm"
                         />
-                        <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                          {apiLeagues
-                            .filter((l) =>
+                        <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
+                          {(() => {
+                            const INTL_IDS = [1, 2, 3, 11, 13, 15, 16, 39, 61, 78, 135, 140, 253, 262];
+                            const filtered = apiLeagues.filter((l) =>
                               leagueSearch === "" ||
                               l.name.toLowerCase().includes(leagueSearch.toLowerCase()) ||
                               l.country.toLowerCase().includes(leagueSearch.toLowerCase())
-                            )
-                            .map((league) => {
+                            );
+                            const intl = filtered.filter(l => INTL_IDS.includes(l.leagueId));
+                            const brazil = filtered.filter(l => !INTL_IDS.includes(l.leagueId));
+                            const renderLeague = (league: typeof apiLeagues[0]) => {
                               const alreadyImported = managedTournaments?.some((t) => (t as {apiFootballLeagueId?: number}).apiFootballLeagueId === league.leagueId);
                               const isLoadingPhases = getLeaguePhasesMutation.isPending && phaseSelectionLeague?.leagueId === league.leagueId;
                               return (
@@ -1134,7 +1137,7 @@ export default function AdminIntegrations() {
                                         setSelectedPhases(new Set());
                                         getLeaguePhasesMutation.mutate({
                                           leagueId: league.leagueId,
-                                          season: league.season ?? integrationSettings?.apiFootballSeason ?? 2022,
+                                          season: league.season ?? integrationSettings?.apiFootballSeason ?? 2026,
                                         });
                                       }}
                                       disabled={isLoadingPhases}
@@ -1144,7 +1147,31 @@ export default function AdminIntegrations() {
                                   )}
                                 </div>
                               );
-                            })}
+                            };
+                            return (
+                              <>
+                                {intl.length > 0 && (
+                                  <>
+                                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-1 pt-1">Internacionais</p>
+                                    {intl.map(renderLeague)}
+                                  </>
+                                )}
+                                {brazil.length > 0 && (
+                                  <>
+                                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-1 pt-2">Brasil</p>
+                                    {brazil.map(renderLeague)}
+                                  </>
+                                )}
+                              </>
+                            );
+                          })()}
+                          {apiLeagues.filter((l) =>
+                            leagueSearch === "" ||
+                            l.name.toLowerCase().includes(leagueSearch.toLowerCase()) ||
+                            l.country.toLowerCase().includes(leagueSearch.toLowerCase())
+                          ).length === 0 && (
+                            <p className="text-xs text-muted-foreground text-center py-4">Nenhuma liga encontrada para "{leagueSearch}"</p>
+                          )}
                         </div>
 
                         {/* Painel de seleção de fases */}

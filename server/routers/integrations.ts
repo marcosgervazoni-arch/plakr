@@ -271,7 +271,8 @@ export const integrationsRouter = router({
 
   /**
    * Busca ligas disponíveis na API-Football para uma temporada.
-   * Consome 1 requisição da quota diária.
+   * Estratégia: busca por país (Brazil) + IDs fixos das principais ligas internacionais.
+   * Consome 2 requisições da quota diária.
    */
   fetchLeaguesFromApi: adminProcedure
     .input(z.object({ season: z.number().default(2026) }))
@@ -283,20 +284,53 @@ export const integrationsRouter = router({
       if (!cfg?.apiFootballKey) throw Err.badRequest("Chave da API-Football não configurada");
       if (!cfg.apiFootballEnabled) throw Err.badRequest("Integração API-Football está desativada");
 
-      // Busca ligas mais populares — filtra por popularidade (top 50)
-      const data = await apiFootballRequest(
-        `/leagues`,
-        { season: cfg.apiFootballSeason, type: "league" }
+      const season = cfg.apiFootballSeason;
+
+      // IDs fixos das principais ligas internacionais (Copa do Mundo, Champions, Europa,
+      // Libertadores, Sul-Americana, FIFA Club World Cup, CONCACAF Champions,
+      // Premier League, La Liga, Serie A Itália, Bundesliga, Ligue 1, MLS, Liga MX)
+      const INTERNATIONAL_IDS = [1, 2, 3, 11, 13, 15, 16, 39, 61, 78, 135, 140, 253, 262];
+
+      // Duas requisições em paralelo:
+      // - ligas do Brasil (garante Brasileirão Série A/B/C/D, Copa do Brasil, estaduais)
+      // - todas as ligas da temporada (para filtrar as internacionais por ID)
+      const [brazilData, allLeaguesData] = await Promise.all([
+        apiFootballRequest(`/leagues`, { country: "Brazil", season }),
+        apiFootballRequest(`/leagues`, { season }),
+      ]);
+
+      const brazilLeagues = (brazilData?.response ?? []) as any[];
+      const allLeagues = (allLeaguesData?.response ?? []) as any[];
+
+      // Filtrar internacionais pelos IDs prioritários
+      const intlLeagues = allLeagues.filter((item: any) =>
+        INTERNATIONAL_IDS.includes(item.league.id as number)
       );
-      const leagues = (data?.response ?? []).slice(0, 80).map((item: any) => ({
+
+      // Ordenar internacionais pela ordem de prioridade definida
+      intlLeagues.sort((a: any, b: any) =>
+        INTERNATIONAL_IDS.indexOf(a.league.id) - INTERNATIONAL_IDS.indexOf(b.league.id)
+      );
+
+      // Combinar: internacionais primeiro (destaque), depois brasileiras
+      const seen = new Set<number>(intlLeagues.map((l: any) => l.league.id as number));
+      const combined: any[] = [...intlLeagues];
+      for (const item of brazilLeagues) {
+        const id = item.league.id as number;
+        if (!seen.has(id)) {
+          seen.add(id);
+          combined.push(item);
+        }
+      }
+
+      return combined.map((item: any) => ({
         leagueId: item.league.id as number,
         name: item.league.name as string,
         country: item.country.name as string,
         logoUrl: item.league.logo as string,
-        season: cfg.apiFootballSeason,
+        season,
         type: item.league.type as string,
       }));
-      return leagues;
     }),
 
   /**
