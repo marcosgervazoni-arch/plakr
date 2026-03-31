@@ -137,6 +137,15 @@ export default function AdminIntegrations() {
     onSuccess: () => { toast.success("Circuit breaker resetado!"); refetchIntegration(); },
     onError: (e: { message: string }) => toast.error(e.message),
   });
+  const { data: backfillStatus, refetch: refetchBackfill } = trpc.integrations.getBackfillStatus.useQuery();
+  const backfillMutation = trpc.integrations.backfillGameData.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Backfill concluído: ${data.succeeded} processados, ${data.failed} falhas (${data.requestsUsed} req usadas)`);
+      refetchBackfill();
+      refetchLogs();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
 
   // ─── Curadoria de Campeonatos ───────────────────────────────────────────────
   const { data: managedTournaments, refetch: refetchTournaments } = trpc.integrations.listTournaments.useQuery();
@@ -798,6 +807,49 @@ export default function AdminIntegrations() {
                         Resultados
                       </Button>
                     </div>
+                  </div>
+
+                  {/* Backfill de Estatísticas */}
+                  <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Reprocessamento</p>
+                      {backfillStatus && backfillStatus.pendingCount > 0 && (
+                        <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full px-2 py-0.5 font-medium">
+                          {backfillStatus.pendingCount} pendentes
+                        </span>
+                      )}
+                      {backfillStatus && backfillStatus.pendingCount === 0 && (
+                        <span className="text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full px-2 py-0.5 font-medium">
+                          Em dia
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Reprocessa jogos finalizados sem estatísticas ou análises de IA.
+                      {backfillStatus && backfillStatus.pendingCount > 0
+                        ? ` ${backfillStatus.pendingCount} jogo${backfillStatus.pendingCount !== 1 ? "s" : ""} aguardando.`
+                        : " Todos os jogos estão atualizados."}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 text-xs"
+                      disabled={!integrationSettings?.apiFootballEnabled || backfillMutation.isPending || (backfillStatus?.pendingCount ?? 0) === 0}
+                      onClick={() => backfillMutation.mutate({ batchSize: 50 })}
+                    >
+                      {backfillMutation.isPending ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Reprocessando...</>
+                      ) : (
+                        <><BarChart2 className="h-3 w-3" /> Reprocessar jogos finalizados</>
+                      )}
+                    </Button>
+                    {backfillMutation.data && (
+                      <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 space-y-0.5">
+                        <p>✅ {backfillMutation.data.succeeded} processados com sucesso</p>
+                        {backfillMutation.data.failed > 0 && <p>⚠️ {backfillMutation.data.failed} falhas</p>}
+                        <p className="text-muted-foreground/70">{backfillMutation.data.requestsUsed} requisições usadas</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

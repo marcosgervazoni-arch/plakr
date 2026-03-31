@@ -1,0 +1,9 @@
+{
+  "query": "SELECT id, status, scoreA, scoreB, aiSummary IS NOT NULL as hasAiSummary, matchStatistics IS NOT NULL as hasStats, goalsTimeline IS NOT NULL as hasGoals FROM games WHERE status = 'FT' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, status, scoreA, scoreB, aiSummary IS NOT NULL as hasAiSummary, matchStatistics IS NOT NULL as hasStats, goalsTimeline IS NOT NULL as hasGoals FROM games WHERE status = 'FT' LIMIT 10;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 64
+}

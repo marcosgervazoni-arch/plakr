@@ -2346,3 +2346,16 @@
 - [x] Fix 1: corrigir leagueId padrão em platform_settings (valor 1 → derivado dos torneios vinculados) e exibir corretamente no painel Admin
 - [x] Fix 2: detectar erro "account suspended" na API e exibir mensagem clara no painel Admin (separar de erro temporário)
 - [x] Fix 3: alinhar syncResults a horários UTC fixos (scheduleDaily) em vez de setInterval relativo
+
+## Bug — Estatísticas e Análises nos Jogos do Bolão
+
+- [ ] Investigar por que estatísticas e análises não aparecem nos cards de jogos da PoolPage
+- [ ] Corrigir exibição de estatísticas/análises nos jogos encerrados
+
+## Feature — Backfill Manual de Estatísticas e Análises de IA
+
+- [x] Backend: procedure integrations.backfillGameData — busca estatísticas e gera análises de IA para jogos finalizados sem dados
+- [x] Backend: procedure integrations.getBackfillStatus — retorna quantos jogos precisam de backfill
+- [x] Frontend: botão "Reprocessar jogos finalizados" no painel Admin → Integrações
+- [x] Frontend: exibir badge de pendentes e resultado final (processados, falhas, requisições usadas)
+- [x] Frontend: botão desabilitado quando todos os jogos estão atualizados

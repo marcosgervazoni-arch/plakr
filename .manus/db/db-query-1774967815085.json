@@ -1,0 +1,100 @@
+{
+  "query": "SELECT id, status, scoreA, scoreB, aiSummary IS NOT NULL as hasAiSummary, matchStatistics IS NOT NULL as hasStats, goalsTimeline IS NOT NULL as hasGoals FROM games WHERE status = 'finished' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, status, scoreA, scoreB, aiSummary IS NOT NULL as hasAiSummary, matchStatistics IS NOT NULL as hasStats, goalsTimeline IS NOT NULL as hasGoals FROM games WHERE status = 'finished' LIMIT 10;",
+  "rows": [
+    {
+      "id": "90001",
+      "status": "finished",
+      "scoreA": "2",
+      "scoreB": "1",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    },
+    {
+      "id": "90002",
+      "status": "finished",
+      "scoreA": "0",
+      "scoreB": "0",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    },
+    {
+      "id": "90003",
+      "status": "finished",
+      "scoreA": "1",
+      "scoreB": "1",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    },
+    {
+      "id": "90004",
+      "status": "finished",
+      "scoreA": "0",
+      "scoreB": "1",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    },
+    {
+      "id": "90005",
+      "status": "finished",
+      "scoreA": "1",
+      "scoreB": "0",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    },
+    {
+      "id": "90006",
+      "status": "finished",
+      "scoreA": "1",
+      "scoreB": "2",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    },
+    {
+      "id": "90007",
+      "status": "finished",
+      "scoreA": "2",
+      "scoreB": "1",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    },
+    {
+      "id": "90008",
+      "status": "finished",
+      "scoreA": "4",
+      "scoreB": "0",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    },
+    {
+      "id": "90009",
+      "status": "finished",
+      "scoreA": "2",
+      "scoreB": "2",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    },
+    {
+      "id": "90010",
+      "status": "finished",
+      "scoreA": "0",
+      "scoreB": "0",
+      "hasAiSummary": "0",
+      "hasStats": "0",
+      "hasGoals": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tstatus\tscoreA\tscoreB\thasAiSummary\thasStats\thasGoals\n90001\tfinished\t2\t1\t0\t0\t0\n90002\tfinished\t0\t0\t0\t0\t0\n90003\tfinished\t1\t1\t0\t0\t0\n90004\tfinished\t0\t1\t0\t0\t0\n90005\tfinished\t1\t0\t0\t0\t0\n90006\tfinished\t1\t2\t0\t0\t0\n90007\tfinished\t2\t1\t0\t0\t0\n90008\tfinished\t4\t0\t0\t0\t0\n90009\tfinished\t2\t2\t0\t0\t0\n90010\tfinished\t0\t0\t0\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

@@ -1,0 +1,45 @@
+{
+  "query": "SELECT id, externalId, status, aiSummary IS NOT NULL as hasAiSummary, matchStatistics IS NOT NULL as hasStats FROM games WHERE status = 'finished' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, externalId, status, aiSummary IS NOT NULL as hasAiSummary, matchStatistics IS NOT NULL as hasStats FROM games WHERE status = 'finished' LIMIT 5;",
+  "rows": [
+    {
+      "id": "90001",
+      "externalId": "1145443",
+      "status": "finished",
+      "hasAiSummary": "0",
+      "hasStats": "0"
+    },
+    {
+      "id": "90002",
+      "externalId": "1145448",
+      "status": "finished",
+      "hasAiSummary": "0",
+      "hasStats": "0"
+    },
+    {
+      "id": "90003",
+      "externalId": "1145446",
+      "status": "finished",
+      "hasAiSummary": "0",
+      "hasStats": "0"
+    },
+    {
+      "id": "90004",
+      "externalId": "1145444",
+      "status": "finished",
+      "hasAiSummary": "0",
+      "hasStats": "0"
+    },
+    {
+      "id": "90005",
+      "externalId": "1145445",
+      "status": "finished",
+      "hasAiSummary": "0",
+      "hasStats": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\texternalId\tstatus\thasAiSummary\thasStats\n90001\t1145443\tfinished\t0\t0\n90002\t1145448\tfinished\t0\t0\n90003\t1145446\tfinished\t0\t0\n90004\t1145444\tfinished\t0\t0\n90005\t1145445\tfinished\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

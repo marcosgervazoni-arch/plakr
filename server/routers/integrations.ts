@@ -10,7 +10,7 @@ import logger from "../logger";
 import { getDb } from "../db";
 import { platformSettings, apiSyncLog, apiQuotaTracker, tournaments } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
-import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament } from "../api-football/sync";
+import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament, backfillGameData, getBackfillPendingCount } from "../api-football/sync";
 import { fetchAccountStatus, apiFootballRequest, AccountSuspendedError } from "../api-football/client";
 import { Err } from "../errors";
 import { getPhaseLabel } from "../../shared/phaseNames";
@@ -520,5 +520,29 @@ export const integrationsRouter = router({
         teamsError: teamsResult.error,
         fixturesError: fixturesResult.error,
       };
+      }),
+
+  /**
+   * Retorna quantos jogos finalizados estão sem estatísticas (precisam de backfill).
+   */
+  getBackfillStatus: adminProcedure.query(async () => {
+    const pendingCount = await getBackfillPendingCount();
+    return { pendingCount };
+  }),
+
+  /**
+   * Reprocessa jogos finalizados sem estatísticas/análises de IA.
+   * Busca eventos e estatísticas da API-Football e gera textos de IA.
+   * Processa até 50 jogos por execução para não exceder a quota.
+   */
+  backfillGameData: adminProcedure
+    .input(z.object({ batchSize: z.number().min(1).max(100).default(50) }))
+    .mutation(async ({ input, ctx }) => {
+      logger.info(`[Backfill] Admin ${ctx.user.id} triggered backfill (batchSize=${input.batchSize})`);
+      const result = await backfillGameData({
+        batchSize: input.batchSize,
+        triggeredByUserId: ctx.user.id,
+      });
+      return result;
     }),
 });
