@@ -135,6 +135,7 @@ function AdsterraSlot({ htmlCode, width, height }: { htmlCode: string; width: nu
             script.src = (el as HTMLScriptElement).src;
             script.type = "text/javascript";
             script.async = true;
+            script.crossOrigin = "anonymous";
           } else {
             script.type = "text/javascript";
             script.textContent = el.textContent || "";
@@ -144,7 +145,7 @@ function AdsterraSlot({ htmlCode, width, height }: { htmlCode: string; width: nu
           // Outros elementos (divs, etc.) podem ser clonados diretamente
           container.appendChild(el.cloneNode(true));
         }
-      } else if (node.nodeType === Node.TEXT_NODE) {
+      } else if (node.nodeType === Node.TEXT_NODE && (node.textContent || "").trim()) {
         container.appendChild(node.cloneNode(true));
       }
     });
@@ -160,13 +161,14 @@ function AdsterraSlot({ htmlCode, width, height }: { htmlCode: string; width: nu
     <div
       ref={containerRef}
       style={{
-        width: width,
-        height: height,
+        // Não usar overflow:hidden — o iframe do Adsterra precisa de espaço para crescer
+        // min-height reserva o espaço visual enquanto o iframe carrega
+        width: "100%",
+        minWidth: width,
+        minHeight: height,
         maxWidth: "100%",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: "block",
+        lineHeight: 0,
       }}
     />
   );

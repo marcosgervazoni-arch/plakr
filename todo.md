@@ -2246,3 +2246,10 @@
 - [x] Expor frequência do popup como configuração no Admin (select session/daily/always)
 - [x] Ler frequência do popup do banco no AdBanner (em vez de hardcode sessionStorage)
 - [x] Aplicar AdInterleaved no BetHistory (histórico de palpites) — banners a cada 5 palpites
+
+## Bug — Ads não aparecem em produção (slots vazios)
+
+- [x] Diagnosticar causa raiz: adsEnabled=0 no banco + overflow:hidden cortando iframe Adsterra
+- [x] Ativar adsEnabled=1 no banco via SQL
+- [x] Corrigir AdsterraSlot: remover overflow:hidden, usar min-height, adicionar crossOrigin
+- [x] Super Admin já vê anúncios (isPro = false para admins no AppShell)
