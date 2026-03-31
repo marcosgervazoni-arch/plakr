@@ -503,6 +503,150 @@ export const integrationsRouter = router({
     }),
 
   /**
+   * Importa múltiplas ligas da API-Football de uma vez (importação em lote).
+   * Para cada liga: busca os rounds disponíveis e importa todas as fases automaticamente.
+   * Consome 1 requisição por liga (para buscar rounds) + sync em background.
+   */
+  importLeaguesBatch: adminProcedure
+    .input(z.object({
+      leagues: z.array(z.object({
+        leagueId: z.number(),
+        name: z.string(),
+        country: z.string().optional(),
+        logoUrl: z.string().optional(),
+        season: z.number(),
+      })),
+      makeAvailable: z.boolean().default(true),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw Err.internal("DB não disponível");
+
+      const results: Array<{
+        leagueId: number;
+        name: string;
+        status: "imported" | "already_exists" | "error";
+        message: string;
+        tournamentId?: number;
+      }> = [];
+
+      for (const league of input.leagues) {
+        try {
+          // Verificar se já existe
+          const existingAll = await db
+            .select()
+            .from(tournaments)
+            .where(eq(tournaments.apiFootballLeagueId, league.leagueId));
+          const existing = existingAll.filter(
+            t => (t as any).apiFootballSeason === league.season
+          );
+
+          if (existing.length > 0) {
+            await db
+              .update(tournaments)
+              .set({ isAvailable: input.makeAvailable })
+              .where(eq(tournaments.id, existing[0].id));
+            results.push({
+              leagueId: league.leagueId,
+              name: league.name,
+              status: "already_exists",
+              message: "Já importado — disponibilidade atualizada",
+              tournamentId: existing[0].id,
+            });
+            continue;
+          }
+
+          // Buscar rounds disponíveis para determinar formato
+          const roundsData = await apiFootballRequest(
+            `/fixtures/rounds`,
+            { league: league.leagueId, season: league.season }
+          );
+          const rounds: string[] = (roundsData?.response ?? []) as unknown as string[];
+
+          // Determinar formato baseado nos rounds
+          const hasGroupPhase = rounds.some(r => roundToPhaseKeyLocal(r) === "group_stage");
+          const hasKnockout = rounds.some(r =>
+            ["round_of_16", "quarter_finals", "semi_finals", "final"].includes(roundToPhaseKeyLocal(r))
+          );
+          const format = (hasGroupPhase && hasKnockout) ? "groups_knockout" :
+                         hasKnockout ? "cup" : "league";
+
+          const slug = `${league.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${league.season}`;
+
+          const result = await db.insert(tournaments).values({
+            name: league.name,
+            slug,
+            logoUrl: league.logoUrl ?? null,
+            isGlobal: true,
+            createdBy: ctx.user.id,
+            status: "active",
+            country: league.country?.slice(0, 10) ?? null,
+            season: String(league.season),
+            format,
+            isAvailable: input.makeAvailable,
+            apiFootballLeagueId: league.leagueId,
+            apiFootballSeason: league.season,
+            apiFootballPhaseKey: null,
+          });
+          const tournamentId = (result[0] as any).insertId;
+
+          // Disparar sync em background (não bloqueia a resposta)
+          const leagueCopy = { ...league };
+          setImmediate(async () => {
+            try {
+              await syncTeamsForTournament({
+                tournamentId,
+                leagueId: leagueCopy.leagueId,
+                season: leagueCopy.season,
+                triggeredByUserId: ctx.user.id,
+              });
+            } catch (err) {
+              logger.error({ err }, `[BatchImport] Erro ao sincronizar times: ${leagueCopy.name}`);
+            }
+            try {
+              await syncFixturesForTournament({
+                tournamentId,
+                leagueId: leagueCopy.leagueId,
+                season: leagueCopy.season,
+                triggeredBy: "manual",
+                triggeredByUserId: ctx.user.id,
+              });
+            } catch (err) {
+              logger.error({ err }, `[BatchImport] Erro ao sincronizar fixtures: ${leagueCopy.name}`);
+            }
+          });
+
+          results.push({
+            leagueId: league.leagueId,
+            name: league.name,
+            status: "imported",
+            message: "Importado — times e jogos sendo sincronizados em background",
+            tournamentId,
+          });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          logger.error({ err }, `[BatchImport] Erro ao importar ${league.name}: ${msg}`);
+          results.push({
+            leagueId: league.leagueId,
+            name: league.name,
+            status: "error",
+            message: `Erro: ${msg}`,
+          });
+        }
+      }
+
+      const imported = results.filter(r => r.status === "imported").length;
+      const alreadyExists = results.filter(r => r.status === "already_exists").length;
+      const errors = results.filter(r => r.status === "error").length;
+
+      logger.info(
+        `[BatchImport] Admin ${ctx.user.id} importou ${imported} ligas, ${alreadyExists} já existiam, ${errors} erros`
+      );
+
+      return { results, imported, alreadyExists, errors };
+    }),
+
+  /**
    * Re-sincroniza times e fixtures de um campeonato específico.
    * Útil para atualizar campeonatos já importados.
    * Consome 2 requisições da quota.

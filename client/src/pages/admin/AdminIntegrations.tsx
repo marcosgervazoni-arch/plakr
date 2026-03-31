@@ -28,7 +28,10 @@ import {
   Clock,
   CheckCircle,
   XOctagon,
+  PackagePlus,
+  ListChecks,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -188,6 +191,25 @@ export default function AdminIntegrations() {
       toast.success((data as {message: string}).message);
       refetchTournaments();
       setApiLeagues([]);
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  // Seleção múltipla para importação em lote
+  const [batchSelected, setBatchSelected] = useState<Set<number>>(new Set());
+  const [batchResults, setBatchResults] = useState<Array<{leagueId: number; name: string; status: string; message: string}> | null>(null);
+
+  const importBatchMutation = trpc.integrations.importLeaguesBatch.useMutation({
+    onSuccess: (data) => {
+      const d = data as { results: Array<{leagueId: number; name: string; status: string; message: string}>; imported: number; alreadyExists: number; errors: number };
+      setBatchResults(d.results);
+      setBatchSelected(new Set());
+      refetchTournaments();
+      if (d.errors === 0) {
+        toast.success(`${d.imported} campeonato${d.imported !== 1 ? "s" : ""} importado${d.imported !== 1 ? "s" : ""} com sucesso!${d.alreadyExists > 0 ? ` (${d.alreadyExists} já existiam)` : ""}`);
+      } else {
+        toast.warning(`${d.imported} importados, ${d.errors} com erro. Verifique os detalhes.`);
+      }
     },
     onError: (e: { message: string }) => toast.error(e.message),
   });
@@ -1096,60 +1118,154 @@ export default function AdminIntegrations() {
                     </Button>
                     {apiLeagues.length > 0 && (
                       <>
-                        <Input
-                          placeholder="Filtrar por nome ou país..."
-                          value={leagueSearch}
-                          onChange={(e) => setLeagueSearch(e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                        <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
-                          {(() => {
-                            const INTL_IDS = [1, 2, 3, 11, 13, 15, 16, 39, 61, 78, 135, 140, 253, 262];
-                            const filtered = apiLeagues.filter((l) =>
-                              leagueSearch === "" ||
-                              l.name.toLowerCase().includes(leagueSearch.toLowerCase()) ||
-                              l.country.toLowerCase().includes(leagueSearch.toLowerCase())
-                            );
-                            const intl = filtered.filter(l => INTL_IDS.includes(l.leagueId));
-                            const brazil = filtered.filter(l => !INTL_IDS.includes(l.leagueId));
-                            const renderLeague = (league: typeof apiLeagues[0]) => {
-                              const alreadyImported = managedTournaments?.some((t) => (t as {apiFootballLeagueId?: number}).apiFootballLeagueId === league.leagueId);
-                              const isLoadingPhases = getLeaguePhasesMutation.isPending && phaseSelectionLeague?.leagueId === league.leagueId;
-                              return (
-                                <div key={league.leagueId} className="flex items-center justify-between p-2 rounded border border-border/30 hover:bg-muted/20">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    {league.logoUrl && <img src={league.logoUrl} alt={league.name} className="w-5 h-5 object-contain shrink-0" />}
-                                    <div className="min-w-0">
-                                      <p className="text-xs font-medium truncate">{league.name}</p>
-                                      <p className="text-[10px] text-muted-foreground">{league.country}</p>
-                                    </div>
-                                  </div>
-                                  {alreadyImported ? (
-                                    <Badge variant="outline" className="text-[10px] border-green-500/40 text-green-400 shrink-0">Importado</Badge>
-                                  ) : (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-6 text-[10px] px-2 shrink-0"
-                                      onClick={() => {
-                                        setPhaseSelectionLeague(league);
-                                        setAvailablePhases([]);
-                                        setSelectedPhases(new Set());
-                                        getLeaguePhasesMutation.mutate({
-                                          leagueId: league.leagueId,
-                                          season: league.season ?? integrationSettings?.apiFootballSeason ?? 2026,
-                                        });
-                                      }}
-                                      disabled={isLoadingPhases}
-                                    >
-                                      {isLoadingPhases ? <Loader2 className="h-3 w-3 animate-spin" /> : "+ Selecionar"}
-                                    </Button>
-                                  )}
-                                </div>
-                              );
-                            };
+                        {/* Barra de filtro + ações em lote */}
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Filtrar por nome ou país..."
+                            value={leagueSearch}
+                            onChange={(e) => { setLeagueSearch(e.target.value); setBatchResults(null); }}
+                            className="h-8 text-sm flex-1"
+                          />
+                          {batchSelected.size > 0 && (
+                            <Button
+                              size="sm"
+                              className="h-8 gap-1.5 text-xs bg-brand hover:bg-brand/90 shrink-0"
+                              disabled={importBatchMutation.isPending}
+                              onClick={() => {
+                                setBatchResults(null);
+                                const leaguesToImport = apiLeagues.filter(l => batchSelected.has(l.leagueId));
+                                importBatchMutation.mutate({
+                                  leagues: leaguesToImport.map(l => ({
+                                    leagueId: l.leagueId,
+                                    name: l.name,
+                                    country: l.country,
+                                    logoUrl: l.logoUrl,
+                                    season: l.season ?? integrationSettings?.apiFootballSeason ?? 2026,
+                                  })),
+                                  makeAvailable: true,
+                                });
+                              }}
+                            >
+                              {importBatchMutation.isPending
+                                ? <><Loader2 className="h-3 w-3 animate-spin" />Importando...</>
+                                : <><PackagePlus className="h-3 w-3" />Importar {batchSelected.size}</>}
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Selecionar todos / desmarcar todos */}
+                        {(() => {
+                          const INTL_IDS = [1, 2, 3, 11, 13, 15, 16, 39, 61, 78, 135, 140, 253, 262];
+                          const filtered = apiLeagues.filter((l) =>
+                            leagueSearch === "" ||
+                            l.name.toLowerCase().includes(leagueSearch.toLowerCase()) ||
+                            l.country.toLowerCase().includes(leagueSearch.toLowerCase())
+                          );
+                          const notImported = filtered.filter(l =>
+                            !managedTournaments?.some((t) => (t as {apiFootballLeagueId?: number}).apiFootballLeagueId === l.leagueId)
+                          );
+                          const allSelected = notImported.length > 0 && notImported.every(l => batchSelected.has(l.leagueId));
+                          const intl = filtered.filter(l => INTL_IDS.includes(l.leagueId));
+                          const brazil = filtered.filter(l => !INTL_IDS.includes(l.leagueId));
+
+                          const renderLeague = (league: typeof apiLeagues[0]) => {
+                            const alreadyImported = managedTournaments?.some((t) => (t as {apiFootballLeagueId?: number}).apiFootballLeagueId === league.leagueId);
+                            const isChecked = batchSelected.has(league.leagueId);
                             return (
-                              <>
+                              <div
+                                key={league.leagueId}
+                                className={`flex items-center gap-2 p-2 rounded border transition-colors cursor-pointer ${
+                                  alreadyImported ? "opacity-50 cursor-default border-border/20" :
+                                  isChecked ? "border-brand/50 bg-brand/5" : "border-border/30 hover:bg-muted/20"
+                                }`}
+                                onClick={() => {
+                                  if (alreadyImported) return;
+                                  const next = new Set(batchSelected);
+                                  if (isChecked) next.delete(league.leagueId);
+                                  else next.add(league.leagueId);
+                                  setBatchSelected(next);
+                                  setPhaseSelectionLeague(null);
+                                }}
+                              >
+                                {!alreadyImported ? (
+                                  <Checkbox
+                                    checked={isChecked}
+                                    onCheckedChange={(v) => {
+                                      const next = new Set(batchSelected);
+                                      if (v) next.add(league.leagueId);
+                                      else next.delete(league.leagueId);
+                                      setBatchSelected(next);
+                                      setPhaseSelectionLeague(null);
+                                    }}
+                                    className="shrink-0"
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                ) : (
+                                  <div className="w-4 h-4 shrink-0" />
+                                )}
+                                {league.logoUrl && <img src={league.logoUrl} alt={league.name} className="w-5 h-5 object-contain shrink-0" />}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium truncate">{league.name}</p>
+                                  <p className="text-[10px] text-muted-foreground">{league.country}</p>
+                                </div>
+                                {alreadyImported ? (
+                                  <Badge variant="outline" className="text-[10px] border-green-500/40 text-green-400 shrink-0">Importado</Badge>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 text-[10px] px-2 shrink-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPhaseSelectionLeague(league);
+                                      setAvailablePhases([]);
+                                      setSelectedPhases(new Set());
+                                      setBatchSelected(new Set());
+                                      getLeaguePhasesMutation.mutate({
+                                        leagueId: league.leagueId,
+                                        season: league.season ?? integrationSettings?.apiFootballSeason ?? 2026,
+                                      });
+                                    }}
+                                    disabled={getLeaguePhasesMutation.isPending && phaseSelectionLeague?.leagueId === league.leagueId}
+                                  >
+                                    {getLeaguePhasesMutation.isPending && phaseSelectionLeague?.leagueId === league.leagueId
+                                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                                      : "Fases"}
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          };
+
+                          return (
+                            <>
+                              {/* Linha selecionar todos */}
+                              {notImported.length > 0 && (
+                                <div
+                                  className="flex items-center gap-2 px-1 py-0.5 cursor-pointer"
+                                  onClick={() => {
+                                    if (allSelected) {
+                                      setBatchSelected(new Set());
+                                    } else {
+                                      setBatchSelected(new Set(notImported.map(l => l.leagueId)));
+                                    }
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={allSelected}
+                                    onCheckedChange={(v) => {
+                                      if (v) setBatchSelected(new Set(notImported.map(l => l.leagueId)));
+                                      else setBatchSelected(new Set());
+                                    }}
+                                    className="shrink-0"
+                                  />
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {allSelected ? "Desmarcar todos" : `Selecionar todos (${notImported.length} disponíveis)`}
+                                  </span>
+                                </div>
+                              )}
+
+                              <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
                                 {intl.length > 0 && (
                                   <>
                                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide px-1 pt-1">Internacionais</p>
@@ -1162,99 +1278,110 @@ export default function AdminIntegrations() {
                                     {brazil.map(renderLeague)}
                                   </>
                                 )}
-                              </>
-                            );
-                          })()}
-                          {apiLeagues.filter((l) =>
-                            leagueSearch === "" ||
-                            l.name.toLowerCase().includes(leagueSearch.toLowerCase()) ||
-                            l.country.toLowerCase().includes(leagueSearch.toLowerCase())
-                          ).length === 0 && (
-                            <p className="text-xs text-muted-foreground text-center py-4">Nenhuma liga encontrada para "{leagueSearch}"</p>
-                          )}
-                        </div>
-
-                        {/* Painel de seleção de fases */}
-                        {phaseSelectionLeague && (
-                          <div className="mt-3 p-3 rounded-lg border border-brand/30 bg-brand/5 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                {phaseSelectionLeague.logoUrl && <img src={phaseSelectionLeague.logoUrl} alt="" className="w-4 h-4 object-contain" />}
-                                <p className="text-xs font-semibold">{phaseSelectionLeague.name}</p>
+                                {filtered.length === 0 && (
+                                  <p className="text-xs text-muted-foreground text-center py-4">Nenhuma liga encontrada para "{leagueSearch}"</p>
+                                )}
                               </div>
-                              <button onClick={() => setPhaseSelectionLeague(null)} className="text-muted-foreground hover:text-foreground text-xs">×</button>
-                            </div>
+                            </>
+                          );
+                        })()}
 
-                            {getLeaguePhasesMutation.isPending ? (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                Buscando fases disponíveis...
+                        {/* Resultado do batch */}
+                        {batchResults && (
+                          <div className="rounded-lg border border-border/40 bg-muted/20 p-3 space-y-1.5">
+                            <p className="text-xs font-semibold flex items-center gap-1.5"><ListChecks className="h-3.5 w-3.5" />Resultado da importação</p>
+                            {batchResults.map(r => (
+                              <div key={r.leagueId} className="flex items-center gap-2">
+                                {r.status === "imported" && <CheckCircle className="h-3 w-3 text-green-400 shrink-0" />}
+                                {r.status === "already_exists" && <CheckCircle2 className="h-3 w-3 text-blue-400 shrink-0" />}
+                                {r.status === "error" && <XCircle className="h-3 w-3 text-red-400 shrink-0" />}
+                                <span className="text-[10px] truncate">{r.name}</span>
+                                <span className="text-[10px] text-muted-foreground ml-auto shrink-0">{r.message}</span>
                               </div>
-                            ) : availablePhases.length === 0 ? (
-                              <p className="text-xs text-muted-foreground">Nenhuma fase encontrada.</p>
-                            ) : (
-                              <>
-                                <p className="text-[10px] text-muted-foreground">Selecione as fases que deseja importar. Todas as fases selecionadas serão importadas para <strong className="text-foreground">um único campeonato</strong>, com os jogos agrupados por fase internamente.</p>
-                                <div className="space-y-1.5">
-                                  {availablePhases.map((phase) => (
-                                    <label key={phase.phaseKey} className="flex items-center gap-2 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedPhases.has(phase.phaseKey)}
-                                        onChange={(e) => {
-                                          const next = new Set(selectedPhases);
-                                          if (e.target.checked) next.add(phase.phaseKey);
-                                          else next.delete(phase.phaseKey);
-                                          setSelectedPhases(next);
-                                        }}
-                                        className="rounded border-border"
-                                      />
-                                      <div className="flex-1 min-w-0">
-                                        <span className="text-xs font-medium">{phase.phaseName}</span>
-                                        <span className="text-[10px] text-muted-foreground ml-1.5">{phase.roundCount} rodadas · ~{phase.estimatedGames} jogos</span>
-                                      </div>
-                                    </label>
-                                  ))}
-                                </div>
-                                <Button
-                                  size="sm"
-                                  className="w-full h-7 text-xs bg-brand hover:bg-brand/90"
-                                  disabled={selectedPhases.size === 0 || importLeagueMutation.isPending}
-                                  onClick={() => {
-                                    const phasesToImport = availablePhases.filter(p => selectedPhases.has(p.phaseKey));
-                                    // Importar todas as fases selecionadas para UM único campeonato
-                                    importLeagueMutation.mutate({
-                                      leagueId: phaseSelectionLeague!.leagueId,
-                                      name: phaseSelectionLeague!.name,
-                                      country: phaseSelectionLeague!.country,
-                                      logoUrl: phaseSelectionLeague!.logoUrl,
-                                      season: phaseSelectionLeague!.season ?? integrationSettings?.apiFootballSeason ?? 2022,
-                                      makeAvailable: true,
-                                      selectedPhases: phasesToImport.map(p => ({
-                                        phaseKey: p.phaseKey,
-                                        rounds: p.rounds,
-                                      })),
-                                    }, {
-                                      onSuccess: () => {
-                                        setPhaseSelectionLeague(null);
-                                        setAvailablePhases([]);
-                                        setApiLeagues([]);
-                                      },
-                                    });
-                                  }}
-                                >
-                                  {importLeagueMutation.isPending
-                                    ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Importando...</>
-                                    : selectedPhases.size === availablePhases.length
-                                      ? `Importar campeonato completo (${selectedPhases.size} fases)`
-                                      : `Importar campeonato com ${selectedPhases.size} fase${selectedPhases.size > 1 ? "s" : ""} selecionada${selectedPhases.size > 1 ? "s" : ""}`
-                                  }
-                                </Button>
-                              </>
-                            )}
+                            ))}
                           </div>
                         )}
                       </>
+                    )}
+
+                    {/* Painel de seleção de fases (importação individual) */}
+                    {phaseSelectionLeague && (
+                      <div className="mt-3 p-3 rounded-lg border border-brand/30 bg-brand/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {phaseSelectionLeague.logoUrl && <img src={phaseSelectionLeague.logoUrl} alt="" className="w-4 h-4 object-contain" />}
+                            <p className="text-xs font-semibold">{phaseSelectionLeague.name} <span className="text-muted-foreground font-normal">(seleção de fases)</span></p>
+                          </div>
+                          <button onClick={() => setPhaseSelectionLeague(null)} className="text-muted-foreground hover:text-foreground text-xs">×</button>
+                        </div>
+
+                        {getLeaguePhasesMutation.isPending ? (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Buscando fases disponíveis...
+                          </div>
+                        ) : availablePhases.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Nenhuma fase encontrada.</p>
+                        ) : (
+                          <>
+                            <p className="text-[10px] text-muted-foreground">Selecione as fases que deseja importar. Todas as fases selecionadas serão importadas para <strong className="text-foreground">um único campeonato</strong>.</p>
+                            <div className="space-y-1.5">
+                              {availablePhases.map((phase) => (
+                                <label key={phase.phaseKey} className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedPhases.has(phase.phaseKey)}
+                                    onChange={(e) => {
+                                      const next = new Set(selectedPhases);
+                                      if (e.target.checked) next.add(phase.phaseKey);
+                                      else next.delete(phase.phaseKey);
+                                      setSelectedPhases(next);
+                                    }}
+                                    className="rounded border-border"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <span className="text-xs font-medium">{phase.phaseName}</span>
+                                    <span className="text-[10px] text-muted-foreground ml-1.5">{phase.roundCount} rodadas · ~{phase.estimatedGames} jogos</span>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                            <Button
+                              size="sm"
+                              className="w-full h-7 text-xs bg-brand hover:bg-brand/90"
+                              disabled={selectedPhases.size === 0 || importLeagueMutation.isPending}
+                              onClick={() => {
+                                const phasesToImport = availablePhases.filter(p => selectedPhases.has(p.phaseKey));
+                                importLeagueMutation.mutate({
+                                  leagueId: phaseSelectionLeague!.leagueId,
+                                  name: phaseSelectionLeague!.name,
+                                  country: phaseSelectionLeague!.country,
+                                  logoUrl: phaseSelectionLeague!.logoUrl,
+                                  season: phaseSelectionLeague!.season ?? integrationSettings?.apiFootballSeason ?? 2026,
+                                  makeAvailable: true,
+                                  selectedPhases: phasesToImport.map(p => ({
+                                    phaseKey: p.phaseKey,
+                                    rounds: p.rounds,
+                                  })),
+                                }, {
+                                  onSuccess: () => {
+                                    setPhaseSelectionLeague(null);
+                                    setAvailablePhases([]);
+                                    setApiLeagues([]);
+                                  },
+                                });
+                              }}
+                            >
+                              {importLeagueMutation.isPending
+                                ? <><Loader2 className="h-3 w-3 animate-spin mr-1" />Importando...</>
+                                : selectedPhases.size === availablePhases.length
+                                  ? `Importar campeonato completo (${selectedPhases.size} fases)`
+                                  : `Importar campeonato com ${selectedPhases.size} fase${selectedPhases.size > 1 ? "s" : ""} selecionada${selectedPhases.size > 1 ? "s" : ""}`
+                              }
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     )}
                   </>
                 )}
