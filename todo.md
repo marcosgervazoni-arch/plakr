@@ -2359,3 +2359,11 @@
 - [x] Frontend: botão "Reprocessar jogos finalizados" no painel Admin → Integrações
 - [x] Frontend: exibir badge de pendentes e resultado final (processados, falhas, requisições usadas)
 - [x] Frontend: botão desabilitado quando todos os jogos estão atualizados
+
+## UX — Acordeons nas Telas do Super Admin
+
+- [x] AdminSettings: 4 grupos (Monetização e Pagamentos, Regras e Limites, Notificações, Mensagens e Badges)
+- [x] AdminIntegrations: 3 grupos (Analytics e Publicidade, API-Football, Campeonatos)
+- [x] AdminAds: 2 grupos (Configurações de Publicidade, Anúncios Cadastrados)
+- [x] AdminBroadcasts: manter Tabs (Compor, Fila de E-mails, Mensagens Automáticas) sem alteração
+- [x] AdminUsers/AdminTournaments: estrutura de lista não se beneficia de acordeons — mantidos sem alteração

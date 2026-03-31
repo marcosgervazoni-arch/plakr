@@ -1,4 +1,5 @@
 import AdminLayout from "@/components/AdminLayout";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -262,9 +263,21 @@ export default function AdminIntegrations() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Accordion type="multiple" defaultValue={["analytics", "api-football", "campeonatos"]} className="space-y-2">
 
+            {/* ══ GRUPO 1 — ANALYTICS E PUBLICIDADE ══ */}
+            <AccordionItem value="analytics" className="border border-border/50 rounded-xl overflow-hidden">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Analytics e Publicidade</p>
+                    <p className="text-xs text-muted-foreground font-normal">Google Analytics 4, Facebook Pixel e Adsterra</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Google Analytics 4 */}
             <Card className="border-border/50">
               <CardHeader className="pb-3">
@@ -550,11 +563,24 @@ export default function AdminIntegrations() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-          {/* SEÇÃO: API-Football — Resultados Automáticos */}
-          <div className="pt-4 space-y-4">
-            <div className="flex items-center gap-3">
+            {/* ══ GRUPO 2 — API-FOOTBALL ══ */}
+            <AccordionItem value="api-football" className="border border-green-500/20 rounded-xl overflow-hidden bg-green-500/5">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-green-500/10 [&[data-state=open]]:bg-green-500/10">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Zap className="h-4 w-4 text-green-400 shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">API-Football</p>
+                    <p className="text-xs text-muted-foreground font-normal">Sincronização automática de jogos e resultados</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 pt-2">
+                <div className="space-y-4">
+<div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-green-500/10 shrink-0">
                 <Zap className="h-5 w-5 text-green-400" />
               </div>
@@ -928,14 +954,24 @@ export default function AdminIntegrations() {
               </Card>
 
             </div>
-          </div>
-          </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-        )}
-
-        {/* SEÇÃO: Curadoria de Campeonatos */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
+            {/* ══ GRUPO 3 — CAMPEONATOS ══ */}
+            <AccordionItem value="campeonatos" className="border border-border/50 rounded-xl overflow-hidden">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Campeonatos Disponíveis</p>
+                    <p className="text-xs text-muted-foreground font-normal">Controle quais campeonatos os usuários podem vincular aos seus bolões</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 pt-2">
+                <div className="space-y-4">
+<div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-green-500/10 shrink-0">
               <Globe className="h-5 w-5 text-green-400" />
             </div>
@@ -1199,7 +1235,12 @@ export default function AdminIntegrations() {
             </Card>
 
           </div>
-        </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+          </Accordion>
+        )}
       </div>
     </AdminLayout>
   );

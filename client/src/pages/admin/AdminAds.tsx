@@ -3,6 +3,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -232,6 +233,21 @@ export default function AdminAds() {
             </Button>
           </div>
 
+          <Accordion type="multiple" defaultValue={["config", "anuncios"]} className="space-y-2">
+
+            {/* ══ GRUPO 1 — CONFIGURAÇÕES ══ */}
+            <AccordionItem value="config" className="border border-border/50 rounded-xl overflow-hidden">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Monitor className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Configurações de Publicidade</p>
+                    <p className="text-xs text-muted-foreground font-normal">Toggles globais, banners próprios e dimensões recomendadas</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 pt-2">
+
           {/* Toggles de Publicidade */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Toggle Global — Adsterra */}
@@ -305,8 +321,7 @@ export default function AdminAds() {
             </Card>
           </div>
 
-          {/* Dimensões Recomendadas */}
-          <Card className="border-border/50">
+          <Card className="border-border/50 mt-4">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Info className="h-4 w-4 text-muted-foreground" />
@@ -325,6 +340,22 @@ export default function AdminAds() {
               </div>
             </CardContent>
           </Card>
+
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ══ GRUPO 2 — ANÚNCIOS CADASTRADOS ══ */}
+            <AccordionItem value="anuncios" className="border border-border/50 rounded-xl overflow-hidden">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Monitor className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Anúncios Cadastrados</p>
+                    <p className="text-xs text-muted-foreground font-normal">Gerencie os banners, vídeos e scripts da plataforma</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-4 pt-2">
 
           {/* Tabela de Anúncios */}
           {isLoading ? (
@@ -456,6 +487,11 @@ export default function AdminAds() {
               </CardContent>
             </Card>
           )}
+
+              </AccordionContent>
+            </AccordionItem>
+
+          </Accordion>
         </div>
       </TooltipProvider>
 

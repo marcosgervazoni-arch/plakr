@@ -5,13 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { trpc } from "@/lib/trpc";
 import {
   Bell,
   BookOpen,
   CheckCircle2,
   CreditCard,
-  ExternalLink,
   Loader2,
   RefreshCw,
   Save,
@@ -21,6 +21,8 @@ import {
   Users,
   XCircle,
   ChevronRight,
+  FlaskConical,
+  MessageSquare,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useEffect, useState } from "react";
@@ -37,11 +39,9 @@ export default function AdminSettings() {
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
 
   const [form, setForm] = useState({
-    // Limites do plano gratuito
     freeMaxParticipants: 50,
     freeMaxPools: 2,
     poolArchiveDays: 10,
-    // Pontuação padrão
     defaultScoringExact: 10,
     defaultScoringCorrect: 5,
     defaultScoringBonusGoals: 3,
@@ -51,7 +51,6 @@ export default function AdminSettings() {
     defaultScoringBonusLandslide: 5,
     defaultLandslideMinDiff: 4,
     defaultZebraThreshold: 75,
-    // Stripe
     stripePriceIdPro: "",
     stripePriceIdProAnnual: "",
     stripePriceIdUnlimited: "",
@@ -62,7 +61,6 @@ export default function AdminSettings() {
     stripeUnlimitedAnnualPrice: 89900,
   });
 
-  // Push / VAPID
   const [pushForm, setPushForm] = useState({
     vapidPublicKey: "",
     vapidPrivateKey: "",
@@ -70,8 +68,6 @@ export default function AdminSettings() {
     pushEnabled: false,
   });
   const [showPrivateKey, setShowPrivateKey] = useState(false);
-
-  // Estado de feedback visual após salvar
   const [allSaved, setAllSaved] = useState(false);
 
   useEffect(() => {
@@ -114,7 +110,6 @@ export default function AdminSettings() {
     }
   }, [settings]);
 
-  // Mutation única que salva tudo de uma vez
   const updateMutation = trpc.platform.updateSettings.useMutation({
     onSuccess: () => {
       utils.platform.getSettings.invalidate();
@@ -125,7 +120,6 @@ export default function AdminSettings() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
-  // Salva form principal + pushForm + campos extras juntos
   const handleSaveAll = () => {
     const secretToSave = stripeKeys.secretKey && !stripeKeys.secretKey.startsWith("•") ? stripeKeys.secretKey : undefined;
     const webhookSecretToSave = stripeKeys.webhookSecret && !stripeKeys.webhookSecret.startsWith("•") ? stripeKeys.webhookSecret : undefined;
@@ -155,10 +149,7 @@ export default function AdminSettings() {
       setForm((f) => ({ ...f, [key]: e.target.value })),
   });
 
-  const stripeConfigured = form.stripePriceIdPro.startsWith("price_") &&
-    form.stripePriceIdUnlimited.startsWith("price_");
-  // S10: vapidPrivateKey nunca é retornada pelo backend por segurança.
-  // pushConfigured verifica apenas vapidPublicKey para detectar se keys já existem no banco.
+  const stripeConfigured = form.stripePriceIdPro.startsWith("price_") && form.stripePriceIdUnlimited.startsWith("price_");
   const pushConfigured = pushForm.vapidPublicKey.length > 10;
 
   const generateVapidMutation = trpc.platform.generateVapidKeys.useMutation({
@@ -170,6 +161,25 @@ export default function AdminSettings() {
   });
 
   const isSaving = updateMutation.isPending;
+
+  // Badge de status do Stripe
+  const stripeBadge = stripeKeys.publishableKey.startsWith("pk_live_") ? (
+    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">Produção ativa</Badge>
+  ) : stripeKeys.publishableKey.startsWith("pk_test_") ? (
+    <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 text-xs">Modo teste</Badge>
+  ) : (
+    <Badge variant="outline" className="text-muted-foreground text-xs">Não configurado</Badge>
+  );
+
+  const pushBadge = pushConfigured ? (
+    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs gap-1">
+      <CheckCircle2 className="h-3 w-3" /> Configurado
+    </Badge>
+  ) : (
+    <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 text-xs gap-1">
+      <XCircle className="h-3 w-3" /> Sem VAPID
+    </Badge>
+  );
 
   return (
     <AdminLayout activeSection="settings">
@@ -186,19 +196,11 @@ export default function AdminSettings() {
             </div>
           </div>
           <Button
-            className={`gap-2 shrink-0 transition-all duration-300 ${
-              allSaved ? "bg-green-600 hover:bg-green-700" : "bg-brand hover:bg-brand/90"
-            }`}
+            className={`gap-2 shrink-0 transition-all duration-300 ${allSaved ? "bg-green-600 hover:bg-green-700" : "bg-brand hover:bg-brand/90"}`}
             onClick={handleSaveAll}
             disabled={isSaving || isLoading}
           >
-            {isSaving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : allSaved ? (
-              <CheckCircle2 className="h-4 w-4" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : allSaved ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
             <span className="hidden sm:inline">{allSaved ? "Salvo!" : "Salvar"}</span>
             <span className="sm:hidden">{allSaved ? "✓" : "Salvar"}</span>
           </Button>
@@ -209,257 +211,240 @@ export default function AdminSettings() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="space-y-6">
+          <Accordion type="multiple" defaultValue={["monetizacao", "regras"]} className="space-y-2">
 
-            {/* ─── STRIPE / MONETIZAÇÃO ─────────────────────────────────────── */}
-            <Card className="border-brand/30 bg-brand/5">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-brand shrink-0" />
-                    <div>
-                      <CardTitle className="text-base">Stripe — Chaves de API</CardTitle>
-                      <CardDescription className="text-sm mt-0.5">Configure as chaves de produção para ativar pagamentos reais.</CardDescription>
-                    </div>
+            {/* ══════════════════════════════════════════════════════════════
+                GRUPO 1 — MONETIZAÇÃO E PAGAMENTOS
+            ══════════════════════════════════════════════════════════════ */}
+            <AccordionItem value="monetizacao" className="border border-brand/20 rounded-xl overflow-hidden bg-brand/5">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-brand/10 [&[data-state=open]]:bg-brand/10 [&>svg]:text-brand">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <CreditCard className="h-4 w-4 text-brand shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Monetização e Pagamentos</p>
+                    <p className="text-xs text-muted-foreground font-normal">Stripe, Price IDs e chaves de API</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {stripeKeys.publishableKey.startsWith("pk_live_") ? (
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">Produção ativa</Badge>
-                    ) : stripeKeys.publishableKey.startsWith("pk_test_") ? (
-                      <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 text-xs">Modo teste</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-muted-foreground text-xs">Não configurado</Badge>
-                    )}
-                    <Button variant="outline" size="sm" asChild>
-                      <a href="/admin/pricing">
-                        Price IDs
-                        <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                      </a>
+                  <div className="ml-2 shrink-0">{stripeBadge}</div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-5 pt-2 space-y-5">
+                {/* Stripe — Chaves de API */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Stripe — Chaves de API</p>
+                    <Button variant="outline" size="sm" asChild className="h-7 text-xs gap-1">
+                      <a href="/admin/pricing">Price IDs <ChevronRight className="h-3 w-3" /></a>
                     </Button>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
-                  <strong>Como obter as chaves:</strong> Acesse <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="underline">dashboard.stripe.com → Desenvolvedores → Chaves da API</a>. Use as <strong>Chaves padrão</strong> (não as restritas). A chave publicável começa com <code>pk_live_</code> e a secreta com <code>sk_live_</code>.
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-1.5">
-                    <Label>Chave Publicável <span className="text-muted-foreground font-normal">(pk_live_...)</span></Label>
-                    <Input
-                      value={stripeKeys.publishableKey}
-                      onChange={e => setStripeKeys(k => ({ ...k, publishableKey: e.target.value }))}
-                      placeholder="pk_live_..."
-                      className="font-mono text-xs"
-                    />
-                    <p className="text-xs text-muted-foreground">Usada no frontend para inicializar o Stripe.js</p>
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
+                    <strong>Como obter as chaves:</strong> Acesse <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="underline">dashboard.stripe.com → Desenvolvedores → Chaves da API</a>. Use as <strong>Chaves padrão</strong>. A publicável começa com <code>pk_live_</code> e a secreta com <code>sk_live_</code>.
                   </div>
-                  <div className="space-y-1.5">
-                    <Label>Chave Secreta <span className="text-muted-foreground font-normal">(sk_live_...)</span></Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type={showStripeSecret ? "text" : "password"}
-                        value={stripeKeys.secretKey}
-                        onChange={e => setStripeKeys(k => ({ ...k, secretKey: e.target.value }))}
-                        placeholder="sk_live_..."
-                        className="font-mono text-xs flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowStripeSecret(s => !s)}
-                        className="shrink-0"
-                      >
-                        {showStripeSecret ? "Ocultar" : "Mostrar"}
-                      </Button>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Chave Publicável <span className="text-muted-foreground font-normal">(pk_live_...)</span></Label>
+                      <Input value={stripeKeys.publishableKey} onChange={e => setStripeKeys(k => ({ ...k, publishableKey: e.target.value }))} placeholder="pk_live_..." className="font-mono text-xs" />
+                      <p className="text-xs text-muted-foreground">Usada no frontend para inicializar o Stripe.js</p>
                     </div>
-                     <p className="text-xs text-muted-foreground">Usada no servidor para criar sessões de pagamento. Nunca compartilhe esta chave.</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Webhook Secret <span className="text-muted-foreground font-normal">(whsec_...)</span></Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type={showWebhookSecret ? "text" : "password"}
-                        value={stripeKeys.webhookSecret}
-                        onChange={e => setStripeKeys(k => ({ ...k, webhookSecret: e.target.value }))}
-                        placeholder="whsec_..."
-                        className="font-mono text-xs flex-1"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowWebhookSecret(s => !s)}
-                        className="shrink-0"
-                      >
-                        {showWebhookSecret ? "Ocultar" : "Mostrar"}
-                      </Button>
+                    <div className="space-y-1.5">
+                      <Label>Chave Secreta <span className="text-muted-foreground font-normal">(sk_live_...)</span></Label>
+                      <div className="flex gap-2">
+                        <Input type={showStripeSecret ? "text" : "password"} value={stripeKeys.secretKey} onChange={e => setStripeKeys(k => ({ ...k, secretKey: e.target.value }))} placeholder="sk_live_..." className="font-mono text-xs flex-1" />
+                        <Button type="button" variant="outline" size="sm" onClick={() => setShowStripeSecret(s => !s)} className="shrink-0">{showStripeSecret ? "Ocultar" : "Mostrar"}</Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Usada no servidor para criar sessões de pagamento. Nunca compartilhe esta chave.</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">Obtido em Stripe → Desenvolvedores → Webhooks → seu endpoint → <strong>Signing secret</strong>. Necessário para validar eventos de pagamento.</p>
+                    <div className="space-y-1.5">
+                      <Label>Webhook Secret <span className="text-muted-foreground font-normal">(whsec_...)</span></Label>
+                      <div className="flex gap-2">
+                        <Input type={showWebhookSecret ? "text" : "password"} value={stripeKeys.webhookSecret} onChange={e => setStripeKeys(k => ({ ...k, webhookSecret: e.target.value }))} placeholder="whsec_..." className="font-mono text-xs flex-1" />
+                        <Button type="button" variant="outline" size="sm" onClick={() => setShowWebhookSecret(s => !s)} className="shrink-0">{showWebhookSecret ? "Ocultar" : "Mostrar"}</Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Obtido em Stripe → Desenvolvedores → Webhooks → seu endpoint → <strong>Signing secret</strong>.</p>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-            {/* ─── LIMITES DO PLANO GRATUITO ────────────────────────────────── */}
-            <Card className="border-border/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-base">Limites do Plano Gratuito</CardTitle>
-                </div>
-                <CardDescription className="text-sm">Controla o que usuários sem assinatura podem fazer</CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Máx. Participantes por Bolão</Label>
-                  <Input {...numField("freeMaxParticipants")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Máx. Bolões por Usuário</Label>
-                  <Input {...numField("freeMaxPools")} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Dias até Arquivamento</Label>
-                  <Input {...numField("poolArchiveDays")} />
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* ─── PONTUAÇÃO PADRÃO ─────────────────────────────────────────── */}
-            <Card className="border-border/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-base">Pontuação Padrão (novos bolões)</CardTitle>
-                </div>
-                <CardDescription className="text-sm">Valores aplicados automaticamente ao criar um bolão. Cada bolão pode personalizar esses valores.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Pontuação Base</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label>Placar Exato</Label>
-                      <Input {...numField("defaultScoringExact")} />
-                      <p className="text-xs text-muted-foreground">Acertou o placar exato</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Resultado Correto</Label>
-                      <Input {...numField("defaultScoringCorrect")} />
-                      <p className="text-xs text-muted-foreground">Acertou vitória/empate/derrota</p>
-                    </div>
-                  </div>
-                </div>
                 <Separator />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Bônus</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div className="space-y-1.5">
-                      <Label>Bônus Gols Totais</Label>
-                      <Input {...numField("defaultScoringBonusGoals")} />
-                      <p className="text-xs text-muted-foreground">Acertou total de gols</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Bônus Diferença</Label>
-                      <Input {...numField("defaultScoringBonusDiff")} />
-                      <p className="text-xs text-muted-foreground">Acertou saldo de gols</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Bônus Zebra</Label>
-                      <Input {...numField("defaultScoringBonusUpset")} />
-                      <p className="text-xs text-muted-foreground">Acertou resultado improvável</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Bônus Gols de 1 Time</Label>
-                      <Input {...numField("defaultScoringBonusOneTeam")} />
-                      <p className="text-xs text-muted-foreground">Acertou gols de um time</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Bônus Goleada</Label>
-                      <Input {...numField("defaultScoringBonusLandslide")} />
-                      <p className="text-xs text-muted-foreground">Acertou resultado de goleada</p>
-                    </div>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Limiares de Critérios Especiais</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label>Diff. mínima para Goleada (gols)</Label>
-                      <Input {...numField("defaultLandslideMinDiff")} min={1} max={10} />
-                      <p className="text-xs text-muted-foreground">Diferença de gols para ativar bônus goleada (padrão: 4)</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Limiar de Zebra (%)</Label>
-                      <Input {...numField("defaultZebraThreshold")} min={50} max={100} />
-                      <p className="text-xs text-muted-foreground">% de apostadores no favorito para considerar zebra (padrão: 75%)</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* ─── NOTIFICAÇÕES PUSH (VAPID) ─────────────────────────── */}
-            <Card className="border-border/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                {/* Price IDs */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Price IDs dos Planos</p>
+                    {stripeConfigured ? (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs gap-1"><CheckCircle2 className="h-3 w-3" /> Configurado</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 text-xs">Incompleto</Badge>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Pro — Mensal</Label>
+                      <Input {...strField("stripePriceIdPro")} placeholder="price_..." className="font-mono text-xs" />
+                      <Input {...numField("stripeMonthlyPrice")} placeholder="2990" className="font-mono text-xs mt-1" />
+                      <p className="text-xs text-muted-foreground">Price ID + valor em centavos (ex: 2990 = R$29,90)</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Pro — Anual</Label>
+                      <Input {...strField("stripePriceIdProAnnual")} placeholder="price_..." className="font-mono text-xs" />
+                      <Input {...numField("stripeProAnnualPrice")} placeholder="39900" className="font-mono text-xs mt-1" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Unlimited — Mensal</Label>
+                      <Input {...strField("stripePriceIdUnlimited")} placeholder="price_..." className="font-mono text-xs" />
+                      <Input {...numField("stripeUnlimitedMonthlyPrice")} placeholder="8990" className="font-mono text-xs mt-1" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Unlimited — Anual</Label>
+                      <Input {...strField("stripePriceIdUnlimitedAnnual")} placeholder="price_..." className="font-mono text-xs" />
+                      <Input {...numField("stripeUnlimitedAnnualPrice")} placeholder="89900" className="font-mono text-xs mt-1" />
+                    </div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ══════════════════════════════════════════════════════════════
+                GRUPO 2 — REGRAS E LIMITES
+            ══════════════════════════════════════════════════════════════ */}
+            <AccordionItem value="regras" className="border border-border/50 rounded-xl overflow-hidden">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20 [&>svg]:text-muted-foreground">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Target className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Regras e Limites</p>
+                    <p className="text-xs text-muted-foreground font-normal">Pontuação padrão, limites do plano gratuito e cotas</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-5 pt-2 space-y-5">
+                {/* Limites do plano gratuito */}
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Smartphone className="h-4 w-4 text-muted-foreground" />
-                    <CardTitle className="text-base">Notificações Push (Web Push)</CardTitle>
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Limites do Plano Gratuito</p>
                   </div>
-                  {pushConfigured ? (
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 gap-1">
-                      <CheckCircle2 className="h-3 w-3" /> Keys configuradas
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 gap-1">
-                      <XCircle className="h-3 w-3" /> Sem VAPID keys
-                    </Badge>
-                  )}
+                  <p className="text-xs text-muted-foreground">Controla o que usuários sem assinatura podem fazer</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                      <Label>Máx. Participantes por Bolão</Label>
+                      <Input {...numField("freeMaxParticipants")} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Máx. Bolões por Usuário</Label>
+                      <Input {...numField("freeMaxPools")} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Dias até Arquivamento</Label>
+                      <Input {...numField("poolArchiveDays")} />
+                    </div>
+                  </div>
                 </div>
-                <CardDescription className="text-sm">
-                  As VAPID keys permitem enviar notificações push para os navegadores dos usuários sem
-                  nenhuma configuração externa. Gere as keys abaixo e salve para ativar o canal push.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Ativar/desativar push */}
+
+                <Separator />
+
+                {/* Pontuação padrão */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pontuação Padrão (novos bolões)</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Valores aplicados automaticamente ao criar um bolão. Cada bolão pode personalizar esses valores.</p>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-3">Pontuação Base</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Placar Exato</Label>
+                        <Input {...numField("defaultScoringExact")} />
+                        <p className="text-xs text-muted-foreground">Acertou o placar exato</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Resultado Correto</Label>
+                        <Input {...numField("defaultScoringCorrect")} />
+                        <p className="text-xs text-muted-foreground">Acertou vitória/empate/derrota</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-3">Bônus</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Bônus Gols Totais</Label>
+                        <Input {...numField("defaultScoringBonusGoals")} />
+                        <p className="text-xs text-muted-foreground">Acertou total de gols</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Bônus Diferença</Label>
+                        <Input {...numField("defaultScoringBonusDiff")} />
+                        <p className="text-xs text-muted-foreground">Acertou saldo de gols</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Bônus Zebra</Label>
+                        <Input {...numField("defaultScoringBonusUpset")} />
+                        <p className="text-xs text-muted-foreground">Acertou resultado improvável</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Bônus Gols de 1 Time</Label>
+                        <Input {...numField("defaultScoringBonusOneTeam")} />
+                        <p className="text-xs text-muted-foreground">Acertou gols de um time</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Bônus Goleada</Label>
+                        <Input {...numField("defaultScoringBonusLandslide")} />
+                        <p className="text-xs text-muted-foreground">Acertou resultado de goleada</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-3">Limiares de Critérios Especiais</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Diff. mínima para Goleada (gols)</Label>
+                        <Input {...numField("defaultLandslideMinDiff")} min={1} max={10} />
+                        <p className="text-xs text-muted-foreground">Diferença de gols para ativar bônus goleada (padrão: 4)</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Limiar de Zebra (%)</Label>
+                        <Input {...numField("defaultZebraThreshold")} min={50} max={100} />
+                        <p className="text-xs text-muted-foreground">% de apostadores no favorito para considerar zebra (padrão: 75%)</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ══════════════════════════════════════════════════════════════
+                GRUPO 3 — NOTIFICAÇÕES
+            ══════════════════════════════════════════════════════════════ */}
+            <AccordionItem value="notificacoes" className="border border-border/50 rounded-xl overflow-hidden">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20 [&>svg]:text-muted-foreground">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Smartphone className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Notificações Push</p>
+                    <p className="text-xs text-muted-foreground font-normal">VAPID keys e canal Web Push</p>
+                  </div>
+                  <div className="ml-2 shrink-0">{pushBadge}</div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-5 pt-2 space-y-4">
+                {/* Toggle ativar push */}
                 <div className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-card/50">
                   <div>
                     <p className="text-sm font-medium">Ativar canal push</p>
-                    <p className="text-xs text-muted-foreground">
-                      Quando desativado, nenhuma notificação push será enviada mesmo com keys configuradas
-                    </p>
+                    <p className="text-xs text-muted-foreground">Quando desativado, nenhuma notificação push será enviada mesmo com keys configuradas</p>
                   </div>
-                  <Switch
-                    checked={pushForm.pushEnabled}
-                    onCheckedChange={(v) => setPushForm((p) => ({ ...p, pushEnabled: v }))}
-                    disabled={!pushConfigured}
-                  />
+                  <Switch checked={pushForm.pushEnabled} onCheckedChange={(v) => setPushForm((p) => ({ ...p, pushEnabled: v }))} disabled={!pushConfigured} />
                 </div>
 
-                {/* E-mail de contato VAPID */}
+                {/* E-mail VAPID */}
                 <div className="space-y-1.5">
                   <Label>E-mail de contato VAPID</Label>
-                  <Input
-                    type="email"
-                    placeholder="suporte@plakr.com.br"
-                    value={pushForm.vapidEmail}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setPushForm((p) => ({ ...p, vapidEmail: e.target.value }))
-                    }
-                    className={pushConfigured && !pushForm.vapidEmail ? "border-yellow-500/60 focus-visible:ring-yellow-500/40" : ""}
-                  />
+                  <Input type="email" placeholder="suporte@plakr.com.br" value={pushForm.vapidEmail} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPushForm((p) => ({ ...p, vapidEmail: e.target.value }))} className={pushConfigured && !pushForm.vapidEmail ? "border-yellow-500/60 focus-visible:ring-yellow-500/40" : ""} />
                   {pushConfigured && !pushForm.vapidEmail ? (
-                    <p className="text-xs text-yellow-400 flex items-center gap-1">
-                      <span>⚠️</span> Recomendado para conformidade com o protocolo VAPID. Preencha para evitar problemas de entrega.
-                    </p>
+                    <p className="text-xs text-yellow-400">⚠️ Recomendado para conformidade com o protocolo VAPID.</p>
                   ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Usado pelo protocolo VAPID para contato em caso de problemas. Não é exibido aos usuários.
-                    </p>
+                    <p className="text-xs text-muted-foreground">Usado pelo protocolo VAPID para contato. Não é exibido aos usuários.</p>
                   )}
                 </div>
 
@@ -467,52 +452,29 @@ export default function AdminSettings() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">VAPID Keys</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 text-xs"
-                      onClick={() => generateVapidMutation.mutate()}
-                      disabled={generateVapidMutation.isPending}
-                    >
-                      {generateVapidMutation.isPending ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3 w-3" />
-                      )}
+                    <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={() => generateVapidMutation.mutate()} disabled={generateVapidMutation.isPending}>
+                      {generateVapidMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                       {pushConfigured ? "Regen. Keys" : "Gerar Keys"}
                     </Button>
                   </div>
-
                   {pushConfigured ? (
                     <div className="space-y-2">
                       <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Chave Pública (compartilhada com o browser)</Label>
-                        <div className="font-mono text-xs bg-surface/50 border border-border/40 rounded p-2 break-all select-all">
-                          {pushForm.vapidPublicKey}
-                        </div>
+                        <Label className="text-xs text-muted-foreground">Chave Pública</Label>
+                        <div className="font-mono text-xs bg-surface/50 border border-border/40 rounded p-2 break-all select-all">{pushForm.vapidPublicKey}</div>
                       </div>
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <Label className="text-xs text-muted-foreground">Chave Privada (confidencial)</Label>
-                          <button
-                            type="button"
-                            className="text-xs text-brand hover:underline"
-                            onClick={() => setShowPrivateKey((v) => !v)}
-                          >
-                            {showPrivateKey ? "Ocultar" : "Revelar"}
-                          </button>
+                          <button type="button" className="text-xs text-brand hover:underline" onClick={() => setShowPrivateKey((v) => !v)}>{showPrivateKey ? "Ocultar" : "Revelar"}</button>
                         </div>
-                        <div className="font-mono text-xs bg-surface/50 border border-border/40 rounded p-2 break-all select-all">
-                          {showPrivateKey ? pushForm.vapidPrivateKey : "•".repeat(43)}
-                        </div>
+                        <div className="font-mono text-xs bg-surface/50 border border-border/40 rounded p-2 break-all select-all">{showPrivateKey ? pushForm.vapidPrivateKey : "•".repeat(43)}</div>
                       </div>
                     </div>
                   ) : (
                     <div className="rounded-lg border border-dashed border-border/50 p-6 text-center">
                       <Bell className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        Nenhuma VAPID key configurada. Clique em <strong>Gerar Keys</strong> para criar um par.
-                      </p>
+                      <p className="text-sm text-muted-foreground">Nenhuma VAPID key configurada. Clique em <strong>Gerar Keys</strong> para criar um par.</p>
                     </div>
                   )}
                 </div>
@@ -527,110 +489,77 @@ export default function AdminSettings() {
                     <li>Clique em <strong>Salvar</strong> (botão no topo da página)</li>
                     <li>Os usuários poderão ativar push em Preferências de Notificação</li>
                   </ol>
-                  <p className="text-xs text-yellow-400 mt-2">
-                    ⚠️ Ao regenerar as keys, todas as assinaturas push existentes serão invalidadas.
-                    Os usuários precisarão reativar o push nas preferências.
-                  </p>
+                  <p className="text-xs text-yellow-400 mt-2">⚠️ Ao regenerar as keys, todas as assinaturas push existentes serão invalidadas.</p>
                 </div>
-              </CardContent>
-            </Card>
+              </AccordionContent>
+            </AccordionItem>
 
-          {/* Card — Mensagens da Plataforma */}
-          <Card className="border-border/50">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-brand/10">
-                  <BookOpen className="h-4 w-4 text-brand" />
+            {/* ══════════════════════════════════════════════════════════════
+                GRUPO 4 — MENSAGENS E BADGES
+            ══════════════════════════════════════════════════════════════ */}
+            <AccordionItem value="mensagens" className="border border-border/50 rounded-xl overflow-hidden">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20 [&>svg]:text-muted-foreground">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Mensagens e Badges</p>
+                    <p className="text-xs text-muted-foreground font-normal">Textos da plataforma e badges de lançamento</p>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-base">Mensagens da Plataforma</CardTitle>
-                  <CardDescription className="text-xs mt-0.5">Textos exibidos para os participantes em situações específicas</CardDescription>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-5 pt-2 space-y-5">
+                {/* Mensagens da Plataforma */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mensagens da Plataforma</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Aviso de convite restrito</Label>
+                    <p className="text-xs text-muted-foreground">Exibido quando o organizador configurou o bolão para que apenas ele possa convidar. Deixe vazio para usar o texto padrão: <em>"Convites gerenciados pelo organizador."</em></p>
+                    <Input value={restrictedInviteMessage} onChange={(e) => setRestrictedInviteMessage(e.target.value)} placeholder="Convites gerenciados pelo organizador." maxLength={500} />
+                    <p className="text-xs text-muted-foreground text-right">{restrictedInviteMessage.length}/500</p>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Aviso de convite restrito</Label>
-                <p className="text-xs text-muted-foreground">
-                  Exibido para participantes quando o organizador configurou o bolão para que apenas ele possa convidar novos membros.
-                  Deixe vazio para usar o texto padrão: <em>"Convites gerenciados pelo organizador."</em>
-                </p>
-                <Input
-                  value={restrictedInviteMessage}
-                  onChange={(e) => setRestrictedInviteMessage(e.target.value)}
-                  placeholder="Convites gerenciados pelo organizador."
-                  maxLength={500}
-                />
-                <p className="text-xs text-muted-foreground text-right">{restrictedInviteMessage.length}/500</p>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* ── Badges Exclusivos ── */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
-                  <span className="text-lg">🧪</span>
-                </div>
-                <div>
-                  <CardTitle className="text-base">Badges Exclusivos</CardTitle>
-                  <CardDescription className="text-xs mt-0.5">Configure a atribuição automática dos badges de lançamento</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Chegou Cedo */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🏆</span>
-                  <Label className="text-sm font-semibold">Chegou Cedo</Label>
-                  <Badge variant="outline" className="text-xs">Automático</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Atribuído automaticamente aos primeiros 100 usuários cadastrados na plataforma (userId ≤ 100).
-                  Nenhuma configuração necessária — o critério é definido no badge cadastrado em{" "}
-                  <a href="/admin/badges" className="text-primary hover:underline">Badges</a>.
-                </p>
-              </div>
+                <Separator />
 
-              <Separator />
+                {/* Badges Exclusivos */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <FlaskConical className="h-3.5 w-3.5 text-muted-foreground" />
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Badges Exclusivos de Lançamento</p>
+                  </div>
 
-              {/* Cobaia */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🧪</span>
-                  <Label className="text-sm font-semibold">Cobaia</Label>
-                  <Badge variant="outline" className="text-xs">Configurável</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Atribuído a todos os participantes do primeiro bolão válido após o lançamento oficial da plataforma.
-                  Informe o <strong>ID do bolão</strong> abaixo. Quando o bolão for finalizado, todos os participantes receberão o badge automaticamente.
-                </p>
-                <div className="flex gap-2 items-center">
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="ID do bolão (ex: 42)"
-                    value={cobaiaPoolId}
-                    onChange={(e) => setCobaiaPoolId(e.target.value)}
-                    className="max-w-[200px]"
-                  />
-                  {cobaiaPoolId && (
-                    <span className="text-xs text-muted-foreground">
-                      Bolão #{cobaiaPoolId} configurado como bolão Cobaia
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground/60">
-                  A atribuição ocorre automaticamente quando o bolão é arquivado/finalizado.
-                  Salve as configurações para ativar.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🏆</span>
+                      <Label className="text-sm font-semibold">Chegou Cedo</Label>
+                      <Badge variant="outline" className="text-xs">Automático</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Atribuído automaticamente aos primeiros 100 usuários cadastrados (userId ≤ 100). Nenhuma configuração necessária — o critério é definido no badge cadastrado em <a href="/admin/badges" className="text-primary hover:underline">Badges</a>.</p>
+                  </div>
 
-          </div>
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🧪</span>
+                      <Label className="text-sm font-semibold">Cobaia</Label>
+                      <Badge variant="outline" className="text-xs">Configurável</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Atribuído a todos os participantes do primeiro bolão válido após o lançamento. Informe o <strong>ID do bolão</strong> abaixo.</p>
+                    <div className="flex gap-2 items-center">
+                      <Input type="number" min={1} placeholder="ID do bolão (ex: 42)" value={cobaiaPoolId} onChange={(e) => setCobaiaPoolId(e.target.value)} className="max-w-[200px]" />
+                      {cobaiaPoolId && <span className="text-xs text-muted-foreground">Bolão #{cobaiaPoolId} configurado como bolão Cobaia</span>}
+                    </div>
+                    <p className="text-xs text-muted-foreground/60">A atribuição ocorre automaticamente quando o bolão é arquivado/finalizado. Salve as configurações para ativar.</p>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+          </Accordion>
         )}
       </div>
     </AdminLayout>
