@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, teamAName, teamBName, aiSummary, goalsTimeline FROM games WHERE status = 'finished' AND aiSummary IS NOT NULL LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, aiSummary, goalsTimeline FROM games WHERE status = 'finished' AND aiSummary IS NOT NULL LIMIT 1;",
+  "rows": [
+    {
+      "id": "90001",
+      "teamAName": "Caxias",
+      "teamBName": "Gremio",
+      "aiSummary": "O Caxias virou sobre o Grêmio e venceu por 2 a 1 no Centenário. Gustavo Martins abriu o placar para o Tricolor aos 7 minutos, mas o time grená reagiu no segundo tempo. Tomas Bastos empatou de pênalti aos 60, e Álvaro garantiu a vitória do Caxias aos 77 minutos.",
+      "goalsTimeline": "[{\"min\": \"7'\", \"player\": \"Gustavo Martins\", \"team\": \"away\", \"type\": \"goal\"}, {\"min\": \"60'\", \"player\": \"Tomas Bastos\", \"team\": \"home\", \"type\": \"goal\"}, {\"min\": \"77'\", \"player\": \"Álvaro\", \"team\": \"home\", \"type\": \"goal\"}]"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\taiSummary\tgoalsTimeline\n90001\tCaxias\tGremio\tO Caxias virou sobre o Grêmio e venceu por 2 a 1 no Centenário. Gustavo Martins abriu o placar para o Tricolor aos 7 minutos, mas o time grená reagiu no segundo tempo. Tomas Bastos empatou de pênalti aos 60, e Álvaro garantiu a vitória do Caxias aos 77 minutos.\t[{\"min\": \"7'\", \"player\": \"Gustavo Martins\", \"team\": \"away\", \"type\": \"goal\"}, {\"min\": \"60'\", \"player\": \"Tomas Bastos\", \"team\": \"home\", \"type\": \"goal\"}, {\"min\": \"77'\", \"player\": \"Álvaro\", \"team\": \"home\", \"type\": \"goal\"}]\n",
+  "stderr": "",
+  "execution_time_ms": 63
+}

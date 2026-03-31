@@ -710,6 +710,7 @@ export default function PoolPage() {
                                 setBetInputs={setBetInputs}
                                 handleBetSubmit={handleBetSubmit}
                                 placeBetPending={placeBet.isPending}
+                                myRankPosition={myPosition?.position}
                               />
                             );
                           })}
@@ -746,6 +747,7 @@ export default function PoolPage() {
                       setBetInputs={setBetInputs}
                       handleBetSubmit={handleBetSubmit}
                       placeBetPending={placeBet.isPending}
+                      myRankPosition={myPosition?.position}
                     />
                   );
                 })}
@@ -1200,11 +1202,12 @@ interface GameCardProps {
   setBetInputs: React.Dispatch<React.SetStateAction<Record<number, { a: string; b: string }>>>;
   handleBetSubmit: (gameId: number) => void;
   placeBetPending: boolean;
+  myRankPosition?: number | null;
 }
 
 function GameCard({
   game, myBet, open, finished, live, betA, betB, hasBet, poolId,
-  betInputs, setBetInputs, handleBetSubmit, placeBetPending,
+  betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition,
 }: GameCardProps) {
    const [analysisOpen, setAnalysisOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -1433,10 +1436,20 @@ function GameCard({
           </div>
         )}
 
-        {/* Badges compactos de pontuação */}
+        {/* Badges compactos de pontuação + posição no ranking */}
         {finished && hasBet && (
-          <div className="mt-3 flex justify-center">
+          <div className="mt-3 flex flex-wrap justify-center gap-1">
+            {myRankPosition != null && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs font-bold bg-yellow-500/15 border-yellow-500/30 text-yellow-400 font-mono">
+                #{myRankPosition}
+              </span>
+            )}
             <BetBreakdownBadges bet={myBet!} compact />
+            {(myBet!.pointsEarned ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs font-bold bg-primary/15 border-primary/30 text-primary font-mono">
+                ⭐ +{myBet!.pointsEarned}
+              </span>
+            )}
           </div>
         )}
 
@@ -1501,97 +1514,138 @@ function GameCard({
         {/* Painel de análise expansível */}
         {analysisOpen && (
           <div className="mt-2 border-t border-border/20 pt-3 space-y-4">
-            {/* PRÉ-JOGO: resumo da IA se disponível */}
+
+            {/* PRÉ-JOGO: análise pré-jogo da IA */}
             {!finished && game.aiSummary && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-primary flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Análise pré-jogo
+              <div className="bg-muted/20 rounded-xl p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Análise pré-jogo
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">{game.aiSummary}</p>
                 <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA.</p>
               </div>
             )}
 
-            {/* PÓS-JOGO: resumo da partida */}
+            {/* PÓS-JOGO: 1. Resumo da partida */}
             {finished && game.aiSummary && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-foreground/80 flex items-center gap-1">
-                  <ScrollText className="w-3 h-3" /> Resumo da partida
+              <div className="bg-muted/20 rounded-xl p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+                  <ScrollText className="w-3.5 h-3.5" /> Resumo da partida
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">{game.aiSummary}</p>
               </div>
             )}
 
-            {/* Estatísticas com barra bipartida */}
-            {finished && game.matchStatistics && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-foreground/80">Estatísticas</p>
-                {[
-                  { label: "Posse", home: game.matchStatistics.homePossession, away: game.matchStatistics.awayPossession, unit: "%" },
-                  { label: "Finalizações", home: game.matchStatistics.homeShots, away: game.matchStatistics.awayShots },
-                  { label: "Escanteios", home: game.matchStatistics.homeCorners, away: game.matchStatistics.awayCorners },
-                  { label: "Cartões amarelos", home: game.matchStatistics.homeYellow, away: game.matchStatistics.awayYellow },
-                ].filter(s => s.home != null && s.away != null).map((stat) => {
-                  const total = (stat.home ?? 0) + (stat.away ?? 0);
-                  const homePct = total > 0 ? Math.round(((stat.home ?? 0) / total) * 100) : 50;
-                  return (
-                    <div key={stat.label} className="space-y-0.5">
-                      <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <span className="font-medium text-primary">{stat.home}{stat.unit ?? ""}</span>
-                        <span>{stat.label}</span>
-                        <span className="font-medium text-red-400">{stat.away}{stat.unit ?? ""}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden flex">
-                        <div className="h-full bg-primary/70 rounded-l-full transition-all" style={{ width: `${homePct}%` }} />
-                        <div className="h-full bg-red-400/70 rounded-r-full transition-all" style={{ width: `${100 - homePct}%` }} />
-                      </div>
+            {/* PÓS-JOGO: 2. Análise do palpite */}
+            {finished && hasBet && (
+              <div className="bg-muted/20 rounded-xl p-3 space-y-3">
+                <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Análise do seu palpite
+                </p>
+
+                {/* Comparação resultado real vs palpite */}
+                <div className="flex items-center justify-center gap-3 text-xs">
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Resultado real</p>
+                    <p className="font-black font-mono text-foreground text-base">{game.scoreA} × {game.scoreB}</p>
+                  </div>
+                  <span className="text-muted-foreground/40 text-sm font-medium">vs</span>
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Seu palpite</p>
+                    <p className="font-black font-mono text-primary text-base">{myBet!.predictedScoreA} × {myBet!.predictedScoreB}</p>
+                  </div>
+                </div>
+
+                {/* Banner de destaque por tipo de resultado */}
+                {(() => {
+                  const pts = myBet!.pointsEarned ?? 0;
+                  const isExact = (myBet!.pointsExactScore ?? 0) > 0;
+                  const isCorrect = !isExact && (myBet!.pointsCorrectResult ?? 0) > 0;
+                  const isZero = pts === 0;
+                  if (isExact) return (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/15 border border-green-500/30">
+                      <span className="text-green-400 text-sm">🎯</span>
+                      <span className="text-xs font-semibold text-green-400">Placar exato — melhor resultado possível!</span>
                     </div>
                   );
-                })}
-              </div>
-            )}
+                  if (isCorrect) return (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/25">
+                      <span className="text-primary text-sm">✅</span>
+                      <span className="text-xs font-semibold text-primary">Resultado correto! Bom palpite.</span>
+                    </div>
+                  );
+                  if (isZero) return (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border/30">
+                      <span className="text-muted-foreground text-sm">😬</span>
+                      <span className="text-xs font-medium text-muted-foreground">Dessa vez não foi. Próximo jogo!</span>
+                    </div>
+                  );
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/25">
+                      <span className="text-yellow-400 text-sm">⚡</span>
+                      <span className="text-xs font-semibold text-yellow-400">Parcialmente correto — {pts} pontos!</span>
+                    </div>
+                  );
+                })()}
 
-            {/* Análise do palpite pela IA */}
-            {finished && hasBet && (
-              <div className="space-y-2 border-t border-border/20 pt-3">
-                <p className="text-xs font-semibold text-primary flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Análise do seu palpite
-                </p>
-                {/* Comparação palpite vs resultado */}
-                <div className="flex items-center justify-center gap-4 text-xs">
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground">Seu palpite</p>
-                    <p className="font-black font-mono text-primary">{myBet!.predictedScoreA} × {myBet!.predictedScoreB}</p>
-                  </div>
-                  <div className="text-muted-foreground/40 text-lg">→</div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground">Resultado</p>
-                    <p className="font-black font-mono text-foreground">{game.scoreA} × {game.scoreB}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground">Pontos</p>
-                    <p className={`font-black font-mono ${ (myBet!.pointsEarned ?? 0) > 0 ? "text-primary" : "text-muted-foreground"}`}>+{myBet!.pointsEarned ?? 0}</p>
-                  </div>
-                </div>
-                {/* Badges completos */}
-                <div className="flex justify-center">
-                  <BetBreakdownBadges bet={myBet!} />
-                </div>
                 {/* Texto da IA */}
                 {betAnalysisLoading ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Loader2 className="w-3 h-3 animate-spin" /> Gerando análise...
                   </div>
                 ) : betAnalysisText ? (
-                  <>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{betAnalysisText}</p>
-                    <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA.</p>
-                  </>
-                ) : (
-                  <p className="text-xs text-muted-foreground/60 italic">Análise não disponível para este jogo.</p>
-                )}
+                  <p className="text-xs text-muted-foreground leading-relaxed">{betAnalysisText}</p>
+                ) : null}
+
+                {/* Badges de breakdown */}
+                <div className="flex flex-wrap gap-1">
+                  <BetBreakdownBadges bet={myBet!} />
+                  {(myBet!.pointsEarned ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs font-bold bg-primary/15 border-primary/30 text-primary font-mono">
+                      Total: +{myBet!.pointsEarned} pts
+                    </span>
+                  )}
+                </div>
               </div>
             )}
+
+            {/* PÓS-JOGO: 3. Estatísticas */}
+            {finished && game.matchStatistics && (() => {
+              const stats = [
+                { label: "Posse de bola", home: game.matchStatistics!.homePossession, away: game.matchStatistics!.awayPossession, unit: "%" },
+                { label: "Finalizações", home: game.matchStatistics!.homeShots, away: game.matchStatistics!.awayShots },
+                { label: "Escanteios", home: game.matchStatistics!.homeCorners, away: game.matchStatistics!.awayCorners },
+                { label: "Cartões amarelos", home: game.matchStatistics!.homeYellow, away: game.matchStatistics!.awayYellow },
+              ].filter(s => s.home != null && s.away != null);
+              if (stats.length === 0) return null;
+              return (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wider">Estatísticas</p>
+                  {stats.map((stat) => {
+                    const total = (stat.home ?? 0) + (stat.away ?? 0);
+                    const homePct = total > 0 ? Math.round(((stat.home ?? 0) / total) * 100) : 50;
+                    return (
+                      <div key={stat.label} className="space-y-0.5">
+                        <div className="flex justify-between text-[10px]">
+                          <span className="font-bold text-primary">{stat.home}{stat.unit ?? ""}</span>
+                          <span className="text-muted-foreground">{stat.label}</span>
+                          <span className="font-bold text-red-400">{stat.away}{stat.unit ?? ""}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden flex">
+                          <div className="h-full bg-primary/70 rounded-l-full transition-all" style={{ width: `${homePct}%` }} />
+                          <div className="h-full bg-red-400/70 rounded-r-full transition-all" style={{ width: `${100 - homePct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-between text-[10px] text-muted-foreground pt-1">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/70 inline-block" />{game.teamAName}</span>
+                    <span className="flex items-center gap-1">{game.teamBName}<span className="w-2 h-2 rounded-full bg-red-400/70 inline-block" /></span>
+                  </div>
+                </div>
+              );
+            })()}
+
           </div>
         )}
       {/* Card visual oculto para captura html2canvas */}

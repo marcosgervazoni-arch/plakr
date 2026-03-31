@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, teamAName, teamBName, scoreA, scoreB, aiSummary IS NOT NULL as hasAiSummary, goalsTimeline IS NOT NULL as hasGoalsTimeline, matchStatistics IS NOT NULL as hasMatchStats FROM games WHERE status = 'finished' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, teamAName, teamBName, scoreA, scoreB, aiSummary IS NOT NULL as hasAiSummary, goalsTimeline IS NOT NULL as hasGoalsTimeline, matchStatistics IS NOT NULL as hasMatchStats FROM games WHERE status = 'finished' LIMIT 5;",
+  "rows": [
+    {
+      "id": "90001",
+      "teamAName": "Caxias",
+      "teamBName": "Gremio",
+      "scoreA": "2",
+      "scoreB": "1",
+      "hasAiSummary": "1",
+      "hasGoalsTimeline": "1",
+      "hasMatchStats": "0"
+    },
+    {
+      "id": "90002",
+      "teamAName": "Brasil DE Pelotas",
+      "teamBName": "Novo Hamburgo",
+      "scoreA": "0",
+      "scoreB": "0",
+      "hasAiSummary": "1",
+      "hasGoalsTimeline": "1",
+      "hasMatchStats": "0"
+    },
+    {
+      "id": "90003",
+      "teamAName": "Sao Jose",
+      "teamBName": "São Luiz",
+      "scoreA": "1",
+      "scoreB": "1",
+      "hasAiSummary": "1",
+      "hasGoalsTimeline": "1",
+      "hasMatchStats": "0"
+    },
+    {
+      "id": "90004",
+      "teamAName": "Santa Cruz RS",
+      "teamBName": "Juventude",
+      "scoreA": "0",
+      "scoreB": "1",
+      "hasAiSummary": "1",
+      "hasGoalsTimeline": "1",
+      "hasMatchStats": "0"
+    },
+    {
+      "id": "90005",
+      "teamAName": "Internacional",
+      "teamBName": "Avenida",
+      "scoreA": "1",
+      "scoreB": "0",
+      "hasAiSummary": "1",
+      "hasGoalsTimeline": "1",
+      "hasMatchStats": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tteamAName\tteamBName\tscoreA\tscoreB\thasAiSummary\thasGoalsTimeline\thasMatchStats\n90001\tCaxias\tGremio\t2\t1\t1\t1\t0\n90002\tBrasil DE Pelotas\tNovo Hamburgo\t0\t0\t1\t1\t0\n90003\tSao Jose\tSão Luiz\t1\t1\t1\t1\t0\n90004\tSanta Cruz RS\tJuventude\t0\t1\t1\t1\t0\n90005\tInternacional\tAvenida\t1\t0\t1\t1\t0\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

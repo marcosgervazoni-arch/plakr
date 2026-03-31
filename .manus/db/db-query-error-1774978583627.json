@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, home_team_name, away_team_name, home_score, away_score, ai_summary IS NOT NULL as hasAiSummary, goals_timeline IS NOT NULL as hasGoalsTimeline, match_statistics IS NOT NULL as hasMatchStats FROM games WHERE status = 'finished' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT id, home_team_name, away_team_name, home_score, away_score, ai_summary IS NOT NULL as hasAiSummary, goals_timeline IS NOT NULL as hasGoalsTimeline, match_statistics IS NOT NULL as hasMatchStats FROM games WHERE status = 'finished' LIMIT 5;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'home_team_name' in 'field list'"
+  ]
+}

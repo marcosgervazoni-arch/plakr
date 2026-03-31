@@ -2373,3 +2373,18 @@
 - [x] Causa: vapidEmail no banco tinha valor "mailto:admin@plakr.io" (prefixo inválido para z.string().email())
 - [x] Correção banco: UPDATE platform_settings SET vapidEmail = 'admin@plakr.io' (removido prefixo mailto:)
 - [x] Correção schema Zod: transform agora remove prefixo mailto: automaticamente antes de validar
+
+## Backlog — UX AdminSettings: Salvar por grupo
+
+- [ ] [BACKLOG] Separar botão "Salvar tudo" em botões independentes por acordeon (Regras, Stripe, Push, Mensagens) — ver docs/backlog/ux-admin-settings-save-por-grupo.md
+
+## Feature — GameCard v4 (modelo aprovado)
+
+- [x] Card fechado: palpite centralizado acima do placar real ("Meu palpite: 2 × 1")
+- [x] Card fechado: timeline de gols inline (ícone bola + minuto + jogador, esquerda=time A, direita=time B)
+- [x] Card fechado: badges de pontuação (posição no ranking, +pts por critério, total)
+- [x] Painel expandido: seção "Resumo da partida" com aiSummary
+- [x] Painel expandido: seção "Análise do seu palpite" com comparação resultado real vs palpite, banner de destaque, breakdown de pontos
+- [x] Painel expandido: REGRA — posição no bolão só mencionada quando TODOS os jogos da rodada estão finalizados (implementada no backend via generateAiTextsForGame)
+- [x] Painel expandido: seção "Estatísticas" com barras bipartidas (posse, finalizações, escanteios, cartões) — só quando matchStatistics não for null
+- [x] Backend: regra de posição já implementada no generateAiTextsForGame (poolContext null quando rodada incompleta)
