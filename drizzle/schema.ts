@@ -204,6 +204,27 @@ export const games = mysqlTable("games", {
   manuallyEdited: boolean("manuallyEdited").default(false).notNull(),
   importedFromSheets: boolean("importedFromSheets").default(false).notNull(),
   reminderSentAt: timestamp("reminderSentAt"), // controle de lembretes automáticos
+  // ── Inteligência Esportiva ──────────────────────────────────────────────────
+  // Gerado pelo syncFixtures antes do jogo: { homeWin, draw, awayWin, homeForm, awayForm }
+  aiPrediction: json("aiPrediction").$type<{
+    homeWin: number; draw: number; awayWin: number;
+    homeForm: string[]; awayForm: string[];
+    aiRecommendation: string;
+  } | null>(),
+  // Gerado pelo syncResults após o jogo: resumo narrativo da partida (LLM)
+  aiSummary: text("aiSummary"),
+  // Gerado pelo syncResults: [{ min, team, player, type }]
+  goalsTimeline: json("goalsTimeline").$type<Array<{
+    min: string; team: "home" | "away"; player: string; type: "goal" | "own_goal" | "penalty";
+  }>>(),
+  // Estatísticas pós-jogo: { possession, shots, corners, yellowCards, redCards }
+  matchStatistics: json("matchStatistics").$type<{
+    homePossession: number; awayPossession: number;
+    homeShots: number; awayShots: number;
+    homeCorners: number; awayCorners: number;
+    homeYellow: number; awayYellow: number;
+    homeRed: number; awayRed: number;
+  } | null>(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -896,3 +917,18 @@ export const apiQuotaTracker = mysqlTable("api_quota_tracker", {
   lastUpdated: timestamp("lastUpdated").defaultNow().onUpdateNow().notNull(),
 });
 export type ApiQuotaTracker = typeof apiQuotaTracker.$inferSelect;
+
+// ─── ANÁLISES DE PALPITE POR JOGO (Inteligência Esportiva) ───────────────────
+// Armazena a análise gerada pela IA para cada palpite de usuário em um jogo.
+// Gerada uma única vez pelo syncResults ao finalizar o jogo.
+export const gameBetAnalyses = mysqlTable("game_bet_analyses", {
+  id: int("id").autoincrement().primaryKey(),
+  gameId: int("gameId").notNull().references(() => games.id),
+  userId: int("userId").notNull().references(() => users.id),
+  poolId: int("poolId").notNull().references(() => pools.id),
+  analysisText: text("analysisText").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  uniqUserGame: unique("uniq_user_game_pool").on(t.gameId, t.userId, t.poolId),
+}));
+export type GameBetAnalysis = typeof gameBetAnalyses.$inferSelect;

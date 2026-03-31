@@ -309,6 +309,20 @@
       "when": 1774822000157,
       "tag": "0043_giant_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "5",
+      "when": 1774934741965,
+      "tag": "0044_safe_shiver_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "5",
+      "when": 1774934870258,
+      "tag": "0045_tearful_lady_ursula",
+      "breakpoints": true
     }
   ]
 }

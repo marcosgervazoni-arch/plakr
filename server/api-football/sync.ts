@@ -17,7 +17,7 @@
  */
 
 import logger from "../logger";
-import { fetchFixtures, fetchTeams, ApiFootballFixture } from "./client";
+import { fetchFixtures, fetchTeams, fetchFixtureEvents, fetchFixtureStatistics, ApiFootballFixture } from "./client";
 import { getDb } from "../db";
 import {
   platformSettings,
@@ -26,6 +26,7 @@ import {
   tournaments,
   tournamentPhases,
   apiSyncLog,
+  gameBetAnalyses,
 } from "../../drizzle/schema";
 import { getPhaseLabel, getPhaseOrder, isKnockoutPhase } from "../../shared/phaseNames";
 import { eq, and, isNull, sql } from "drizzle-orm";
@@ -41,6 +42,12 @@ import {
   calculateBetScore,
   calculateZebraContext,
 } from "../scoring";
+import {
+  parseGoalsTimeline,
+  parseMatchStatistics,
+  generateGameSummary,
+  generateBetAnalysis,
+} from "./ai-analysis";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -623,7 +630,7 @@ export async function syncFixtures(options: {
 // ─── Helper interno: aplicar resultado de um jogo e disparar pontuação ─────────
 
 async function applyGameResult(
-  existingGame: { id: number; status: string | null; scoreA: number | null },
+  existingGame: { id: number; status: string | null; scoreA: number | null; externalId: string | null; teamAName: string | null; teamBName: string | null },
   scoreA: number,
   scoreB: number,
   syncStatusRef: { value: "success" | "error" | "partial" | "skipped" }
@@ -634,7 +641,32 @@ async function applyGameResult(
   // Aplicar resultado final (NUNCA parcial)
   await updateGameResult(existingGame.id, scoreA, scoreB, false);
 
+  // ── Buscar eventos e estatísticas da API-Football (fire-and-forget, não bloqueia scoring) ──
+  const fixtureId = existingGame.externalId ? parseInt(existingGame.externalId) : null;
+  let goalsTimeline: ReturnType<typeof parseGoalsTimeline> = [];
+  let matchStatistics: ReturnType<typeof parseMatchStatistics> = null;
+
+  if (fixtureId) {
+    try {
+      const [events, stats] = await Promise.all([
+        fetchFixtureEvents(fixtureId),
+        fetchFixtureStatistics(fixtureId),
+      ]);
+      goalsTimeline = parseGoalsTimeline(events, existingGame.teamAName ?? "");
+      matchStatistics = parseMatchStatistics(stats, existingGame.teamAName ?? "");
+
+      // Salvar gols e estatísticas no banco
+      const db = await getDb();
+      if (db) {
+        await db.update(games).set({ goalsTimeline, matchStatistics }).where(eq(games.id, existingGame.id));
+      }
+    } catch (evtErr) {
+      logger.warn({ err: evtErr, gameId: existingGame.id }, "[ApiFootball] Could not fetch events/stats");
+    }
+  }
+
   // Disparar motor de pontuação para todos os bolões com palpites neste jogo
+  const betsByPool: Map<number, Array<{ id: number; userId: number; predictedScoreA: number | null; predictedScoreB: number | null; poolId: number }>> = new Map();
   try {
     const allBets = await getBetsByGameAllPools(existingGame.id);
     const affectedPoolsSet = new Set(allBets.map((b) => b.poolId));
@@ -646,6 +678,7 @@ async function applyGameResult(
       const poolBets = allBets.filter((b) => b.poolId === poolId);
       const zebraCtx = calculateZebraContext(poolBets, scoreA, scoreB);
       const affectedUsersSet = new Set<number>();
+      betsByPool.set(poolId, poolBets);
 
       for (const bet of poolBets) {
         const breakdown = calculateBetScore(
@@ -684,7 +717,144 @@ async function applyGameResult(
     syncStatusRef.value = "partial";
   }
 
+  // ── Gerar textos de IA (assíncrono, não bloqueia o sync) ────────────────────────────────
+  generateAiTextsForGame({
+    gameId: existingGame.id,
+    homeTeam: existingGame.teamAName ?? "Casa",
+    awayTeam: existingGame.teamBName ?? "Visitante",
+    scoreA,
+    scoreB,
+    goalsTimeline,
+    matchStatistics,
+    betsByPool,
+  }).catch((e) => logger.error({ err: e, gameId: existingGame.id }, "[AI] Error generating AI texts"));
+
   return true;
+}
+
+// ── Geração assíncrona de textos de IA para um jogo finalizado ────────────────────────────
+async function generateAiTextsForGame(ctx: {
+  gameId: number;
+  homeTeam: string;
+  awayTeam: string;
+  scoreA: number;
+  scoreB: number;
+  goalsTimeline: Array<{ min: string; team: "home" | "away"; player: string; type: "goal" | "own_goal" | "penalty" }>;
+  matchStatistics: ReturnType<typeof parseMatchStatistics>;
+  betsByPool: Map<number, Array<{ id: number; userId: number; predictedScoreA: number | null; predictedScoreB: number | null; poolId: number }>>;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  // 1. Gerar resumo narrativo da partida
+  const aiSummary = await generateGameSummary({
+    homeTeam: ctx.homeTeam,
+    awayTeam: ctx.awayTeam,
+    scoreA: ctx.scoreA,
+    scoreB: ctx.scoreB,
+    goalsTimeline: ctx.goalsTimeline,
+    statistics: ctx.matchStatistics ? {
+      homePossession: ctx.matchStatistics.homePossession,
+      awayPossession: ctx.matchStatistics.awayPossession,
+      homeShots: ctx.matchStatistics.homeShots,
+      awayShots: ctx.matchStatistics.awayShots,
+    } : null,
+  });
+
+  await db.update(games).set({ aiSummary }).where(eq(games.id, ctx.gameId));
+  logger.info(`[AI] Game summary generated for game ${ctx.gameId}`);
+
+  // 2. Gerar análise de palpite para cada apostador em cada bolão
+  for (const [poolId, poolBets] of ctx.betsByPool.entries()) {
+    // Verificar se todos os jogos da rodada estão finalizados (regra de posição)
+    const [gameRow] = await db.select({ roundNumber: games.roundNumber, tournamentId: games.tournamentId })
+      .from(games).where(eq(games.id, ctx.gameId)).limit(1);
+
+    let poolContext: Parameters<typeof generateBetAnalysis>[0]["poolContext"] = null;
+    if (gameRow?.roundNumber) {
+      const roundGames = await db.select({ status: games.status })
+        .from(games)
+        .where(and(
+          eq(games.tournamentId, gameRow.tournamentId),
+          eq(games.roundNumber, gameRow.roundNumber)
+        ));
+      const allRoundFinished = roundGames.every(g => g.status === "finished");
+
+      if (allRoundFinished) {
+        const exactCount = poolBets.filter(b => b.predictedScoreA === ctx.scoreA && b.predictedScoreB === ctx.scoreB).length;
+        const correctCount = poolBets.filter(b => {
+          const pA = b.predictedScoreA ?? 0;
+          const pB = b.predictedScoreB ?? 0;
+          return (pA > pB && ctx.scoreA > ctx.scoreB) || (pA < pB && ctx.scoreA < ctx.scoreB) || (pA === pB && ctx.scoreA === ctx.scoreB);
+        }).length;
+
+        // Calcular ranking da rodada por pontos
+        const memberStats = await db.execute(
+          sql`SELECT userId, SUM(pointsEarned) as roundPoints FROM bets WHERE poolId = ${poolId} AND gameId IN (SELECT id FROM games WHERE tournamentId = ${gameRow.tournamentId} AND roundNumber = ${gameRow.roundNumber}) GROUP BY userId ORDER BY roundPoints DESC`
+        ) as any;
+        const rows = memberStats[0] as Array<{ userId: number; roundPoints: number }>;
+        poolContext = { totalParticipants: poolBets.length, exactCount, correctCount, userRank: 0 };
+
+        for (const bet of poolBets) {
+          const userRankIdx = rows.findIndex((r: any) => r.userId === bet.userId);
+          const userRank = userRankIdx >= 0 ? userRankIdx + 1 : poolBets.length;
+          const breakdown = calculateBetScore(
+            bet.predictedScoreA ?? 0, bet.predictedScoreB ?? 0, ctx.scoreA, ctx.scoreB,
+            { exactScorePoints: 10, correctResultPoints: 5, totalGoalsPoints: 3, goalDiffPoints: 3, oneTeamGoalsPoints: 2, landslidePoints: 5, zebraPoints: 1, landslideMinDiff: 4, zebraThreshold: 75, zebraCountDraw: false, zebraEnabled: true },
+            { isZebraGame: false, betterTeam: "A", favoriteWon: true, losingRatio: 0 }
+          );
+
+          const analysisText = await generateBetAnalysis({
+            homeTeam: ctx.homeTeam,
+            awayTeam: ctx.awayTeam,
+            scoreA: ctx.scoreA,
+            scoreB: ctx.scoreB,
+            predictedA: bet.predictedScoreA ?? 0,
+            predictedB: bet.predictedScoreB ?? 0,
+            resultType: breakdown.resultType,
+            totalPoints: breakdown.total,
+            isZebra: false,
+            poolContext: { ...poolContext, userRank },
+          });
+
+          await db.insert(gameBetAnalyses).values({
+            gameId: ctx.gameId,
+            userId: bet.userId,
+            poolId,
+            analysisText,
+          }).onDuplicateKeyUpdate({ set: { analysisText } });
+        }
+      } else {
+        // Rodada incompleta: gerar análise sem posição
+        for (const bet of poolBets) {
+          const breakdown = calculateBetScore(
+            bet.predictedScoreA ?? 0, bet.predictedScoreB ?? 0, ctx.scoreA, ctx.scoreB,
+            { exactScorePoints: 10, correctResultPoints: 5, totalGoalsPoints: 3, goalDiffPoints: 3, oneTeamGoalsPoints: 2, landslidePoints: 5, zebraPoints: 1, landslideMinDiff: 4, zebraThreshold: 75, zebraCountDraw: false, zebraEnabled: true },
+            { isZebraGame: false, betterTeam: "A", favoriteWon: true, losingRatio: 0 }
+          );
+          const analysisText = await generateBetAnalysis({
+            homeTeam: ctx.homeTeam,
+            awayTeam: ctx.awayTeam,
+            scoreA: ctx.scoreA,
+            scoreB: ctx.scoreB,
+            predictedA: bet.predictedScoreA ?? 0,
+            predictedB: bet.predictedScoreB ?? 0,
+            resultType: breakdown.resultType,
+            totalPoints: breakdown.total,
+            isZebra: false,
+            poolContext: null, // rodada incompleta
+          });
+          await db.insert(gameBetAnalyses).values({
+            gameId: ctx.gameId,
+            userId: bet.userId,
+            poolId,
+            analysisText,
+          }).onDuplicateKeyUpdate({ set: { analysisText } });
+        }
+      }
+    }
+  }
+  logger.info(`[AI] Bet analyses generated for game ${ctx.gameId}`);
 }
 
 export async function syncResults(options: {

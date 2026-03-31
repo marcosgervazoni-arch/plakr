@@ -179,4 +179,26 @@ export const poolsGamesRouter = router({
       }
       return getPoolScoringRules(input.poolId);
     }),
+
+  getBetAnalysis: protectedProcedure
+    .input(z.object({ gameId: z.number(), poolId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const { getDb } = await import("../db");
+      const { gameBetAnalyses } = await import("../../drizzle/schema");
+      const { and, eq } = await import("drizzle-orm");
+      const db = await getDb();
+      if (!db) return null;
+      const [row] = await db
+        .select({ analysisText: gameBetAnalyses.analysisText })
+        .from(gameBetAnalyses)
+        .where(
+          and(
+            eq(gameBetAnalyses.gameId, input.gameId),
+            eq(gameBetAnalyses.poolId, input.poolId),
+            eq(gameBetAnalyses.userId, ctx.user.id)
+          )
+        )
+        .limit(1);
+      return row?.analysisText ?? null;
+    }),
 });

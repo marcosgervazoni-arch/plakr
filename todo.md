@@ -2276,3 +2276,27 @@
 - [x] Atualizar getAdConfig para retornar adsEnabled + adsLocalEnabled
 - [x] Reescrever AdminAds com dois cards de toggle independentes (verde=Adsterra, azul=local)
 - [x] Atualizar AdBanner: adsterraCode respeita adsEnabled, effectiveAds respeita adsLocalEnabled
+
+## Feature — Inteligência Esportiva no GameCard (Sprint 1: Schema + Sync)
+- [x] Adicionar campos no schema games: aiPrediction (json), aiSummary (text), goalsTimeline (json), matchStatistics (json)
+- [x] Criar tabela game_bet_analyses (análise por usuário+jogo)
+- [x] Aplicar migration SQL
+- [x] Adicionar fetchFixtureEvents e fetchFixtureStatistics no client API-Football
+- [x] Atualizar syncResults para salvar goalsTimeline e matchStatistics ao finalizar jogo
+- [x] Atualizar syncFixtures para buscar e salvar aiPrediction (probabilidades + forma recente)
+- [x] Criar função generateGameSummary (LLM) chamada pelo syncResults ao finalizar jogo
+- [x] Criar função generateBetAnalysis (LLM) — respeita regra de posição por rodada
+
+## Feature — Inteligência Esportiva no GameCard (Sprint 2: Interface)
+- [x] Painel de análise expansível inline no GameCard
+- [x] Pré-jogo: resumo narrativo da IA expansível
+- [x] Pós-jogo: resumo narrativo + estatísticas com barra bipartida + timeline de gols
+- [x] Análise do palpite: placar real vs palpite + badges completos + texto IA com contexto do bolão
+- [x] Badges compactos (ícone+pts) no card compactado
+- [x] Badges completos (ícone+label+pts) no painel expandido
+
+## Feature — Inteligência Esportiva no GameCard (Sprint 3: Compartilhamento)
+- [x] Botão Compartilhar: Instagram Stories, WhatsApp, Copiar texto, Outros apps
+- [ ] Baixar imagem (html2canvas) — pendente próximo sprint
+- [x] Card pré-jogo: texto com palpite do usuário para compartilhamento
+- [x] Card pós-jogo: placar + pontos + texto de compartilhamento

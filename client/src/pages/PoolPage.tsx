@@ -704,6 +704,7 @@ export default function PoolPage() {
                                 betA={betA}
                                 betB={betB}
                                 hasBet={hasBet}
+                                poolId={pool.id}
                                 betInputs={betInputs}
                                 setBetInputs={setBetInputs}
                                 handleBetSubmit={handleBetSubmit}
@@ -739,6 +740,7 @@ export default function PoolPage() {
                       betA={betA}
                       betB={betB}
                       hasBet={hasBet}
+                      poolId={pool.id}
                       betInputs={betInputs}
                       setBetInputs={setBetInputs}
                       handleBetSubmit={handleBetSubmit}
@@ -1137,6 +1139,26 @@ export default function PoolPage() {
 /* ───────────────────────────────────────────────────────────────────────────────────
  * GameCard — card reutilizável para um jogo (usado em modo fases e modo simples)
  * ────────────────────────────────────────────────────────────────────────────────── */
+interface GoalEvent {
+  min: string;
+  team: "home" | "away";
+  player: string;
+  type: string;
+}
+interface MatchStats {
+  homePossession?: number;
+  awayPossession?: number;
+  homeShots?: number;
+  awayShots?: number;
+  homeShotsOnTarget?: number;
+  awayShotsOnTarget?: number;
+  homeCorners?: number;
+  awayCorners?: number;
+  homeYellow?: number;
+  awayYellow?: number;
+  homeRed?: number;
+  awayRed?: number;
+}
 interface GameCardProps {
   game: {
     id: number;
@@ -1149,6 +1171,9 @@ interface GameCardProps {
     matchDate: Date;
     status: string;
     phase: string | null;
+    aiSummary?: string | null;
+    goalsTimeline?: GoalEvent[] | null;
+    matchStatistics?: MatchStats | null;
   };
   myBet: {
     predictedScoreA: number;
@@ -1169,6 +1194,7 @@ interface GameCardProps {
   betA: string;
   betB: string;
   hasBet: boolean;
+  poolId: number;
   betInputs: Record<number, { a: string; b: string }>;
   setBetInputs: React.Dispatch<React.SetStateAction<Record<number, { a: string; b: string }>>>;
   handleBetSubmit: (gameId: number) => void;
@@ -1176,9 +1202,18 @@ interface GameCardProps {
 }
 
 function GameCard({
-  game, myBet, open, finished, live, betA, betB, hasBet,
+  game, myBet, open, finished, live, betA, betB, hasBet, poolId,
   betInputs, setBetInputs, handleBetSubmit, placeBetPending,
 }: GameCardProps) {
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  // Busca análise do palpite apenas quando o painel é aberto e o jogo está finalizado
+  const { data: betAnalysisText, isLoading: betAnalysisLoading } = trpc.pools.getBetAnalysis.useQuery(
+    { gameId: game.id, poolId },
+    { enabled: analysisOpen && finished && hasBet, staleTime: 10 * 60 * 1000 }
+  );
+
   // Calcula urgência do prazo
   const minutesUntilDeadline = open && !finished
     ? Math.floor((new Date(game.matchDate).getTime() - Date.now()) / 60000)
@@ -1191,6 +1226,35 @@ function GameCard({
     : isUrgent
     ? `Fecha em ${Math.floor(minutesUntilDeadline! / 60)}h ${minutesUntilDeadline! % 60}min`
     : null;
+
+  // Helpers de compartilhamento
+  const shareText = finished
+    ? `Jogo: ${game.teamAName} ${game.scoreA} × ${game.scoreB} ${game.teamBName}\nMeu palpite: ${myBet?.predictedScoreA} × ${myBet?.predictedScoreB} (+${myBet?.pointsEarned ?? 0} pts)\nPlakr — plataforma de bolões esportivos`
+    : `Meu palpite: ${game.teamAName} ${myBet?.predictedScoreA} × ${myBet?.predictedScoreB} ${game.teamBName}\nPlakr — plataforma de bolões esportivos`;
+
+  const handleShareWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
+  };
+  const handleShareInstagram = () => {
+    // Instagram não tem deep link direto para stories via URL; abrimos o app
+    if (navigator.share) {
+      navigator.share({ text: shareText }).catch(() => {});
+    } else {
+      toast.info("Copie o texto e cole nos Stories do Instagram");
+      navigator.clipboard?.writeText(shareText);
+    }
+  };
+  const handleCopyLink = () => {
+    navigator.clipboard?.writeText(shareText);
+    toast.success("Copiado para a área de transferência!");
+  };
+  const handleShareOthers = () => {
+    if (navigator.share) {
+      navigator.share({ text: shareText }).catch(() => {});
+    } else {
+      handleCopyLink();
+    }
+  };
 
   return (
     <div
@@ -1327,10 +1391,183 @@ function GameCard({
           </div>
         </div>
 
-        {/* Badges de pontução */}
+        {/* Timeline de gols — visível em ao vivo e finalizado */}
+        {(finished || live) && game.goalsTimeline && game.goalsTimeline.length > 0 && (
+          <div className="mt-3 border-t border-border/20 pt-3">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
+              {game.goalsTimeline.map((g, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center gap-1 text-xs ${
+                    g.team === "home" ? "col-start-1 justify-start" : "col-start-2 justify-end flex-row-reverse"
+                  }`}
+                >
+                  <span className="text-[10px] font-mono bg-muted/40 px-1 py-0.5 rounded text-muted-foreground">{g.min}'</span>
+                  <span className="text-[10px]">⚽</span>
+                  <span className="text-[10px] text-foreground/80 truncate max-w-[80px]">{g.player}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Badges compactos de pontuação */}
         {finished && hasBet && (
           <div className="mt-3 flex justify-center">
             <BetBreakdownBadges bet={myBet!} compact />
+          </div>
+        )}
+
+        {/* Barra de ações — Compartilhar + Ver análise */}
+        {hasBet && (
+          <div className="mt-3 border-t border-border/20 pt-2 flex items-center justify-between">
+            <button
+              onClick={() => setShareOpen((v) => !v)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-muted/30"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Compartilhar
+            </button>
+            {(finished || !finished) && (
+              <button
+                onClick={() => setAnalysisOpen((v) => !v)}
+                className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors px-2 py-1.5 rounded-lg hover:bg-primary/10"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {analysisOpen ? "Fechar análise" : "Ver análise"}
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${analysisOpen ? "rotate-180" : ""}`} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Painel de compartilhamento */}
+        {shareOpen && hasBet && (
+          <div className="mt-2 p-3 bg-muted/20 rounded-xl border border-border/30 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Compartilhar este jogo</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleShareInstagram}
+                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-opacity"
+              >
+                <span>📸</span> Instagram Stories
+              </button>
+              <button
+                onClick={handleShareWhatsApp}
+                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
+              >
+                <span>💬</span> WhatsApp
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-muted/50 border border-border/40 text-foreground hover:bg-muted/70 transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5" /> Copiar texto
+              </button>
+              <button
+                onClick={handleShareOthers}
+                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-muted/50 border border-border/40 text-foreground hover:bg-muted/70 transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" /> Outros apps
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Painel de análise expansível */}
+        {analysisOpen && (
+          <div className="mt-2 border-t border-border/20 pt-3 space-y-4">
+            {/* PRÉ-JOGO: resumo da IA se disponível */}
+            {!finished && game.aiSummary && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-primary flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Análise pré-jogo
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{game.aiSummary}</p>
+                <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA.</p>
+              </div>
+            )}
+
+            {/* PÓS-JOGO: resumo da partida */}
+            {finished && game.aiSummary && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-foreground/80 flex items-center gap-1">
+                  <ScrollText className="w-3 h-3" /> Resumo da partida
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{game.aiSummary}</p>
+              </div>
+            )}
+
+            {/* Estatísticas com barra bipartida */}
+            {finished && game.matchStatistics && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-foreground/80">Estatísticas</p>
+                {[
+                  { label: "Posse", home: game.matchStatistics.homePossession, away: game.matchStatistics.awayPossession, unit: "%" },
+                  { label: "Finalizações", home: game.matchStatistics.homeShots, away: game.matchStatistics.awayShots },
+                  { label: "Escanteios", home: game.matchStatistics.homeCorners, away: game.matchStatistics.awayCorners },
+                  { label: "Cartões amarelos", home: game.matchStatistics.homeYellow, away: game.matchStatistics.awayYellow },
+                ].filter(s => s.home != null && s.away != null).map((stat) => {
+                  const total = (stat.home ?? 0) + (stat.away ?? 0);
+                  const homePct = total > 0 ? Math.round(((stat.home ?? 0) / total) * 100) : 50;
+                  return (
+                    <div key={stat.label} className="space-y-0.5">
+                      <div className="flex justify-between text-[10px] text-muted-foreground">
+                        <span className="font-medium text-primary">{stat.home}{stat.unit ?? ""}</span>
+                        <span>{stat.label}</span>
+                        <span className="font-medium text-red-400">{stat.away}{stat.unit ?? ""}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden flex">
+                        <div className="h-full bg-primary/70 rounded-l-full transition-all" style={{ width: `${homePct}%` }} />
+                        <div className="h-full bg-red-400/70 rounded-r-full transition-all" style={{ width: `${100 - homePct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Análise do palpite pela IA */}
+            {finished && hasBet && (
+              <div className="space-y-2 border-t border-border/20 pt-3">
+                <p className="text-xs font-semibold text-primary flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Análise do seu palpite
+                </p>
+                {/* Comparação palpite vs resultado */}
+                <div className="flex items-center justify-center gap-4 text-xs">
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground">Seu palpite</p>
+                    <p className="font-black font-mono text-primary">{myBet!.predictedScoreA} × {myBet!.predictedScoreB}</p>
+                  </div>
+                  <div className="text-muted-foreground/40 text-lg">→</div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground">Resultado</p>
+                    <p className="font-black font-mono text-foreground">{game.scoreA} × {game.scoreB}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground">Pontos</p>
+                    <p className={`font-black font-mono ${ (myBet!.pointsEarned ?? 0) > 0 ? "text-primary" : "text-muted-foreground"}`}>+{myBet!.pointsEarned ?? 0}</p>
+                  </div>
+                </div>
+                {/* Badges completos */}
+                <div className="flex justify-center">
+                  <BetBreakdownBadges bet={myBet!} />
+                </div>
+                {/* Texto da IA */}
+                {betAnalysisLoading ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Gerando análise...
+                  </div>
+                ) : betAnalysisText ? (
+                  <>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{betAnalysisText}</p>
+                    <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA.</p>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground/60 italic">Análise não disponível para este jogo.</p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

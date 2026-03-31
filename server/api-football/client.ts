@@ -311,3 +311,75 @@ export async function fetchAccountStatus(): Promise<{
     plan: resp?.subscription?.plan ?? "Free",
   };
 }
+
+// ── Tipos para Inteligência Esportiva ────────────────────────────────────────
+
+export interface FixtureEvent {
+  time: { elapsed: number; extra: number | null };
+  team: { id: number; name: string };
+  player: { id: number; name: string };
+  assist: { id: number | null; name: string | null };
+  type: string; // "Goal", "Card", "subst", etc.
+  detail: string; // "Normal Goal", "Own Goal", "Penalty", "Yellow Card", etc.
+}
+
+export interface FixtureStatistic {
+  team: { id: number; name: string };
+  statistics: Array<{ type: string; value: string | number | null }>;
+}
+
+export interface FixturePrediction {
+  winner: { id: number | null; name: string | null; comment: string | null } | null;
+  win_or_draw: boolean | null;
+  under_over: string | null;
+  goals: { home: string | null; away: string | null };
+  advice: string | null;
+  percent: { home: string; draw: string; away: string };
+}
+
+/**
+ * Busca os eventos de um jogo (gols, cartões, substituições).
+ * Endpoint: GET /fixtures/events?fixture={fixtureId}
+ * Consome 1 requisição.
+ */
+export async function fetchFixtureEvents(
+  fixtureId: number
+): Promise<FixtureEvent[]> {
+  const data = await apiFootballRequest<FixtureEvent>("/fixtures/events", {
+    fixture: fixtureId,
+  });
+  return data.response;
+}
+
+/**
+ * Busca as estatísticas de um jogo finalizado (posse, finalizações, escanteios, cartões).
+ * Endpoint: GET /fixtures/statistics?fixture={fixtureId}
+ * Consome 1 requisição.
+ */
+export async function fetchFixtureStatistics(
+  fixtureId: number
+): Promise<FixtureStatistic[]> {
+  const data = await apiFootballRequest<FixtureStatistic>("/fixtures/statistics", {
+    fixture: fixtureId,
+  });
+  return data.response;
+}
+
+/**
+ * Busca as probabilidades e forma recente de um jogo agendado.
+ * Endpoint: GET /predictions?fixture={fixtureId}
+ * Consome 1 requisição. Disponível apenas em planos pagos da API-Football.
+ */
+export async function fetchFixturePredictions(
+  fixtureId: number
+): Promise<FixturePrediction | null> {
+  try {
+    const data = await apiFootballRequest<{ predictions: FixturePrediction }>("/predictions", {
+      fixture: fixtureId,
+    });
+    const resp = data.response[0] as any;
+    return resp?.predictions ?? null;
+  } catch {
+    return null; // endpoint pode não estar disponível no plano Free
+  }
+}
