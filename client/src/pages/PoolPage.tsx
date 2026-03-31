@@ -1175,6 +1175,7 @@ interface GameCardProps {
     status: string;
     phase: string | null;
     aiSummary?: string | null;
+    aiNarration?: string | null;
     goalsTimeline?: GoalEvent[] | null;
     matchStatistics?: MatchStats | null;
   };
@@ -1218,7 +1219,7 @@ function GameCard({
     { enabled: analysisOpen && finished && hasBet, staleTime: 10 * 60 * 1000 }
   );
   // Hook de compartilhamento com imagem
-  const { cardRef: shareCardRef, downloadImage, shareToInstagram, shareToWhatsApp } = useShareCard();
+  const { cardRef: shareCardRef, downloadImage, shareToInstagram, shareToWhatsApp, shareToOthers } = useShareCard();
   const shareCardData = {
     teamAName: game.teamAName ?? "Time A",
     teamBName: game.teamBName ?? "Time B",
@@ -1277,12 +1278,9 @@ function GameCard({
     navigator.clipboard?.writeText(shareText);
     toast.success("Copiado para a área de transferência!");
   };
-  const handleShareOthers = () => {
-    if (navigator.share) {
-      navigator.share({ text: shareText }).catch(() => {});
-    } else {
-      handleCopyLink();
-    }
+  const handleShareOthers = async () => {
+    setIsCapturing(true);
+    try { await shareToOthers(shareText); } finally { setIsCapturing(false); }
   };
 
   return (
@@ -1540,7 +1538,17 @@ function GameCard({
               </div>
             )}
 
-            {/* PÓS-JOGO: 2. Análise do palpite */}
+            {/* PÓS-JOGO: 2a. Narração do narrador (sem palpite) */}
+            {finished && !hasBet && game.aiNarration && (
+              <div className="bg-muted/20 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> O que rolou nesse jogo
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed italic">{game.aiNarration}</p>
+              </div>
+            )}
+
+            {/* PÓS-JOGO: 2b. Análise do palpite (com palpite) */}
             {finished && hasBet && (
               <div className="bg-muted/20 rounded-xl p-3 space-y-3">
                 <p className="text-xs font-semibold text-primary flex items-center gap-1.5">

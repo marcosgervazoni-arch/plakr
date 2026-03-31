@@ -31,6 +31,7 @@ interface UseShareCardReturn {
   downloadImage: (filename?: string) => Promise<void>;
   shareToInstagram: () => Promise<void>;
   shareToWhatsApp: (text: string) => Promise<void>;
+  shareToOthers: (text: string) => Promise<void>;
 }
 
 export function useShareCard(): UseShareCardReturn {
@@ -56,74 +57,106 @@ export function useShareCard(): UseShareCardReturn {
     }
   }, []);
 
+  // Helper interno: converte dataURL em File
+  const dataUrlToFile = useCallback(async (dataUrl: string, filename: string): Promise<File> => {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: "image/png" });
+  }, []);
+
   const downloadImage = useCallback(async (filename = "plakr-card.png") => {
     const dataUrl = await captureImage();
     if (!dataUrl) return;
+    // Cria link de download e dispara — funciona em todos os dispositivos
     const link = document.createElement("a");
     link.href = dataUrl;
     link.download = filename;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+    // Libera memória
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
   }, [captureImage]);
 
   const shareToInstagram = useCallback(async () => {
     const dataUrl = await captureImage();
     if (!dataUrl) return;
+    const file = await dataUrlToFile(dataUrl, "plakr-card.png");
 
-    // Converte dataURL para Blob/File
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    const file = new File([blob], "plakr-card.png", { type: "image/png" });
-
-    // Tenta Web Share API com arquivo (suportado no mobile)
+    // Tenta Web Share API com arquivo (abre seletor nativo de apps no mobile)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({
-          files: [file],
-          title: "Meu palpite no Plakr!",
-        });
+        await navigator.share({ files: [file], title: "Meu palpite no Plakr!" });
         return;
-      } catch {
-        // usuário cancelou ou não suportado — fallback para download
+      } catch (e: any) {
+        // Usuário cancelou — não faz fallback
+        if (e?.name === "AbortError") return;
       }
     }
 
-    // Fallback: baixa a imagem e abre Instagram
+    // Fallback desktop: baixa a imagem e abre Instagram Stories
     const link = document.createElement("a");
     link.href = dataUrl;
     link.download = "plakr-card.png";
+    document.body.appendChild(link);
     link.click();
-    setTimeout(() => {
-      window.open("https://www.instagram.com/stories/create", "_blank");
-    }, 800);
-  }, [captureImage]);
+    document.body.removeChild(link);
+    setTimeout(() => window.open("https://www.instagram.com/stories/create", "_blank"), 800);
+  }, [captureImage, dataUrlToFile]);
 
   const shareToWhatsApp = useCallback(async (text: string) => {
     const dataUrl = await captureImage();
     if (!dataUrl) return;
+    const file = await dataUrlToFile(dataUrl, "plakr-card.png");
 
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    const file = new File([blob], "plakr-card.png", { type: "image/png" });
-
-    // Tenta Web Share API com arquivo + texto
+    // Tenta Web Share API com arquivo + texto (abre seletor nativo no mobile)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({
-          files: [file],
-          text,
-          title: "Plakr! — Bolão Esportivo",
-        });
+        await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" });
         return;
-      } catch {
-        // fallback para link de texto
+      } catch (e: any) {
+        if (e?.name === "AbortError") return;
       }
     }
 
-    // Fallback: abre WhatsApp com texto
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-  }, [captureImage]);
+    // Fallback desktop: baixa a imagem e abre WhatsApp Web com texto
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = "plakr-card.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank"), 800);
+  }, [captureImage, dataUrlToFile]);
 
-  return { cardRef, captureImage, downloadImage, shareToInstagram, shareToWhatsApp };
+  const shareToOthers = useCallback(async (text: string) => {
+    const dataUrl = await captureImage();
+    if (!dataUrl) return;
+    const file = await dataUrlToFile(dataUrl, "plakr-card.png");
+
+    // Tenta Web Share API com arquivo (abre seletor nativo de apps)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" });
+        return;
+      } catch (e: any) {
+        if (e?.name === "AbortError") return;
+      }
+    } else if (navigator.share) {
+      // Fallback: share sem arquivo (texto apenas)
+      try {
+        await navigator.share({ text, title: "Plakr! — Bolão Esportivo" });
+        return;
+      } catch (e: any) {
+        if (e?.name === "AbortError") return;
+      }
+    }
+
+    // Fallback final: copia texto para área de transferência
+    navigator.clipboard?.writeText(text);
+  }, [captureImage, dataUrlToFile]);
+
+  return { cardRef, captureImage, downloadImage, shareToInstagram, shareToWhatsApp, shareToOthers };
 }
 
 /**

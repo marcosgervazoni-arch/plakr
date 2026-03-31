@@ -214,6 +214,8 @@ export const games = mysqlTable("games", {
   } | null>(),
   // Gerado pelo syncResults após o jogo: resumo narrativo da partida (LLM)
   aiSummary: text("aiSummary"),
+  // Gerado pelo syncResults: comentário do narrador sobre o jogo (independente de palpite)
+  aiNarration: text("aiNarration"),
   // Gerado pelo syncResults: [{ min, team, player, type }]
   goalsTimeline: json("goalsTimeline").$type<Array<{
     min: string; team: "home" | "away"; player: string; type: "goal" | "own_goal" | "penalty";

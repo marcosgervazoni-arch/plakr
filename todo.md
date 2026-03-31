@@ -2394,3 +2394,29 @@
 - [x] GameCard: exibir resumo IA e estatísticas mesmo quando usuário não tem palpite
 - [x] GameCard: exibir botão "Compartilhar" mesmo quando usuário não tem palpite
 - [x] Backend: atualizar prompt de análise de apostas para tom de narrador de estádio animado (sem exagero)
+
+## Feature — Narração do jogo sem palpite
+
+- [ ] Backend: adicionar campo `aiNarration` na tabela games (comentário geral do narrador, independente de palpite)
+- [ ] Backend: gerar aiNarration para os 76 jogos finalizados
+- [ ] Frontend: exibir aiNarration no painel de análise quando usuário não tem palpite
+- [ ] Backend: gerar aiNarration automaticamente no syncResults para jogos futuros
+
+## Bug — Compartilhamento GameCard
+
+- [ ] Botão "Baixar imagem": deve baixar a imagem diretamente no dispositivo do usuário
+- [ ] Botão "Instagram Stories" / "WhatsApp" / "Outros apps": deve capturar a imagem e abrir o app selecionado com a imagem pronta para compartilhar (via Web Share API com files)
+
+## Feature — Narrador comenta ausência de palpite
+
+- [x] Backend: campo aiNarration na tabela games (comentário do narrador sobre o jogo, sem palpite)
+- [x] Backend: generateGameNarration — narrador comenta o jogo e a ausência do apostador
+- [x] Backend: gerar aiNarration para os 76 jogos finalizados sem palpite
+- [x] Frontend: exibir aiNarration na seção "O que rolou nesse jogo" quando usuário não tem palpite
+- [x] Backend: gerar aiNarration automaticamente no syncResults para jogos futuros
+
+## Bug — Compartilhamento GameCard
+
+- [x] Botão "Baixar imagem": corrigido para baixar diretamente no dispositivo (append/remove do DOM)
+- [x] Botões de redes sociais: Web Share API com files (abre seletor nativo no mobile); fallback desktop: download + abre app
+- [x] Botão "Outros apps": agora usa shareToOthers com imagem (Web Share API com arquivo)

@@ -192,3 +192,46 @@ Escreva apenas a análise, sem título.`;
       : `Desta vez não foi. Continue apostando.`;
   }
 }
+
+/**
+ * Gera um comentário do narrador sobre o jogo para usuários que NÃO apostaram.
+ * Tom de narrador de estádio: comenta o resultado e a ausência do apostador.
+ * Salvo em games.aiNarration.
+ */
+export async function generateGameNarration(ctx: {
+  homeTeam: string;
+  awayTeam: string;
+  scoreA: number;
+  scoreB: number;
+  goalsTimeline: Array<{ min: string; team: "home" | "away"; player: string; type: string }>;
+}): Promise<string> {
+  const goalsText = ctx.goalsTimeline.length > 0
+    ? ctx.goalsTimeline
+        .map(g => `${g.min} ${g.player} (${g.team === "home" ? ctx.homeTeam : ctx.awayTeam})`)
+        .join(", ")
+    : "sem gols registrados";
+
+  const prompt = `Escreva um comentário curto de narrador de estádio sobre uma partida de futebol que o apostador NÃO apostou. Máximo 2 linhas. Tom animado e divertido, sem exagero. Comente o resultado e faça uma referência leve à ausência do apostador — sem ser agressivo, com bom humor. Sem emojis.
+
+Dados:
+- Jogo: ${ctx.homeTeam} ${ctx.scoreA} × ${ctx.scoreB} ${ctx.awayTeam}
+- Gols: ${goalsText}
+
+Escreva apenas o comentário, sem título.`;
+
+  try {
+    const response = await invokeLLM({
+      messages: [
+        { role: "system", content: "Você é um narrador de estádio brasileiro com personalidade: animado, divertido e com um toque de humor natural. Quando o apostador não apostou num jogo, você comenta o resultado com entusiasmo e faz uma referência bem-humorada à ausência dele. Nunca exagera. Escreve em português brasileiro, sem emojis." },
+        { role: "user", content: prompt },
+      ],
+    });
+    const text = (response as any)?.choices?.[0]?.message?.content ?? "";
+    return text.trim().slice(0, 400);
+  } catch {
+    const winner = ctx.scoreA > ctx.scoreB ? ctx.homeTeam : ctx.scoreB > ctx.scoreA ? ctx.awayTeam : null;
+    return winner
+      ? `${ctx.homeTeam} ${ctx.scoreA} × ${ctx.scoreB} ${ctx.awayTeam}. Você perdeu esse!`
+      : `Empate em ${ctx.scoreA} × ${ctx.scoreB}. Você não apostou nesse.`;
+  }
+}

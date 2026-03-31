@@ -46,6 +46,7 @@ import {
   parseGoalsTimeline,
   parseMatchStatistics,
   generateGameSummary,
+  generateGameNarration,
   generateBetAnalysis,
 } from "./ai-analysis";
 
@@ -761,8 +762,17 @@ async function generateAiTextsForGame(ctx: {
     } : null,
   });
 
-  await db.update(games).set({ aiSummary }).where(eq(games.id, ctx.gameId));
-  logger.info(`[AI] Game summary generated for game ${ctx.gameId}`);
+  // 1b. Gerar narração do narrador (para usuários sem palpite)
+  const aiNarration = await generateGameNarration({
+    homeTeam: ctx.homeTeam,
+    awayTeam: ctx.awayTeam,
+    scoreA: ctx.scoreA,
+    scoreB: ctx.scoreB,
+    goalsTimeline: ctx.goalsTimeline,
+  });
+
+  await db.update(games).set({ aiSummary, aiNarration }).where(eq(games.id, ctx.gameId));
+  logger.info(`[AI] Game summary + narration generated for game ${ctx.gameId}`);
 
   // 2. Gerar análise de palpite para cada apostador em cada bolão
   for (const [poolId, poolBets] of ctx.betsByPool.entries()) {
