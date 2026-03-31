@@ -2426,3 +2426,9 @@
 - [x] Download: usar blob URL (URL.createObjectURL) em vez de dataURL — Chrome mobile bloqueia download de base64
 - [x] Web Share API: captureBlob() retorna Blob direto do canvas.toBlob() — mais compatível no Android
 - [x] Todos os métodos de share usam blob URL no fallback (não mais dataURL)
+
+## Bug — Download de imagem não salva o arquivo
+
+- [x] Toast "Imagem salva!" disparava antes de confirmar o download
+- [x] link.click() silenciosamente bloqueado no Chrome (desktop e mobile)
+- [x] Solução: FileSaver.js (saveAs) garante download em todos os browsers incluindo Android/iOS

@@ -3,6 +3,7 @@
  * Renderizado fora da viewport e capturado via html2canvas
  */
 import { useRef, useCallback } from "react";
+import { saveAs } from "file-saver";
 
 export interface ShareCardData {
   teamAName: string;
@@ -68,15 +69,8 @@ export function useShareCard(): UseShareCardReturn {
   const downloadImage = useCallback(async (filename = "plakr-card.png") => {
     const blob = await captureBlob();
     if (!blob) return;
-    // blob URL funciona no Android Chrome (dataURL é bloqueado)
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+    // FileSaver.js garante download em todos os browsers (Chrome, Firefox, Safari, Android, iOS)
+    saveAs(blob, filename);
   }, [captureBlob]);
 
   const shareToInstagram = useCallback(async () => {
