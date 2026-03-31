@@ -231,10 +231,21 @@ export function AdBanner({ position, className }: AdBannerProps) {
       }
     } else if (adsterraCode) {
       // Sem banner próprio: usar Adsterra como interstitial
-      // Controle de frequência: máx 1x por sessão por padrão
+      // Frequência configurada no Admin (popup_frequency): session | daily | always
+      const freq = (adNetworkScripts["popup_frequency"] as string) || "session";
       const popupKey = "adsterra_popup_shown";
-      if (!sessionStorage.getItem(popupKey)) {
-        sessionStorage.setItem(popupKey, "1");
+      let canShow = false;
+      if (freq === "always") {
+        canShow = true;
+      } else if (freq === "session") {
+        canShow = !sessionStorage.getItem(popupKey);
+        if (canShow) sessionStorage.setItem(popupKey, "1");
+      } else if (freq === "daily") {
+        const stored = localStorage.getItem(popupKey);
+        canShow = stored !== new Date().toDateString();
+        if (canShow) localStorage.setItem(popupKey, new Date().toDateString());
+      }
+      if (canShow) {
         const timer = setTimeout(() => setPopupVisible(true), 800);
         return () => clearTimeout(timer);
       }

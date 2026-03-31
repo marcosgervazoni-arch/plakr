@@ -13,6 +13,8 @@
  */
 import { trpc } from "@/lib/trpc";
 import AppShell from "@/components/AppShell";
+import { AdInterleaved } from "@/components/AdInterleaved";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -106,6 +108,7 @@ export default function BetHistory() {
   );
   const poolId = poolData?.pool?.id;
 
+  const { isPro } = useUserPlan();
   const { data: betsRaw, isLoading: loadingBets } =
     trpc.bets.myBets.useQuery({ poolId: poolId! }, { enabled: !!poolId });
   const utils = trpc.useUtils();
@@ -395,8 +398,12 @@ export default function BetHistory() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredGames.map((g) => {
+          <AdInterleaved
+            items={filteredGames}
+            showAds={!isPro}
+            interval={5}
+            adClassName="w-full my-2"
+            renderItem={(g) => {
               const classification = classifyGame(g);
               const matchDate = new Date(g.matchDate);
               const deadline = getDeadline(matchDate, deadlineMinutes);
@@ -642,8 +649,8 @@ export default function BetHistory() {
                   )}
                 </div>
               );
-            })}
-          </div>
+            }}
+          />
         )}
 
         {/* Resumo de performance */}

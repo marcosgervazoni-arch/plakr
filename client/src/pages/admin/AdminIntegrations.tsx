@@ -31,6 +31,13 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AdminIntegrations() {
   const { data: settings, isLoading } = trpc.platform.getSettings.useQuery();
@@ -47,6 +54,7 @@ export default function AdminIntegrations() {
   const [adBottomDesktop, setAdBottomDesktop] = useState("");
   const [adBottomMobile, setAdBottomMobile] = useState("");
   const [adPopup, setAdPopup] = useState("");
+  const [adPopupFrequency, setAdPopupFrequency] = useState<"session" | "daily" | "always">("session");
 
   useEffect(() => {
     if (settings) {
@@ -62,6 +70,10 @@ export default function AdminIntegrations() {
       setAdBottomDesktop(str(scripts["bottom_desktop"]));
       setAdBottomMobile(str(scripts["bottom_mobile"]));
       setAdPopup(str(scripts["popup"]));
+      const freq = scripts["popup_frequency"];
+      if (freq === "daily" || freq === "always" || freq === "session") {
+        setAdPopupFrequency(freq);
+      }
     }
   }, [settings]);
 
@@ -216,6 +228,7 @@ export default function AdminIntegrations() {
                 bottom_desktop: adBottomDesktop,
                 bottom_mobile: adBottomMobile,
                 popup: adPopup,
+                popup_frequency: adPopupFrequency,
               },
             })}
             disabled={updateMutation.isPending || isLoading}
@@ -466,8 +479,24 @@ export default function AdminIntegrations() {
                       size="400×300px — Interstitial"
                       value={adPopup}
                       onChange={setAdPopup}
-                      hint="Aparece após 2 segundos na primeira visita da sessão"
+                      hint="Disparado por navegação (a cada 3 trocas de rota). Frequência configurável abaixo."
                     />
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-muted-foreground">Frequência do Popup</Label>
+                      <Select value={adPopupFrequency} onValueChange={(v) => setAdPopupFrequency(v as "session" | "daily" | "always")}>
+                        <SelectTrigger className="h-9 bg-card border-border/50 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="session">1× por sessão (recomendado)</SelectItem>
+                          <SelectItem value="daily">1× por dia</SelectItem>
+                          <SelectItem value="always">Sempre (toda navegação)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Controla com que frequência o popup aparece para cada usuário free.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </CardContent>

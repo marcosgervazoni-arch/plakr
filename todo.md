@@ -2239,3 +2239,10 @@
 - [x] Suporte a Adsterra no popup quando não há banner próprio cadastrado
 - [x] Adicionar prop gridClassName no AdInterleaved para suporte a grades CSS
 - [x] Aplicar AdInterleaved na grade de bolões públicos (PublicPools) — banners a cada 4 cards
+
+## Feature — Popup configurável + AdInterleaved BetHistory
+
+- [x] Adicionar campo "Código Popup/Interstitial Adsterra" no AdminIntegrations (já existia, melhorado hint)
+- [x] Expor frequência do popup como configuração no Admin (select session/daily/always)
+- [x] Ler frequência do popup do banco no AdBanner (em vez de hardcode sessionStorage)
+- [x] Aplicar AdInterleaved no BetHistory (histórico de palpites) — banners a cada 5 palpites
