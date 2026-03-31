@@ -286,6 +286,7 @@ export const pools = mysqlTable("pools", {
   // Taxa de inscrição (feature Pro)
   entryFee: decimal("entryFee", { precision: 10, scale: 2 }),       // null = gratuito
   entryQrCodeUrl: text("entryQrCodeUrl"),                           // URL do QR Code PIX no S3
+  pixKey: text("pixKey"),                                            // Chave PIX (CPF, CNPJ, e-mail, telefone ou aleatória)
   // Onboarding
   onboardingDismissedAt: timestamp("onboardingDismissedAt"),        // null = checklist ainda visível
 });

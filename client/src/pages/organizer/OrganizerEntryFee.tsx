@@ -1,6 +1,7 @@
 /**
  * Taxa de Inscrição — Página dedicada para configuração de cobrança via PIX
  * Exclusivo para organizadores com Plano Pro.
+ * Suporta QR Code (upload) + Chave PIX (com reconhecimento automático do tipo)
  */
 import OrganizerLayout from "@/components/OrganizerLayout";
 import { trpc } from "@/lib/trpc";
@@ -17,12 +18,50 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Key,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useParams } from "wouter";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { useUserPlan } from "@/hooks/useUserPlan";
 import { useImageUpload } from "@/hooks/useImageUpload";
+
+// ── Reconhecimento automático do tipo de chave PIX ──────────────────────────
+type PixKeyType = "cpf" | "cnpj" | "email" | "phone" | "random" | null;
+
+function detectPixKeyType(key: string): PixKeyType {
+  if (!key || key.trim() === "") return null;
+  const clean = key.replace(/\D/g, "");
+  // CPF: 11 dígitos
+  if (/^\d{11}$/.test(clean)) return "cpf";
+  // CNPJ: 14 dígitos
+  if (/^\d{14}$/.test(clean)) return "cnpj";
+  // Telefone: +55 + 10 ou 11 dígitos
+  if (/^(\+55)?\d{10,11}$/.test(key.replace(/[\s\-().]/g, ""))) return "phone";
+  // E-mail
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key)) return "email";
+  // Chave aleatória: UUID-like (32 hex chars com hífens)
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) return "random";
+  return null;
+}
+
+const PIX_KEY_LABELS: Record<NonNullable<PixKeyType>, string> = {
+  cpf: "CPF",
+  cnpj: "CNPJ",
+  email: "E-mail",
+  phone: "Telefone",
+  random: "Chave aleatória",
+};
+
+const PIX_KEY_COLORS: Record<NonNullable<PixKeyType>, string> = {
+  cpf: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+  cnpj: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  email: "text-green-400 bg-green-500/10 border-green-500/20",
+  phone: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+  random: "text-orange-400 bg-orange-500/10 border-orange-500/20",
+};
 
 export default function OrganizerEntryFee() {
   const { slug } = useParams<{ slug: string }>();
@@ -41,11 +80,16 @@ export default function OrganizerEntryFee() {
   // Estado do formulário
   const [entryFeeInput, setEntryFeeInput] = useState("");
   const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
+  const [pixKeyInput, setPixKeyInput] = useState("");
   const [editing, setEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const qrFileInputRef = useRef<HTMLInputElement>(null);
 
   const currentFee = pool?.entryFee ? Number(pool.entryFee) : null;
   const currentQr = (pool as any)?.entryQrCodeUrl ?? null;
+  const currentPixKey = (pool as any)?.pixKey ?? null;
+
+  const detectedType = detectPixKeyType(pixKeyInput);
 
   const { upload: uploadQrCode, uploading: uploadingQr } = useImageUpload({
     folder: "pool-qrcodes",
@@ -78,7 +122,12 @@ export default function OrganizerEntryFee() {
       return;
     }
     updateMutation.mutate(
-      { poolId: pool.id, entryFee: fee, entryQrCodeUrl: qrPreviewUrl || null },
+      {
+        poolId: pool.id,
+        entryFee: fee,
+        entryQrCodeUrl: qrPreviewUrl || null,
+        pixKey: pixKeyInput.trim() || null,
+      },
       {
         onSuccess: () => {
           toast.success("Taxa de inscrição atualizada.");
@@ -92,13 +141,14 @@ export default function OrganizerEntryFee() {
   const handleStartEdit = () => {
     setEntryFeeInput(currentFee ? currentFee.toFixed(2).replace(".", ",") : "");
     setQrPreviewUrl(currentQr ?? null);
+    setPixKeyInput(currentPixKey ?? "");
     setEditing(true);
   };
 
   const handleDisable = () => {
     if (!pool?.id) return;
     updateMutation.mutate(
-      { poolId: pool.id, entryFee: null, entryQrCodeUrl: null },
+      { poolId: pool.id, entryFee: null, entryQrCodeUrl: null, pixKey: null },
       {
         onSuccess: () => {
           toast.success("Taxa de inscrição desativada.");
@@ -107,6 +157,16 @@ export default function OrganizerEntryFee() {
       }
     );
   };
+
+  const handleCopyPixKey = useCallback(() => {
+    if (!currentPixKey) return;
+    navigator.clipboard.writeText(currentPixKey).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [currentPixKey]);
+
+  const currentPixKeyType = detectPixKeyType(currentPixKey ?? "");
 
   return (
     <OrganizerLayout
@@ -191,29 +251,61 @@ export default function OrganizerEntryFee() {
                   </div>
                 </div>
 
-                {/* Status do QR Code */}
+                {/* Status do QR Code e Chave PIX */}
                 {currentFee && currentFee > 0 && (
-                  <div className="flex items-center gap-2 text-xs">
-                    {currentQr ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-                        <span className="text-muted-foreground">QR Code PIX configurado</span>
-                        <div className="ml-auto w-10 h-10 rounded-lg overflow-hidden border border-border/30 bg-white">
-                          <img src={currentQr} alt="QR Code PIX" className="w-full h-full object-contain p-0.5" />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="w-3.5 h-3.5 text-yellow-400" />
-                        <span className="text-yellow-400">QR Code PIX não configurado — participantes não saberão como pagar</span>
-                      </>
-                    )}
+                  <div className="space-y-2 pt-1 border-t border-border/20">
+                    {/* QR Code status */}
+                    <div className="flex items-center gap-2 text-xs">
+                      {currentQr ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                          <span className="text-muted-foreground">QR Code PIX configurado</span>
+                          <div className="ml-auto w-10 h-10 rounded-lg overflow-hidden border border-border/30 bg-white">
+                            <img src={currentQr} alt="QR Code PIX" className="w-full h-full object-contain p-0.5" />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                          <span className="text-yellow-400">QR Code PIX não configurado</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Chave PIX status */}
+                    <div className="flex items-center gap-2 text-xs">
+                      {currentPixKey ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
+                          <span className="text-muted-foreground">Chave PIX configurada</span>
+                          {currentPixKeyType && (
+                            <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-medium border ${PIX_KEY_COLORS[currentPixKeyType]}`}>
+                              {PIX_KEY_LABELS[currentPixKeyType]}
+                            </span>
+                          )}
+                          <button
+                            onClick={handleCopyPixKey}
+                            className="ml-auto flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                            title="Copiar chave PIX"
+                          >
+                            {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            <span>{copied ? "Copiado!" : "Copiar"}</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                          <span className="text-yellow-400">Chave PIX não configurada</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
               /* Formulário de edição */
               <div className="bg-card border border-border/30 rounded-xl p-5 space-y-5">
+                {/* Valor da taxa */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground">Valor da taxa (R$)</label>
                   <Input
@@ -228,8 +320,9 @@ export default function OrganizerEntryFee() {
                   </p>
                 </div>
 
+                {/* QR Code PIX */}
                 <div className="space-y-3">
-                  <label className="text-xs font-medium text-muted-foreground">QR Code PIX</label>
+                  <label className="text-xs font-medium text-muted-foreground">QR Code PIX (opcional)</label>
                   <div className="flex items-start gap-4">
                     {qrPreviewUrl ? (
                       <div className="relative w-36 h-36 rounded-xl overflow-hidden border border-border/30 bg-white shrink-0">
@@ -296,6 +389,30 @@ export default function OrganizerEntryFee() {
                   />
                 </div>
 
+                {/* Chave PIX */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5" />
+                    Chave PIX (opcional)
+                  </label>
+                  <div className="relative">
+                    <Input
+                      value={pixKeyInput}
+                      onChange={(e) => setPixKeyInput(e.target.value)}
+                      placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                      className="pr-24"
+                    />
+                    {detectedType && (
+                      <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium px-2 py-0.5 rounded border ${PIX_KEY_COLORS[detectedType]}`}>
+                        {PIX_KEY_LABELS[detectedType]}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    O tipo da chave é detectado automaticamente. Útil para quem acessa pelo celular e quer copiar e colar no app do banco.
+                  </p>
+                </div>
+
                 <div className="flex gap-2">
                   <Button
                     className="gap-1.5"
@@ -325,8 +442,8 @@ export default function OrganizerEntryFee() {
                 {[
                   {
                     icon: QrCode,
-                    title: "Participante vê o QR Code",
-                    desc: "Ao entrar pelo link de convite, o participante vê o valor e o QR Code PIX para pagamento.",
+                    title: "Participante vê o QR Code ou Chave PIX",
+                    desc: "Ao entrar pelo link de convite, o participante vê o valor, o QR Code para escanear e/ou a chave PIX para copiar.",
                   },
                   {
                     icon: Users,
@@ -359,8 +476,7 @@ export default function OrganizerEntryFee() {
             <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 flex items-start gap-3">
               <Info className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                O reembolso em caso de recusa é de responsabilidade do organizador e deve ser tratado
-                diretamente com o participante, fora do aplicativo.
+                <strong className="text-foreground">Atenção:</strong> O Plakr! não processa pagamentos. Você é responsável por verificar o recebimento antes de aprovar cada participante.
               </p>
             </div>
           </>

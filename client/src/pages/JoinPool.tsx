@@ -20,8 +20,11 @@ import {
   QrCode,
   AlertCircle,
   Info,
+  Copy,
+  Check,
+  Key,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 
@@ -33,6 +36,14 @@ export default function JoinPool() {
   const [pendingApproval, setPendingApproval] = useState(false);
   const [alreadyMember, setAlreadyMember] = useState(false);
   const [targetSlug, setTargetSlug] = useState("");
+  const [copiedPixKey, setCopiedPixKey] = useState(false);
+
+  const handleCopyPixKey = useCallback((key: string) => {
+    navigator.clipboard.writeText(key).then(() => {
+      setCopiedPixKey(true);
+      setTimeout(() => setCopiedPixKey(false), 2000);
+    });
+  }, []);
 
   // Fetch pool preview by token
   const { data: preview, isLoading: loadingPreview, error: previewError } =
@@ -269,10 +280,10 @@ export default function JoinPool() {
               </div>
 
               {/* QR Code */}
-              {preview.entryQrCodeUrl ? (
+              {preview.entryQrCodeUrl && (
                 <div className="p-6 border-b border-border/30 space-y-3">
                   <p className="text-sm text-center text-muted-foreground">
-                    Escaneie o QR Code PIX abaixo para pagar a taxa de inscrição:
+                    Escaneie o QR Code PIX para pagar a taxa de inscrição:
                   </p>
                   <div className="flex justify-center">
                     <div className="bg-white p-3 rounded-xl shadow-sm">
@@ -284,12 +295,40 @@ export default function JoinPool() {
                     </div>
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {/* Chave PIX com botão de copiar */}
+              {(preview as any).pixKey && (
+                <div className="px-6 py-4 border-b border-border/30 space-y-2">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5" />
+                    Ou pague via chave PIX:
+                  </p>
+                  <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-2.5">
+                    <span className="font-mono text-sm text-foreground flex-1 truncate">
+                      {(preview as any).pixKey}
+                    </span>
+                    <button
+                      onClick={() => handleCopyPixKey((preview as any).pixKey)}
+                      className="flex items-center gap-1.5 text-xs font-medium shrink-0 px-2.5 py-1.5 rounded-md bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+                    >
+                      {copiedPixKey ? (
+                        <><Check className="w-3.5 h-3.5" /> Copiado!</>
+                      ) : (
+                        <><Copy className="w-3.5 h-3.5" /> Copiar</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Aviso se não tem QR nem chave */}
+              {!preview.entryQrCodeUrl && !(preview as any).pixKey && (
                 <div className="p-6 border-b border-border/30">
                   <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-3">
                     <QrCode className="w-8 h-8 text-muted-foreground/50 shrink-0" />
                     <p className="text-sm text-muted-foreground">
-                      O organizador ainda não configurou o QR Code PIX. Entre em contato para obter as informações de pagamento.
+                      O organizador ainda não configurou os dados de pagamento PIX. Entre em contato para obter as informações.
                     </p>
                   </div>
                 </div>

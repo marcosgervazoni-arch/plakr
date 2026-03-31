@@ -182,6 +182,7 @@ export const poolsCoreRouter = router({
         ownerName: owner?.name ?? null,
         entryFee: pool.entryFee ? Number(pool.entryFee) : null,
         entryQrCodeUrl: pool.entryQrCodeUrl ?? null,
+        pixKey: (pool as any).pixKey ?? null,
       };
     }),
 
@@ -270,9 +271,10 @@ export const poolsCoreRouter = router({
       tournamentId: z.number().optional(),
       entryFee: z.number().nullable().optional(),
       entryQrCodeUrl: z.string().nullable().optional(),
+      pixKey: z.string().nullable().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const { poolId, entryFee, entryQrCodeUrl, ...rest } = input;
+      const { poolId, entryFee, entryQrCodeUrl, pixKey, ...rest } = input;
       const member = await getPoolMember(poolId, ctx.user.id);
       if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
         throw Err.forbidden();
@@ -287,6 +289,7 @@ export const poolsCoreRouter = router({
       const data: any = { ...rest };
       if (entryFee !== undefined) data.entryFee = entryFee !== null ? String(entryFee) : null;
       if (entryQrCodeUrl !== undefined) data.entryQrCodeUrl = entryQrCodeUrl;
+      if (pixKey !== undefined) data.pixKey = pixKey;
       await updatePool(poolId, data);
       return { success: true };
     }),
