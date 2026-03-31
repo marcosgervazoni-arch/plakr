@@ -27,6 +27,7 @@ import { Link, useLocation } from "wouter";
 import { AdBanner } from "@/components/AdBanner";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { trpc } from "@/lib/trpc";
 
 export type OrganizerSection =
   | "dashboard"
@@ -44,6 +45,7 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   proOnly?: boolean;
+  badge?: number; // contador numérico opcional
 }
 
 interface NavGroup {
@@ -79,6 +81,18 @@ export default function OrganizerLayout({
 }: OrganizerLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [, navigate] = useLocation();
+
+  // Buscar contagem de membros pendentes de aprovação
+  const { data: poolData } = trpc.pools.getBySlug.useQuery(
+    { slug: slug ?? "" },
+    { enabled: !!slug }
+  );
+  const poolId = poolData?.pool?.id;
+  const { data: pendingMembers } = trpc.pools.listPendingMembers.useQuery(
+    { poolId: poolId ?? 0 },
+    { enabled: !!poolId && isPro, refetchInterval: 30_000 }
+  );
+  const pendingCount = pendingMembers?.length ?? 0;
 
   // Grupos colapsáveis — inicializa com o grupo ativo aberto
   const getInitialOpenGroups = (): Record<string, boolean> => {
@@ -130,7 +144,7 @@ export default function OrganizerLayout({
     {
       label: "Participantes",
       items: [
-        { id: "members", label: "Membros", icon: Users },
+        { id: "members", label: "Membros", icon: Users, badge: pendingCount > 0 ? pendingCount : undefined },
         { id: "access", label: "Controle de Acesso", icon: Link2 },
         { id: "communication", label: "Comunicação", icon: MessageSquare, proOnly: true },
       ],
@@ -172,6 +186,11 @@ export default function OrganizerLayout({
         >
           <item.icon className="w-4 h-4 shrink-0" />
           <span className="flex-1 truncate">{item.label}</span>
+          {item.badge !== undefined && item.badge > 0 && (
+            <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shrink-0">
+              {item.badge > 99 ? "99+" : item.badge}
+            </span>
+          )}
           {isLocked && <Lock className="w-3 h-3 text-muted-foreground/50 shrink-0" />}
           {isReadOnly && <Lock className="w-3 h-3 text-yellow-400/70 shrink-0" />}
         </button>

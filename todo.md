@@ -2318,3 +2318,7 @@
 - [x] Frontend: botão "Já paguei — solicitar entrada" → status pending_approval
 - [x] Frontend: aba "Pendentes" no painel do organizador com Aprovar/Recusar
 - [x] Frontend: badge de upgrade Pro ao tentar configurar taxa no plano Free
+
+## Feature — Upload QR Code PIX e Badge de Pendentes (31/03/2026)
+- [x] OrganizerAccess: substituir campo de URL por botão de upload de imagem do QR Code PIX
+- [x] OrganizerLayout: exibir badge numérico no item "Membros" quando há aprovações pendentes

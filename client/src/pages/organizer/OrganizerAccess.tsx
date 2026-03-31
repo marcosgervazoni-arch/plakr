@@ -40,9 +40,10 @@ import {
   Save,
 } from "lucide-react";
 import { useParams } from "wouter";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { useUserPlan } from "@/hooks/useUserPlan";
+import { useImageUpload } from "@/hooks/useImageUpload";
 
 type AccessType = "public" | "private_link";
 
@@ -108,12 +109,41 @@ export default function OrganizerAccess() {
 
   // Taxa de inscrição
   const [entryFeeInput, setEntryFeeInput] = useState("");
-  const [qrCodeInput, setQrCodeInput] = useState("");
+  const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null); // URL após upload ou URL atual
   const [feeEditing, setFeeEditing] = useState(false);
+  const qrFileInputRef = useRef<HTMLInputElement>(null);
 
   // Sincronizar com dados do pool quando carregarem
   const currentFee = pool?.entryFee ? Number(pool.entryFee) : null;
   const currentQr = (pool as any)?.entryQrCodeUrl ?? null;
+
+  const { upload: uploadQrCode, uploading: uploadingQr } = useImageUpload({
+    folder: "pool-qrcodes",
+    maxSizeMB: 2,
+    onSuccess: (url) => {
+      setQrPreviewUrl(url);
+      toast.success("QR Code carregado com sucesso!");
+    },
+    onError: (err) => toast.error(err),
+  });
+
+  const handleQrFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Preview local imediato
+    const localUrl = URL.createObjectURL(file);
+    setQrPreviewUrl(localUrl);
+    // Upload para S3
+    const uploadedUrl = await uploadQrCode(file);
+    if (uploadedUrl) {
+      setQrPreviewUrl(uploadedUrl);
+    } else {
+      // Reverter preview se upload falhou
+      setQrPreviewUrl(null);
+    }
+    // Limpar input para permitir re-upload do mesmo arquivo
+    if (qrFileInputRef.current) qrFileInputRef.current.value = "";
+  };
 
   const handleSaveFee = () => {
     if (!pool?.id) return;
@@ -125,7 +155,7 @@ export default function OrganizerAccess() {
     updateMutation.mutate({
       poolId: pool.id,
       entryFee: fee,
-      entryQrCodeUrl: qrCodeInput || null,
+      entryQrCodeUrl: qrPreviewUrl || null,
     }, {
       onSuccess: () => {
         toast.success("Taxa de inscrição atualizada.");
@@ -341,7 +371,7 @@ export default function OrganizerAccess() {
                   size="sm"
                   onClick={() => {
                     setEntryFeeInput(currentFee ? currentFee.toFixed(2).replace(".", ",") : "");
-                    setQrCodeInput(currentQr ?? "");
+                    setQrPreviewUrl(currentQr ?? null);
                     setFeeEditing(true);
                   }}
                 >
@@ -374,14 +404,64 @@ export default function OrganizerAccess() {
                 <p className="text-xs text-muted-foreground">Deixe em branco para desativar a taxa de inscrição.</p>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">URL do QR Code PIX</label>
-                <Input
-                  value={qrCodeInput}
-                  onChange={(e) => setQrCodeInput(e.target.value)}
-                  placeholder="https://..."
+                <label className="text-xs font-medium text-muted-foreground">QR Code PIX</label>
+                {/* Preview do QR Code */}
+                {qrPreviewUrl ? (
+                  <div className="relative w-40 h-40 rounded-xl overflow-hidden border border-border/30 bg-white">
+                    <img
+                      src={qrPreviewUrl}
+                      alt="QR Code PIX"
+                      className="w-full h-full object-contain p-2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setQrPreviewUrl(null)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80 transition-colors"
+                      title="Remover imagem"
+                    >
+                      <span className="text-white text-xs leading-none">&times;</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => qrFileInputRef.current?.click()}
+                    disabled={uploadingQr}
+                    className="w-40 h-40 rounded-xl border-2 border-dashed border-border/40 hover:border-primary/50 bg-muted/20 hover:bg-muted/40 transition-all flex flex-col items-center justify-center gap-2 text-muted-foreground"
+                  >
+                    {uploadingQr ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    ) : (
+                      <>
+                        <QrCode className="w-8 h-8" />
+                        <span className="text-xs text-center px-2">Clique para enviar o QR Code</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                {/* Botão de troca quando já tem imagem */}
+                {qrPreviewUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => qrFileInputRef.current?.click()}
+                    disabled={uploadingQr}
+                  >
+                    {uploadingQr ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <QrCode className="w-3.5 h-3.5" />}
+                    Trocar imagem
+                  </Button>
+                )}
+                <input
+                  ref={qrFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleQrFileChange}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Gere o QR Code PIX no app do seu banco e cole aqui a URL da imagem.
+                  Gere o QR Code PIX no app do seu banco e faça o upload da imagem (PNG ou JPG, máx. 2MB).
                 </p>
               </div>
               <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-3 flex items-start gap-2">
