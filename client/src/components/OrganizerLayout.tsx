@@ -1,7 +1,7 @@
 /**
  * OrganizerLayout — Layout com sidebar fixa para todas as telas do Organizador (O2–O6)
- * C1: Sidebar reorganizada com grupos colapsáveis para melhor navegação.
- * Grupos: Visão Geral / Participantes / Configuração / Financeiro
+ * Redesign UX: navegação plana com separadores visuais, sem grupos colapsáveis.
+ * Cabeçalho limpo: nome do bolão + status + "← Ver bolão".
  */
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,6 @@ import {
   Trophy,
   Settings2,
   ChevronLeft,
-  ChevronDown,
-  ChevronRight,
   Menu,
   X,
   Crown,
@@ -46,13 +44,12 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   proOnly?: boolean;
-  badge?: number; // contador numérico opcional
+  badge?: number;
 }
 
-interface NavGroup {
-  label: string;
+interface NavSection {
+  label?: string; // undefined = sem separador
   items: NavItem[];
-  defaultOpen?: boolean;
 }
 
 interface OrganizerLayoutProps {
@@ -95,23 +92,6 @@ export default function OrganizerLayout({
   );
   const pendingCount = pendingMembers?.length ?? 0;
 
-  // Grupos colápsáveis — inicializa com o grupo ativo aberto
-  const getInitialOpenGroups = (): Record<string, boolean> => {
-    const participantsItems: OrganizerSection[] = ["members", "access", "entry-fee"];
-    const configItems: OrganizerSection[] = ["identity", "rules", "games"];
-    return {
-      overview: true,
-      participants: participantsItems.includes(activeSection),
-      config: configItems.includes(activeSection),
-    };
-  };
-
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(getInitialOpenGroups);
-
-  const toggleGroup = (key: string) => {
-    setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
   // Guard: if slug is empty (malformed URL), redirect to dashboard
   useEffect(() => {
     if (!slug) navigate("/dashboard");
@@ -134,13 +114,12 @@ export default function OrganizerLayout({
     "entry-fee": `/pool/${slug}/manage/entry-fee`,
   };
 
-  const navGroups: NavGroup[] = [
+  // Navegação plana organizada em seções com separadores visuais
+  const navSections: NavSection[] = [
     {
-      label: "Visão Geral",
       items: [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { id: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
       ],
-      defaultOpen: true,
     },
     {
       label: "Participantes",
@@ -151,23 +130,22 @@ export default function OrganizerLayout({
       ],
     },
     {
-      label: "Configurações do Bolão",
+      label: "Bolão",
       items: [
         { id: "identity", label: "Aparência", icon: Palette },
         { id: "rules", label: "Regras de Pontuação", icon: Settings2 },
         { id: "games", label: "Jogos e Resultados", icon: ClipboardList, proOnly: true },
+        { id: "tournament", label: "Campeonato", icon: Trophy, proOnly: true },
+      ],
+    },
+    {
+      label: "Geral",
+      items: [
+        { id: "communication", label: "Comunicação", icon: MessageSquare, proOnly: true },
+        { id: "plan", label: "Plano e Assinatura", icon: Crown },
       ],
     },
   ];
-
-  // Itens de nível superior (sem grupo)
-  const topLevelItems: NavItem[] = [
-    { id: "tournament", label: "Campeonato", icon: Trophy, proOnly: true },
-    { id: "communication", label: "Comunicação", icon: MessageSquare, proOnly: true },
-    { id: "plan", label: "Plano e Assinatura", icon: Crown },
-  ];
-
-  const groupKeys = ["overview", "participants", "config"];
 
   const NavItemButton = ({ item }: { item: NavItem }) => {
     const isActive = activeSection === item.id;
@@ -178,14 +156,14 @@ export default function OrganizerLayout({
       <Link key={item.id} href={sectionPaths[item.id]}>
         <button
           className={cn(
-            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left",
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
             isActive
               ? "bg-primary/10 text-primary font-medium"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           )}
           onClick={() => setSidebarOpen(false)}
         >
-          <item.icon className="w-4 h-4 shrink-0" />
+          <item.icon className={cn("w-4 h-4 shrink-0", isActive && "text-primary")} />
           <span className="flex-1 truncate">{item.label}</span>
           {item.badge !== undefined && item.badge > 0 && (
             <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shrink-0">
@@ -201,83 +179,46 @@ export default function OrganizerLayout({
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Pool header */}
+      {/* Pool header — nome, status, botão voltar */}
       <div className="p-4 border-b border-border/30">
         <Link href={`/pool/${slug}`}>
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground px-2 mb-3">
-            <ChevronLeft className="w-4 h-4" /> Ver bolão
+          <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground px-2 mb-3 -ml-1">
+            <ChevronLeft className="w-4 h-4" />
+            <span className="text-xs">Ver bolão</span>
           </Button>
         </Link>
-        <div className="flex items-center gap-2 px-2">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <Trophy className="w-4 h-4 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-display font-bold text-sm truncate">
-              {poolName}
-            </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <Badge className={cn("text-xs py-0 px-1.5 border", statusConfig.color)}>
-                {statusConfig.label}
+        <div className="px-1">
+          <p className="font-bold text-sm leading-tight truncate mb-1.5">
+            {poolName}
+          </p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge className={cn("text-xs py-0 px-1.5 border", statusConfig.color)}>
+              {statusConfig.label}
+            </Badge>
+            {isPro && !isProExpired && (
+              <Badge className="text-xs py-0 px-1.5 bg-primary/10 text-primary border-primary/20">
+                <Crown className="w-2.5 h-2.5 mr-1" />Pro
               </Badge>
-              {isPro && !isProExpired && (
-                <Badge className="text-xs py-0 px-1.5 bg-primary/10 text-primary border-primary/20">
-                  <Crown className="w-2.5 h-2.5 mr-1" />Pro
-                </Badge>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Nav groups */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {navGroups.map((group, idx) => {
-          const key = groupKeys[idx];
-          const isOpen = openGroups[key];
-          const hasActiveItem = group.items.some((i) => i.id === activeSection);
-
-          return (
-            <div key={key}>
-              {/* Group header — "Visão Geral" não tem toggle, sempre visível */}
-              {group.items.length === 1 && group.label === "Visão Geral" ? (
-                <NavItemButton item={group.items[0]} />
-              ) : (
-                <>
-                  <button
-                    onClick={() => toggleGroup(key)}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors",
-                      hasActiveItem
-                        ? "text-primary"
-                        : "text-muted-foreground/60 hover:text-muted-foreground"
-                    )}
-                  >
-                    <span className="flex-1 text-left">{group.label}</span>
-                    {isOpen
-                      ? <ChevronDown className="w-3 h-3 shrink-0" />
-                      : <ChevronRight className="w-3 h-3 shrink-0" />
-                    }
-                  </button>
-                  {isOpen && (
-                    <div className="mt-0.5 space-y-0.5 pl-1">
-                      {group.items.map((item) => (
-                        <NavItemButton key={item.id} item={item} />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
+      {/* Navegação plana com separadores */}
+      <nav className="flex-1 p-3 overflow-y-auto space-y-4">
+        {navSections.map((section, idx) => (
+          <div key={idx}>
+            {section.label && (
+              <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider px-3 mb-1">
+                {section.label}
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {section.items.map((item) => (
+                <NavItemButton key={item.id} item={item} />
+              ))}
             </div>
-          );
-        })}
-
-        {/* Separador */}
-        <div className="border-t border-border/20 my-2" />
-
-        {/* Itens de nível superior — sem grupo */}
-        {topLevelItems.map((item) => (
-          <NavItemButton key={item.id} item={item} />
+          </div>
         ))}
       </nav>
     </div>
@@ -310,10 +251,10 @@ export default function OrganizerLayout({
         >
           <Menu className="w-4 h-4" />
         </Button>
-        <span className="font-display font-bold text-sm truncate">
-          {poolName}
-        </span>
-        <Badge className={cn("text-xs py-0 px-1.5 border ml-auto", statusConfig.color)}>
+        <div className="flex-1 min-w-0">
+          <span className="font-bold text-sm truncate block">{poolName}</span>
+        </div>
+        <Badge className={cn("text-xs py-0 px-1.5 border shrink-0", statusConfig.color)}>
           {statusConfig.label}
         </Badge>
       </div>
@@ -336,7 +277,7 @@ export default function OrganizerLayout({
         </div>
       )}
 
-      {/* Mobile content — apenas para telas pequenas */}
+      {/* Mobile content */}
       <div className="lg:hidden flex-1 flex flex-col">
         <main className="min-w-0 flex-1">
           {!isPro && <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0" />}
@@ -354,12 +295,9 @@ export default function OrganizerLayout({
 
         {/* Main content */}
         <main className="flex-1 min-w-0 overflow-hidden h-screen flex flex-col">
-          {/* Banner de topo — apenas para usuários free */}
           {!isPro && <AdBanner position="top" className="w-full rounded-none border-x-0 border-t-0 shrink-0" />}
-          {/* Área de conteúdo scrollável */}
           <div className="flex-1 overflow-y-auto flex flex-col">
             <div className="flex-1">{children}</div>
-            {/* Banner de rodapé — apenas para usuários free */}
             {!isPro && <AdBanner position="bottom" className="w-full rounded-none border-x-0 border-b-0 shrink-0" />}
           </div>
         </main>

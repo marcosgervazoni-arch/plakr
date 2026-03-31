@@ -23,13 +23,6 @@ import {
   Plus,
   Award,
   UserCircle,
-  Gamepad2,
-  ScrollText,
-  GitBranch,
-  History,
-  Sparkles,
-  Swords,
-  ChevronDown,
   Settings,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -79,7 +72,6 @@ export default function AppShell({ children }: AppShellProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [poolNavOpen, setPoolNavOpen] = useState(true);
   const { data: userData } = trpc.users.me.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -105,46 +97,8 @@ export default function AppShell({ children }: AppShellProps) {
   const activePoolData = activePoolSlug
     ? (myPools as any[]).find((p: any) => p.pool?.slug === activePoolSlug)
     : null;
-  const activePoolName = activePoolData?.pool?.name ?? activePoolSlug;
-  const activePoolStatus = activePoolData?.pool?.status ?? "active";
   const activePoolIsOrganizer = activePoolData?.member?.role === "organizer" || user?.role === "admin";
-  const activePoolIsConcluded = activePoolStatus === "concluded";
 
-  // Itens de subnavegação do bolão ativo — nova ordem e nomenclatura (orquestrador)
-  const poolNavItems = activePoolSlug
-    ? [
-        // Configurações — apenas para organizadores
-        ...(activePoolIsOrganizer ? [{
-          id: "pool-manage",
-          label: "Configurações",
-          icon: Settings,
-          href: `/pool/${activePoolSlug}/manage`,
-          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/manage`),
-          highlight: false,
-        }] : []),
-        // Meus Palpites — com destaque visual
-        { id: "pool-history",  label: "Meus Palpites",  icon: History,     href: `/pool/${activePoolSlug}/history`,          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/history`),          highlight: true  },
-        // Jogos
-        { id: "pool-games",    label: "Jogos",          icon: Gamepad2,    href: `/pool/${activePoolSlug}?tab=games`,        match: (l: string) => l === `/pool/${activePoolSlug}` || (l.startsWith(`/pool/${activePoolSlug}`) && !l.includes('/history') && !l.includes('/rules') && !l.includes('/bracket') && !l.includes('/retrospectiva') && !l.includes('/player') && !l.includes('/manage')), highlight: false },
-        // Ranking
-        { id: "pool-ranking",  label: "Ranking",        icon: Trophy,      href: `/pool/${activePoolSlug}?tab=ranking`,      match: (l: string) => l === `/pool/${activePoolSlug}` && (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'ranking'),  highlight: false },
-        // Duelos
-        { id: "pool-duelos",   label: "Duelos",         icon: Swords,      href: `/pool/${activePoolSlug}?tab=duelos`,       match: (l: string) => l === `/pool/${activePoolSlug}` && (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'duelos'),   highlight: false },
-        // Chaveamento
-        { id: "pool-bracket",  label: "Chaveamento",    icon: GitBranch,   href: `/pool/${activePoolSlug}/bracket`,          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/bracket`),          highlight: false },
-        // Retrospectiva — apenas quando bolão está concluído
-        ...(activePoolIsConcluded ? [{
-          id: "pool-retro",
-          label: "Retrospectiva",
-          icon: Sparkles,
-          href: `/pool/${activePoolSlug}/retrospectiva`,
-          match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/retrospectiva`),
-          highlight: false,
-        }] : []),
-        // Regras
-        { id: "pool-rules",    label: "Regras",         icon: ScrollText,  href: `/pool/${activePoolSlug}/rules`,            match: (l: string) => l.startsWith(`/pool/${activePoolSlug}/rules`),            highlight: false },
-      ]
-    : [];
 
   const isAdmin =
     userData?.user?.role === "admin" || user?.role === "admin";
@@ -253,72 +207,6 @@ export default function AppShell({ children }: AppShellProps) {
           })}
 
           {/* Notificações removidas da sidebar — disponível no top bar mobile */}
-
-          {/* ── Subnavegação contextual do bolão ativo ── */}
-          {isAuthenticated && poolNavItems.length > 0 && (
-            <div className="pt-2">
-              {/* Cabeçalho colapsável com nome do bolão */}
-              <button
-                className="w-full flex items-center justify-between px-3 pb-1.5 group"
-                onClick={() => setPoolNavOpen((v) => !v)}
-              >
-                <p className="text-[10px] font-semibold text-primary/70 uppercase tracking-wider truncate max-w-[140px]">
-                  {activePoolName}
-                </p>
-                <ChevronDown
-                  className={cn(
-                    "w-3 h-3 text-muted-foreground/50 shrink-0 transition-transform",
-                    poolNavOpen ? "rotate-0" : "-rotate-90"
-                  )}
-                />
-              </button>
-
-              {poolNavOpen && (
-                <div className="space-y-0.5">
-                  {poolNavItems.map((item) => {
-                    const isActive = item.match(location);
-                    const isHighlight = (item as any).highlight === true;
-                    // Detectar se o link usa ?tab= (mesma rota, troca de aba)
-                    const hasTabParam = item.href.includes('?tab=');
-                    const handleClick = (e: React.MouseEvent) => {
-                      if (hasTabParam) {
-                        e.preventDefault();
-                        // Atualizar a URL sem recarregar (wouter ignora query string changes)
-                        const url = new URL(item.href, window.location.origin);
-                        window.history.pushState({}, '', url.pathname + url.search);
-                        // Disparar evento customizado para a PoolPage escutar
-                        window.dispatchEvent(new CustomEvent('pool-tab-change', {
-                          detail: { tab: url.searchParams.get('tab') }
-                        }));
-                      }
-                      setSidebarOpen(false);
-                    };
-                    return (
-                      <Link
-                        key={item.id}
-                        href={item.href}
-                        onClick={handleClick}
-                      >
-                        <button
-                          className={cn(
-                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all text-left",
-                            isActive
-                              ? "bg-primary/10 text-primary font-medium"
-                              : isHighlight
-                                ? "text-primary/90 bg-primary/5 hover:bg-primary/10 font-medium"
-                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                          )}
-                        >
-                          <item.icon className={cn("w-4 h-4 shrink-0", isHighlight && !isActive && "text-primary")} />
-                          <span className="flex-1 truncate">{item.label}</span>
-                        </button>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* ── Seção: Meus Bolões — acesso direto, visível apenas quando autenticado ── */}
           {isAuthenticated && (

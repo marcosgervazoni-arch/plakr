@@ -616,8 +616,26 @@ export default function PoolPage() {
       {/* ── Conteúdo principal ── */}
       <main className="max-w-2xl mx-auto px-4 py-5">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* TabsList oculta — navegação feita pelo PoolBottomNav */}
-          <TabsList className="hidden">
+          {/* TabsList — visível no desktop, oculta no mobile (usa PoolBottomNav) */}
+          <TabsList className="hidden lg:flex w-full mb-4 bg-muted/40 p-1 rounded-xl h-auto gap-0.5">
+            <TabsTrigger value="games" className="flex-1 text-sm py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Jogos
+            </TabsTrigger>
+            <TabsTrigger value="ranking" className="flex-1 text-sm py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Ranking
+            </TabsTrigger>
+            <TabsTrigger value="duelos" className="flex-1 text-sm py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Duelos
+            </TabsTrigger>
+            <TabsTrigger value="members" className="flex-1 text-sm py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Membros
+            </TabsTrigger>
+            <TabsTrigger value="rules" className="flex-1 text-sm py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Regras
+            </TabsTrigger>
+          </TabsList>
+          {/* TabsList mobile — oculta (usa PoolBottomNav) */}
+          <TabsList className="lg:hidden hidden">
             <TabsTrigger value="games">Jogos</TabsTrigger>
             <TabsTrigger value="ranking">Ranking</TabsTrigger>
             <TabsTrigger value="duelos">Duelos</TabsTrigger>
