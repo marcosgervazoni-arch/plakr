@@ -272,11 +272,15 @@ export default function OrganizerRules() {
 
   const { isPro, isProExpired } = useUserPlan();
 
-  // Verificar se o primeiro jogo já começou (bloquear regras)
-  const firstGame = poolData?.games?.[0];
-  const isLocked = firstGame
-    ? new Date(firstGame.matchDate).getTime() - (rules?.bettingDeadlineMinutes ?? 60) * 60000 < Date.now()
-    : false;
+  // Verificar se o primeiro jogo FUTURO (scheduled) já passou do prazo de palpites
+  // Usa o primeiro jogo agendado — não o primeiro jogo de todos (que pode ser passado)
+  const firstScheduledGame = poolData?.games?.find((g) => g.status === "scheduled");
+  const firstGame = firstScheduledGame ?? poolData?.games?.[0];
+  const isLocked = firstScheduledGame
+    ? new Date(firstScheduledGame.matchDate).getTime() - (rules?.bettingDeadlineMinutes ?? 60) * 60000 < Date.now()
+    : poolData?.games && poolData.games.length > 0
+      ? poolData.games.every((g) => g.status === "finished" || g.status === "cancelled")
+      : false;
 
   const canEdit = isPro && !isProExpired && !isLocked;
 
