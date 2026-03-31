@@ -107,9 +107,14 @@ export const platformRouter = router({
       // VAPID / Push
       vapidPublicKey: z.string().optional(),
       vapidPrivateKey: z.string().optional(),
-      // Aceita string vazia (campo não preenchido) ou e-mail válido.
+      // Aceita string vazia, e-mail válido, ou formato "mailto:email" (normalizado automaticamente).
       // String vazia é normalizada para undefined para não sobrescrever valor existente no banco.
-      vapidEmail: z.union([z.string().email(), z.literal("")]).optional().transform(v => v === "" ? undefined : v),
+      vapidEmail: z.string().optional().transform(v => {
+        if (!v || v.trim() === "") return undefined;
+        // Remove prefixo mailto: se presente
+        const cleaned = v.trim().replace(/^mailto:/i, "");
+        return cleaned || undefined;
+      }).pipe(z.string().email().optional()),
       pushEnabled: z.boolean().optional(),
       adsEnabled: z.boolean().optional(),
       restrictedInviteMessage: z.string().max(500).optional().nullable(),

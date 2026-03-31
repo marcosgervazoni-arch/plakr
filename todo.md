@@ -2367,3 +2367,9 @@
 - [x] AdminAds: 2 grupos (Configurações de Publicidade, Anúncios Cadastrados)
 - [x] AdminBroadcasts: manter Tabs (Compor, Fila de E-mails, Mensagens Automáticas) sem alteração
 - [x] AdminUsers/AdminTournaments: estrutura de lista não se beneficia de acordeons — mantidos sem alteração
+
+## Bug — AdminSettings: Erro de validação ao salvar pontuações (vapidEmail)
+
+- [x] Causa: vapidEmail no banco tinha valor "mailto:admin@plakr.io" (prefixo inválido para z.string().email())
+- [x] Correção banco: UPDATE platform_settings SET vapidEmail = 'admin@plakr.io' (removido prefixo mailto:)
+- [x] Correção schema Zod: transform agora remove prefixo mailto: automaticamente antes de validar
