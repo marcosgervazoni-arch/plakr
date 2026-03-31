@@ -2388,3 +2388,9 @@
 - [x] Painel expandido: REGRA — posição no bolão só mencionada quando TODOS os jogos da rodada estão finalizados (implementada no backend via generateAiTextsForGame)
 - [x] Painel expandido: seção "Estatísticas" com barras bipartidas (posse, finalizações, escanteios, cartões) — só quando matchStatistics não for null
 - [x] Backend: regra de posição já implementada no generateAiTextsForGame (poolContext null quando rodada incompleta)
+
+## Feature — GameCard melhorias (sem palpite + narrador)
+
+- [x] GameCard: exibir resumo IA e estatísticas mesmo quando usuário não tem palpite
+- [x] GameCard: exibir botão "Compartilhar" mesmo quando usuário não tem palpite
+- [x] Backend: atualizar prompt de análise de apostas para tom de narrador de estádio animado (sem exagero)

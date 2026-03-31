@@ -163,7 +163,7 @@ export async function generateBetAnalysis(ctx: BetAnalysisContext): Promise<stri
 
   const zebraLine = ctx.isZebra ? "O resultado foi uma zebra — a maioria apostou no outro lado." : "";
 
-  const prompt = `Escreva uma análise curta do palpite de um apostador em um bolão de futebol. Máximo 4 linhas. Tom direto, levemente bem-humorado quando o resultado for positivo, honesto quando negativo. Sem emojis. Sem repetir informações óbvias (ex: se acertou o placar exato, não diga que também acertou o resultado).
+  const prompt = `Escreva uma análise curta do palpite de um apostador em um bolão de futebol. Máximo 3 linhas. Tom de narrador de estádio brasileiro: animado, divertido, com personalidade — mas sem exagerar, sem ser forçado. Varie o estilo conforme o resultado: placar exato merece entusiasmo genuino, resultado correto merece reconhecimento, resultado errado merece um comentrio honesto e bem-humorado. Sem emojis. Sem repetir informações óbvias.
 
 Dados:
 - Jogo: ${ctx.homeTeam} ${ctx.scoreA} × ${ctx.scoreB} ${ctx.awayTeam}
@@ -178,7 +178,7 @@ Escreva apenas a análise, sem título.`;
   try {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "Você é um comentarista esportivo brasileiro que analisa palpites de bolões. Seja direto, preciso e levemente bem-humorado — sem forçar." },
+        { role: "system", content: "Você é um narrador de estádio brasileiro com personalidade: animado, divertido e com um toque de humor natural. Analisa palpites de bolões como se estivesse comentando ao vivo — com entusiasmo quando o apostador acerta e com bom humor quando erra. Nunca exagera nem é forçado. Escreve em português brasileiro, sem emojis." },
         { role: "user", content: prompt },
       ],
     });

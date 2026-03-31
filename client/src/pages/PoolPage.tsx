@@ -1250,8 +1250,12 @@ function GameCard({
 
   // Helpers de compartilhamento
   const shareText = finished
-    ? `Jogo: ${game.teamAName} ${game.scoreA} × ${game.scoreB} ${game.teamBName}\nMeu palpite: ${myBet?.predictedScoreA} × ${myBet?.predictedScoreB} (+${myBet?.pointsEarned ?? 0} pts)\nPlakr — plataforma de bolões esportivos`
-    : `Meu palpite: ${game.teamAName} ${myBet?.predictedScoreA} × ${myBet?.predictedScoreB} ${game.teamBName}\nPlakr — plataforma de bolões esportivos`;
+    ? hasBet
+      ? `Jogo: ${game.teamAName} ${game.scoreA} × ${game.scoreB} ${game.teamBName}\nMeu palpite: ${myBet?.predictedScoreA} × ${myBet?.predictedScoreB} (+${myBet?.pointsEarned ?? 0} pts)\nPlakr — plataforma de bolões esportivos`
+      : `${game.teamAName} ${game.scoreA} × ${game.scoreB} ${game.teamBName}\nPlakr — plataforma de bolões esportivos`
+    : hasBet
+      ? `Meu palpite: ${game.teamAName} ${myBet?.predictedScoreA} × ${myBet?.predictedScoreB} ${game.teamBName}\nPlakr — plataforma de bolões esportivos`
+      : `${game.teamAName} vs ${game.teamBName}\nPlakr — plataforma de bolões esportivos`;
 
   const handleShareWhatsApp = async () => {
     setIsCapturing(true);
@@ -1454,7 +1458,7 @@ function GameCard({
         )}
 
         {/* Barra de ações — Compartilhar + Ver análise */}
-        {hasBet && (
+        {(hasBet || finished) && (
           <div className="mt-3 border-t border-border/20 pt-2 flex items-center justify-between">
             <button
               onClick={() => setShareOpen((v) => !v)}
@@ -1477,7 +1481,7 @@ function GameCard({
         )}
 
         {/* Painel de compartilhamento */}
-        {shareOpen && hasBet && (
+        {shareOpen && (finished || hasBet) && (
           <div className="mt-2 p-3 bg-muted/20 rounded-xl border border-border/30 space-y-2">
             <p className="text-xs font-medium text-muted-foreground mb-2">Compartilhar este jogo</p>
             <div className="grid grid-cols-2 gap-2">
@@ -1649,7 +1653,7 @@ function GameCard({
           </div>
         )}
       {/* Card visual oculto para captura html2canvas */}
-      {hasBet && <ShareCardVisual data={shareCardData} cardRef={shareCardRef} />}
+      {(hasBet || finished) && <ShareCardVisual data={shareCardData} cardRef={shareCardRef} />}
       </div>
     </div>
   );
