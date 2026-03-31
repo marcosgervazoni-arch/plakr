@@ -322,10 +322,10 @@ export function AdBanner({ position, className }: AdBannerProps) {
     return (
       <div
         className={cn(
-          "relative overflow-hidden rounded-lg border border-border/30 flex items-center justify-center",
+          "relative rounded-lg border border-border/30 flex items-center justify-center",
           className
         )}
-        style={{ width: "100%", height: adHeight }}
+        style={{ width: "100%", minHeight: adHeight }}
       >
         <div className="absolute top-1 right-1 z-10 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded">
           Publicidade

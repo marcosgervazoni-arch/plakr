@@ -60,7 +60,7 @@ async function startServer() {
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         connectSrc: ["'self'", "https:", "wss:"],
-        frameSrc: ["'self'", "blob:"],
+        frameSrc: ["'self'", "blob:", "https:"],  // Adsterra usa iframes de highperformanceformat.com
         objectSrc: ["'none'"],
         upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : null,
       },

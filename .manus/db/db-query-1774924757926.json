@@ -1,0 +1,16 @@
+{
+  "query": "SELECT u.name, u.role, up.plan, up.isActive FROM users u LEFT JOIN user_plans up ON u.id = up.userId WHERE u.name LIKE '%Pessoa Teste%' OR u.name LIKE '%Teste%' LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT u.name, u.role, up.plan, up.isActive FROM users u LEFT JOIN user_plans up ON u.id = up.userId WHERE u.name LIKE '%Pessoa Teste%' OR u.name LIKE '%Teste%' LIMIT 5;",
+  "rows": [
+    {
+      "name": "Pessoa Teste ApostAI",
+      "role": "user",
+      "plan": "NULL",
+      "isActive": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\trole\tplan\tisActive\nPessoa Teste ApostAI\tuser\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}
