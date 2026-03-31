@@ -406,4 +406,41 @@ export const poolsCoreRouter = router({
       }
       return result;
     }),
+
+  // ── Onboarding checklist ────────────────────────────────────────────────────
+  getOnboardingStatus: protectedProcedure
+    .input(z.object({ poolId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const pool = await getPoolById(input.poolId);
+      if (!pool) throw Err.notFound("Bolão");
+      if (pool.ownerId !== ctx.user.id && ctx.user.role !== "admin") throw Err.forbidden();
+
+      const dismissed = !!pool.onboardingDismissedAt;
+
+      // Etapas derivadas dos dados do próprio pool (sem tabela extra)
+      const steps = {
+        appearance: !!(pool.logoUrl || pool.description),
+        access: pool.accessType === "public" || !!(pool.inviteToken),
+        entryFee: pool.entryFee !== null && Number(pool.entryFee) > 0,
+      };
+
+      const allDone = Object.values(steps).every(Boolean);
+      return { dismissed, steps, allDone };
+    }),
+
+  dismissOnboarding: protectedProcedure
+    .input(z.object({ poolId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const pool = await getPoolById(input.poolId);
+      if (!pool) throw Err.notFound("Bolão");
+      if (pool.ownerId !== ctx.user.id && ctx.user.role !== "admin") throw Err.forbidden();
+
+      const { getDb } = await import("../db");
+      const { pools: poolsTable } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const db = await getDb();
+      if (!db) throw Err.internal();
+      await db.update(poolsTable).set({ onboardingDismissedAt: new Date() }).where(eq(poolsTable.id, input.poolId));
+      return { ok: true };
+    }),
 });

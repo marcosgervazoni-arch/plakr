@@ -33,6 +33,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import OnboardingChecklist from "@/components/OnboardingChecklist";
 
 function MetricCard({
   icon: Icon,
@@ -223,6 +224,11 @@ export default function OrganizerDashboard() {
             Visão geral e indicadores em tempo real.
           </p>
         </div>
+
+        {/* Onboarding checklist — exibido apenas quando há etapas pendentes e não foi dispensado */}
+        {pool.id && (
+          <OnboardingChecklist poolId={pool.id} slug={slug ?? ""} isPro={isPro} />
+        )}
 
         {/* 4 metric cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

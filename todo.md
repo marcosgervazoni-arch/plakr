@@ -2332,3 +2332,11 @@
 - [x] Remover grupo "Financeiro" e deixar "Plano e Assinatura" como item solto
 - [x] Registrar nova rota /pool/:slug/manage/entry-fee no App.tsx
 - [x] Atualizar OrganizerLayout com nova estrutura de grupos e nomes
+
+## Feature — Onboarding Checklist do Organizador (31/03/2026)
+- [x] Schema: campo onboardingDismissedAt (timestamp) na tabela pools
+- [x] Backend: procedure pools.getOnboardingStatus — retorna quais etapas estão concluídas (derivado dos dados do pool)
+- [x] Backend: procedure pools.dismissOnboarding — marca o checklist como dispensado
+- [x] Frontend: componente OnboardingChecklist com etapas: Aparência, Acesso e Convite, Taxa de Inscrição (Pro)
+- [x] Frontend: exibir checklist no OrganizerDashboard apenas quando não dispensado e há etapas pendentes
+- [x] Frontend: botão "Dispensar" para ocultar permanentemente o checklist
