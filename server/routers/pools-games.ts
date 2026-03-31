@@ -53,6 +53,8 @@ export const poolsGamesRouter = router({
     .query(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
       if (!member && ctx.user.role !== "admin") throw Err.forbidden();
+      // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
+      if (member && member.memberStatus && member.memberStatus !== "active" && ctx.user.role !== "admin") throw Err.forbidden();
       return getGamesByPool(input.poolId);
     }),
 

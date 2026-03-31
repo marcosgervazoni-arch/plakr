@@ -310,15 +310,34 @@ export default function PoolPage() {
 
   /* ── Error ── */
   if (error || !data) {
+    const errMsg = error ? (error as unknown as { message?: string }).message ?? "" : "";
+    const isPendingApproval = errMsg.includes("aguardando aprovação");
+    const isRejected = errMsg.includes("recusada");
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4">
-        <div className="w-14 h-14 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center">
-          <Trophy className="w-7 h-7 text-destructive" />
+        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+          isPendingApproval ? "bg-yellow-500/10 border border-yellow-500/20" :
+          isRejected ? "bg-red-500/10 border border-red-500/20" :
+          "bg-destructive/10 border border-destructive/20"
+        }`}>
+          {isPendingApproval ? (
+            <Lock className="w-7 h-7 text-yellow-400" />
+          ) : (
+            <Trophy className={`w-7 h-7 ${isRejected ? "text-red-400" : "text-destructive"}`} />
+          )}
         </div>
         <div className="text-center">
-          <h3 className="font-semibold text-base mb-1">Bolão não encontrado</h3>
+          <h3 className="font-semibold text-base mb-1">
+            {isPendingApproval ? "Aguardando aprovação" :
+             isRejected ? "Inscrição recusada" :
+             "Bolão não encontrado"}
+          </h3>
           <p className="text-sm text-muted-foreground max-w-xs">
-            {error ? (error as unknown as Error).message : "O bolão solicitado não existe ou você não tem acesso."}
+            {isPendingApproval
+              ? "Sua inscrição está aguardando confirmação de pagamento pelo organizador. Você será notificado quando for aprovado."
+              : isRejected
+              ? "Sua inscrição foi recusada pelo organizador. Entre em contato para mais informações."
+              : errMsg || "O bolão solicitado não existe ou você não tem acesso."}
           </p>
         </div>
         <Link href="/dashboard">

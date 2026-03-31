@@ -88,6 +88,19 @@ export const poolsCoreRouter = router({
       if (!member && ctx.user.role !== "admin") {
         throw Err.forbidden("Você não é membro deste bolão.");
       }
+      // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
+      if (member && member.memberStatus === "pending_approval") {
+        throw new (await import("@trpc/server")).TRPCError({
+          code: "FORBIDDEN",
+          message: "Sua inscrição está aguardando aprovação do organizador. Você terá acesso ao bolão após a confirmação do pagamento.",
+        });
+      }
+      if (member && member.memberStatus === "rejected") {
+        throw new (await import("@trpc/server")).TRPCError({
+          code: "FORBIDDEN",
+          message: "Sua inscrição foi recusada pelo organizador. Entre em contato para mais informações.",
+        });
+      }
       const tournament = await getTournamentById(pool.tournamentId);
       const gameList = await getGamesByTournament(pool.tournamentId);
       const rules = await getPoolScoringRules(pool.id);

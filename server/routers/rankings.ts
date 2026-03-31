@@ -14,6 +14,8 @@ export const rankingsRouter = router({
     .query(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
       if (!member && ctx.user.role !== "admin") throw Err.forbidden();
+      // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
+      if (member && member.memberStatus && member.memberStatus !== "active" && ctx.user.role !== "admin") throw Err.forbidden();
       return getPoolRanking(input.poolId);
     }),
 
@@ -22,6 +24,8 @@ export const rankingsRouter = router({
     .query(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
       if (!member && ctx.user.role !== "admin") throw Err.forbidden();
+      // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
+      if (member && member.memberStatus && member.memberStatus !== "active" && ctx.user.role !== "admin") throw Err.forbidden();
       const ranking = await getPoolRanking(input.poolId);
       const idx = ranking.findIndex((r) => r.user.id === ctx.user.id);
       if (idx === -1) return { position: null as number | null, points: null as number | null };

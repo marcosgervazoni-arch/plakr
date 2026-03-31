@@ -34,6 +34,8 @@ export const poolsMembersRouter = router({
     .query(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
       if (!member && ctx.user.role !== "admin") throw Err.forbidden();
+      // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
+      if (member && member.memberStatus && member.memberStatus !== "active" && ctx.user.role !== "admin") throw Err.forbidden();
       const allMembers = await getPoolMembers(input.poolId);
       // Paginação cursor-based manual
       const startIdx = input.cursor ? allMembers.findIndex((m) => m.member.userId === input.cursor) + 1 : 0;
@@ -171,6 +173,10 @@ export const poolsMembersRouter = router({
       const pool = await getPoolById(input.poolId);
       if (!pool) throw Err.notFound("Recurso");
       if (!requester && ctx.user.role !== "admin" && pool.accessType !== "public") {
+        throw Err.forbidden();
+      }
+      // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
+      if (requester && requester.memberStatus && requester.memberStatus !== "active" && ctx.user.role !== "admin") {
         throw Err.forbidden();
       }
       const db = await (await import("../db")).getDb();

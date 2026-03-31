@@ -27,6 +27,8 @@ export const betsRouter = router({
     .query(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
       if (!member) throw Err.forbidden();
+      // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
+      if (member.memberStatus && member.memberStatus !== "active") throw Err.forbidden();
 
       const db = await (await import("../db")).getDb();
       if (!db) return { items: [], nextCursor: undefined, hasMore: false };
@@ -66,6 +68,15 @@ export const betsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
       if (!member || member.isBlocked) throw Err.forbidden();
+      // [SEC] Bloquear palpites de membros com pagamento pendente ou rejeitado
+      if (member.memberStatus && member.memberStatus !== "active") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: member.memberStatus === "pending_approval"
+            ? "Sua inscrição está aguardando aprovação do organizador. Você poderá fazer palpites após a confirmação do pagamento."
+            : "Sua inscrição foi recusada. Você não pode fazer palpites neste bolão.",
+        });
+      }
 
       const game = await getGameById(input.gameId);
       if (!game) throw Err.notFound("Recurso");
