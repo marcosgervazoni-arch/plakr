@@ -19,6 +19,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
+import { AdInterleaved } from "@/components/AdInterleaved";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import AppShell from "@/components/AppShell";
 import {
@@ -102,6 +104,7 @@ export default function PublicPools() {
 
   // Modal confirmação — bolão público
   const analytics = useAnalytics();
+  const { isPro } = useUserPlan();
   const [confirmPool, setConfirmPool] = useState<Pool | null>(null);
   const [joiningSlug, setJoiningSlug] = useState<string | null>(null);
 
@@ -244,8 +247,13 @@ export default function PublicPools() {
 
         {/* Lista de bolões — coluna única mobile, 2 colunas sm+ */}
         {!isLoading && pools.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {pools.map((pool: Pool) => {
+          <AdInterleaved
+            items={pools as any[]}
+            showAds={!isPro}
+            interval={4}
+            adClassName="col-span-1 sm:col-span-2 w-full my-1"
+            gridClassName="grid grid-cols-1 sm:grid-cols-2 gap-3"
+            renderItem={(pool: any) => {
               const progress = getPoolProgress(pool);
               return (
                 <div
@@ -353,8 +361,8 @@ export default function PublicPools() {
                   </div>
                 </div>
               );
-            })}
-          </div>
+            }}
+          />
         )}
       </div>
 

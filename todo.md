@@ -2232,3 +2232,10 @@
 - [x] Aplicar em OrganizerDashboard
 - [x] Aplicar em OrganizerAccess
 - [x] Aplicar em PoolSettings
+
+## Feature — Popup Interstitial Adsterra + AdInterleaved em PublicPools
+
+- [x] Implementar popup Adsterra com trigger por navegação (a cada 3 trocas de rota, máx 1x/sessão)
+- [x] Suporte a Adsterra no popup quando não há banner próprio cadastrado
+- [x] Adicionar prop gridClassName no AdInterleaved para suporte a grades CSS
+- [x] Aplicar AdInterleaved na grade de bolões públicos (PublicPools) — banners a cada 4 cards

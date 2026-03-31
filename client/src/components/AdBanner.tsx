@@ -26,6 +26,7 @@
  */
 import { trpc } from "@/lib/trpc";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useLocation } from "wouter";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -189,6 +190,9 @@ export function AdBanner({ position, className }: AdBannerProps) {
   const [popupVisible, setPopupVisible] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const popupEvaluated = useRef(false);
+  const [location] = useLocation();
+  const lastPopupLocation = useRef<string | null>(null);
+  const popupShownCount = useRef(0);
 
   const ads = allAds ? filterByDevice(allAds as Ad[], isMobile) : [];
 
@@ -203,17 +207,39 @@ export function AdBanner({ position, className }: AdBannerProps) {
     ? (adNetworkScripts[adsterraKey] as string)
     : null;
 
-  // Popup: avaliar apenas uma vez quando os dados chegarem
+  // Popup: disparar por banner próprio OU por Adsterra, com trigger por navegação
   useEffect(() => {
-    if (position !== "popup" || ads.length === 0 || popupEvaluated.current) return;
-    popupEvaluated.current = true;
-    const ad = ads[0];
-    if (canShowPopup(ad)) {
-      markPopupShown(ad);
-      const timer = setTimeout(() => setPopupVisible(true), 2000);
-      return () => clearTimeout(timer);
+    if (position !== "popup") return;
+    // Ignorar a primeira rota (carregamento inicial)
+    if (lastPopupLocation.current === null) {
+      lastPopupLocation.current = location;
+      return;
     }
-  }, [ads.length, position]);
+    // Só disparar quando a rota mudar
+    if (lastPopupLocation.current === location) return;
+    lastPopupLocation.current = location;
+    popupShownCount.current += 1;
+    // Disparar a cada 3 trocas de rota para não ser intrusivo
+    if (popupShownCount.current % 3 !== 0) return;
+    // Verificar se há banner próprio
+    if (ads.length > 0) {
+      const ad = ads[0];
+      if (canShowPopup(ad)) {
+        markPopupShown(ad);
+        const timer = setTimeout(() => setPopupVisible(true), 800);
+        return () => clearTimeout(timer);
+      }
+    } else if (adsterraCode) {
+      // Sem banner próprio: usar Adsterra como interstitial
+      // Controle de frequência: máx 1x por sessão por padrão
+      const popupKey = "adsterra_popup_shown";
+      if (!sessionStorage.getItem(popupKey)) {
+        sessionStorage.setItem(popupKey, "1");
+        const timer = setTimeout(() => setPopupVisible(true), 800);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [location, position, ads.length, adsterraCode]);
 
   // Carousel auto-advance
   useEffect(() => {
@@ -238,8 +264,9 @@ export function AdBanner({ position, className }: AdBannerProps) {
   // ── Popup mode ──────────────────────────────────────────────────────────────
   if (position === "popup") {
     if (!popupVisible) return null;
-    if (ads.length === 0) return null;
-    const ad = ads[0];
+    // Sem banner próprio E sem Adsterra: nada a exibir
+    if (ads.length === 0 && !adsterraCode) return null;
+    const ad = ads.length > 0 ? ads[0] : null;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div
@@ -253,7 +280,11 @@ export function AdBanner({ position, className }: AdBannerProps) {
             <X className="h-4 w-4" />
           </button>
           <div style={{ height: adHeight, overflow: "hidden" }}>
-            <AdContent ad={ad} onClick={() => handleClick(ad)} />
+            {ad ? (
+              <AdContent ad={ad} onClick={() => handleClick(ad)} />
+            ) : (
+              <AdsterraSlot htmlCode={adsterraCode!} width={adWidth} height={adHeight} />
+            )}
           </div>
           <div className="p-2 text-center">
             <span className="text-xs text-muted-foreground">Publicidade</span>

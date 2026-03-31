@@ -6,13 +6,25 @@
  * - A cada `interval` itens renderizados, injeta um <AdBanner position="between_sections" />
  * - Nunca insere banner antes do primeiro item nem após o último
  * - Só renderiza banners se `showAds` for true (usuário não-Pro)
+ * - Suporta `gridClassName` para grades CSS (ex: "grid grid-cols-2 gap-3")
+ *   Quando usado em grade, o banner ocupa toda a largura via `adClassName` (ex: "col-span-2")
  *
- * Uso:
+ * Uso básico (lista):
  * <AdInterleaved
  *   items={ranking}
  *   showAds={!isPro}
  *   interval={5}
  *   renderItem={(item, idx) => <RankCard key={item.id} item={item} idx={idx} />}
+ * />
+ *
+ * Uso em grade:
+ * <AdInterleaved
+ *   items={pools}
+ *   showAds={!isPro}
+ *   interval={4}
+ *   gridClassName="grid grid-cols-1 sm:grid-cols-2 gap-3"
+ *   adClassName="col-span-1 sm:col-span-2 w-full my-1"
+ *   renderItem={(pool) => <PoolCard key={pool.id} pool={pool} />}
  * />
  */
 import React from "react";
@@ -29,6 +41,8 @@ interface AdInterleavedProps<T> {
   renderItem: (item: T, index: number) => React.ReactNode;
   /** Classe CSS aplicada ao wrapper de cada banner */
   adClassName?: string;
+  /** Classe CSS do container wrapper (ex: "grid grid-cols-2 gap-3"). Se fornecida, envolve os itens num div com essa classe */
+  gridClassName?: string;
 }
 
 export function AdInterleaved<T>({
@@ -37,12 +51,15 @@ export function AdInterleaved<T>({
   interval = 5,
   renderItem,
   adClassName = "w-full my-2",
+  gridClassName,
 }: AdInterleavedProps<T>) {
   if (!items.length) return null;
 
-  // Sem anúncios: renderiza lista pura
+  // Sem anúncios: renderiza lista pura (com ou sem grid wrapper)
   if (!showAds) {
-    return <>{items.map((item, idx) => renderItem(item, idx))}</>;
+    const children = items.map((item, idx) => renderItem(item, idx));
+    if (gridClassName) return <div className={gridClassName}>{children}</div>;
+    return <>{children}</>;
   }
 
   const result: React.ReactNode[] = [];
@@ -67,5 +84,7 @@ export function AdInterleaved<T>({
     }
   });
 
+  // Se gridClassName fornecido, envolve tudo num div com essa classe
+  if (gridClassName) return <div className={gridClassName}>{result}</div>;
   return <>{result}</>;
 }
