@@ -135,6 +135,7 @@ export const adsRouter = router({
       return { success: true };
     }),
 
+  // Publicidade Global (Adsterra) — liga/desliga a rede de anúncios externa
   globalToggle: adminProcedure
     .input(z.object({ enabled: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
@@ -144,6 +145,19 @@ export const adsRouter = router({
       const { eq } = await import("drizzle-orm");
       await db.update(platformSettings).set({ adsEnabled: input.enabled }).where(eq(platformSettings.id, 1));
       await createAdminLog(ctx.user.id, "ads.globalToggle", "platform", 1, { adsEnabled: input.enabled });
+      return { success: true };
+    }),
+
+  // Publicidade Local (banners próprios) — liga/desliga banners cadastrados pelo admin
+  localToggle: adminProcedure
+    .input(z.object({ enabled: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await (await import("../db")).getDb();
+      if (!db) throw new Error("DB not available");
+      const { platformSettings } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      await db.update(platformSettings).set({ adsLocalEnabled: input.enabled }).where(eq(platformSettings.id, 1));
+      await createAdminLog(ctx.user.id, "ads.localToggle", "platform", 1, { adsLocalEnabled: input.enabled });
       return { success: true };
     }),
 });

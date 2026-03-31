@@ -205,9 +205,15 @@ export function AdBanner({ position, className }: AdBannerProps) {
   // Código Adsterra do banco
   const adsterraKey = getAdsterraKey(position, isMobile);
   const adNetworkScripts = (adConfig?.adNetworkScripts as Record<string, unknown> | null) ?? {};
-  const adsterraCode = typeof adNetworkScripts[adsterraKey] === "string" && (adNetworkScripts[adsterraKey] as string).trim().length > 0
+  // adsEnabled = Publicidade Global (Adsterra) — false = Adsterra suprimido
+  const adsterraEnabled = adConfig?.adsEnabled !== false;
+  // adsLocalEnabled = Publicidade Local (banners próprios) — false = banners próprios suprimidos
+  const localAdsEnabled = adConfig?.adsLocalEnabled !== false;
+  const adsterraCode = adsterraEnabled && typeof adNetworkScripts[adsterraKey] === "string" && (adNetworkScripts[adsterraKey] as string).trim().length > 0
     ? (adNetworkScripts[adsterraKey] as string)
     : null;
+  // Banners próprios: respeitar localAdsEnabled
+  const effectiveAds = localAdsEnabled ? ads : [];
 
   // Popup: disparar por banner próprio OU por Adsterra, com trigger por navegação
   useEffect(() => {
@@ -224,8 +230,8 @@ export function AdBanner({ position, className }: AdBannerProps) {
     // Disparar a cada 3 trocas de rota para não ser intrusivo
     if (popupShownCount.current % 3 !== 0) return;
     // Verificar se há banner próprio
-    if (ads.length > 0) {
-      const ad = ads[0];
+    if (effectiveAds.length > 0) {
+      const ad = effectiveAds[0];
       if (canShowPopup(ad)) {
         markPopupShown(ad);
         const timer = setTimeout(() => setPopupVisible(true), 800);
@@ -252,19 +258,19 @@ export function AdBanner({ position, className }: AdBannerProps) {
         return () => clearTimeout(timer);
       }
     }
-  }, [location, position, ads.length, adsterraCode]);
+  }, [location, position, effectiveAds.length, adsterraCode]);
 
   // Carousel auto-advance
   useEffect(() => {
-    if (ads.length <= 1 || position === "popup") return;
-    const interval = ads[currentIndex]?.carouselInterval ?? 5000;
+    if (effectiveAds.length <= 1 || position === "popup") return;
+    const interval = effectiveAds[currentIndex]?.carouselInterval ?? 5000;
     intervalRef.current = setInterval(() => {
-      setCurrentIndex((i) => (i + 1) % ads.length);
+      setCurrentIndex((i) => (i + 1) % effectiveAds.length);
     }, interval);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [ads.length, currentIndex, position]);
+  }, [effectiveAds.length, currentIndex, position]);
 
   const handleClick = useCallback(
     (ad: Ad) => {
@@ -278,8 +284,8 @@ export function AdBanner({ position, className }: AdBannerProps) {
   if (position === "popup") {
     if (!popupVisible) return null;
     // Sem banner próprio E sem Adsterra: nada a exibir
-    if (ads.length === 0 && !adsterraCode) return null;
-    const ad = ads.length > 0 ? ads[0] : null;
+    if (effectiveAds.length === 0 && !adsterraCode) return null;
+    const ad = effectiveAds.length > 0 ? effectiveAds[0] : null;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div
@@ -311,7 +317,7 @@ export function AdBanner({ position, className }: AdBannerProps) {
   if (position === "sidebar" && isMobile) return null;
 
   // ── Sem banner próprio: tentar Adsterra como fallback ──────────────────────
-  if (ads.length === 0) {
+  if (effectiveAds.length === 0) {
     if (!adsterraCode) return null;
     return (
       <div
@@ -330,7 +336,7 @@ export function AdBanner({ position, className }: AdBannerProps) {
   }
 
   // ── Banner próprio (carrossel) ──────────────────────────────────────────────
-  const currentAd = ads[currentIndex];
+  const currentAd = effectiveAds[currentIndex];
 
   return (
     <div
@@ -351,9 +357,9 @@ export function AdBanner({ position, className }: AdBannerProps) {
       </div>
 
       {/* Carousel dots */}
-      {ads.length > 1 && (
+      {effectiveAds.length > 1 && (
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-          {ads.map((_, i) => (
+          {effectiveAds.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentIndex(i)}

@@ -48,12 +48,14 @@ export const platformRouter = router({
     };
   }),
 
-  // Retorna configuração de rede de anúncios para o AdBanner (pública — não contém dados sensíveis)
+  // Retorna configuração de anúncios para o AdBanner (pública — não contém dados sensíveis)
+  // adsEnabled = Publicidade Global (Adsterra) | adsLocalEnabled = Publicidade Local (banners próprios)
   getAdConfig: publicProcedure.query(async () => {
     const settings = await getPlatformSettings();
-    if (!settings) return { adsEnabled: false, adNetworkScripts: null };
+    if (!settings) return { adsEnabled: false, adsLocalEnabled: false, adNetworkScripts: null };
     return {
       adsEnabled: settings.adsEnabled ?? false,
+      adsLocalEnabled: settings.adsLocalEnabled ?? false,
       adNetworkScripts: settings.adNetworkScripts ?? null,
     };
   }),

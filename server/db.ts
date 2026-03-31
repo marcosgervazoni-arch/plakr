@@ -675,13 +675,13 @@ export async function getActiveAds(position?: string) {
   const db = await getDb();
   if (!db) return [];
 
-  // [S-ADS-1] Verificar se anúncios estão globalmente habilitados na plataforma
+  // [S-ADS-1] Verificar se Publicidade Local (banners próprios) está habilitada
   const settings = await db
-    .select({ adsEnabled: platformSettings.adsEnabled })
+    .select({ adsLocalEnabled: platformSettings.adsLocalEnabled })
     .from(platformSettings)
     .where(eq(platformSettings.id, 1))
     .limit(1);
-  if (settings.length > 0 && settings[0].adsEnabled === false) return [];
+  if (settings.length > 0 && settings[0].adsLocalEnabled === false) return [];
 
   const now = new Date();
   const conditions = position

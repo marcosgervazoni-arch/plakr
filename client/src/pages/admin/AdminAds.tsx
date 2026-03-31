@@ -174,7 +174,15 @@ export default function AdminAds() {
 
   const globalToggleMutation = trpc.ads.globalToggle.useMutation({
     onSuccess: (_, vars) => {
-      toast.success(vars.enabled ? "Publicidade ativada globalmente." : "Publicidade desativada globalmente.");
+      toast.success(vars.enabled ? "Publicidade Global (Adsterra) ativada." : "Publicidade Global (Adsterra) desativada.");
+      refetchSettings();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const localToggleMutation = trpc.ads.localToggle.useMutation({
+    onSuccess: (_, vars) => {
+      toast.success(vars.enabled ? "Publicidade Local (banners próprios) ativada." : "Publicidade Local (banners próprios) desativada.");
       refetchSettings();
     },
     onError: (e: { message: string }) => toast.error(e.message),
@@ -197,7 +205,8 @@ export default function AdminAds() {
       popupFrequency: ((ad as { popupFrequency?: string }).popupFrequency as "session" | "daily" | "always") ?? "session",
     });
   };
-  const adsGlobalEnabled = settings?.adsEnabled ?? true;;
+  const adsGlobalEnabled = settings?.adsEnabled ?? true;
+  const adsLocalEnabled = settings?.adsLocalEnabled ?? true;
 
   // Totais de cliques
   const totalClicks = clicksData?.reduce((acc, r) => acc + Number(r.clicks), 0) ?? 0;
@@ -223,23 +232,20 @@ export default function AdminAds() {
             </Button>
           </div>
 
-          {/* Stats + Toggle Global */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className={`border-border/50 sm:col-span-3 ${!adsGlobalEnabled ? "border-amber-500/40 bg-amber-500/5" : "border-green-500/30 bg-green-500/5"}`}>
+          {/* Toggles de Publicidade */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Toggle Global — Adsterra */}
+            <Card className={`border-border/50 ${!adsGlobalEnabled ? "border-amber-500/40 bg-amber-500/5" : "border-green-500/30 bg-green-500/5"}`}>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${adsGlobalEnabled ? "bg-green-500/20" : "bg-amber-500/20"}`}>
-                      <span className="text-base">{adsGlobalEnabled ? "✅" : "⚠️"}</span>
+                      <Globe className={`h-4 w-4 ${adsGlobalEnabled ? "text-green-400" : "text-amber-400"}`} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold">
-                        Banners próprios: <span className={adsGlobalEnabled ? "text-green-400" : "text-amber-400"}>{adsGlobalEnabled ? "Ativos" : "Desativados"}</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {adsGlobalEnabled
-                          ? "Os banners cadastrados abaixo estão visíveis para usuários free. Desativar os oculta — o Adsterra continua funcionando nos espaços vagos."
-                          : "Banners próprios estão ocultos. O Adsterra continua ativo e preenche os espaços automaticamente. Ative para exibir seus próprios banners no lugar do Adsterra."}
+                      <p className="text-sm font-semibold">Publicidade Global</p>
+                      <p className={`text-xs font-medium ${adsGlobalEnabled ? "text-green-400" : "text-amber-400"}`}>
+                        {adsGlobalEnabled ? "• Adsterra ativo" : "• Adsterra desativado"}
                       </p>
                     </div>
                   </div>
@@ -250,13 +256,37 @@ export default function AdminAds() {
                     className="shrink-0"
                   />
                 </div>
-                {!adsGlobalEnabled && (
-                  <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-                    <p className="text-xs text-amber-300 leading-relaxed">
-                      <strong>⚠️ Atenção:</strong> este toggle foi a causa de anúncios não aparecerem anteriormente. Certifique-se de mantê-lo ativo para que seus banners próprios sejam exibidos.
-                    </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Controla a rede de anúncios <strong>Adsterra</strong>. Quando ativo, o Adsterra preenche automaticamente os espaços de publicidade para usuários free.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Toggle Local — Banners próprios */}
+            <Card className={`border-border/50 ${!adsLocalEnabled ? "border-amber-500/40 bg-amber-500/5" : "border-blue-500/30 bg-blue-500/5"}`}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${adsLocalEnabled ? "bg-blue-500/20" : "bg-amber-500/20"}`}>
+                      <Monitor className={`h-4 w-4 ${adsLocalEnabled ? "text-blue-400" : "text-amber-400"}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Publicidade Local</p>
+                      <p className={`text-xs font-medium ${adsLocalEnabled ? "text-blue-400" : "text-amber-400"}`}>
+                        {adsLocalEnabled ? "• Banners próprios ativos" : "• Banners próprios desativados"}
+                      </p>
+                    </div>
                   </div>
-                )}
+                  <Switch
+                    checked={adsLocalEnabled}
+                    onCheckedChange={(v) => localToggleMutation.mutate({ enabled: v })}
+                    disabled={localToggleMutation.isPending}
+                    className="shrink-0"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Controla os <strong>banners cadastrados abaixo</strong>. Quando ativo, seus banners próprios aparecem no lugar do Adsterra nos espaços configurados.
+                </p>
               </CardContent>
             </Card>
             <Card className="border-border/50">

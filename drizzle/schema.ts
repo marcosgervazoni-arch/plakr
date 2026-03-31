@@ -70,7 +70,8 @@ export const platformSettings = mysqlTable("platform_settings", {
   vapidPrivateKey: text("vapidPrivateKey"),
   vapidEmail: varchar("vapidEmail", { length: 320 }),
   pushEnabled: boolean("pushEnabled").default(false).notNull(),
-  adsEnabled: boolean("adsEnabled").default(true).notNull(),
+  adsEnabled: boolean("adsEnabled").default(true).notNull(),          // Publicidade Global (Adsterra) — controla se a rede de anúncios externa é exibida
+  adsLocalEnabled: boolean("adsLocalEnabled").default(true).notNull(),  // Publicidade Local — controla se banners próprios cadastrados pelo admin são exibidos
   restrictedInviteMessage: text("restrictedInviteMessage"), // mensagem exibida ao participante quando convite é restrito ao organizador
   cobaiaPoolId: int("cobaiaPoolId"), // ID do primeiro bolão válido após lançamento — participantes ganham o badge Cobaia
   // ─── INTEGRAÇÃO API-FOOTBALL (configurada pelo Super Admin) ─────────────────────────────────

@@ -2258,3 +2258,21 @@
 
 - [x] Adicionar aviso explicativo no toggle adsEnabled: "Desativar remove banners próprios, mas mantém Adsterra ativo"
 - [x] Melhorar UX do toggle com badge de status, cor condicional (verde/âmbar) e alerta histórico
+
+## Feature — Dois toggles independentes de publicidade
+
+- [ ] Adicionar coluna adsLocalEnabled no banco (platform_settings)
+- [ ] Atualizar schema Drizzle e aplicar migration SQL
+- [ ] Atualizar procedure globalToggle para suportar adsGlobalEnabled (Adsterra) e adsLocalEnabled (banners próprios)
+- [ ] Atualizar getAdConfig para retornar ambos os flags
+- [ ] Atualizar getActiveAds para usar adsLocalEnabled em vez de adsEnabled
+- [ ] Atualizar AdminAds com dois cards de toggle independentes e descrições claras
+- [ ] Atualizar AdBanner para respeitar os dois toggles separadamente
+
+## Feature — Dois toggles independentes de publicidade (31/03/2026)
+- [x] Adicionar coluna adsLocalEnabled no schema Drizzle e no banco via ALTER TABLE
+- [x] Criar procedure ads.localToggle (Publicidade Local — banners próprios)
+- [x] Atualizar ads.globalToggle para controlar exclusivamente o Adsterra
+- [x] Atualizar getAdConfig para retornar adsEnabled + adsLocalEnabled
+- [x] Reescrever AdminAds com dois cards de toggle independentes (verde=Adsterra, azul=local)
+- [x] Atualizar AdBanner: adsterraCode respeita adsEnabled, effectiveAds respeita adsLocalEnabled
