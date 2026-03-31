@@ -16,7 +16,10 @@ import {
   CheckCircle2,
   Loader2,
   XCircle,
-  Crown,
+  Clock,
+  QrCode,
+  AlertCircle,
+  Info,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
@@ -27,6 +30,7 @@ export default function JoinPool() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
   const [joined, setJoined] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState(false);
   const [alreadyMember, setAlreadyMember] = useState(false);
   const [targetSlug, setTargetSlug] = useState("");
 
@@ -36,6 +40,22 @@ export default function JoinPool() {
       { token: token ?? "" },
       { enabled: !!token && isAuthenticated, retry: false }
     );
+
+  // Mutation para bolão com taxa (solicitar aprovação)
+  const requestEntryMutation = trpc.pools.requestEntry.useMutation({
+    onSuccess: (data: { poolId: number; slug: string; alreadyMember: boolean; status?: string }) => {
+      if (data.alreadyMember) {
+        setAlreadyMember(true);
+        setTargetSlug(data.slug);
+      } else {
+        setPendingApproval(true);
+        setTargetSlug(data.slug);
+      }
+    },
+    onError: (err: { message?: string }) => {
+      toast.error(err.message || "Erro ao solicitar entrada no bolão.");
+    },
+  });
 
   const joinMutation = trpc.pools.joinByToken.useMutation({
     onSuccess: (data: { poolId: number; slug: string; alreadyMember: boolean }) => {
@@ -99,16 +119,49 @@ export default function JoinPool() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="w-full max-w-sm bg-card border border-border/50 rounded-xl p-8 text-center space-y-5">
-          <div className="w-14 h-14 rounded-xl bg-destructive/10 flex items-center justify-center mx-auto">
-            <XCircle className="w-7 h-7 text-destructive" />
+          <div className="w-14 h-14 rounded-xl bg-red-500/10 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-7 h-7 text-red-400" />
           </div>
           <div>
-            <h1 className="font-bold text-xl mb-1">Link inválido</h1>
-            <p className="text-sm text-muted-foreground">Este link de convite é inválido ou expirou.</p>
+            <h1 className="font-bold text-xl mb-1">Link inválido ou expirado</h1>
+            <p className="text-sm text-muted-foreground">Este link de convite não é mais válido. Peça um novo link ao organizador.</p>
           </div>
-          <Link href="/dashboard">
-            <Button variant="outline" className="w-full">Ir para o painel</Button>
-          </Link>
+          <Button variant="outline" onClick={() => navigate("/dashboard")} className="w-full">
+            Ir para o início
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Pending approval state
+  if (pendingApproval) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="w-full max-w-sm bg-card border border-border/50 rounded-xl p-8 text-center space-y-5 animate-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30 flex items-center justify-center mx-auto">
+            <Clock className="w-8 h-8 text-yellow-400" />
+          </div>
+          <div>
+            <h1 className="font-bold text-xl mb-1">Aguardando aprovação</h1>
+            <p className="text-sm text-muted-foreground">
+              Sua solicitação foi enviada ao organizador de <strong>{preview.name}</strong>.
+              Você receberá uma notificação assim que for aprovado.
+            </p>
+          </div>
+          <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground text-left space-y-1.5">
+            <p className="flex items-start gap-1.5">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-yellow-400" />
+              Solicitações não aprovadas em 7 dias são canceladas automaticamente.
+            </p>
+            <p className="flex items-start gap-1.5">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-yellow-400" />
+              Em caso de não aprovação, entre em contato com o organizador sobre o reembolso.
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => navigate("/dashboard")} className="w-full">
+            Ir para o início
+          </Button>
         </div>
       </div>
     );
@@ -151,6 +204,8 @@ export default function JoinPool() {
       </div>
     );
   }
+
+  const hasFee = !!preview.entryFee && preview.entryFee > 0;
 
   // Main confirmation screen
   return (
@@ -200,31 +255,101 @@ export default function JoinPool() {
             </div>
           </div>
 
-          {/* Invite context */}
-          <div className="px-6 py-3 bg-primary/5 border-b border-border/30">
-            <p className="text-sm text-center text-muted-foreground">
-              Você foi convidado para participar deste bolão.
-            </p>
-          </div>
+          {/* Entry fee section */}
+          {hasFee ? (
+            <>
+              {/* Fee badge */}
+              <div className="px-6 py-3 bg-yellow-500/5 border-b border-yellow-500/20">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-yellow-400 font-bold text-lg">
+                    R$ {Number(preview.entryFee).toFixed(2).replace(".", ",")}
+                  </span>
+                  <span className="text-sm text-muted-foreground">de taxa de inscrição</span>
+                </div>
+              </div>
 
-          {/* Actions */}
-          <div className="p-6 space-y-3">
-            <Button
-              onClick={() => joinMutation.mutate({ token: token ?? "" })}
-              disabled={joinMutation.isPending}
-              className="w-full"
-              size="lg"
-            >
-              {joinMutation.isPending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Entrando...</>
+              {/* QR Code */}
+              {preview.entryQrCodeUrl ? (
+                <div className="p-6 border-b border-border/30 space-y-3">
+                  <p className="text-sm text-center text-muted-foreground">
+                    Escaneie o QR Code PIX abaixo para pagar a taxa de inscrição:
+                  </p>
+                  <div className="flex justify-center">
+                    <div className="bg-white p-3 rounded-xl shadow-sm">
+                      <img
+                        src={preview.entryQrCodeUrl}
+                        alt="QR Code PIX"
+                        className="w-48 h-48 object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
               ) : (
-                "Entrar no bolão"
+                <div className="p-6 border-b border-border/30">
+                  <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-3">
+                    <QrCode className="w-8 h-8 text-muted-foreground/50 shrink-0" />
+                    <p className="text-sm text-muted-foreground">
+                      O organizador ainda não configurou o QR Code PIX. Entre em contato para obter as informações de pagamento.
+                    </p>
+                  </div>
+                </div>
               )}
-            </Button>
-            <Link href="/dashboard" className="block text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Recusar convite
-            </Link>
-          </div>
+
+              {/* Info note */}
+              <div className="px-6 py-3 bg-muted/20 border-b border-border/30">
+                <p className="text-xs text-muted-foreground text-center">
+                  Após o pagamento, clique em "Já paguei" e aguarde a aprovação do organizador.
+                  Solicitações não aprovadas em 7 dias são canceladas automaticamente.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="p-6 space-y-3">
+                <Button
+                  onClick={() => requestEntryMutation.mutate({ token: token ?? "" })}
+                  disabled={requestEntryMutation.isPending}
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
+                  size="lg"
+                >
+                  {requestEntryMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando solicitação...</>
+                  ) : (
+                    <>✓ Já paguei — aguardar aprovação</>
+                  )}
+                </Button>
+                <Link href="/dashboard" className="block text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Recusar convite
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Invite context */}
+              <div className="px-6 py-3 bg-primary/5 border-b border-border/30">
+                <p className="text-sm text-center text-muted-foreground">
+                  Você foi convidado para participar deste bolão.
+                </p>
+              </div>
+              {/* Actions */}
+              <div className="p-6 space-y-3">
+                <Button
+                  onClick={() => joinMutation.mutate({ token: token ?? "" })}
+                  disabled={joinMutation.isPending}
+                  className="w-full"
+                  size="lg"
+                >
+                  {joinMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Entrando...</>
+                  ) : (
+                    "Entrar no bolão"
+                  )}
+                </Button>
+                <Link href="/dashboard" className="block text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  Recusar convite
+                </Link>
+              </div>
+            </>
+          )}
         </div>
 
         <p className="text-center text-xs text-muted-foreground">

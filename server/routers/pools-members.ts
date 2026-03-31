@@ -303,6 +303,165 @@ export const poolsMembersRouter = router({
       return { bySource, total, daily };
     }),
 
+  // ── Taxa de inscrição: solicitar entrada (participante) ────────────────────
+  requestEntry: protectedProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const { getPoolByInviteToken, getUserPlanTier } = await import("../db");
+      const pool = await getPoolByInviteToken(input.token);
+      if (!pool) throw PoolErr.invalidInvite();
+      if (pool.status !== "active") throw PoolErr.notActive();
+      if (!pool.entryFee) throw Err.forbidden("Este bol\u00e3o n\u00e3o tem taxa de inscri\u00e7\u00e3o.");
+      const existing = await getPoolMember(pool.id, ctx.user.id);
+      if (existing) return { poolId: pool.id, slug: pool.slug, alreadyMember: true };
+      const db = await (await import("../db")).getDb();
+      if (!db) throw Err.internal();
+      const { poolMembers: pm } = await import("../../drizzle/schema");
+      const { and, eq } = await import("drizzle-orm");
+      // Inserir com status pending_approval
+      await db.insert(pm).values({
+        poolId: pool.id,
+        userId: ctx.user.id,
+        role: "participant",
+        memberStatus: "pending_approval",
+        paymentRequestedAt: new Date(),
+        joinSource: "link",
+      }).onDuplicateKeyUpdate({ set: { memberStatus: "pending_approval", paymentRequestedAt: new Date() } });
+      // Notificar organizador
+      await createNotification({
+        userId: pool.ownerId,
+        poolId: pool.id,
+        type: "system",
+        title: "\uD83D\uDCB0 Novo pagamento pendente",
+        message: `${ctx.user.name ?? "Um participante"} pagou R$ ${Number(pool.entryFee).toFixed(2)} e aguarda aprova\u00e7\u00e3o no bol\u00e3o \"${pool.name}\".`,
+      });
+      await createAdminLog(ctx.user.id, "pool_entry_requested", "pool", pool.id, {
+        poolName: pool.name, entryFee: pool.entryFee,
+      }, pool.id, { level: "info" });
+      return { poolId: pool.id, slug: pool.slug, alreadyMember: false, status: "pending_approval" };
+    }),
+
+  // ── Taxa de inscrição: listar pendentes (organizador) ─────────────────────
+  listPendingMembers: protectedProcedure
+    .input(z.object({ poolId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) throw Err.forbidden();
+      const db = await (await import("../db")).getDb();
+      if (!db) return [];
+      const { poolMembers: pm, users: usersT } = await import("../../drizzle/schema");
+      const { and, eq } = await import("drizzle-orm");
+      return db.select({ member: pm, user: usersT })
+        .from(pm)
+        .innerJoin(usersT, eq(pm.userId, usersT.id))
+        .where(and(eq(pm.poolId, input.poolId), eq(pm.memberStatus, "pending_approval")));
+    }),
+
+  // ── Taxa de inscrição: aprovar membro (organizador) ───────────────────────
+  approveMember: protectedProcedure
+    .input(z.object({ poolId: z.number(), userId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) throw Err.forbidden();
+      const db = await (await import("../db")).getDb();
+      if (!db) throw Err.internal();
+      const { poolMembers: pm } = await import("../../drizzle/schema");
+      const { and, eq } = await import("drizzle-orm");
+      await db.update(pm)
+        .set({ memberStatus: "active" })
+        .where(and(eq(pm.poolId, input.poolId), eq(pm.userId, input.userId)));
+      const pool = await getPoolById(input.poolId);
+      await createNotification({
+        userId: input.userId,
+        poolId: input.poolId,
+        type: "system",
+        title: "\u2705 Inscri\u00e7\u00e3o aprovada!",
+        message: `Sua inscri\u00e7\u00e3o no bol\u00e3o \"${pool?.name ?? ""}\" foi aprovada. Boas apostas!`,
+      });
+      await createAdminLog(ctx.user.id, "pool_entry_approved", "pool", input.poolId, {
+        approvedUserId: input.userId,
+      }, input.poolId, { level: "info" });
+      return { success: true };
+    }),
+
+  // ── Taxa de inscrição: recusar membro (organizador) ───────────────────────
+  rejectMember: protectedProcedure
+    .input(z.object({ poolId: z.number(), userId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) throw Err.forbidden();
+      const db = await (await import("../db")).getDb();
+      if (!db) throw Err.internal();
+      const { poolMembers: pm } = await import("../../drizzle/schema");
+      const { and, eq } = await import("drizzle-orm");
+      await db.update(pm)
+        .set({ memberStatus: "rejected" })
+        .where(and(eq(pm.poolId, input.poolId), eq(pm.userId, input.userId)));
+      const pool = await getPoolById(input.poolId);
+      await createNotification({
+        userId: input.userId,
+        poolId: input.poolId,
+        type: "system",
+        title: "Inscri\u00e7\u00e3o n\u00e3o aprovada",
+        message: `Sua inscri\u00e7\u00e3o no bol\u00e3o \"${pool?.name ?? ""}\" n\u00e3o foi aprovada. Entre em contato com o organizador para informa\u00e7\u00f5es sobre reembolso.`,
+      });
+      await createAdminLog(ctx.user.id, "pool_entry_rejected", "pool", input.poolId, {
+        rejectedUserId: input.userId,
+      }, input.poolId, { level: "info" });
+      return { success: true };
+    }),
+
+  // ── Taxa de inscrição: upload do QR Code PIX (organizador Pro) ────────────
+  uploadEntryQrCode: protectedProcedure
+    .input(z.object({
+      poolId: z.number(),
+      imageBase64: z.string(), // base64 da imagem
+      mimeType: z.string().default("image/png"),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) throw Err.forbidden();
+      // Gate Pro
+      const { getUserPlanTier } = await import("../db");
+      const tier = ctx.user.role === "admin" ? "pro" : await getUserPlanTier(ctx.user.id);
+      if (tier === "free") throw Err.forbidden("O upload de QR Code PIX \u00e9 exclusivo do plano Pro.");
+      const { storagePut } = await import("../storage");
+      const { nanoid: nid } = await import("nanoid");
+      const ext = input.mimeType.includes("png") ? "png" : "jpg";
+      const key = `pool-qrcodes/${input.poolId}-${nid(8)}.${ext}`;
+      const buffer = Buffer.from(input.imageBase64, "base64");
+      const { url } = await storagePut(key, buffer, input.mimeType);
+      const db = await (await import("../db")).getDb();
+      if (!db) throw Err.internal();
+      const { pools: poolsT } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      await db.update(poolsT).set({ entryQrCodeUrl: url }).where(eq(poolsT.id, input.poolId));
+      return { url };
+    }),
+
+  // ── Taxa de inscrição: configurar taxa (organizador Pro) ──────────────────
+  setEntryFee: protectedProcedure
+    .input(z.object({
+      poolId: z.number(),
+      entryFee: z.number().min(0).nullable(), // null = remover taxa
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) throw Err.forbidden();
+      // Gate Pro
+      const { getUserPlanTier } = await import("../db");
+      const tier = ctx.user.role === "admin" ? "pro" : await getUserPlanTier(ctx.user.id);
+      if (tier === "free" && input.entryFee !== null) throw Err.forbidden("Taxa de inscri\u00e7\u00e3o \u00e9 exclusiva do plano Pro.");
+      const db = await (await import("../db")).getDb();
+      if (!db) throw Err.internal();
+      const { pools: poolsT } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      await db.update(poolsT)
+        .set({ entryFee: input.entryFee !== null ? String(input.entryFee) : null })
+        .where(eq(poolsT.id, input.poolId));
+      return { success: true };
+    }),
+
   // ── Regenerar código de acesso do bolão ───────────────────────────────────
   regenerateAccessCode: protectedProcedure
     .input(z.object({ poolId: z.number() }))

@@ -167,6 +167,8 @@ export const poolsCoreRouter = router({
         tournament: tournament ? { name: tournament.name } : null,
         memberCount,
         ownerName: owner?.name ?? null,
+        entryFee: pool.entryFee ? Number(pool.entryFee) : null,
+        entryQrCodeUrl: pool.entryQrCodeUrl ?? null,
       };
     }),
 
@@ -253,13 +255,25 @@ export const poolsCoreRouter = router({
       accessType: z.enum(["public", "private_link"]).optional(),
       invitePermission: z.enum(["organizer_only", "all_members"]).optional(),
       tournamentId: z.number().optional(),
+      entryFee: z.number().nullable().optional(),
+      entryQrCodeUrl: z.string().nullable().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const { poolId, ...data } = input;
+      const { poolId, entryFee, entryQrCodeUrl, ...rest } = input;
       const member = await getPoolMember(poolId, ctx.user.id);
       if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
         throw Err.forbidden();
       }
+      // Validar plano Pro para taxa de inscrição
+      if (entryFee !== undefined && entryFee !== null && entryFee > 0) {
+        const { getUserPlanTier } = await import("../db");
+        const tier = await getUserPlanTier(ctx.user.id);
+        if (tier !== "pro") throw Err.forbidden("Taxa de inscrição é uma funcionalidade exclusiva do plano Pro.");
+      }
+      // Drizzle usa string para decimal, converter
+      const data: any = { ...rest };
+      if (entryFee !== undefined) data.entryFee = entryFee !== null ? String(entryFee) : null;
+      if (entryQrCodeUrl !== undefined) data.entryQrCodeUrl = entryQrCodeUrl;
       await updatePool(poolId, data);
       return { success: true };
     }),

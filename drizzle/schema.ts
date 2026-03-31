@@ -1,5 +1,6 @@
 import {
   boolean,
+  decimal,
   int,
   json,
   mysqlEnum,
@@ -280,8 +281,10 @@ export const pools = mysqlTable("pools", {
     .references(() => tournaments.id),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  // Taxa de inscrição (feature Pro)
+  entryFee: decimal("entryFee", { precision: 10, scale: 2 }),       // null = gratuito
+  entryQrCodeUrl: text("entryQrCodeUrl"),                           // URL do QR Code PIX no S3
 });
-
 export type Pool = typeof pools.$inferSelect;
 // ─── MEMBROS DO BOLÃO ─────────────────────────────────────────────────────────
 
@@ -299,6 +302,10 @@ export const poolMembers = mysqlTable(
     isBlocked: boolean("isBlocked").default(false).notNull(),
     joinedAt: timestamp("joinedAt").defaultNow().notNull(),
     joinSource: mysqlEnum("joinSource", ["code", "link", "public", "organizer"]).default("public"),
+    // Status de aprovação para bolões com taxa de inscrição (feature Pro)
+    memberStatus: mysqlEnum("memberStatus", ["active", "pending_approval", "rejected"])
+      .default("active").notNull(),
+    paymentRequestedAt: timestamp("paymentRequestedAt"), // quando o participante clicou em "Já paguei"
   },
   (t) => [unique("pool_member_unique").on(t.poolId, t.userId)]
 );

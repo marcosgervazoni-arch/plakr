@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 import {
   Globe,
   Key,
@@ -34,6 +35,9 @@ import {
   UserCheck,
   Lock,
   Share2,
+  DollarSign,
+  Info,
+  Save,
 } from "lucide-react";
 import { useParams } from "wouter";
 import { useState } from "react";
@@ -101,6 +105,35 @@ export default function OrganizerAccess() {
   const { isPro, isProExpired } = useUserPlan();
   void isProExpired; // usado no OrganizerLayout
   const accessType = (pool?.accessType ?? "private_link") as AccessType;
+
+  // Taxa de inscrição
+  const [entryFeeInput, setEntryFeeInput] = useState("");
+  const [qrCodeInput, setQrCodeInput] = useState("");
+  const [feeEditing, setFeeEditing] = useState(false);
+
+  // Sincronizar com dados do pool quando carregarem
+  const currentFee = pool?.entryFee ? Number(pool.entryFee) : null;
+  const currentQr = (pool as any)?.entryQrCodeUrl ?? null;
+
+  const handleSaveFee = () => {
+    if (!pool?.id) return;
+    const fee = entryFeeInput ? parseFloat(entryFeeInput.replace(",", ".")) : null;
+    if (fee !== null && (isNaN(fee) || fee < 0)) {
+      toast.error("Valor inválido. Use um número positivo.");
+      return;
+    }
+    updateMutation.mutate({
+      poolId: pool.id,
+      entryFee: fee,
+      entryQrCodeUrl: qrCodeInput || null,
+    }, {
+      onSuccess: () => {
+        toast.success("Taxa de inscrição atualizada.");
+        setFeeEditing(false);
+        refetch();
+      },
+    });
+  };
   const inviteLink = pool?.inviteToken
     ? `${window.location.origin}/join/${pool.inviteToken}`
     : "";
@@ -264,6 +297,115 @@ export default function OrganizerAccess() {
             </div>
           </div>
         )}
+
+        {/* Taxa de inscrição — Pro only */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Taxa de Inscrição</h3>
+            {isPro && (
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">Pro</span>
+            )}
+          </div>
+
+          {!isPro ? (
+            <div className="bg-card border border-border/30 rounded-xl p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Cobrança de taxa de inscrição via PIX disponível no Plano Pro</p>
+              </div>
+              <Crown className="w-4 h-4 text-primary shrink-0" />
+            </div>
+          ) : !feeEditing ? (
+            <div className="bg-card border border-border/30 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div>
+                    {currentFee && currentFee > 0 ? (
+                      <>
+                        <p className="font-bold text-lg text-yellow-400">R$ {currentFee.toFixed(2).replace(".", ",")}</p>
+                        <p className="text-xs text-muted-foreground">Taxa de inscrição ativa</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium text-sm text-muted-foreground">Sem taxa de inscrição</p>
+                        <p className="text-xs text-muted-foreground">Entrada gratuita para todos</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEntryFeeInput(currentFee ? currentFee.toFixed(2).replace(".", ",") : "");
+                    setQrCodeInput(currentQr ?? "");
+                    setFeeEditing(true);
+                  }}
+                >
+                  Configurar
+                </Button>
+              </div>
+              {currentFee && currentFee > 0 && currentQr && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <QrCode className="w-3.5 h-3.5 text-green-400" />
+                  <span>QR Code PIX configurado</span>
+                </div>
+              )}
+              {currentFee && currentFee > 0 && !currentQr && (
+                <div className="flex items-center gap-2 text-xs text-yellow-400">
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>QR Code PIX não configurado — participantes não poderão ver como pagar</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-card border border-border/30 rounded-xl p-4 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Valor da taxa (R$)</label>
+                <Input
+                  value={entryFeeInput}
+                  onChange={(e) => setEntryFeeInput(e.target.value)}
+                  placeholder="Ex: 20,00"
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">Deixe em branco para desativar a taxa de inscrição.</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">URL do QR Code PIX</label>
+                <Input
+                  value={qrCodeInput}
+                  onChange={(e) => setQrCodeInput(e.target.value)}
+                  placeholder="https://..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Gere o QR Code PIX no app do seu banco e cole aqui a URL da imagem.
+                </p>
+              </div>
+              <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg p-3 flex items-start gap-2">
+                <Info className="w-3.5 h-3.5 text-yellow-400 shrink-0 mt-0.5" />
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>Após o pagamento, o participante clicará em "Já paguei" e aguardará sua aprovação na aba <strong>Aprovações Pendentes</strong> em Membros.</p>
+                  <p>Solicitações não aprovadas em <strong>7 dias</strong> são canceladas automaticamente.</p>
+                  <p>O reembolso em caso de recusa é de responsabilidade do organizador e deve ser tratado fora do app.</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 gap-1.5"
+                  onClick={handleSaveFee}
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Salvar
+                </Button>
+                <Button variant="outline" onClick={() => setFeeEditing(false)}>Cancelar</Button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Ingress stats */}
         <div className="space-y-3">

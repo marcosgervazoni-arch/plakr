@@ -2300,3 +2300,21 @@
 - [x] Baixar imagem (html2canvas) — implementado via ShareCard + useShareCard hook
 - [x] Card pré-jogo: texto com palpite do usuário para compartilhamento
 - [x] Card pós-jogo: placar + pontos + texto de compartilhamento
+
+## Feature — Taxa de Inscrição por Bolão (Plano Pro)
+- [x] Schema: campo entryFee (decimal) e entryQrCodeUrl (text) na tabela pools
+- [x] Schema: campo memberStatus (enum: active|pending_approval|rejected) e paymentRequestedAt em pool_members
+- [x] Aplicar migration SQL
+- [x] Backend: storagePut para upload do QR Code PIX
+- [x] Backend: procedure uploadEntryQrCode (Pro only)
+- [x] Backend: procedure joinByToken atualizar para status pending_approval quando há taxa
+- [x] Backend: procedure listPendingMembers (organizador)
+- [x] Backend: procedure approveMember / rejectMember (organizador)
+- [x] Backend: notificação ao organizador quando novo membro pendente
+- [x] Backend: notificação ao participante quando aprovado/recusado
+- [x] Backend: cron job — expirar membros pending_approval após 7 dias
+- [x] Frontend: campo taxa de inscrição + upload QR Code na criação/edição do bolão (gate Pro)
+- [x] Frontend: tela JoinPool — exibir QR Code + valor + notas (reembolso e prazo 7 dias)
+- [x] Frontend: botão "Já paguei — solicitar entrada" → status pending_approval
+- [x] Frontend: aba "Pendentes" no painel do organizador com Aprovar/Recusar
+- [x] Frontend: badge de upgrade Pro ao tentar configurar taxa no plano Free
