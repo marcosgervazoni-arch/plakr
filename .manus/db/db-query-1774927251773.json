@@ -1,0 +1,31 @@
+{
+  "query": "-- Jogos sem nome de time (integridade)\nSELECT COUNT(*) AS jogos_sem_teamAName FROM games WHERE tournamentId = 60001 AND (teamAName IS NULL OR teamAName = '');\n\n-- Amostra de 5 jogos com nomes para confirmar dados reais\nSELECT id, teamAName, scoreA, scoreB, teamBName, phase, matchDate, externalId\nFROM games WHERE tournamentId = 60001 AND teamAName IS NOT NULL ORDER BY matchDate DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Jogos sem nome de time (integridade)\nSELECT COUNT(*) AS jogos_sem_teamAName FROM games WHERE tournamentId = 60001 AND (teamAName IS NULL OR teamAName = '');\n\n-- Amostra de 5 jogos com nomes para confirmar dados reais\nSELECT id, teamAName, scoreA, scoreB, teamBName, phase, matchDate, externalId\nFROM games WHERE tournamentId = 60001 AND teamAName IS NOT NULL ORDER BY matchDate DESC LIMIT 5;",
+  "rows": [
+    {
+      "jogos_sem_teamAName": "0"
+    },
+    {
+      "jogos_sem_teamAName": "id\tteamAName\tscoreA\tscoreB\tteamBName\tphase\tmatchDate\texternalId"
+    },
+    {
+      "jogos_sem_teamAName": "90076\tGremio\t3\t1\tJuventude\tfinal\t2024-04-06 19:30:00\t1190031"
+    },
+    {
+      "jogos_sem_teamAName": "90075\tJuventude\t0\t0\tGremio\tfinal\t2024-03-30 19:30:00\t1190030"
+    },
+    {
+      "jogos_sem_teamAName": "90074\tGremio\t3\t2\tCaxias\tsemi_finals\t2024-03-27 00:00:00\t1183790"
+    },
+    {
+      "jogos_sem_teamAName": "90073\tInternacional\t1\t1\tJuventude\tsemi_finals\t2024-03-26 00:45:00\t1183708"
+    },
+    {
+      "jogos_sem_teamAName": "90072\tJuventude\t0\t0\tInternacional\tsemi_finals\t2024-03-17 19:00:00\t1183707"
+    }
+  ],
+  "messages": [],
+  "stdout": "jogos_sem_teamAName\n0\nid\tteamAName\tscoreA\tscoreB\tteamBName\tphase\tmatchDate\texternalId\n90076\tGremio\t3\t1\tJuventude\tfinal\t2024-04-06 19:30:00\t1190031\n90075\tJuventude\t0\t0\tGremio\tfinal\t2024-03-30 19:30:00\t1190030\n90074\tGremio\t3\t2\tCaxias\tsemi_finals\t2024-03-27 00:00:00\t1183790\n90073\tInternacional\t1\t1\tJuventude\tsemi_finals\t2024-03-26 00:45:00\t1183708\n90072\tJuventude\t0\t0\tInternacional\tsemi_finals\t2024-03-17 19:00:00\t1183707\n",
+  "stderr": "",
+  "execution_time_ms": 435
+}

@@ -1,0 +1,130 @@
+{
+  "query": "SELECT g.id, g.phase, g.roundNumber, \n       tA.name AS teamA, g.scoreA, g.scoreB, tB.name AS teamB,\n       g.matchDate, g.status, g.externalId\nFROM games g\nLEFT JOIN teams tA ON g.teamAId = tA.id\nLEFT JOIN teams tB ON g.teamBId = tB.id\nWHERE g.tournamentId = 60001\nORDER BY g.matchDate DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT g.id, g.phase, g.roundNumber, \n       tA.name AS teamA, g.scoreA, g.scoreB, tB.name AS teamB,\n       g.matchDate, g.status, g.externalId\nFROM games g\nLEFT JOIN teams tA ON g.teamAId = tA.id\nLEFT JOIN teams tB ON g.teamBId = tB.id\nWHERE g.tournamentId = 60001\nORDER BY g.matchDate DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "90076",
+      "phase": "final",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "3",
+      "scoreB": "1",
+      "teamB": "NULL",
+      "matchDate": "2024-04-06 19:30:00",
+      "status": "finished",
+      "externalId": "1190031"
+    },
+    {
+      "id": "90075",
+      "phase": "final",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "0",
+      "scoreB": "0",
+      "teamB": "NULL",
+      "matchDate": "2024-03-30 19:30:00",
+      "status": "finished",
+      "externalId": "1190030"
+    },
+    {
+      "id": "90074",
+      "phase": "semi_finals",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "3",
+      "scoreB": "2",
+      "teamB": "NULL",
+      "matchDate": "2024-03-27 00:00:00",
+      "status": "finished",
+      "externalId": "1183790"
+    },
+    {
+      "id": "90073",
+      "phase": "semi_finals",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "1",
+      "scoreB": "1",
+      "teamB": "NULL",
+      "matchDate": "2024-03-26 00:45:00",
+      "status": "finished",
+      "externalId": "1183708"
+    },
+    {
+      "id": "90072",
+      "phase": "semi_finals",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "0",
+      "scoreB": "0",
+      "teamB": "NULL",
+      "matchDate": "2024-03-17 19:00:00",
+      "status": "finished",
+      "externalId": "1183707"
+    },
+    {
+      "id": "90071",
+      "phase": "semi_finals",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "1",
+      "scoreB": "2",
+      "teamB": "NULL",
+      "matchDate": "2024-03-16 19:30:00",
+      "status": "finished",
+      "externalId": "1183791"
+    },
+    {
+      "id": "90070",
+      "phase": "quarter_finals",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "2",
+      "scoreB": "0",
+      "teamB": "NULL",
+      "matchDate": "2024-03-10 21:30:00",
+      "status": "finished",
+      "externalId": "1180814"
+    },
+    {
+      "id": "90069",
+      "phase": "quarter_finals",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "0",
+      "scoreB": "4",
+      "teamB": "NULL",
+      "matchDate": "2024-03-09 22:30:00",
+      "status": "finished",
+      "externalId": "1180816"
+    },
+    {
+      "id": "90068",
+      "phase": "quarter_finals",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "3",
+      "scoreB": "0",
+      "teamB": "NULL",
+      "matchDate": "2024-03-09 19:30:00",
+      "status": "finished",
+      "externalId": "1180813"
+    },
+    {
+      "id": "90067",
+      "phase": "quarter_finals",
+      "roundNumber": "NULL",
+      "teamA": "NULL",
+      "scoreA": "1",
+      "scoreB": "0",
+      "teamB": "NULL",
+      "matchDate": "2024-03-08 22:00:00",
+      "status": "finished",
+      "externalId": "1180815"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tphase\troundNumber\tteamA\tscoreA\tscoreB\tteamB\tmatchDate\tstatus\texternalId\n90076\tfinal\tNULL\tNULL\t3\t1\tNULL\t2024-04-06 19:30:00\tfinished\t1190031\n90075\tfinal\tNULL\tNULL\t0\t0\tNULL\t2024-03-30 19:30:00\tfinished\t1190030\n90074\tsemi_finals\tNULL\tNULL\t3\t2\tNULL\t2024-03-27 00:00:00\tfinished\t1183790\n90073\tsemi_finals\tNULL\tNULL\t1\t1\tNULL\t2024-03-26 00:45:00\tfinished\t1183708\n90072\tsemi_finals\tNULL\tNULL\t0\t0\tNULL\t2024-03-17 19:00:00\tfinished\t1183707\n90071\tsemi_finals\tNULL\tNULL\t1\t2\tNULL\t2024-03-16 19:30:00\tfinished\t1183791\n90070\tquarter_finals\tNULL\tNULL\t2\t0\tNULL\t2024-03-10 21:30:00\tfinished\t1180814\n90069\tquarter_finals\tNULL\tNULL\t0\t4\tNULL\t2024-03-09 22:30:00\tfinished\t1180816\n90068\tquarter_finals\tNULL\tNULL\t3\t0\tNULL\t2024-03-09 19:30:00\tfinished\t1180813\n90067\tquarter_finals\tNULL\tNULL\t1\t0\tNULL\t2024-03-08 22:00:00\tfinished\t1180815\n",
+  "stderr": "",
+  "execution_time_ms": 349
+}

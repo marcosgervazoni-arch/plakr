@@ -1,0 +1,9 @@
+{
+  "query": "-- Fases cadastradas para o Gaúcho\nSELECT tp.id, tp.key AS phaseKey, tp.label, tp.enabled, tp.isKnockout, tp.order\nFROM tournament_phases tp WHERE tp.tournamentId = 60001 ORDER BY tp.order;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Fases cadastradas para o Gaúcho\nSELECT tp.id, tp.key AS phaseKey, tp.label, tp.enabled, tp.isKnockout, tp.order\nFROM tournament_phases tp WHERE tp.tournamentId = 60001 ORDER BY tp.order;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 371
+}

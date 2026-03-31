@@ -1,0 +1,32 @@
+{
+  "query": "-- Campeonatos com detalhes\nSELECT id, name, apiFootballLeagueId, apiFootballSeason, isAvailable, status, \n       (SELECT COUNT(*) FROM games WHERE tournamentId = tournaments.id) AS totalGames,\n       (SELECT COUNT(*) FROM games WHERE tournamentId = tournaments.id AND status = 'finished') AS finishedGames,\n       (SELECT COUNT(*) FROM games WHERE tournamentId = tournaments.id AND matchDate > NOW()) AS futureGames\nFROM tournaments ORDER BY id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Campeonatos com detalhes\nSELECT id, name, apiFootballLeagueId, apiFootballSeason, isAvailable, status, \n       (SELECT COUNT(*) FROM games WHERE tournamentId = tournaments.id) AS totalGames,\n       (SELECT COUNT(*) FROM games WHERE tournamentId = tournaments.id AND status = 'finished') AS finishedGames,\n       (SELECT COUNT(*) FROM games WHERE tournamentId = tournaments.id AND matchDate > NOW()) AS futureGames\nFROM tournaments ORDER BY id;\n",
+  "rows": [
+    {
+      "id": "30003",
+      "name": "Torneio de Teste",
+      "apiFootballLeagueId": "NULL",
+      "apiFootballSeason": "NULL",
+      "isAvailable": "1",
+      "status": "active",
+      "totalGames": "0",
+      "finishedGames": "0",
+      "futureGames": "0"
+    },
+    {
+      "id": "60001",
+      "name": "Gaúcho - 1",
+      "apiFootballLeagueId": "477",
+      "apiFootballSeason": "2024",
+      "isAvailable": "1",
+      "status": "active",
+      "totalGames": "76",
+      "finishedGames": "76",
+      "futureGames": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tapiFootballLeagueId\tapiFootballSeason\tisAvailable\tstatus\ttotalGames\tfinishedGames\tfutureGames\n30003\tTorneio de Teste\tNULL\tNULL\t1\tactive\t0\t0\t0\n60001\tGaúcho - 1\t477\t2024\t1\tactive\t76\t76\t0\n",
+  "stderr": "",
+  "execution_time_ms": 352
+}

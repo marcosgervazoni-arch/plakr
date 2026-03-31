@@ -1,0 +1,24 @@
+{
+  "query": "SELECT \n  apiFootballEnabled,\n  apiFootballKeyConfigured,\n  apiFootballKey IS NOT NULL AND apiFootballKey != '' AS hasKey,\n  LEFT(apiFootballKey, 6) AS keyPrefix,\n  apiFootballQuotaLimit,\n  apiFootballSyncFixtures,\n  apiFootballSyncResults,\n  apiFootballLeagueId,\n  apiFootballSeason,\n  apiFootballLastSync,\n  apiFootballCircuitOpen,\n  apiFootballCircuitOpenAt\nFROM (\n  SELECT \n    apiFootballEnabled,\n    CASE WHEN apiFootballKey IS NOT NULL AND apiFootballKey != '' THEN 1 ELSE 0 END AS apiFootballKeyConfigured,\n    apiFootballKey,\n    apiFootballQuotaLimit,\n    apiFootballSyncFixtures,\n    apiFootballSyncResults,\n    apiFootballLeagueId,\n    apiFootballSeason,\n    apiFootballLastSync,\n    apiFootballCircuitOpen,\n    apiFootballCircuitOpenAt\n  FROM platform_settings WHERE id = 1\n) t;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT \n  apiFootballEnabled,\n  apiFootballKeyConfigured,\n  apiFootballKey IS NOT NULL AND apiFootballKey != '' AS hasKey,\n  LEFT(apiFootballKey, 6) AS keyPrefix,\n  apiFootballQuotaLimit,\n  apiFootballSyncFixtures,\n  apiFootballSyncResults,\n  apiFootballLeagueId,\n  apiFootballSeason,\n  apiFootballLastSync,\n  apiFootballCircuitOpen,\n  apiFootballCircuitOpenAt\nFROM (\n  SELECT \n    apiFootballEnabled,\n    CASE WHEN apiFootballKey IS NOT NULL AND apiFootballKey != '' THEN 1 ELSE 0 END AS apiFootballKeyConfigured,\n    apiFootballKey,\n    apiFootballQuotaLimit,\n    apiFootballSyncFixtures,\n    apiFootballSyncResults,\n    apiFootballLeagueId,\n    apiFootballSeason,\n    apiFootballLastSync,\n    apiFootballCircuitOpen,\n    apiFootballCircuitOpenAt\n  FROM platform_settings WHERE id = 1\n) t;",
+  "rows": [
+    {
+      "apiFootballEnabled": "1",
+      "apiFootballKeyConfigured": "1",
+      "hasKey": "1",
+      "keyPrefix": "08ec7a",
+      "apiFootballQuotaLimit": "100",
+      "apiFootballSyncFixtures": "1",
+      "apiFootballSyncResults": "1",
+      "apiFootballLeagueId": "1",
+      "apiFootballSeason": "2024",
+      "apiFootballLastSync": "2026-03-31 02:07:29",
+      "apiFootballCircuitOpen": "0",
+      "apiFootballCircuitOpenAt": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "apiFootballEnabled\tapiFootballKeyConfigured\thasKey\tkeyPrefix\tapiFootballQuotaLimit\tapiFootballSyncFixtures\tapiFootballSyncResults\tapiFootballLeagueId\tapiFootballSeason\tapiFootballLastSync\tapiFootballCircuitOpen\tapiFootballCircuitOpenAt\n1\t1\t1\t08ec7a\t100\t1\t1\t1\t2024\t2026-03-31 02:07:29\t0\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 348
+}

@@ -1,0 +1,30 @@
+{
+  "query": "-- Distribuição de jogos por fase\nSELECT phase, status, COUNT(*) AS total FROM games WHERE tournamentId = 60001 GROUP BY phase, status ORDER BY phase;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Distribuição de jogos por fase\nSELECT phase, status, COUNT(*) AS total FROM games WHERE tournamentId = 60001 GROUP BY phase, status ORDER BY phase;\n",
+  "rows": [
+    {
+      "phase": "1st_phase",
+      "status": "finished",
+      "total": "66"
+    },
+    {
+      "phase": "final",
+      "status": "finished",
+      "total": "2"
+    },
+    {
+      "phase": "quarter_finals",
+      "status": "finished",
+      "total": "4"
+    },
+    {
+      "phase": "semi_finals",
+      "status": "finished",
+      "total": "4"
+    }
+  ],
+  "messages": [],
+  "stdout": "phase\tstatus\ttotal\n1st_phase\tfinished\t66\nfinal\tfinished\t2\nquarter_finals\tfinished\t4\nsemi_finals\tfinished\t4\n",
+  "stderr": "",
+  "execution_time_ms": 349
+}

@@ -521,6 +521,33 @@ export async function syncFixtures(options: {
         ? allFixtures.filter(f => roundToPhaseKey(f.league.round) === phaseKey)
         : allFixtures;
 
+      // ── Garantir tournament_phases para cada fase encontrada ──────────────
+      // Mesma lógica do syncFixturesForTournament — necessário para filtros de
+      // fase na UI e para consistência com importações manuais.
+      const phaseKeysFound = new Set<string>(fixtures.map(f => roundToPhaseKey(f.league.round)));
+      if (phaseKeysFound.size > 0) {
+        const existingPhases = await db
+          .select({ key: tournamentPhases.key })
+          .from(tournamentPhases)
+          .where(eq(tournamentPhases.tournamentId, tournamentId));
+        const existingPhaseKeys = new Set(existingPhases.map((p) => p.key));
+        for (const pk of phaseKeysFound) {
+          if (!existingPhaseKeys.has(pk)) {
+            await db.insert(tournamentPhases).values({
+              tournamentId,
+              key: pk,
+              label: getPhaseLabel(pk),
+              enabled: true,
+              order: getPhaseOrder(pk),
+              isKnockout: isKnockoutPhase(pk),
+            });
+            existingPhaseKeys.add(pk);
+            logger.info(`[ApiFootball] syncFixtures — fase criada: ${pk} → "${getPhaseLabel(pk)}" (torneio ${tournamentId})`);
+          }
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
       for (const fixture of fixtures) {
         const externalId = String(fixture.fixture.id);
         const matchDate = new Date(fixture.fixture.date);

@@ -1,0 +1,19 @@
+{
+  "query": "-- Quota tracker hoje\nSELECT date, requestsUsed, quotaLimit, (requestsUsed / quotaLimit * 100) AS percentUsed\nFROM api_quota_tracker WHERE date = CURDATE();\n\n-- Configuração global vs campeonato\nSELECT \n  ps.apiFootballLeagueId AS globalLeagueId, \n  ps.apiFootballSeason AS globalSeason,\n  ps.apiFootballEnabled,\n  ps.apiFootballSyncFixtures,\n  ps.apiFootballSyncResults,\n  ps.apiFootballLastSync,\n  t.id AS tournamentId,\n  t.name AS tournamentName,\n  t.apiFootballLeagueId AS tournamentLeagueId,\n  t.apiFootballSeason AS tournamentSeason\nFROM platform_settings ps\nLEFT JOIN tournaments t ON t.apiFootballLeagueId IS NOT NULL\nWHERE ps.id = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Quota tracker hoje\nSELECT date, requestsUsed, quotaLimit, (requestsUsed / quotaLimit * 100) AS percentUsed\nFROM api_quota_tracker WHERE date = CURDATE();\n\n-- Configuração global vs campeonato\nSELECT \n  ps.apiFootballLeagueId AS globalLeagueId, \n  ps.apiFootballSeason AS globalSeason,\n  ps.apiFootballEnabled,\n  ps.apiFootballSyncFixtures,\n  ps.apiFootballSyncResults,\n  ps.apiFootballLastSync,\n  t.id AS tournamentId,\n  t.name AS tournamentName,\n  t.apiFootballLeagueId AS tournamentLeagueId,\n  t.apiFootballSeason AS tournamentSeason\nFROM platform_settings ps\nLEFT JOIN tournaments t ON t.apiFootballLeagueId IS NOT NULL\nWHERE ps.id = 1;",
+  "rows": [
+    {
+      "date": "2026-03-31",
+      "requestsUsed": "1",
+      "quotaLimit": "100",
+      "percentUsed": "1.0000"
+    }
+  ],
+  "messages": [
+    "globalLeagueId\tglobalSeason\tapiFootballEnabled\tapiFootballSyncFixtures\tapiFootballSyncResults\tapiFootballLastSync\ttournamentId\ttournamentName\ttournamentLeagueId\ttournamentSeason",
+    "1\t2024\t1\t1\t1\t2026-03-31 02:07:29\t60001\tGaúcho - 1\t477\t2024"
+  ],
+  "stdout": "date\trequestsUsed\tquotaLimit\tpercentUsed\n2026-03-31\t1\t100\t1.0000\nglobalLeagueId\tglobalSeason\tapiFootballEnabled\tapiFootballSyncFixtures\tapiFootballSyncResults\tapiFootballLastSync\ttournamentId\ttournamentName\ttournamentLeagueId\ttournamentSeason\n1\t2024\t1\t1\t1\t2026-03-31 02:07:29\t60001\tGaúcho - 1\t477\t2024\n",
+  "stderr": "",
+  "execution_time_ms": 408
+}

@@ -1,0 +1,9 @@
+{
+  "query": "-- Inserir as fases do Gaúcho 2024 com base nas fases já presentes nos jogos\n-- As fases encontradas: 1st_phase, quarter_finals, semi_finals, final\nINSERT INTO tournament_phases (tournamentId, `key`, label, enabled, `order`, isKnockout)\nVALUES\n  (60001, '1st_phase',      '1ª Fase',           1, 10, 0),\n  (60001, 'quarter_finals', 'Quartas de Final',   1, 50, 1),\n  (60001, 'semi_finals',    'Semifinais',         1, 60, 1),\n  (60001, 'final',          'Final',              1, 70, 1)\nON DUPLICATE KEY UPDATE label = VALUES(label);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Inserir as fases do Gaúcho 2024 com base nas fases já presentes nos jogos\n-- As fases encontradas: 1st_phase, quarter_finals, semi_finals, final\nINSERT INTO tournament_phases (tournamentId, `key`, label, enabled, `order`, isKnockout)\nVALUES\n  (60001, '1st_phase',      '1ª Fase',           1, 10, 0),\n  (60001, 'quarter_finals', 'Quartas de Final',   1, 50, 1),\n  (60001, 'semi_finals',    'Semifinais',         1, 60, 1),\n  (60001, 'final',          'Final',              1, 70, 1)\nON DUPLICATE KEY UPDATE label = VALUES(label);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 401
+}

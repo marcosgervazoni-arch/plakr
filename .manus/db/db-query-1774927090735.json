@@ -1,0 +1,60 @@
+{
+  "query": "-- Últimos 5 logs de sync\nSELECT syncType, status, gamesCreated, gamesUpdated, resultsApplied, requestsUsed, errorMessage, createdAt\nFROM api_sync_log ORDER BY createdAt DESC LIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Últimos 5 logs de sync\nSELECT syncType, status, gamesCreated, gamesUpdated, resultsApplied, requestsUsed, errorMessage, createdAt\nFROM api_sync_log ORDER BY createdAt DESC LIMIT 5;\n",
+  "rows": [
+    {
+      "syncType": "results",
+      "status": "success",
+      "gamesCreated": "0",
+      "gamesUpdated": "0",
+      "resultsApplied": "0",
+      "requestsUsed": "1",
+      "errorMessage": "NULL",
+      "createdAt": "2026-03-30 23:50:49"
+    },
+    {
+      "syncType": "results",
+      "status": "success",
+      "gamesCreated": "0",
+      "gamesUpdated": "0",
+      "resultsApplied": "0",
+      "requestsUsed": "1",
+      "errorMessage": "NULL",
+      "createdAt": "2026-03-30 18:10:40"
+    },
+    {
+      "syncType": "results",
+      "status": "success",
+      "gamesCreated": "0",
+      "gamesUpdated": "0",
+      "resultsApplied": "0",
+      "requestsUsed": "1",
+      "errorMessage": "NULL",
+      "createdAt": "2026-03-30 16:10:12"
+    },
+    {
+      "syncType": "results",
+      "status": "success",
+      "gamesCreated": "0",
+      "gamesUpdated": "0",
+      "resultsApplied": "0",
+      "requestsUsed": "1",
+      "errorMessage": "NULL",
+      "createdAt": "2026-03-30 04:27:38"
+    },
+    {
+      "syncType": "manual",
+      "status": "success",
+      "gamesCreated": "76",
+      "gamesUpdated": "0",
+      "resultsApplied": "0",
+      "requestsUsed": "1",
+      "errorMessage": "NULL",
+      "createdAt": "2026-03-30 02:28:36"
+    }
+  ],
+  "messages": [],
+  "stdout": "syncType\tstatus\tgamesCreated\tgamesUpdated\tresultsApplied\trequestsUsed\terrorMessage\tcreatedAt\nresults\tsuccess\t0\t0\t0\t1\tNULL\t2026-03-30 23:50:49\nresults\tsuccess\t0\t0\t0\t1\tNULL\t2026-03-30 18:10:40\nresults\tsuccess\t0\t0\t0\t1\tNULL\t2026-03-30 16:10:12\nresults\tsuccess\t0\t0\t0\t1\tNULL\t2026-03-30 04:27:38\nmanual\tsuccess\t76\t0\t0\t1\tNULL\t2026-03-30 02:28:36\n",
+  "stderr": "",
+  "execution_time_ms": 362
+}

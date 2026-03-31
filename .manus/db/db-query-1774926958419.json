@@ -1,0 +1,26 @@
+{
+  "query": "SELECT \n  adsEnabled,\n  adsLocalEnabled,\n  adNetworkScripts IS NOT NULL AS hasScripts,\n  JSON_LENGTH(adNetworkScripts) AS scriptSlotCount,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.top_desktop')) LIKE '%atOptions%' AS top_desktop_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.top_mobile')) LIKE '%atOptions%' AS top_mobile_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.sidebar')) LIKE '%atOptions%' AS sidebar_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.between_desktop')) LIKE '%atOptions%' AS between_desktop_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.between_mobile')) LIKE '%atOptions%' AS between_mobile_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.bottom_desktop')) LIKE '%atOptions%' AS bottom_desktop_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.bottom_mobile')) LIKE '%atOptions%' AS bottom_mobile_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.popup')) LIKE '%atOptions%' AS popup_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.native')) LIKE '%async%' AS native_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.popup_frequency')) AS popup_frequency\nFROM platform_settings WHERE id = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT \n  adsEnabled,\n  adsLocalEnabled,\n  adNetworkScripts IS NOT NULL AS hasScripts,\n  JSON_LENGTH(adNetworkScripts) AS scriptSlotCount,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.top_desktop')) LIKE '%atOptions%' AS top_desktop_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.top_mobile')) LIKE '%atOptions%' AS top_mobile_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.sidebar')) LIKE '%atOptions%' AS sidebar_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.between_desktop')) LIKE '%atOptions%' AS between_desktop_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.between_mobile')) LIKE '%atOptions%' AS between_mobile_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.bottom_desktop')) LIKE '%atOptions%' AS bottom_desktop_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.bottom_mobile')) LIKE '%atOptions%' AS bottom_mobile_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.popup')) LIKE '%atOptions%' AS popup_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.native')) LIKE '%async%' AS native_ok,\n  JSON_UNQUOTE(JSON_EXTRACT(adNetworkScripts, '$.popup_frequency')) AS popup_frequency\nFROM platform_settings WHERE id = 1;",
+  "rows": [
+    {
+      "adsEnabled": "1",
+      "adsLocalEnabled": "0",
+      "hasScripts": "1",
+      "scriptSlotCount": "9",
+      "top_desktop_ok": "1",
+      "top_mobile_ok": "1",
+      "sidebar_ok": "1",
+      "between_desktop_ok": "1",
+      "between_mobile_ok": "1",
+      "bottom_desktop_ok": "1",
+      "bottom_mobile_ok": "1",
+      "popup_ok": "1",
+      "native_ok": "1",
+      "popup_frequency": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "adsEnabled\tadsLocalEnabled\thasScripts\tscriptSlotCount\ttop_desktop_ok\ttop_mobile_ok\tsidebar_ok\tbetween_desktop_ok\tbetween_mobile_ok\tbottom_desktop_ok\tbottom_mobile_ok\tpopup_ok\tnative_ok\tpopup_frequency\n1\t0\t1\t9\t1\t1\t1\t1\t1\t1\t1\t1\t1\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 355
+}

@@ -1,0 +1,54 @@
+{
+  "query": "SELECT 'tournaments_total' AS metrica, COUNT(*) AS valor FROM tournaments\nUNION ALL SELECT 'tournaments_active_visible', COUNT(*) FROM tournaments WHERE isAvailable = 1\nUNION ALL SELECT 'tournaments_with_api_id', COUNT(*) FROM tournaments WHERE apiFootballLeagueId IS NOT NULL\nUNION ALL SELECT 'games_total', COUNT(*) FROM games\nUNION ALL SELECT 'games_with_result', COUNT(*) FROM games WHERE scoreA IS NOT NULL AND scoreB IS NOT NULL\nUNION ALL SELECT 'games_finished', COUNT(*) FROM games WHERE status = 'finished'\nUNION ALL SELECT 'games_future_scheduled', COUNT(*) FROM games WHERE matchDate > NOW() AND status = 'scheduled'\nUNION ALL SELECT 'teams_total', COUNT(*) FROM teams\nUNION ALL SELECT 'sync_logs_total', COUNT(*) FROM api_sync_log\nUNION ALL SELECT 'sync_logs_today', COUNT(*) FROM api_sync_log WHERE DATE(createdAt) = CURDATE()\nUNION ALL SELECT 'quota_used_today', COALESCE((SELECT requestsUsed FROM api_quota_tracker WHERE date = CURDATE() LIMIT 1), 0);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT 'tournaments_total' AS metrica, COUNT(*) AS valor FROM tournaments\nUNION ALL SELECT 'tournaments_active_visible', COUNT(*) FROM tournaments WHERE isAvailable = 1\nUNION ALL SELECT 'tournaments_with_api_id', COUNT(*) FROM tournaments WHERE apiFootballLeagueId IS NOT NULL\nUNION ALL SELECT 'games_total', COUNT(*) FROM games\nUNION ALL SELECT 'games_with_result', COUNT(*) FROM games WHERE scoreA IS NOT NULL AND scoreB IS NOT NULL\nUNION ALL SELECT 'games_finished', COUNT(*) FROM games WHERE status = 'finished'\nUNION ALL SELECT 'games_future_scheduled', COUNT(*) FROM games WHERE matchDate > NOW() AND status = 'scheduled'\nUNION ALL SELECT 'teams_total', COUNT(*) FROM teams\nUNION ALL SELECT 'sync_logs_total', COUNT(*) FROM api_sync_log\nUNION ALL SELECT 'sync_logs_today', COUNT(*) FROM api_sync_log WHERE DATE(createdAt) = CURDATE()\nUNION ALL SELECT 'quota_used_today', COALESCE((SELECT requestsUsed FROM api_quota_tracker WHERE date = CURDATE() LIMIT 1), 0);",
+  "rows": [
+    {
+      "metrica": "tournaments_active_visible",
+      "valor": "2"
+    },
+    {
+      "metrica": "tournaments_with_api_id",
+      "valor": "1"
+    },
+    {
+      "metrica": "tournaments_total",
+      "valor": "2"
+    },
+    {
+      "metrica": "games_total",
+      "valor": "76"
+    },
+    {
+      "metrica": "games_with_result",
+      "valor": "76"
+    },
+    {
+      "metrica": "teams_total",
+      "valor": "12"
+    },
+    {
+      "metrica": "quota_used_today",
+      "valor": "1"
+    },
+    {
+      "metrica": "sync_logs_total",
+      "valor": "10"
+    },
+    {
+      "metrica": "games_future_scheduled",
+      "valor": "0"
+    },
+    {
+      "metrica": "games_finished",
+      "valor": "76"
+    },
+    {
+      "metrica": "sync_logs_today",
+      "valor": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "metrica\tvalor\ntournaments_active_visible\t2\ntournaments_with_api_id\t1\ntournaments_total\t2\ngames_total\t76\ngames_with_result\t76\nteams_total\t12\nquota_used_today\t1\nsync_logs_total\t10\ngames_future_scheduled\t0\ngames_finished\t76\nsync_logs_today\t0\n",
+  "stderr": "",
+  "execution_time_ms": 360
+}
