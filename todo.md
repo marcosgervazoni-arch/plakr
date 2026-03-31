@@ -2322,3 +2322,13 @@
 ## Feature — Upload QR Code PIX e Badge de Pendentes (31/03/2026)
 - [x] OrganizerAccess: substituir campo de URL por botão de upload de imagem do QR Code PIX
 - [x] OrganizerLayout: exibir badge numérico no item "Membros" quando há aprovações pendentes
+
+## Reestruturação de Navegação do Painel do Organizador (31/03/2026)
+- [x] Criar página OrganizerEntryFee.tsx (/pool/:slug/manage/entry-fee) com toda a configuração de taxa
+- [x] Remover seção de taxa do OrganizerAccess (renomear para "Acesso e Convite")
+- [x] Renomear "Identidade Visual" → "Aparência" no menu
+- [x] Promover "Campeonato" para item de nível superior (fora do grupo Configurações)
+- [x] Mover "Comunicação" para item de nível superior (fora do grupo Participantes)
+- [x] Remover grupo "Financeiro" e deixar "Plano e Assinatura" como item solto
+- [x] Registrar nova rota /pool/:slug/manage/entry-fee no App.tsx
+- [x] Atualizar OrganizerLayout com nova estrutura de grupos e nomes

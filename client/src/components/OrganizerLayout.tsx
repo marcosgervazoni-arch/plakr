@@ -38,7 +38,8 @@ export type OrganizerSection =
   | "games"
   | "communication"
   | "tournament"
-  | "plan";
+  | "plan"
+  | "entry-fee";
 
 interface NavItem {
   id: OrganizerSection;
@@ -94,15 +95,14 @@ export default function OrganizerLayout({
   );
   const pendingCount = pendingMembers?.length ?? 0;
 
-  // Grupos colapsáveis — inicializa com o grupo ativo aberto
+  // Grupos colápsáveis — inicializa com o grupo ativo aberto
   const getInitialOpenGroups = (): Record<string, boolean> => {
-    const participantsItems: OrganizerSection[] = ["members", "access", "communication"];
-    const configItems: OrganizerSection[] = ["identity", "rules", "games", "tournament"];
+    const participantsItems: OrganizerSection[] = ["members", "access", "entry-fee"];
+    const configItems: OrganizerSection[] = ["identity", "rules", "games"];
     return {
       overview: true,
       participants: participantsItems.includes(activeSection),
       config: configItems.includes(activeSection),
-      financial: activeSection === "plan",
     };
   };
 
@@ -131,6 +131,7 @@ export default function OrganizerLayout({
     communication: `/pool/${slug}/manage/communication`,
     tournament: `/pool/${slug}/manage/tournament`,
     plan: `/pool/${slug}/manage/plan`,
+    "entry-fee": `/pool/${slug}/manage/entry-fee`,
   };
 
   const navGroups: NavGroup[] = [
@@ -145,28 +146,28 @@ export default function OrganizerLayout({
       label: "Participantes",
       items: [
         { id: "members", label: "Membros", icon: Users, badge: pendingCount > 0 ? pendingCount : undefined },
-        { id: "access", label: "Controle de Acesso", icon: Link2 },
-        { id: "communication", label: "Comunicação", icon: MessageSquare, proOnly: true },
+        { id: "access", label: "Acesso e Convite", icon: Link2 },
+        { id: "entry-fee", label: "Taxa de Inscrição", icon: Crown, proOnly: true },
       ],
     },
     {
-      label: "Configuração",
+      label: "Configurações do Bolão",
       items: [
-        { id: "identity", label: "Identidade Visual", icon: Palette },
+        { id: "identity", label: "Aparência", icon: Palette },
         { id: "rules", label: "Regras de Pontuação", icon: Settings2 },
         { id: "games", label: "Jogos e Resultados", icon: ClipboardList, proOnly: true },
-        { id: "tournament", label: "Campeonato", icon: Trophy, proOnly: true },
-      ],
-    },
-    {
-      label: "Financeiro",
-      items: [
-        { id: "plan", label: "Plano e Assinatura", icon: Crown },
       ],
     },
   ];
 
-  const groupKeys = ["overview", "participants", "config", "financial"];
+  // Itens de nível superior (sem grupo)
+  const topLevelItems: NavItem[] = [
+    { id: "tournament", label: "Campeonato", icon: Trophy, proOnly: true },
+    { id: "communication", label: "Comunicação", icon: MessageSquare, proOnly: true },
+    { id: "plan", label: "Plano e Assinatura", icon: Crown },
+  ];
+
+  const groupKeys = ["overview", "participants", "config"];
 
   const NavItemButton = ({ item }: { item: NavItem }) => {
     const isActive = activeSection === item.id;
@@ -270,6 +271,14 @@ export default function OrganizerLayout({
             </div>
           );
         })}
+
+        {/* Separador */}
+        <div className="border-t border-border/20 my-2" />
+
+        {/* Itens de nível superior — sem grupo */}
+        {topLevelItems.map((item) => (
+          <NavItemButton key={item.id} item={item} />
+        ))}
       </nav>
     </div>
   );

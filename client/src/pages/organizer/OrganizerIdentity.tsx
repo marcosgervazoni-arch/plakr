@@ -40,7 +40,7 @@ export default function OrganizerIdentity() {
 
   const updateMutation = trpc.pools.update.useMutation({
     onSuccess: () => {
-      toast.success("Identidade visual atualizada!");
+      toast.success("Aparência atualizada!");
       refetch();
     },
     onError: (err) => toast.error(err.message || "Erro ao salvar."),
@@ -71,7 +71,7 @@ export default function OrganizerIdentity() {
       <div className="p-6 space-y-6 max-w-5xl">
         <div>
           <h1 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
-            Identidade Visual
+            Aparência
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Personalize o nome, subtítulo e logo do seu bolão.
