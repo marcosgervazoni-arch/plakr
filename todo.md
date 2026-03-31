@@ -2450,4 +2450,4 @@
 - [x] Painel de análise pré-jogo: barra tripartida de probabilidade (homeWin/draw/awayWin)
 - [x] Painel de análise pré-jogo: últimos 5 jogos de cada time (W/D/L badges coloridos)
 - [x] Painel de análise pré-jogo: caixa "Análise da IA" com texto e disclaimer
-- [ ] Download: ainda não salva o arquivo no Chrome desktop e Android (em investigação)
+- [x] Download: File System Access API (diálogo nativo "Salvar como" no Chrome desktop) + fallback window.open (nova aba) + fallback link.click()

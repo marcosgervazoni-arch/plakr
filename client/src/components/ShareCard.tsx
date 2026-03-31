@@ -3,7 +3,6 @@
  * Renderizado fora da viewport e capturado via html2canvas
  */
 import { useRef, useCallback } from "react";
-import { saveAs } from "file-saver";
 
 export interface ShareCardData {
   teamAName: string;
@@ -69,8 +68,44 @@ export function useShareCard(): UseShareCardReturn {
   const downloadImage = useCallback(async (filename = "plakr-card.png") => {
     const blob = await captureBlob();
     if (!blob) return;
-    // FileSaver.js garante download em todos os browsers (Chrome, Firefox, Safari, Android, iOS)
-    saveAs(blob, filename);
+
+    // 1ª tentativa: File System Access API — mostra caixa de diálogo nativa "Salvar como" no Chrome desktop
+    if (typeof window !== "undefined" && "showSaveFilePicker" in window) {
+      try {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: "Imagem PNG", accept: { "image/png": [".png"] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      } catch (e: any) {
+        // AbortError = usuário cancelou o diálogo — não é erro
+        if (e?.name === "AbortError") return;
+        // Outro erro — tenta fallback
+      }
+    }
+
+    // 2ª tentativa: abrir blob em nova aba — funciona em todos os browsers
+    // O usuário pode salvar com Ctrl+S ou clique direito → Salvar imagem
+    const blobUrl = URL.createObjectURL(blob);
+    const newTab = window.open(blobUrl, "_blank");
+    if (newTab) {
+      // Revoga o URL após 60s para liberar memória
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+      return;
+    }
+
+    // 3ª tentativa: link programático (pode ser bloqueado, mas vale tentar)
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5_000);
   }, [captureBlob]);
 
   const shareToInstagram = useCallback(async () => {

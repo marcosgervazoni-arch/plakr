@@ -1279,8 +1279,8 @@ function GameCard({
     try {
       const filename = `plakr-${(game.teamAName ?? "time-a").toLowerCase().replace(/\s+/g, "-")}-vs-${(game.teamBName ?? "time-b").toLowerCase().replace(/\s+/g, "-")}.png`;
       await downloadImage(filename);
-      // Toast apenas após o FileSaver concluir (saveAs é síncrono após criar o blob URL)
-      toast.success("Download iniciado!");
+      // Não mostra toast — o download abre diálogo nativo (File System Access API) ou nova aba
+      // O usuário vê o resultado diretamente sem precisar de confirmação via toast
     } catch {
       toast.error("Não foi possível baixar a imagem.");
     } finally { setIsDownloading(false); }
