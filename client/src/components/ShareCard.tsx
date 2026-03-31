@@ -37,7 +37,8 @@ interface UseShareCardReturn {
 export function useShareCard(): UseShareCardReturn {
   const cardRef = useRef<HTMLDivElement | null>(null);
 
-  const captureImage = useCallback(async (): Promise<string | null> => {
+  // Captura o card e retorna um Blob PNG (mais compatível que dataURL no Android)
+  const captureBlob = useCallback(async (): Promise<Blob | null> => {
     if (!cardRef.current) return null;
     try {
       const html2canvas = (await import("html2canvas")).default;
@@ -50,66 +51,70 @@ export function useShareCard(): UseShareCardReturn {
         width: cardRef.current.offsetWidth,
         height: cardRef.current.offsetHeight,
       });
-      return canvas.toDataURL("image/png");
+      return await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/png"));
     } catch (err) {
       console.error("[ShareCard] Erro ao capturar imagem:", err);
       return null;
     }
   }, []);
 
-  // Helper interno: converte dataURL em File
-  const dataUrlToFile = useCallback(async (dataUrl: string, filename: string): Promise<File> => {
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    return new File([blob], filename, { type: "image/png" });
-  }, []);
+  // Mantido para compatibilidade (retorna dataURL a partir do blob)
+  const captureImage = useCallback(async (): Promise<string | null> => {
+    const blob = await captureBlob();
+    if (!blob) return null;
+    return URL.createObjectURL(blob);
+  }, [captureBlob]);
 
   const downloadImage = useCallback(async (filename = "plakr-card.png") => {
-    const dataUrl = await captureImage();
-    if (!dataUrl) return;
-    // Cria link de download e dispara — funciona em todos os dispositivos
+    const blob = await captureBlob();
+    if (!blob) return;
+    // blob URL funciona no Android Chrome (dataURL é bloqueado)
+    const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = dataUrl;
+    link.href = blobUrl;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // Libera memória
-    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-  }, [captureImage]);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+  }, [captureBlob]);
 
   const shareToInstagram = useCallback(async () => {
-    const dataUrl = await captureImage();
-    if (!dataUrl) return;
-    const file = await dataUrlToFile(dataUrl, "plakr-card.png");
+    const blob = await captureBlob();
+    if (!blob) return;
+    const file = new File([blob], "plakr-card.png", { type: "image/png" });
 
-    // Tenta Web Share API com arquivo (abre seletor nativo de apps no mobile)
+    // Web Share API com arquivo — abre seletor nativo no Android/iOS
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: "Meu palpite no Plakr!" });
         return;
       } catch (e: any) {
-        // Usuário cancelou — não faz fallback
         if (e?.name === "AbortError") return;
+        // Outro erro — tenta fallback
       }
     }
 
-    // Fallback desktop: baixa a imagem e abre Instagram Stories
+    // Fallback: baixa a imagem via blob URL e abre Instagram Stories
+    const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = dataUrl;
+    link.href = blobUrl;
     link.download = "plakr-card.png";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => window.open("https://www.instagram.com/stories/create", "_blank"), 800);
-  }, [captureImage, dataUrlToFile]);
+    setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+      window.open("https://www.instagram.com/stories/create", "_blank");
+    }, 800);
+  }, [captureBlob]);
 
   const shareToWhatsApp = useCallback(async (text: string) => {
-    const dataUrl = await captureImage();
-    if (!dataUrl) return;
-    const file = await dataUrlToFile(dataUrl, "plakr-card.png");
+    const blob = await captureBlob();
+    if (!blob) return;
+    const file = new File([blob], "plakr-card.png", { type: "image/png" });
 
-    // Tenta Web Share API com arquivo + texto (abre seletor nativo no mobile)
+    // Web Share API com arquivo + texto — abre seletor nativo no Android/iOS
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" });
@@ -119,22 +124,26 @@ export function useShareCard(): UseShareCardReturn {
       }
     }
 
-    // Fallback desktop: baixa a imagem e abre WhatsApp Web com texto
+    // Fallback: baixa a imagem e abre WhatsApp Web com texto
+    const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = dataUrl;
+    link.href = blobUrl;
     link.download = "plakr-card.png";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank"), 800);
-  }, [captureImage, dataUrlToFile]);
+    setTimeout(() => {
+      URL.revokeObjectURL(blobUrl);
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    }, 800);
+  }, [captureBlob]);
 
   const shareToOthers = useCallback(async (text: string) => {
-    const dataUrl = await captureImage();
-    if (!dataUrl) return;
-    const file = await dataUrlToFile(dataUrl, "plakr-card.png");
+    const blob = await captureBlob();
+    if (!blob) return;
+    const file = new File([blob], "plakr-card.png", { type: "image/png" });
 
-    // Tenta Web Share API com arquivo (abre seletor nativo de apps)
+    // Web Share API com arquivo (abre seletor nativo de apps)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" });
@@ -143,7 +152,6 @@ export function useShareCard(): UseShareCardReturn {
         if (e?.name === "AbortError") return;
       }
     } else if (navigator.share) {
-      // Fallback: share sem arquivo (texto apenas)
       try {
         await navigator.share({ text, title: "Plakr! — Bolão Esportivo" });
         return;
@@ -154,7 +162,7 @@ export function useShareCard(): UseShareCardReturn {
 
     // Fallback final: copia texto para área de transferência
     navigator.clipboard?.writeText(text);
-  }, [captureImage, dataUrlToFile]);
+  }, [captureBlob]);
 
   return { cardRef, captureImage, downloadImage, shareToInstagram, shareToWhatsApp, shareToOthers };
 }

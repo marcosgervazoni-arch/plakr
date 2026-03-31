@@ -2420,3 +2420,9 @@
 - [x] Botão "Baixar imagem": corrigido para baixar diretamente no dispositivo (append/remove do DOM)
 - [x] Botões de redes sociais: Web Share API com files (abre seletor nativo no mobile); fallback desktop: download + abre app
 - [x] Botão "Outros apps": agora usa shareToOthers com imagem (Web Share API com arquivo)
+
+## Bug — Compartilhamento Android/Xiaomi
+
+- [x] Download: usar blob URL (URL.createObjectURL) em vez de dataURL — Chrome mobile bloqueia download de base64
+- [x] Web Share API: captureBlob() retorna Blob direto do canvas.toBlob() — mais compatível no Android
+- [x] Todos os métodos de share usam blob URL no fallback (não mais dataURL)
