@@ -225,17 +225,38 @@ export default function AdminAds() {
 
           {/* Stats + Toggle Global */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="border-border/50">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Publicidade Global</p>
-                  <p className="text-sm font-medium mt-1">{adsGlobalEnabled ? "Ativa" : "Desativada"}</p>
+            <Card className={`border-border/50 sm:col-span-3 ${!adsGlobalEnabled ? "border-amber-500/40 bg-amber-500/5" : "border-green-500/30 bg-green-500/5"}`}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${adsGlobalEnabled ? "bg-green-500/20" : "bg-amber-500/20"}`}>
+                      <span className="text-base">{adsGlobalEnabled ? "✅" : "⚠️"}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">
+                        Banners próprios: <span className={adsGlobalEnabled ? "text-green-400" : "text-amber-400"}>{adsGlobalEnabled ? "Ativos" : "Desativados"}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {adsGlobalEnabled
+                          ? "Os banners cadastrados abaixo estão visíveis para usuários free. Desativar os oculta — o Adsterra continua funcionando nos espaços vagos."
+                          : "Banners próprios estão ocultos. O Adsterra continua ativo e preenche os espaços automaticamente. Ative para exibir seus próprios banners no lugar do Adsterra."}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={adsGlobalEnabled}
+                    onCheckedChange={(v) => globalToggleMutation.mutate({ enabled: v })}
+                    disabled={globalToggleMutation.isPending}
+                    className="shrink-0"
+                  />
                 </div>
-                <Switch
-                  checked={adsGlobalEnabled}
-                  onCheckedChange={(v) => globalToggleMutation.mutate({ enabled: v })}
-                  disabled={globalToggleMutation.isPending}
-                />
+                {!adsGlobalEnabled && (
+                  <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2">
+                    <p className="text-xs text-amber-300 leading-relaxed">
+                      <strong>⚠️ Atenção:</strong> este toggle foi a causa de anúncios não aparecerem anteriormente. Certifique-se de mantê-lo ativo para que seus banners próprios sejam exibidos.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card className="border-border/50">

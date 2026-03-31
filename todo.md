@@ -2253,3 +2253,8 @@
 - [x] Ativar adsEnabled=1 no banco via SQL
 - [x] Corrigir AdsterraSlot: remover overflow:hidden, usar min-height, adicionar crossOrigin
 - [x] Super Admin já vê anúncios (isPro = false para admins no AppShell)
+
+## Feature — Toggle adsEnabled com aviso claro no Admin
+
+- [x] Adicionar aviso explicativo no toggle adsEnabled: "Desativar remove banners próprios, mas mantém Adsterra ativo"
+- [x] Melhorar UX do toggle com badge de status, cor condicional (verde/âmbar) e alerta histórico
