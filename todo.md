@@ -2432,3 +2432,22 @@
 - [x] Toast "Imagem salva!" disparava antes de confirmar o download
 - [x] link.click() silenciosamente bloqueado no Chrome (desktop e mobile)
 - [x] Solução: FileSaver.js (saveAs) garante download em todos os browsers incluindo Android/iOS
+
+## Bug — Compartilhamento: loading compartilhado e download falso
+
+- [ ] Estado de loading único dispara para todos os botões (Instagram, WhatsApp, Outros, Baixar)
+- [ ] Download ainda não salva o arquivo mesmo com FileSaver.js
+- [ ] Separar estado de loading por botão (isDownloading, isSharingInstagram, isSharingWhatsApp, isSharingOthers)
+
+## ## Feature — Modal de Compartilhamento (bottom-sheet)
+- [x] Substituir painel inline por modal bottom-sheet conforme modelo aprovado
+- [x] Modal: header "Compartilhar jogo" + subtítulo
+- [x] Modal: preview do card (times, placar, palpite) visível dentro do modal
+- [x] Modal: botões Instagram Stories, WhatsApp, Baixar imagem, Outros apps
+- [x] Modal: botão Fechar + fechar ao clicar fora
+- [x] Estado de loading separado por botão (isDownloading, isSharingInstagram, isSharingWhatsApp, isSharingOthers)
+## Feature — GameCard: layout conforme modelo aprovado
+- [x] Painel de análise pré-jogo: barra tripartida de probabilidade (homeWin/draw/awayWin)
+- [x] Painel de análise pré-jogo: últimos 5 jogos de cada time (W/D/L badges coloridos)
+- [x] Painel de análise pré-jogo: caixa "Análise da IA" com texto e disclaimer
+- [ ] Download: ainda não salva o arquivo no Chrome desktop e Android (em investigação)

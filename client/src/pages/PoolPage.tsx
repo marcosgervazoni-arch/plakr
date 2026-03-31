@@ -1176,6 +1176,11 @@ interface GameCardProps {
     phase: string | null;
     aiSummary?: string | null;
     aiNarration?: string | null;
+    aiPrediction?: {
+      homeWin: number; draw: number; awayWin: number;
+      homeForm: string[]; awayForm: string[];
+      aiRecommendation: string;
+    } | null;
     goalsTimeline?: GoalEvent[] | null;
     matchStatistics?: MatchStats | null;
   };
@@ -1212,7 +1217,10 @@ function GameCard({
 }: GameCardProps) {
    const [analysisOpen, setAnalysisOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [isCapturing, setIsCapturing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSharingInstagram, setIsSharingInstagram] = useState(false);
+  const [isSharingWhatsApp, setIsSharingWhatsApp] = useState(false);
+  const [isSharingOthers, setIsSharingOthers] = useState(false);
   // Busca análise do palpite apenas quando o painel é aberto e o jogo está finalizado
   const { data: betAnalysisText, isLoading: betAnalysisLoading } = trpc.pools.getBetAnalysis.useQuery(
     { gameId: game.id, poolId },
@@ -1259,28 +1267,31 @@ function GameCard({
       : `${game.teamAName} vs ${game.teamBName}\nPlakr — plataforma de bolões esportivos`;
 
   const handleShareWhatsApp = async () => {
-    setIsCapturing(true);
-    try { await shareToWhatsApp(shareText); } finally { setIsCapturing(false); }
+    setIsSharingWhatsApp(true);
+    try { await shareToWhatsApp(shareText); } finally { setIsSharingWhatsApp(false); }
   };
   const handleShareInstagram = async () => {
-    setIsCapturing(true);
-    try { await shareToInstagram(); } finally { setIsCapturing(false); }
+    setIsSharingInstagram(true);
+    try { await shareToInstagram(); } finally { setIsSharingInstagram(false); }
   };
   const handleDownloadImage = async () => {
-    setIsCapturing(true);
+    setIsDownloading(true);
     try {
       const filename = `plakr-${(game.teamAName ?? "time-a").toLowerCase().replace(/\s+/g, "-")}-vs-${(game.teamBName ?? "time-b").toLowerCase().replace(/\s+/g, "-")}.png`;
       await downloadImage(filename);
-      toast.success("Imagem salva!");
-    } finally { setIsCapturing(false); }
+      // Toast apenas após o FileSaver concluir (saveAs é síncrono após criar o blob URL)
+      toast.success("Download iniciado!");
+    } catch {
+      toast.error("Não foi possível baixar a imagem.");
+    } finally { setIsDownloading(false); }
   };
   const handleCopyLink = () => {
     navigator.clipboard?.writeText(shareText);
     toast.success("Copiado para a área de transferência!");
   };
   const handleShareOthers = async () => {
-    setIsCapturing(true);
-    try { await shareToOthers(shareText); } finally { setIsCapturing(false); }
+    setIsSharingOthers(true);
+    try { await shareToOthers(shareText); } finally { setIsSharingOthers(false); }
   };
 
   return (
@@ -1478,36 +1489,81 @@ function GameCard({
           </div>
         )}
 
-        {/* Painel de compartilhamento */}
+        {/* Modal de compartilhamento — bottom-sheet */}
         {shareOpen && (finished || hasBet) && (
-          <div className="mt-2 p-3 bg-muted/20 rounded-xl border border-border/30 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Compartilhar este jogo</p>
-            <div className="grid grid-cols-2 gap-2">
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+            onClick={(e) => { if (e.target === e.currentTarget) setShareOpen(false); }}
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShareOpen(false)} />
+            <div className="relative z-10 w-full max-w-sm mx-auto bg-card border border-border/40 rounded-t-2xl sm:rounded-2xl p-5 space-y-4 shadow-2xl">
+              {/* Handle */}
+              <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto sm:hidden" />
+              {/* Header */}
+              <div className="text-center">
+                <p className="font-semibold text-sm">Compartilhar jogo</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Compartilhe o resultado e sua pontuação</p>
+              </div>
+              {/* Preview do card */}
+              <div className="rounded-xl overflow-hidden border border-border/20 bg-muted/10 flex items-center justify-center min-h-[80px]">
+                <div className="flex items-center gap-4 px-4 py-3 w-full">
+                  <div className="flex flex-col items-center gap-1 flex-1">
+                    {game.teamAFlag && <img src={game.teamAFlag} alt="" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                    <span className="text-xs font-semibold truncate max-w-[80px] text-center">{game.teamAName}</span>
+                    {finished && <span className="text-xl font-black font-mono">{game.scoreA}</span>}
+                  </div>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-xs text-muted-foreground font-medium">×</span>
+                    {hasBet && <span className="text-[10px] text-primary font-medium">{myBet?.predictedScoreA}×{myBet?.predictedScoreB}</span>}
+                  </div>
+                  <div className="flex flex-col items-center gap-1 flex-1">
+                    {game.teamBFlag && <img src={game.teamBFlag} alt="" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                    <span className="text-xs font-semibold truncate max-w-[80px] text-center">{game.teamBName}</span>
+                    {finished && <span className="text-xl font-black font-mono">{game.scoreB}</span>}
+                  </div>
+                </div>
+              </div>
+              {/* Botões */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={handleShareInstagram}
+                  disabled={isSharingInstagram}
+                  className="flex items-center justify-center gap-2 text-xs font-medium py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {isSharingInstagram ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>📸</span>}
+                  Instagram Stories
+                </button>
+                <button
+                  onClick={handleShareWhatsApp}
+                  disabled={isSharingWhatsApp}
+                  className="flex items-center justify-center gap-2 text-xs font-medium py-2.5 px-3 rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {isSharingWhatsApp ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>💬</span>}
+                  WhatsApp
+                </button>
+                <button
+                  onClick={handleDownloadImage}
+                  disabled={isDownloading}
+                  className="flex items-center justify-center gap-2 text-xs font-medium py-2.5 px-3 rounded-xl bg-muted/50 border border-border/40 text-foreground hover:bg-muted/70 transition-colors disabled:opacity-50"
+                >
+                  {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  Baixar imagem
+                </button>
+                <button
+                  onClick={handleShareOthers}
+                  disabled={isSharingOthers}
+                  className="flex items-center justify-center gap-2 text-xs font-medium py-2.5 px-3 rounded-xl bg-muted/50 border border-border/40 text-foreground hover:bg-muted/70 transition-colors disabled:opacity-50"
+                >
+                  {isSharingOthers ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
+                  Outros apps
+                </button>
+              </div>
+              {/* Fechar */}
               <button
-                onClick={handleShareInstagram}
-                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 transition-opacity"
+                onClick={() => setShareOpen(false)}
+                className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                <span>📸</span> Instagram Stories
-              </button>
-              <button
-                onClick={handleShareWhatsApp}
-                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors"
-              >
-                <span>💬</span> WhatsApp
-              </button>
-              <button
-                onClick={handleDownloadImage}
-                disabled={isCapturing}
-                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-muted/50 border border-border/40 text-foreground hover:bg-muted/70 transition-colors disabled:opacity-50"
-              >
-                {isCapturing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                Baixar imagem
-              </button>
-              <button
-                onClick={handleShareOthers}
-                className="flex items-center justify-center gap-2 text-xs font-medium py-2 px-3 rounded-lg bg-muted/50 border border-border/40 text-foreground hover:bg-muted/70 transition-colors"
-              >
-                <Share2 className="w-3.5 h-3.5" /> Outros apps
+                Fechar
               </button>
             </div>
           </div>
@@ -1517,14 +1573,71 @@ function GameCard({
         {analysisOpen && (
           <div className="mt-2 border-t border-border/20 pt-3 space-y-4">
 
-            {/* PRÉ-JOGO: análise pré-jogo da IA */}
-            {!finished && game.aiSummary && (
+            {/* PRÉ-JOGO: probabilidades + últimos 5 jogos + análise da IA */}
+            {!finished && game.aiPrediction && (
+              <div className="space-y-3">
+                {/* Barra tripartida de probabilidade */}
+                <div className="space-y-1.5">
+                  <div className="flex h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary/80" style={{ width: `${game.aiPrediction.homeWin}%` }} />
+                    <div className="bg-muted-foreground/40" style={{ width: `${game.aiPrediction.draw}%` }} />
+                    <div className="bg-red-400/80" style={{ width: `${game.aiPrediction.awayWin}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <div className="text-left">
+                      <span className="font-bold text-primary">{game.aiPrediction.homeWin}%</span>
+                      <p className="text-muted-foreground">{game.teamAName} vence</p>
+                    </div>
+                    <div className="text-center">
+                      <span className="font-bold text-muted-foreground">{game.aiPrediction.draw}%</span>
+                      <p className="text-muted-foreground">Empate</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-red-400">{game.aiPrediction.awayWin}%</span>
+                      <p className="text-muted-foreground">{game.teamBName} vence</p>
+                    </div>
+                  </div>
+                </div>
+                {/* Últimos 5 jogos */}
+                {(game.aiPrediction.homeForm?.length > 0 || game.aiPrediction.awayForm?.length > 0) && (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Últimos 5 jogos</p>
+                    {[{ name: game.teamAName, form: game.aiPrediction.homeForm }, { name: game.teamBName, form: game.aiPrediction.awayForm }].map(({ name, form }) => (
+                      <div key={name} className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-foreground/80 truncate max-w-[100px]">{name}</span>
+                        <div className="flex gap-1">
+                          {(form ?? []).slice(0, 5).map((r, i) => (
+                            <span key={i} className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
+                              r === 'W' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                              r === 'L' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                              'bg-muted/40 text-muted-foreground border border-border/30'
+                            }`}>{r}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Análise da IA */}
+                {game.aiPrediction.aiRecommendation && (
+                  <div className="bg-muted/20 rounded-xl p-3 space-y-1.5 border border-border/20">
+                    <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" /> Análise da IA
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{game.aiPrediction.aiRecommendation}</p>
+                    <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA. Dado informativo — não é recomendação de aposta.</p>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Fallback: aiSummary pré-jogo quando não há aiPrediction */}
+            {!finished && !game.aiPrediction && game.aiSummary && (
               <div className="bg-muted/20 rounded-xl p-3 space-y-1.5">
                 <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" /> Análise pré-jogo
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed">{game.aiSummary}</p>
-                <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA.</p>
+                <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA. Dado informativo — não é recomendação de aposta.</p>
               </div>
             )}
 
