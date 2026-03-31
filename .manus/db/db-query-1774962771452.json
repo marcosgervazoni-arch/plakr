@@ -1,0 +1,24 @@
+{
+  "query": "SELECT \n  id,\n  apiFootballEnabled,\n  apiFootballKey IS NOT NULL AND apiFootballKey != '' AS hasKey,\n  LEFT(apiFootballKey, 8) AS keyPrefix,\n  apiFootballQuotaLimit,\n  apiFootballSyncFixtures,\n  apiFootballSyncResults,\n  apiFootballLeagueId,\n  apiFootballSeason,\n  apiFootballLastSync,\n  apiFootballCircuitOpen,\n  apiFootballCircuitOpenAt\nFROM platform_settings\nWHERE id = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute SELECT \n  id,\n  apiFootballEnabled,\n  apiFootballKey IS NOT NULL AND apiFootballKey != '' AS hasKey,\n  LEFT(apiFootballKey, 8) AS keyPrefix,\n  apiFootballQuotaLimit,\n  apiFootballSyncFixtures,\n  apiFootballSyncResults,\n  apiFootballLeagueId,\n  apiFootballSeason,\n  apiFootballLastSync,\n  apiFootballCircuitOpen,\n  apiFootballCircuitOpenAt\nFROM platform_settings\nWHERE id = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "apiFootballEnabled": "1",
+      "hasKey": "1",
+      "keyPrefix": "08ec7ad2",
+      "apiFootballQuotaLimit": "100",
+      "apiFootballSyncFixtures": "1",
+      "apiFootballSyncResults": "1",
+      "apiFootballLeagueId": "1",
+      "apiFootballSeason": "2024",
+      "apiFootballLastSync": "2026-03-31 06:00:58",
+      "apiFootballCircuitOpen": "1",
+      "apiFootballCircuitOpenAt": "2026-03-31 12:55:43"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tapiFootballEnabled\thasKey\tkeyPrefix\tapiFootballQuotaLimit\tapiFootballSyncFixtures\tapiFootballSyncResults\tapiFootballLeagueId\tapiFootballSeason\tapiFootballLastSync\tapiFootballCircuitOpen\tapiFootballCircuitOpenAt\n1\t1\t1\t08ec7ad2\t100\t1\t1\t1\t2024\t2026-03-31 06:00:58\t1\t2026-03-31 12:55:43\n",
+  "stderr": "",
+  "execution_time_ms": 105
+}

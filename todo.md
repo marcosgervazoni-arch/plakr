@@ -2340,3 +2340,9 @@
 - [x] Frontend: componente OnboardingChecklist com etapas: Aparência, Acesso e Convite, Taxa de Inscrição (Pro)
 - [x] Frontend: exibir checklist no OrganizerDashboard apenas quando não dispensado e há etapas pendentes
 - [x] Frontend: botão "Dispensar" para ocultar permanentemente o checklist
+
+## Correções API-Football (diagnóstico 31/03/2026)
+
+- [x] Fix 1: corrigir leagueId padrão em platform_settings (valor 1 → derivado dos torneios vinculados) e exibir corretamente no painel Admin
+- [x] Fix 2: detectar erro "account suspended" na API e exibir mensagem clara no painel Admin (separar de erro temporário)
+- [x] Fix 3: alinhar syncResults a horários UTC fixos (scheduleDaily) em vez de setInterval relativo

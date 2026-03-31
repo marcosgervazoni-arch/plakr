@@ -1,0 +1,28 @@
+{
+  "query": "-- Quota do dia\nSELECT date, requestsUsed, quotaLimit FROM api_quota_tracker ORDER BY date DESC LIMIT 5;\n\n-- Torneios vinculados\nSELECT id, name, apiFootballLeagueId, apiFootballSeason, apiFootballPhaseKey FROM tournaments WHERE apiFootballLeagueId IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Quota do dia\nSELECT date, requestsUsed, quotaLimit FROM api_quota_tracker ORDER BY date DESC LIMIT 5;\n\n-- Torneios vinculados\nSELECT id, name, apiFootballLeagueId, apiFootballSeason, apiFootballPhaseKey FROM tournaments WHERE apiFootballLeagueId IS NOT NULL;",
+  "rows": [
+    {
+      "date": "2026-03-31",
+      "requestsUsed": "8",
+      "quotaLimit": "100"
+    },
+    {
+      "date": "2026-03-30",
+      "requestsUsed": "11",
+      "quotaLimit": "100"
+    },
+    {
+      "date": "2026-03-29",
+      "requestsUsed": "15",
+      "quotaLimit": "100"
+    }
+  ],
+  "messages": [
+    "id\tname\tapiFootballLeagueId\tapiFootballSeason\tapiFootballPhaseKey",
+    "60001\tGaúcho - 1\t477\t2024\tNULL"
+  ],
+  "stdout": "date\trequestsUsed\tquotaLimit\n2026-03-31\t8\t100\n2026-03-30\t11\t100\n2026-03-29\t15\t100\nid\tname\tapiFootballLeagueId\tapiFootballSeason\tapiFootballPhaseKey\n60001\tGaúcho - 1\t477\t2024\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 66
+}

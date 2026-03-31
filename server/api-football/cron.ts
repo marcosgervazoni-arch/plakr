@@ -7,10 +7,12 @@
  *     Busca jogos agendados dos próximos 14 dias.
  *     Consome ~1 requisição por execução.
  *
- *  2. syncResults — A cada 2 horas
+ *  2. syncResults — A cada 2 horas em horários UTC fixos (00, 02, 04, ..., 22)
  *     Busca resultados finais (FT) dos jogos do dia.
  *     Aplica pontuação nos bolões afetados.
  *     Consome ~1 requisição por execução.
+ *     Usando scheduleDaily com horários fixos (não setInterval) para garantir
+ *     execução previsível independente do momento de inicialização do servidor.
  *
  * Ambos os jobs verificam se a integração está habilitada antes de executar.
  * O controle é feito pelo Super Admin em Admin → Integrações.
@@ -60,8 +62,10 @@ export function registerApiFootballCronJobs() {
     );
   });
 
-  // Job 2: Sincronizar resultados a cada 2 horas
-  scheduleInterval(2 * 60 * 60 * 1000, "syncResults", async () => {
+  // Job 2: Sincronizar resultados a cada 2 horas em horários UTC fixos
+  // Usando scheduleDaily com todos os horários pares do dia para garantir
+  // execução previsível independente do momento de restart do servidor.
+  scheduleDaily([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22], "syncResults", async () => {
     const result = await syncResults({ triggeredBy: "cron" });
     logger.info(
       `[ApiFootball][Cron] syncResults completed: applied=${result.resultsApplied} req=${result.requestsUsed}`

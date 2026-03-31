@@ -11,7 +11,7 @@ import { getDb } from "../db";
 import { platformSettings, apiSyncLog, apiQuotaTracker, tournaments } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament } from "../api-football/sync";
-import { fetchAccountStatus, apiFootballRequest } from "../api-football/client";
+import { fetchAccountStatus, apiFootballRequest, AccountSuspendedError } from "../api-football/client";
 import { Err } from "../errors";
 import { getPhaseLabel } from "../../shared/phaseNames";
 
@@ -171,14 +171,20 @@ export const integrationsRouter = router({
       const status = await fetchAccountStatus();
       return {
         success: true,
+        accountSuspended: false,
         plan: status.plan,
         requestsLimit: status.requestsLimit,
         requestsRemaining: status.requestsRemaining,
       };
     } catch (err) {
+      const isSuspended = err instanceof AccountSuspendedError;
       return {
         success: false,
-        error: err instanceof Error ? err.message : "Unknown error",
+        accountSuspended: isSuspended,
+        // Mensagem amigável diferenciada para conta suspensa vs erro temporário
+        error: isSuspended
+          ? "Conta API-Football suspensa. Acesse dashboard.api-football.com para regularizar."
+          : err instanceof Error ? err.message : "Erro desconhecido",
       };
     }
   }),

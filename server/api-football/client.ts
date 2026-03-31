@@ -119,6 +119,20 @@ async function closeCircuitBreaker(): Promise<void> {
     .where(eq(platformSettings.id, 1));
 }
 
+// ─── Erro de conta suspensa (não deve abrir circuit breaker) ─────────────────
+
+/**
+ * Erro lançado quando a conta na API-Football está suspensa.
+ * Diferente de um erro temporário de rede — não deve incrementar o circuit breaker
+ * nem ser retentado, pois só será resolvido com ação manual no dashboard.api-football.com.
+ */
+export class AccountSuspendedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AccountSuspendedError";
+  }
+}
+
 // ─── Estado em memória do circuit breaker ─────────────────────────────────────
 
 let consecutiveFailures = 0;
@@ -193,6 +207,16 @@ export async function apiFootballRequest<T>(
       const hasErrors = Array.isArray(errors) ? errors.length > 0 : Object.keys(errors).length > 0;
       if (hasErrors) {
         const errMsg = Array.isArray(errors) ? errors.join(", ") : JSON.stringify(errors);
+        // Detectar especificamente erro de conta suspensa — não deve abrir circuit breaker
+        // pois é um problema de conta, não de disponibilidade da API
+        const isSuspended =
+          errMsg.toLowerCase().includes("suspended") ||
+          errMsg.toLowerCase().includes("account is suspended");
+        if (isSuspended) {
+          throw new AccountSuspendedError(
+            `Conta API-Football suspensa. Acesse dashboard.api-football.com para regularizar. Detalhe: ${errMsg}`
+          );
+        }
         throw new Error(`API-Football error: ${errMsg}`);
       }
 
@@ -213,10 +237,11 @@ export async function apiFootballRequest<T>(
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
 
-      // Não fazer retry em erros de quota ou circuit breaker
+      // Não fazer retry em erros de quota, circuit breaker ou conta suspensa
       if (
         lastError.message.includes("quota exhausted") ||
-        lastError.message.includes("Circuit breaker")
+        lastError.message.includes("Circuit breaker") ||
+        lastError instanceof AccountSuspendedError
       ) {
         throw lastError;
       }
@@ -229,10 +254,13 @@ export async function apiFootballRequest<T>(
   }
 
   // Todas as tentativas falharam — incrementar contador do circuit breaker
-  consecutiveFailures++;
-  if (consecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD) {
-    await openCircuitBreaker();
-    consecutiveFailures = 0;
+  // Não abrir circuit breaker por erro de conta suspensa (é problema de conta, não de rede)
+  if (!(lastError instanceof AccountSuspendedError)) {
+    consecutiveFailures++;
+    if (consecutiveFailures >= CIRCUIT_BREAKER_THRESHOLD) {
+      await openCircuitBreaker();
+      consecutiveFailures = 0;
+    }
   }
 
   throw lastError ?? new Error("Unknown error in API-Football request");

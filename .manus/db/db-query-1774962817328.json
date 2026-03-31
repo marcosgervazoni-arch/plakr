@@ -1,0 +1,18 @@
+{
+  "query": "-- Verificar se o leagueId padrão (1) está correto vs o torneio vinculado (477)\nSELECT \n  ps.apiFootballLeagueId AS settingsLeagueId,\n  ps.apiFootballSeason AS settingsSeason,\n  t.id AS tournamentId,\n  t.name AS tournamentName,\n  t.apiFootballLeagueId AS tournamentLeagueId,\n  t.apiFootballSeason AS tournamentSeason\nFROM platform_settings ps\nCROSS JOIN tournaments t\nWHERE ps.id = 1 AND t.apiFootballLeagueId IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 2wStqi96Bwp1QsN.a3b8e3def1a1 --database dJv8mGehu4r2vn8N2SWpLW --execute -- Verificar se o leagueId padrão (1) está correto vs o torneio vinculado (477)\nSELECT \n  ps.apiFootballLeagueId AS settingsLeagueId,\n  ps.apiFootballSeason AS settingsSeason,\n  t.id AS tournamentId,\n  t.name AS tournamentName,\n  t.apiFootballLeagueId AS tournamentLeagueId,\n  t.apiFootballSeason AS tournamentSeason\nFROM platform_settings ps\nCROSS JOIN tournaments t\nWHERE ps.id = 1 AND t.apiFootballLeagueId IS NOT NULL;",
+  "rows": [
+    {
+      "settingsLeagueId": "1",
+      "settingsSeason": "2024",
+      "tournamentId": "60001",
+      "tournamentName": "Gaúcho - 1",
+      "tournamentLeagueId": "477",
+      "tournamentSeason": "2024"
+    }
+  ],
+  "messages": [],
+  "stdout": "settingsLeagueId\tsettingsSeason\ttournamentId\ttournamentName\ttournamentLeagueId\ttournamentSeason\n1\t2024\t60001\tGaúcho - 1\t477\t2024\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}
