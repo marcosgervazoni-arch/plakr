@@ -242,28 +242,38 @@ export const x1Router = router({
       const planLimit = limits.maxActive === Infinity ? null : limits.maxActive;
 
       // Detecção 100% baseada nos dados reais do banco:
-      // - hasGroups: true se o torneio tem jogos com groupName preenchido
+      // - hasGroups: true se o torneio tem jogos com groupName preenchido OU tem fase group_stage
+      //   (a API às vezes não retorna groupName mesmo para torneios com grupos, ex: Copa do Mundo 2026)
       // - knockoutPhases: fases que não são de grupo (excluindo group_stage, group_a, group_b...)
       // Isso garante que qualquer organizador que crie um bolão com grupos/fases veja as opções corretas,
       // independente do formato cadastrado (league, cup, groups_knockout, custom, etc.)
-      const hasGroups = groups.length > 0;
+      const hasGroupNameFilled = groups.length > 0;
+      const hasGroupStagePhase = phases.includes("group_stage");
+      const hasGroups = hasGroupNameFilled || hasGroupStagePhase;
       const knockoutPhasesFromGames = phases.filter(
         (p) => p && p !== "group_stage" && !p.startsWith("group_")
       );
 
-      // ── Fases previstas para campeonatos Copa (groups_knockout) ──────────────
-      // Quando o campeonato tem grupos mas ainda não tem jogos eliminatórios na API
+      // ── Fases previstas para campeonatos Copa (groups_knockout ou com group_stage) ──
+      // Quando o campeonato tem fase de grupos mas ainda não tem jogos eliminatórios na API
       // (ex: Copa do Mundo antes das oitavas), exibimos as fases previstas para
       // permitir duelos de classificação antecipados.
       // A resolução acontece automaticamente quando a API confirmar os classificados.
       const { isKnockoutPhase: _isKnockoutPhase, getPhaseLabel: _getPhaseLabel, PHASE_ORDER: _PHASE_ORDER } = await import("../../shared/phaseNames");
       let predictedKnockoutPhases: string[] = [];
-      if (hasGroups && knockoutPhasesFromGames.length === 0 && t.format === "groups_knockout") {
+      // Ativa fases previstas se: tem fase de grupos E sem fases eliminatórias reais
+      // Condição: formato groups_knockout OU tem phase=group_stage nos jogos
+      const isGroupsKnockoutFormat = t.format === "groups_knockout" || hasGroupStagePhase;
+      if (hasGroups && knockoutPhasesFromGames.length === 0 && isGroupsKnockoutFormat) {
         // Copa do Mundo 2026: 48 times → Round of 32 → Round of 16 → QF → SF → Final
         // Copa padrão (32 times): Round of 16 → QF → SF → Final
-        const groupCount = groups.length;
-        if (groupCount >= 12) {
-          // 48 times / 12 grupos → fase extra (Round of 32)
+        // Detecta pelo número de jogos na fase de grupos:
+        // Copa 2026: 72 jogos (48 times × 3 rodadas / 2) → 12+ grupos
+        // Copa padrão: 48 jogos (32 times × 3 rodadas / 2) → 8 grupos
+        const groupStageGameCount = phaseGameCount.get("group_stage") ?? 0;
+        const groupCount = hasGroupNameFilled ? groups.length : Math.ceil(groupStageGameCount / 6); // 6 jogos por grupo de 4 times
+        if (groupCount >= 12 || groupStageGameCount >= 60) {
+          // 48 times / 16 grupos ou 72+ jogos → Copa do Mundo 2026 (Round of 32 extra)
           predictedKnockoutPhases = ["round_of_32", "round_of_16", "quarter_finals", "semi_finals", "final"];
         } else {
           predictedKnockoutPhases = ["round_of_16", "quarter_finals", "semi_finals", "final"];
