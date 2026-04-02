@@ -2458,3 +2458,13 @@
 - [x] Atualizar banco: api_quota_tracker.quotaLimit = 7500 (registro de hoje)
 - [x] Corrigir INSERT hardcoded com 7500 no client.ts
 - [x] Corrigir fallbacks hardcoded com 7500 nas linhas 337-338 do client.ts
+
+## Feature — Melhorias estruturais de formato de torneio (3 sugestões)
+- [x] Override manual de formato por torneio: badge "Formato" + botão "Alterar formato" em Admin → Torneio → Detalhe
+- [x] Dialog de override com 4 opções (league/cup/groups_knockout/custom) e aviso de atenção
+- [x] Endpoint tournaments.update aceita campo `format` para override via admin
+- [x] Cron job semanal (toda segunda-feira 03:00 UTC) para recalcular formatos automaticamente
+- [x] scheduleWeekly() helper adicionado ao cron.ts
+- [x] Cron usa 3 estratégias: ID conhecido → rounds da API → fases no banco
+- [x] KNOWN_LEAGUE_FORMATS expandido com todos os 26 campeonatos estaduais brasileiros
+- [x] Campeonatos estaduais: Paulista, Gaúcho, Carioca, Mineiro, Baiano, Paranaense, Pernambucano, Cearense, Goiano, Catarinense, Capixaba e demais 15 estados

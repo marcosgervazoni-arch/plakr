@@ -135,7 +135,15 @@ export default function AdminTournamentDetail() {
   const [batchPhase, setBatchPhase] = useState<string | null>(null);
   const [batchEdits, setBatchEdits] = useState<Record<number, Partial<EditGameForm>>>({});
 
+  // ── Override de formato ──
+  const [showFormatOverride, setShowFormatOverride] = useState(false);
+
   // ── Mutations ──
+  const updateFormatMutation = trpc.tournaments.update.useMutation({
+    onSuccess: () => { toast.success("Formato do torneio atualizado."); setShowFormatOverride(false); refetch(); },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
   const addTeamMutation = trpc.tournaments.addTeam.useMutation({
     onSuccess: () => { toast.success("Time adicionado."); setShowAddTeam(false); setTeamForm({ name: "", code: "", flagUrl: "", groupName: "" }); refetch(); },
     onError: (e: { message: string }) => toast.error(e.message),
@@ -438,6 +446,29 @@ export default function AdminTournamentDetail() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Formato do torneio + override manual */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg px-3 py-1.5 border border-border/40">
+            <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Formato:</span>
+            <span className="text-xs font-semibold">
+              {tournament.format === "league" && "Liga (Pontos Corridos)"}
+              {tournament.format === "cup" && "Copa (Mata-Mata)"}
+              {tournament.format === "groups_knockout" && "Grupos + Eliminatórias"}
+              {tournament.format === "custom" && "Personalizado"}
+              {!tournament.format && "Não definido"}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
+            onClick={() => setShowFormatOverride(true)}
+          >
+            <Pencil className="h-3 w-3" /> Alterar formato
+          </Button>
         </div>
 
         {/* Teams accordion */}
@@ -1155,6 +1186,67 @@ export default function AdminTournamentDetail() {
               {importSheetsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
               Importar Jogos
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Modal: Override de Formato */}
+      <Dialog open={showFormatOverride} onOpenChange={setShowFormatOverride}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-brand" /> Alterar Formato do Torneio</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Define como este torneio é estruturado. Afeta a exibição de fases, chaveamentos e palpites.
+            </p>
+            <div className="space-y-1.5">
+              <Label>Formato</Label>
+              <Select
+                defaultValue={tournament.format ?? "league"}
+                onValueChange={(val) => updateFormatMutation.mutate({ id: tournamentId, format: val as "league" | "cup" | "groups_knockout" | "custom" })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o formato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="league">
+                    <div className="flex flex-col text-left">
+                      <span className="font-medium">Liga (Pontos Corridos)</span>
+                      <span className="text-xs text-muted-foreground">Brasileirão, Premier League, Gauchão</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="cup">
+                    <div className="flex flex-col text-left">
+                      <span className="font-medium">Copa (Mata-Mata Puro)</span>
+                      <span className="text-xs text-muted-foreground">Copa do Brasil, FA Cup, Copa del Rey</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="groups_knockout">
+                    <div className="flex flex-col text-left">
+                      <span className="font-medium">Grupos + Eliminatórias</span>
+                      <span className="text-xs text-muted-foreground">Copa do Mundo, Libertadores, Champions League</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="custom">
+                    <div className="flex flex-col text-left">
+                      <span className="font-medium">Personalizado</span>
+                      <span className="text-xs text-muted-foreground">Torneio criado manualmente pelo organizador</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+              <p className="text-xs text-amber-500">
+                <strong>Atenção:</strong> Alterar o formato manualmente substitui a detecção automática.
+                Use apenas quando a API retornar dados inconsistentes.
+              </p>
+            </div>
+            {updateFormatMutation.isPending && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Salvando...
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

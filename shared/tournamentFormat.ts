@@ -54,9 +54,7 @@ export const KNOWN_LEAGUE_FORMATS: Record<number, "league" | "cup" | "groups_kno
   65:   "cup",             // EFL Cup (England)
   526:  "cup",             // Supercopa de España
   529:  "cup",             // Supercopa de Italia
-  556:  "cup",             // UEFA Super Cup
-
-  // ── Ligas de pontos corridos (Brasil) ─────────────────────────────────────
+  556:  "cup",             // UEFA Su  // ── Ligas de pontos corridos (Brasil) ───────────────────────────────────────────────
   71:   "league",          // Série A
   72:   "league",          // Série B
   75:   "league",          // Série C
@@ -65,6 +63,34 @@ export const KNOWN_LEAGUE_FORMATS: Record<number, "league" | "cup" | "groups_kno
   1224: "groups_knockout", // Copa Sul-Sudeste
   1225: "groups_knockout", // Copa Centro-Oeste
 
+  // ── Campeonatos Estaduais Brasileiros ──────────────────────────────────────────
+  // Formato: grupos + mata-mata (fase de grupos + semifinais + final)
+  74:   "groups_knockout", // Campeonato Paulista (São Paulo)
+  77:   "groups_knockout", // Campeonato Gaúcho (Rio Grande do Sul)
+  79:   "groups_knockout", // Campeonato Carioca (Rio de Janeiro)
+  80:   "groups_knockout", // Campeonato Mineiro (Minas Gerais)
+  81:   "groups_knockout", // Campeonato Baiano (Bahia)
+  82:   "groups_knockout", // Campeonato Paranaense (Paraná)
+  83:   "groups_knockout", // Campeonato Pernambucano (Pernambuco)
+  84:   "groups_knockout", // Campeonato Cearense (Ceará)
+  85:   "groups_knockout", // Campeonato Goiano (Goiás)
+  86:   "groups_knockout", // Campeonato Catarinense (Santa Catarina)
+  87:   "groups_knockout", // Campeonato Capixaba (Espírito Santo)
+  475:  "groups_knockout", // Campeonato Alagoano (Alagoas)
+  476:  "groups_knockout", // Campeonato Amazonense (Amazonas)
+  477:  "groups_knockout", // Campeonato Maranhense (Maranhão)
+  478:  "groups_knockout", // Campeonato Mato-Grossense (Mato Grosso)
+  479:  "groups_knockout", // Campeonato Mato-Grossense do Sul
+  480:  "groups_knockout", // Campeonato Paraibano (Paraíba)
+  481:  "groups_knockout", // Campeonato Paraense (Pará)
+  482:  "groups_knockout", // Campeonato Piauiense (Piauí)
+  483:  "groups_knockout", // Campeonato Potiguar (Rio Grande do Norte)
+  484:  "groups_knockout", // Campeonato Rondoniense (Rondônia)
+  485:  "groups_knockout", // Campeonato Sergipano (Sergipe)
+  486:  "groups_knockout", // Campeonato Tocantinense (Tocantins)
+  487:  "groups_knockout", // Campeonato Acreano (Acre)
+  488:  "groups_knockout", // Campeonato Amapaense (Amapá)
+  489:  "groups_knockout", // Campeonato Roraimense (Roraima)
   // ── Ligas de pontos corridos (Internacionais) ─────────────────────────────
   39:   "league",          // Premier League
   140:  "league",          // La Liga

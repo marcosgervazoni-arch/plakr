@@ -160,11 +160,12 @@ export const tournamentsRouter = router({
       name: z.string().optional(),
       status: z.enum(["active", "finished", "archived"]).optional(),
       logoUrl: z.string().optional(),
+      format: z.enum(["league", "cup", "groups_knockout", "custom"]).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
       await updateTournament(id, data);
-      await createAdminLog(ctx.user.id, "update_tournament", "tournament", id);
+      await createAdminLog(ctx.user.id, "update_tournament", "tournament", id, { changedFields: Object.keys(data) });
       return { success: true };
     }),
 
