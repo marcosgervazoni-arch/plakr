@@ -8,12 +8,13 @@ import { z } from "zod";
 import { adminProcedure, router } from "../_core/trpc";
 import logger from "../logger";
 import { getDb } from "../db";
-import { platformSettings, apiSyncLog, apiQuotaTracker, tournaments } from "../../drizzle/schema";
+import { platformSettings, apiSyncLog, apiQuotaTracker, tournaments, games as gamesTable } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament, backfillGameData, getBackfillPendingCount } from "../api-football/sync";
 import { fetchAccountStatus, apiFootballRequest, AccountSuspendedError } from "../api-football/client";
 import { Err } from "../errors";
 import { getPhaseLabel } from "../../shared/phaseNames";
+import { inferTournamentFormat, inferTournamentFormatFromPhases } from "../../shared/tournamentFormat";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -44,11 +45,19 @@ async function getIntegrationSettings() {
 /** Converte o round string da API para uma chave de fase normalizada */
 function roundToPhaseKeyLocal(round: string): string {
   const r = round.toLowerCase().trim();
+  // Fases eliminatórias (prioridade máxima)
+  if (r.includes("round of 32") || r.includes("last 32")) return "round_of_32";
   if (r.includes("round of 16") || r.includes("last 16")) return "round_of_16";
+  if (r.includes("1/256") || r.includes("1/128") || r.includes("1/64") || r.includes("1/32") || r.includes("1/16")) return "round_of_16";
+  if (r.includes("round of 64") || r.includes("round of 128")) return "round_of_16";
   if (r.includes("quarter")) return "quarter_finals";
   if (r.includes("semi")) return "semi_finals";
   if (r.includes("3rd place") || r.includes("third place")) return "third_place";
   if (/^final$/.test(r) || r === "1st phase - final" || r === "2nd phase - final") return "final";
+  // Fases de qualificação
+  if (r.includes("qualification") || r.includes("qualifying") || r.includes("playoff") || r.includes("play-off")) return "1st_phase";
+  if (r.includes("knockout round")) return "round_of_16";
+  // Fases nomeadas
   if (r.startsWith("1st phase")) return "1st_phase";
   if (r.startsWith("2nd phase")) return "2nd_phase";
   if (r.startsWith("3rd phase")) return "3rd_phase";
@@ -56,7 +65,8 @@ function roundToPhaseKeyLocal(round: string): string {
   if (r.startsWith("clausura")) return "clausura";
   if (r.startsWith("regular season")) return "regular_season";
   if (r.startsWith("group")) return "group_stage";
-  return "group_stage";
+  // Fallback: regular_season (não group_stage, para não contaminar detecção de formato)
+  return "regular_season";
 }
 
 /** Converte a chave de fase em nome legível para exibição */
@@ -424,15 +434,10 @@ export const integrationsRouter = router({
       // Cria novo campeonato global (nome simples, sem sufixo de fase)
       const slug = `${input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${input.season}`;
 
-      // Determinar formato: se há fases de grupos + mata-mata, usar groups_knockout
-      const hasGroupPhase = input.selectedPhases?.some(p =>
-        p.phaseKey.includes("phase") || p.phaseKey === "group_stage"
-      );
-      const hasKnockout = input.selectedPhases?.some(p =>
-        ["round_of_16", "quarter_finals", "semi_finals", "final"].includes(p.phaseKey)
-      );
-      const format = (hasGroupPhase && hasKnockout) ? "groups_knockout" :
-                     hasKnockout ? "cup" : "league";
+      // Determinar formato usando utilitário centralizado
+      // Usa os phaseKeys selecionados como proxy de rounds para inferência
+      const selectedPhaseKeys = input.selectedPhases?.map(p => p.phaseKey) ?? [];
+      const format = inferTournamentFormatFromPhases(selectedPhaseKeys, input.leagueId);
 
       const result = await db.insert(tournaments).values({
         name: input.name,
@@ -563,13 +568,8 @@ export const integrationsRouter = router({
           );
           const rounds: string[] = (roundsData?.response ?? []) as unknown as string[];
 
-          // Determinar formato baseado nos rounds
-          const hasGroupPhase = rounds.some(r => roundToPhaseKeyLocal(r) === "group_stage");
-          const hasKnockout = rounds.some(r =>
-            ["round_of_16", "quarter_finals", "semi_finals", "final"].includes(roundToPhaseKeyLocal(r))
-          );
-          const format = (hasGroupPhase && hasKnockout) ? "groups_knockout" :
-                         hasKnockout ? "cup" : "league";
+          // Determinar formato usando utilitário centralizado com rounds reais da API
+          const format = inferTournamentFormat(rounds, league.leagueId);
 
           const slug = `${league.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${league.season}`;
 
@@ -707,6 +707,108 @@ export const integrationsRouter = router({
     const pendingCount = await getBackfillPendingCount();
     return { pendingCount };
   }),
+
+  /**
+   * Recalcula o formato de todos os torneios importados via API-Football.
+   * Para cada torneio: consulta os rounds na API e aplica a lógica centralizada
+   * de inferência de formato. Corrige torneios com formato errado (ex: league → groups_knockout).
+   * Consome 1 requisição por torneio.
+   */
+  recalcularFormatos: adminProcedure
+    .mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw Err.internal("DB não disponível");
+
+      // Buscar todos os torneios vinculados à API-Football
+      const allTournaments = await db
+        .select()
+        .from(tournaments)
+        .where(eq(tournaments.isGlobal, true));
+
+      const apiLinked = allTournaments.filter(
+        t => t.apiFootballLeagueId !== null && t.apiFootballSeason !== null
+      );
+
+      logger.info(`[RecalcFormatos] Admin ${ctx.user.id} iniciou recalculo de ${apiLinked.length} torneios`);
+
+      const results: Array<{
+        id: number;
+        name: string;
+        oldFormat: string;
+        newFormat: string;
+        changed: boolean;
+        source: "known_id" | "api_rounds" | "db_phases";
+      }> = [];
+
+      for (const t of apiLinked) {
+        const leagueId = t.apiFootballLeagueId!;
+        const season = t.apiFootballSeason!;
+        const oldFormat = t.format ?? "league";
+
+        try {
+          // Tentar buscar rounds da API para inferência mais precisa
+          let newFormat: "league" | "cup" | "groups_knockout";
+          let source: "known_id" | "api_rounds" | "db_phases";
+
+          // Estratégia em 3 níveis:
+          // 1. ID conhecido → override direto (mais confiável)
+          // 2. Rounds da API → inferência dinâmica
+          // 3. Fases dos jogos no banco → fallback sem API
+          const knownFormat = inferTournamentFormat([], leagueId);
+          // inferTournamentFormat com rounds=[] só retorna não-league se o leagueId está na lista conhecida
+          if (knownFormat !== "league") {
+            newFormat = knownFormat;
+            source = "known_id";
+          } else {
+            // Tentar buscar rounds da API
+            let apiRounds: string[] = [];
+            try {
+              const roundsData = await apiFootballRequest(
+                `/fixtures/rounds`,
+                { league: leagueId, season }
+              );
+              apiRounds = (roundsData?.response ?? []) as unknown as string[];
+            } catch {
+              // API indisponível, continuar com fallback
+            }
+
+            if (apiRounds.length > 0) {
+              newFormat = inferTournamentFormat(apiRounds, leagueId);
+              source = "api_rounds";
+            } else {
+              // Fallback: usar fases dos jogos já importados
+              const gameRows = await db
+                .select({ phase: gamesTable.phase })
+                .from(gamesTable)
+                .where(eq(gamesTable.tournamentId, t.id));
+              const phases = [...new Set(gameRows.map(g => g.phase).filter(Boolean))] as string[];
+              newFormat = inferTournamentFormatFromPhases(phases, leagueId);
+              source = "db_phases";
+            }
+          }
+
+          const changed = newFormat !== oldFormat;
+          if (changed) {
+            await db
+              .update(tournaments)
+              .set({ format: newFormat })
+              .where(eq(tournaments.id, t.id));
+            logger.info(`[RecalcFormatos] ${t.name}: ${oldFormat} → ${newFormat} (source=${source})`);
+          }
+
+          results.push({ id: t.id, name: t.name, oldFormat, newFormat, changed, source });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          logger.error({ err }, `[RecalcFormatos] Erro em ${t.name}: ${msg}`);
+          results.push({ id: t.id, name: t.name, oldFormat, newFormat: oldFormat, changed: false, source: "db_phases" });
+        }
+      }
+
+      const changed = results.filter(r => r.changed).length;
+      logger.info(`[RecalcFormatos] Concluído: ${changed} torneios atualizados de ${apiLinked.length}`);
+
+      return { results, changed, total: apiLinked.length };
+    }),
 
   /**
    * Reprocessa jogos finalizados sem estatísticas/análises de IA.

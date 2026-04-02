@@ -151,6 +151,19 @@ export default function AdminIntegrations() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
+  // ─── Recalculo de Formatos ────────────────────────────────────────────────
+  const recalcularFormatosMutation = trpc.integrations.recalcularFormatos.useMutation({
+    onSuccess: (data) => {
+      if (data.changed > 0) {
+        toast.success(`${data.changed} torneio${data.changed !== 1 ? 's' : ''} corrigido${data.changed !== 1 ? 's' : ''} de ${data.total} analisados`);
+      } else {
+        toast.success(`Todos os ${data.total} torneios já estão com formato correto`);
+      }
+      refetchTournaments();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
   // ─── Curadoria de Campeonatos ───────────────────────────────────────────────
   const { data: managedTournaments, refetch: refetchTournaments } = trpc.integrations.listTournaments.useQuery();
   const [apiLeagues, setApiLeagues] = useState<Array<{leagueId: number; name: string; country: string; logoUrl: string; season: number}>>([]);
@@ -896,6 +909,42 @@ export default function AdminIntegrations() {
                         <p>✅ {backfillMutation.data.succeeded} processados com sucesso</p>
                         {backfillMutation.data.failed > 0 && <p>⚠️ {backfillMutation.data.failed} falhas</p>}
                         <p className="text-muted-foreground/70">{backfillMutation.data.requestsUsed} requisições usadas</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recalculo de Formatos */}
+                  <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Formatos de Torneio</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Recalcula o formato (liga/copa/grupos+mata-mata) de todos os torneios importados.
+                      Corrige automaticamente torneios com formato errado usando a lista de IDs conhecidos e rounds da API.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 text-xs"
+                      disabled={recalcularFormatosMutation.isPending}
+                      onClick={() => recalcularFormatosMutation.mutate()}
+                    >
+                      {recalcularFormatosMutation.isPending ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Recalculando...</>
+                      ) : (
+                        <><RefreshCw className="h-3 w-3" /> Recalcular formatos dos torneios</>
+                      )}
+                    </Button>
+                    {recalcularFormatosMutation.data && (
+                      <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 space-y-0.5">
+                        {recalcularFormatosMutation.data.results
+                          .filter(r => r.changed)
+                          .map(r => (
+                            <p key={r.id}>✅ {r.name}: <span className="line-through">{r.oldFormat}</span> → <strong>{r.newFormat}</strong> <span className="text-muted-foreground/60">({r.source})</span></p>
+                          ))}
+                        {recalcularFormatosMutation.data.changed === 0 && (
+                          <p>✅ Todos os torneios já estão com formato correto</p>
+                        )}
                       </div>
                     )}
                   </div>

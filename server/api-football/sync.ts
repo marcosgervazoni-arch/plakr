@@ -136,11 +136,17 @@ function roundToPhaseKey(round: string): string {
   // Fases eliminatórias (prioridade máxima)
   if (r.includes("round of 32") || r.includes("last 32")) return "round_of_32";
   if (r.includes("round of 16") || r.includes("last 16")) return "round_of_16";
+  if (r.includes("1/256") || r.includes("1/128") || r.includes("1/64") || r.includes("1/32") || r.includes("1/16")) return "round_of_16";
+  if (r.includes("round of 64") || r.includes("round of 128")) return "round_of_16";
   if (r.includes("quarter")) return "quarter_finals";
   if (r.includes("semi")) return "semi_finals";
   if (r.includes("3rd place") || r.includes("third place")) return "third_place";
   // "final" deve vir após "semi" e "quarter" para não capturar "semi-finals"
   if (/^final$/.test(r) || r === "1st phase - final" || r === "2nd phase - final") return "final";
+
+  // Fases de qualificação (pré-fase de grupos)
+  if (r.includes("qualification") || r.includes("qualifying") || r.includes("playoff") || r.includes("play-off")) return "1st_phase";
+  if (r.includes("knockout round")) return "round_of_16";
 
   // Fases numeradas com nome específico — preservar para evitar sobreposição de rodadas
   if (r.startsWith("1st phase")) return "1st_phase";
@@ -151,8 +157,9 @@ function roundToPhaseKey(round: string): string {
   if (r.startsWith("regular season")) return "regular_season";
   if (r.startsWith("group")) return "group_stage";
 
-  // Fallback genérico
-  return "group_stage";
+  // Fallback: usar regular_season para rounds numerados genéricos (ex: "Round 5", "Week 12")
+  // Não usar group_stage como fallback pois contamina a detecção de formato
+  return "regular_season";
 }
 
 // ─── Helper: extrair número da rodada ────────────────────────────────────────────
