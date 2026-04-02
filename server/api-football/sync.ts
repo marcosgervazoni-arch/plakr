@@ -508,16 +508,34 @@ export async function syncFixtures(options: {
   let errorMessage: string | undefined;
   let syncStatus: "success" | "error" | "partial" | "skipped" = "success";
 
-  // Buscar jogos dos próximos 14 dias
+  // Buscar jogos dos próximos 14 dias (para campeonatos em andamento)
+  // Para campeonatos que ainda não começaram, buscar todos os fixtures sem filtro de data
   const today = new Date();
   const in14Days = new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000);
   const fromStr = today.toISOString().slice(0, 10);
   const toStr = in14Days.toISOString().slice(0, 10);
 
+  // Buscar startDate dos torneios para identificar campeonatos futuros
+  const db2 = await getDb();
+  const tournamentStartDates: Record<number, Date | null> = {};
+  if (db2) {
+    const startRows = await db2
+      .select({ id: tournaments.id, startDate: tournaments.startDate })
+      .from(tournaments)
+      .where(sql`${tournaments.apiFootballLeagueId} IS NOT NULL`);
+    for (const r of startRows) {
+      tournamentStartDates[r.id] = r.startDate;
+    }
+  }
+
   for (const linked of linkedTournaments) {
     const { leagueId, season, id: tournamentId, name: tournamentName, phaseKey } = linked;
     try {
-      const allFixtures = await fetchFixtures(leagueId, season, {
+      // Se o campeonato ainda não começou, buscar todos os fixtures sem filtro de data
+      // para garantir que novos jogos publicados pela API sejam importados
+      const startDate = tournamentStartDates[tournamentId];
+      const isFutureTournament = startDate && startDate > today;
+      const allFixtures = await fetchFixtures(leagueId, season, isFutureTournament ? {} : {
         status: SCHEDULED_STATUSES.join("-"),
         from: fromStr,
         to: toStr,
