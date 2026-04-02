@@ -247,9 +247,35 @@ export const x1Router = router({
       // Isso garante que qualquer organizador que crie um bolão com grupos/fases veja as opções corretas,
       // independente do formato cadastrado (league, cup, groups_knockout, custom, etc.)
       const hasGroups = groups.length > 0;
-      const knockoutPhases = phases.filter(
+      const knockoutPhasesFromGames = phases.filter(
         (p) => p && p !== "group_stage" && !p.startsWith("group_")
       );
+
+      // ── Fases previstas para campeonatos Copa (groups_knockout) ──────────────
+      // Quando o campeonato tem grupos mas ainda não tem jogos eliminatórios na API
+      // (ex: Copa do Mundo antes das oitavas), exibimos as fases previstas para
+      // permitir duelos de classificação antecipados.
+      // A resolução acontece automaticamente quando a API confirmar os classificados.
+      const { isKnockoutPhase: _isKnockoutPhase, getPhaseLabel: _getPhaseLabel, PHASE_ORDER: _PHASE_ORDER } = await import("../../shared/phaseNames");
+      let predictedKnockoutPhases: string[] = [];
+      if (hasGroups && knockoutPhasesFromGames.length === 0 && t.format === "groups_knockout") {
+        // Copa do Mundo 2026: 48 times → Round of 32 → Round of 16 → QF → SF → Final
+        // Copa padrão (32 times): Round of 16 → QF → SF → Final
+        const groupCount = groups.length;
+        if (groupCount >= 12) {
+          // 48 times / 12 grupos → fase extra (Round of 32)
+          predictedKnockoutPhases = ["round_of_32", "round_of_16", "quarter_finals", "semi_finals", "final"];
+        } else {
+          predictedKnockoutPhases = ["round_of_16", "quarter_finals", "semi_finals", "final"];
+        }
+      }
+
+      // Combinar fases reais + previstas (sem duplicar)
+      const knockoutPhases = [
+        ...knockoutPhasesFromGames,
+        ...predictedKnockoutPhases.filter(p => !knockoutPhasesFromGames.includes(p)),
+      ].sort((a, b) => (_PHASE_ORDER[a] ?? 999) - (_PHASE_ORDER[b] ?? 999));
+
       const hasKnockoutPhases = knockoutPhases.length > 0;
       // isGroupsKnockout: true se o torneio tem grupos OU fases de mata-mata nos dados reais
       const isGroupsKnockout = hasGroups || hasKnockoutPhases;
@@ -287,23 +313,35 @@ export const x1Router = router({
                 teamsRequired: 2,
               }))
             : []),
-          // ── Classificação por fase de mata-mata (detectado pelos dados reais) ──────────
+          // ── Classificação por fase de mata-mata (reais + previstas) ────────────
           ...(hasKnockoutPhases
             ? knockoutPhases.map((p) => {
+                const isPredicted = predictedKnockoutPhases.includes(p) && !knockoutPhasesFromGames.includes(p);
                 // Estratégia de cálculo de teamsRequired:
                 // 1º) Se os times já estão cadastrados nos jogos: usa metade dos times únicos
-                // 2º) Se os jogos ainda não têm times (chaveamento dinâmico): usa número de jogos
-                //    (em eliminatória simples, cada jogo produz exatamente 1 vencedor)
+                // 2º) Se é fase prevista (sem jogos ainda): usa número padrão por fase
+                // 3º) Se os jogos ainda não têm times (chaveamento dinâmico): usa número de jogos
                 const teamsInPhase = phaseTeamMap.get(p)?.size ?? 0;
                 const gameCount = phaseGameCount.get(p) ?? 0;
-                const teamsRequired = teamsInPhase >= 2
-                  ? Math.max(1, Math.floor(teamsInPhase / 2))
-                  : Math.max(1, gameCount);
+                let teamsRequired: number;
+                if (teamsInPhase >= 2) {
+                  teamsRequired = Math.max(1, Math.floor(teamsInPhase / 2));
+                } else if (isPredicted) {
+                  // Fases previstas: número padrão de classificados por fase
+                  const PREDICTED_TEAMS: Record<string, number> = {
+                    round_of_32: 32, round_of_16: 16, quarter_finals: 8, semi_finals: 4, final: 2
+                  };
+                  teamsRequired = PREDICTED_TEAMS[p] ?? 8;
+                } else {
+                  teamsRequired = Math.max(1, gameCount);
+                }
+                const phaseLabel = _getPhaseLabel(p);
                 return {
                   type: "phase_qualified" as const,
-                  label: `Quem passa para ${p}?`,
+                  label: `Quem passa para as ${phaseLabel}?`,
                   context: { phase: p },
                   teamsRequired,
+                  isPredicted,
                 };
               })
             : []),

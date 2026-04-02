@@ -124,6 +124,7 @@ async function getAllLinkedTournaments(): Promise<Array<{ id: number; leagueId: 
  *  - "Apertura - 3"        → "apertura"
  *  - "Clausura - 7"        → "clausura"
  *  - "Group Stage - 2"     → "group_stage"
+ *  - "Round of 32"         → "round_of_32"
  *  - "Round of 16"         → "round_of_16"
  *  - "Quarter-finals"      → "quarter_finals"
  *  - "Semi-finals"         → "semi_finals"
@@ -133,6 +134,7 @@ function roundToPhaseKey(round: string): string {
   const r = round.toLowerCase().trim();
 
   // Fases eliminatórias (prioridade máxima)
+  if (r.includes("round of 32") || r.includes("last 32")) return "round_of_32";
   if (r.includes("round of 16") || r.includes("last 16")) return "round_of_16";
   if (r.includes("quarter")) return "quarter_finals";
   if (r.includes("semi")) return "semi_finals";

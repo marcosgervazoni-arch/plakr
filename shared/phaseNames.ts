@@ -26,6 +26,7 @@ export const PHASE_NAME_MAP: Record<string, string> = {
   "clausura":        "Clausura",
 
   // Mata-mata
+  "round_of_32":     "16 Avos de Final",
   "round_of_16":     "Oitavas de Final",
   "quarter_finals":  "Quartas de Final",
   "semi_finals":     "Semifinais",
@@ -57,11 +58,12 @@ export const PHASE_ORDER: Record<string, number> = {
   "regular_season": 5,
   "apertura":       6,
   "clausura":       7,
-  "round_of_16":    8,
-  "quarter_finals": 9,
-  "semi_finals":    10,
-  "third_place":    11,
-  "final":          12,
+  "round_of_32":    8,
+  "round_of_16":    9,
+  "quarter_finals": 10,
+  "semi_finals":    11,
+  "third_place":    12,
+  "final":          13,
 };
 
 /**
@@ -75,5 +77,5 @@ export function getPhaseOrder(phaseKey: string): number {
  * Indica se uma fase é eliminatória (mata-mata).
  */
 export function isKnockoutPhase(phaseKey: string): boolean {
-  return ["round_of_16", "quarter_finals", "semi_finals", "third_place", "final"].includes(phaseKey);
+  return ["round_of_32", "round_of_16", "quarter_finals", "semi_finals", "third_place", "final"].includes(phaseKey);
 }
