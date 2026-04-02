@@ -785,6 +785,7 @@ export default function PoolPage() {
                       handleBetSubmit={handleBetSubmit}
                       placeBetPending={placeBet.isPending}
                       myRankPosition={myPosition?.position}
+                      showPhaseLabel
                     />
                   );
                 })}
@@ -1211,6 +1212,7 @@ interface GameCardProps {
     matchDate: Date;
     status: string;
     phase: string | null;
+    roundNumber?: number | null;
     aiSummary?: string | null;
     aiNarration?: string | null;
     aiPrediction?: {
@@ -1246,11 +1248,12 @@ interface GameCardProps {
   handleBetSubmit: (gameId: number) => void;
   placeBetPending: boolean;
   myRankPosition?: number | null;
+  showPhaseLabel?: boolean;
 }
 
 function GameCard({
   game, myBet, open, finished, live, betA, betB, hasBet, poolId,
-  betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition,
+  betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition, showPhaseLabel,
 }: GameCardProps) {
    const [analysisOpen, setAnalysisOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -1352,6 +1355,14 @@ function GameCard({
           {!live && !finished && (
             <span className="text-xs text-muted-foreground">
               {open ? "Aberto para palpites" : "Prazo encerrado"}
+            </span>
+          )}
+          {/* Rodada/Fase — exibido apenas quando showPhaseLabel=true (modo simples) */}
+          {showPhaseLabel && (game.phase || game.roundNumber != null) && (
+            <span className="text-xs font-medium text-primary/80 bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+              {game.roundNumber != null
+                ? `Rodada ${game.roundNumber}`
+                : getPhaseLabel(game.phase!)}
             </span>
           )}
           {/* Indicador de urgência */}
