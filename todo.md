@@ -2487,3 +2487,7 @@
 - [x] Adicionar job semanal no cron.ts para gerar aiPrediction de todos os jogos futuros sem análise
 - [x] Endpoint getAiPendingCount para retornar contagem de jogos sem análise
 - [x] Badge "X jogos aguardando análise" no card de Análises Pré-Jogo no admin
+
+## UX — FAB e borda do GameCard
+- [x] Atualizar FAB "Palpites" para abrir aba Jogos com filtro "Falta palpitar" pré-ativado (em vez de /history)
+- [x] Adicionar borda amarela fina (#FFB800) nos cards de jogo

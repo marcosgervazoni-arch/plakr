@@ -1302,6 +1302,10 @@ export default function PoolPage() {
       <PoolBottomNav
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        onPendingFilter={() => {
+          setActiveFilter("pending");
+          setShowFilters(true);
+        }}
         pendingBetsCount={pendingBetsCount}
         slug={slug}
       />
@@ -1469,7 +1473,7 @@ function GameCard({
 
   return (
     <div
-      className={`bg-card transition-all ${
+      className={`bg-card transition-all border-l-2 border-[#FFB800]/60 ${
         live ? "bg-red-500/5" : finished ? "opacity-80" : ""
       }`}
     >
