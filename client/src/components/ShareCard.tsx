@@ -1,8 +1,11 @@
 /**
  * ShareCard — geração de imagem de compartilhamento via Canvas 2D API
- * Não depende de captura DOM (html2canvas / html-to-image) — funciona em qualquer browser/mobile
+ * Formato Stories 9:16 (1080×1920) com 5 estados emocionais
+ * Não depende de captura DOM — funciona em qualquer browser/mobile
  */
 import { useRef, useCallback } from "react";
+import { DEFAULT_SHARE_CARD_CONFIG } from "../../../drizzle/schema";
+import type { ShareCardStateConfig } from "../../../drizzle/schema";
 
 export interface ShareCardData {
   teamAName: string;
@@ -15,14 +18,13 @@ export interface ShareCardData {
   status: string; // "scheduled" | "live" | "finished"
   roundName?: string | null;
   tournamentName?: string | null;
+  poolName?: string | null;
   // Palpite do usuário
   predictedScoreA?: number | null;
   predictedScoreB?: number | null;
   pointsEarned?: number | null;
-  // Análise IA
-  aiSummary?: string | null;
-  // Gols
-  goalsTimeline?: Array<{ min: number; player: string; team: "home" | "away" }> | null;
+  // Config personalizada (do super admin)
+  shareCardConfig?: ShareCardStateConfig | null;
 }
 
 interface UseShareCardReturn {
@@ -39,7 +41,8 @@ interface UseShareCardReturn {
   shareToOthersFromBlob: (blob: Blob, text: string) => Promise<void>;
 }
 
-// Carrega uma imagem de URL como HTMLImageElement
+// ─── Utilitários Canvas ───────────────────────────────────────────────────────
+
 async function loadImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -47,191 +50,14 @@ async function loadImage(url: string): Promise<HTMLImageElement | null> {
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = url;
-    // Timeout de 3s para imagens lentas
-    setTimeout(() => resolve(null), 3000);
+    setTimeout(() => resolve(null), 4000);
   });
 }
 
-// Desenha texto com quebra de linha automática
-function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
-  const words = text.split(' ');
-  let line = '';
-  let currentY = y;
-  for (const word of words) {
-    const testLine = line + word + ' ';
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && line !== '') {
-      ctx.fillText(line.trim(), x, currentY);
-      line = word + ' ';
-      currentY += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line.trim(), x, currentY);
-  return currentY;
-}
-
-// Gera o card de compartilhamento via Canvas 2D API
-async function generateCardCanvas(data: ShareCardData): Promise<HTMLCanvasElement> {
-  const W = 720; // 360px * 2x
-  const H = 540; // 270px * 2x
-  const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d")!;
-
-  // ── Fundo com gradiente ──────────────────────────────────────────────────
-  const grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0, "#0f1117");
-  grad.addColorStop(1, "#1a1f2e");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // ── Borda sutil ──────────────────────────────────────────────────────────
-  ctx.strokeStyle = "rgba(255,255,255,0.08)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1, 1, W - 2, H - 2);
-
-  // ── Header: logo Plakr! ──────────────────────────────────────────────────
-  // Logo badge
-  ctx.fillStyle = "#f5c518";
-  roundRect(ctx, 40, 32, 56, 56, 16);
-  ctx.fill();
-  ctx.fillStyle = "#000";
-  ctx.font = "bold 28px Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("P!", 68, 68);
-
-  // Nome Plakr!
-  ctx.fillStyle = "#f5c518";
-  ctx.font = "bold 26px Arial, sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText("Plakr!", 108, 68);
-
-  // Campeonato / rodada
-  const tournamentLabel = [data.tournamentName, data.roundName].filter(Boolean).join(" · ") || "Bolão";
-  ctx.fillStyle = "rgba(255,255,255,0.5)";
-  ctx.font = "22px Arial, sans-serif";
-  ctx.textAlign = "right";
-  ctx.fillText(tournamentLabel, W - 40, 68);
-
-  // ── Linha separadora ─────────────────────────────────────────────────────
-  ctx.strokeStyle = "rgba(255,255,255,0.08)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(40, 108);
-  ctx.lineTo(W - 40, 108);
-  ctx.stroke();
-
-  // ── Times ────────────────────────────────────────────────────────────────
-  const centerY = 260;
-  const teamAX = 180;
-  const teamBX = W - 180;
-
-  // Carregar escudos em paralelo
-  const [imgA, imgB] = await Promise.all([
-    data.teamAFlag ? loadImage(data.teamAFlag) : Promise.resolve(null),
-    data.teamBFlag ? loadImage(data.teamBFlag) : Promise.resolve(null),
-  ]);
-
-  // Escudo time A
-  if (imgA) {
-    ctx.drawImage(imgA, teamAX - 48, centerY - 100, 96, 96);
-  } else {
-    ctx.fillStyle = "rgba(255,255,255,0.15)";
-    ctx.beginPath();
-    ctx.arc(teamAX, centerY - 52, 48, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Escudo time B
-  if (imgB) {
-    ctx.drawImage(imgB, teamBX - 48, centerY - 100, 96, 96);
-  } else {
-    ctx.fillStyle = "rgba(255,255,255,0.15)";
-    ctx.beginPath();
-    ctx.arc(teamBX, centerY - 52, 48, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Nome time A
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 26px Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(truncate(data.teamAName, 12), teamAX, centerY + 16);
-
-  // Nome time B
-  ctx.fillText(truncate(data.teamBName, 12), teamBX, centerY + 16);
-
-  // ── Placar ───────────────────────────────────────────────────────────────
-  const hasResult = data.scoreA != null && data.scoreB != null;
-  const finished = data.status === "finished";
-
-  if (hasResult && finished) {
-    // Placar real
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 72px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(`${data.scoreA}`, teamAX + 80, centerY + 20);
-    ctx.fillStyle = "rgba(255,255,255,0.4)";
-    ctx.font = "bold 48px Arial, sans-serif";
-    ctx.fillText("×", W / 2, centerY + 20);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 72px Arial, sans-serif";
-    ctx.fillText(`${data.scoreB}`, teamBX - 80, centerY + 20);
-  } else {
-    // VS
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
-    ctx.font = "bold 48px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("VS", W / 2, centerY + 16);
-  }
-
-  // ── Palpite do usuário ───────────────────────────────────────────────────
-  const hasBet = data.predictedScoreA != null && data.predictedScoreB != null;
-  if (hasBet) {
-    const betY = centerY + 60;
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
-    roundRect(ctx, W / 2 - 140, betY, 280, 52, 12);
-    ctx.fill();
-
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = "20px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("Meu palpite", W / 2, betY + 20);
-
-    ctx.fillStyle = "#f5c518";
-    ctx.font = "bold 24px Arial, sans-serif";
-    ctx.fillText(`${data.predictedScoreA} × ${data.predictedScoreB}`, W / 2, betY + 44);
-  }
-
-  // ── Pontuação ────────────────────────────────────────────────────────────
-  if (data.pointsEarned != null && data.pointsEarned > 0) {
-    const ptsY = hasBet ? centerY + 128 : centerY + 72;
-    ctx.fillStyle = "#22c55e";
-    ctx.font = "bold 28px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(`+${data.pointsEarned} pts`, W / 2, ptsY);
-  }
-
-  // ── Data do jogo ─────────────────────────────────────────────────────────
-  const dateStr = new Date(data.matchDate).toLocaleDateString("pt-BR", {
-    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
-  });
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
-  ctx.font = "20px Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(dateStr, W / 2, H - 36);
-
-  return canvas;
-}
-
-function truncate(str: string, maxLen: number): string {
-  return str.length > maxLen ? str.substring(0, maxLen - 1) + "…" : str;
-}
-
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number, r: number
+) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);
@@ -245,9 +71,319 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
+function truncate(str: string, maxLen: number): string {
+  return str.length > maxLen ? str.substring(0, maxLen - 1) + "…" : str;
+}
+
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string, x: number, y: number,
+  maxWidth: number, lineHeight: number
+): number {
+  const words = text.split(" ");
+  let line = "";
+  let currentY = y;
+  for (const word of words) {
+    const testLine = line + word + " ";
+    if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+      ctx.fillText(line.trim(), x, currentY);
+      line = word + " ";
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, currentY);
+  return currentY;
+}
+
+// ─── Determinar estado emocional ──────────────────────────────────────────────
+
+type CardState = "future" | "exactHit" | "correctResult" | "miss" | "noBet";
+
+function getCardState(data: ShareCardData): CardState {
+  const finished = data.status === "finished";
+  const hasBet = data.predictedScoreA != null && data.predictedScoreB != null;
+  const hasResult = data.scoreA != null && data.scoreB != null;
+
+  if (!finished) return "future";
+  if (!hasBet) return "noBet";
+  if (!hasResult) return "noBet";
+
+  const predA = data.predictedScoreA!;
+  const predB = data.predictedScoreB!;
+  const realA = data.scoreA!;
+  const realB = data.scoreB!;
+
+  if (predA === realA && predB === realB) return "exactHit";
+
+  const predResult = predA > predB ? "A" : predA < predB ? "B" : "X";
+  const realResult = realA > realB ? "A" : realA < realB ? "B" : "X";
+  if (predResult === realResult) return "correctResult";
+
+  return "miss";
+}
+
+// ─── Gerador principal do card Stories ───────────────────────────────────────
+
+export async function generateStoriesCanvas(data: ShareCardData): Promise<HTMLCanvasElement> {
+  const W = 1080;
+  const H = 1920;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  const cfg = data.shareCardConfig ?? DEFAULT_SHARE_CARD_CONFIG;
+  const state = getCardState(data);
+  const stateItem = cfg[state];
+  const finished = data.status === "finished";
+  const hasBet = data.predictedScoreA != null && data.predictedScoreB != null;
+  const hasResult = data.scoreA != null && data.scoreB != null;
+
+  // ── 1. Fundo escuro com gradiente ─────────────────────────────────────────
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, "#0B0F1A");
+  bgGrad.addColorStop(0.5, "#111827");
+  bgGrad.addColorStop(1, "#0B0F1A");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── 2. Textura sutil (linhas diagonais) ───────────────────────────────────
+  ctx.strokeStyle = "rgba(255,255,255,0.025)";
+  ctx.lineWidth = 1;
+  for (let i = -H; i < W + H; i += 60) {
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i + H, H);
+    ctx.stroke();
+  }
+
+  // ── 3. Faixa dourada topo ─────────────────────────────────────────────────
+  const topBarGrad = ctx.createLinearGradient(0, 0, W, 0);
+  topBarGrad.addColorStop(0, "#FFB800");
+  topBarGrad.addColorStop(0.5, "#FFD700");
+  topBarGrad.addColorStop(1, "#FFB800");
+  ctx.fillStyle = topBarGrad;
+  ctx.fillRect(0, 0, W, 14);
+
+  // ── 4. Header: Logo Plakr! ────────────────────────────────────────────────
+  const headerY = 80;
+
+  // Badge P!
+  ctx.fillStyle = "#FFB800";
+  roundRect(ctx, 60, headerY, 100, 100, 24);
+  ctx.fill();
+  ctx.fillStyle = "#0B0F1A";
+  ctx.font = "bold 52px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("P!", 110, headerY + 68);
+
+  // Nome Plakr!
+  ctx.fillStyle = "#FFB800";
+  ctx.font = "bold 56px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Plakr!", 180, headerY + 68);
+
+  // Campeonato
+  const tournamentLabel = [data.tournamentName, data.roundName].filter(Boolean).join(" · ");
+  if (tournamentLabel) {
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.font = "36px Arial, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(truncate(tournamentLabel, 28), W - 60, headerY + 68);
+  }
+
+  // ── 5. Banner emocional (estado) ──────────────────────────────────────────
+  const bannerY = 240;
+  const bannerH = 200;
+
+  // Fundo do banner com cor do estado
+  ctx.fillStyle = stateItem.bgColor;
+  roundRect(ctx, 40, bannerY, W - 80, bannerH, 32);
+  ctx.fill();
+
+  // Overlay escuro sutil para profundidade
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  roundRect(ctx, 40, bannerY, W - 80, bannerH, 32);
+  ctx.fill();
+
+  // Emoji grande
+  ctx.font = "80px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(stateItem.emoji, 80, bannerY + 118);
+
+  // Título do estado
+  ctx.fillStyle = stateItem.textColor;
+  ctx.font = "bold 60px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(stateItem.title, 200, bannerY + 108);
+
+  // ── 6. Área de times ──────────────────────────────────────────────────────
+  const teamsAreaY = 510;
+  const teamAX = W / 4;
+  const teamBX = (W * 3) / 4;
+  const shieldSize = 200;
+
+  const [imgA, imgB] = await Promise.all([
+    data.teamAFlag ? loadImage(data.teamAFlag) : Promise.resolve(null),
+    data.teamBFlag ? loadImage(data.teamBFlag) : Promise.resolve(null),
+  ]);
+
+  // Escudo time A
+  if (imgA) {
+    ctx.drawImage(imgA, teamAX - shieldSize / 2, teamsAreaY, shieldSize, shieldSize);
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.beginPath();
+    ctx.arc(teamAX, teamsAreaY + shieldSize / 2, shieldSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.4)";
+    ctx.font = "bold 80px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(data.teamAName.substring(0, 2).toUpperCase(), teamAX, teamsAreaY + shieldSize / 2 + 28);
+  }
+
+  // Escudo time B
+  if (imgB) {
+    ctx.drawImage(imgB, teamBX - shieldSize / 2, teamsAreaY, shieldSize, shieldSize);
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.beginPath();
+    ctx.arc(teamBX, teamsAreaY + shieldSize / 2, shieldSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.4)";
+    ctx.font = "bold 80px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(data.teamBName.substring(0, 2).toUpperCase(), teamBX, teamsAreaY + shieldSize / 2 + 28);
+  }
+
+  // Nomes dos times
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "bold 48px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(truncate(data.teamAName, 14), teamAX, teamsAreaY + shieldSize + 60);
+  ctx.fillText(truncate(data.teamBName, 14), teamBX, teamsAreaY + shieldSize + 60);
+
+  // ── 7. Placar / VS ────────────────────────────────────────────────────────
+  const scoreCenterY = teamsAreaY + shieldSize / 2 + 30;
+
+  if (finished && hasResult) {
+    // Placar real grande
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "bold 160px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${data.scoreA}`, teamAX + 120, scoreCenterY + 60);
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.font = "bold 100px Arial, sans-serif";
+    ctx.fillText("×", W / 2, scoreCenterY + 50);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "bold 160px Arial, sans-serif";
+    ctx.fillText(`${data.scoreB}`, teamBX - 120, scoreCenterY + 60);
+  } else {
+    // VS com data
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.font = "bold 80px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("VS", W / 2, scoreCenterY + 40);
+    const dateStr = new Date(data.matchDate).toLocaleDateString("pt-BR", {
+      day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+    });
+    ctx.fillStyle = "#FFB800";
+    ctx.font = "bold 44px Arial, sans-serif";
+    ctx.fillText(dateStr, W / 2, scoreCenterY + 110);
+  }
+
+  // ── 8. Palpite do usuário ─────────────────────────────────────────────────
+  const betBoxY = teamsAreaY + shieldSize + 100;
+
+  if (hasBet) {
+    // Box do palpite
+    ctx.fillStyle = "rgba(255,255,255,0.07)";
+    roundRect(ctx, 80, betBoxY, W - 160, 180, 28);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,184,0,0.35)";
+    ctx.lineWidth = 2;
+    roundRect(ctx, 80, betBoxY, W - 160, 180, 28);
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = "36px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("MEU PALPITE", W / 2, betBoxY + 52);
+
+    ctx.fillStyle = "#FFB800";
+    ctx.font = "bold 88px Arial, sans-serif";
+    ctx.fillText(`${data.predictedScoreA}  ×  ${data.predictedScoreB}`, W / 2, betBoxY + 148);
+  }
+
+  // ── 9. Pontuação ──────────────────────────────────────────────────────────
+  if (data.pointsEarned != null && data.pointsEarned > 0) {
+    const ptsY = betBoxY + (hasBet ? 220 : 20);
+    const ptsColor = state === "exactHit" ? "#00FF88" : state === "correctResult" ? "#FFB800" : "#FFFFFF";
+    ctx.fillStyle = ptsColor;
+    ctx.font = "bold 72px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`+${data.pointsEarned} pts`, W / 2, ptsY);
+  }
+
+  // ── 10. Copy emocional ────────────────────────────────────────────────────
+  const copyBaseY = betBoxY + (hasBet ? 260 : 60);
+  ctx.fillStyle = "rgba(255,255,255,0.75)";
+  ctx.font = "44px Arial, sans-serif";
+  ctx.textAlign = "center";
+  wrapText(ctx, stateItem.copy, W / 2, copyBaseY, W - 160, 62);
+
+  // ── 11. Nome do bolão (se disponível) ─────────────────────────────────────
+  if (data.poolName) {
+    const poolY = H - 260;
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    roundRect(ctx, W / 2 - 300, poolY - 48, 600, 68, 18);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = "36px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(truncate(data.poolName, 32), W / 2, poolY);
+  }
+
+  // ── 12. Faixa de assinatura (rodapé) ─────────────────────────────────────
+  const footerY = H - 160;
+  const footerGrad = ctx.createLinearGradient(0, footerY, W, footerY + 160);
+  footerGrad.addColorStop(0, "#FFB800");
+  footerGrad.addColorStop(1, "#FFD700");
+  ctx.fillStyle = footerGrad;
+  ctx.fillRect(0, footerY, W, 160);
+
+  // Overlay escuro sutil
+  ctx.fillStyle = "rgba(0,0,0,0.12)";
+  ctx.fillRect(0, footerY, W, 160);
+
+  // Badge P! no rodapé
+  ctx.fillStyle = "#0B0F1A";
+  roundRect(ctx, 60, footerY + 30, 80, 80, 16);
+  ctx.fill();
+  ctx.fillStyle = "#FFB800";
+  ctx.font = "bold 40px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("P!", 100, footerY + 82);
+
+  // Texto assinatura
+  ctx.fillStyle = "#0B0F1A";
+  ctx.font = "bold 52px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(cfg.signatureText, 160, footerY + 90);
+
+  // Faixa escura no final
+  ctx.fillStyle = "#0B0F1A";
+  ctx.fillRect(0, H - 14, W, 14);
+
+  return canvas;
+}
+
+// ─── Hook useShareCard ────────────────────────────────────────────────────────
+
 export function useShareCard(): UseShareCardReturn {
   const cardRef = useRef<HTMLDivElement | null>(null);
-  // Dados do card atual (preenchidos pelo PoolPage via captureBlob(data))
   const dataRef = useRef<ShareCardData | null>(null);
 
   const captureBlob = useCallback(async (data?: ShareCardData): Promise<Blob | null> => {
@@ -256,9 +392,9 @@ export function useShareCard(): UseShareCardReturn {
       console.warn("[ShareCard] Nenhum dado disponível para gerar o card");
       return null;
     }
-    console.log("[ShareCard] Gerando card via Canvas 2D...");
+    console.log("[ShareCard] Gerando card Stories via Canvas 2D...");
     try {
-      const canvas = await generateCardCanvas(d);
+      const canvas = await generateStoriesCanvas(d);
       return new Promise<Blob | null>((resolve) => {
         canvas.toBlob((blob) => {
           console.log("[ShareCard] Blob gerado:", blob?.size, "bytes");
@@ -279,7 +415,6 @@ export function useShareCard(): UseShareCardReturn {
 
   const downloadImageFromBlob = useCallback(async (blob: Blob, filename = "plakr-card.png") => {
     try {
-      // 1ª tentativa: File System Access API (Chrome desktop)
       if ("showSaveFilePicker" in window) {
         try {
           const handle = await (window as any).showSaveFilePicker({
@@ -294,7 +429,6 @@ export function useShareCard(): UseShareCardReturn {
           if (e.name === "AbortError") return;
         }
       }
-      // 2ª tentativa: link download
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -324,7 +458,6 @@ export function useShareCard(): UseShareCardReturn {
     } catch (e: any) {
       if (e.name === "AbortError") return;
     }
-    // Fallback: download
     await downloadImageFromBlob(blob, "plakr-instagram.png");
   }, [downloadImageFromBlob]);
 
@@ -344,7 +477,6 @@ export function useShareCard(): UseShareCardReturn {
     } catch (e: any) {
       if (e.name === "AbortError") return;
     }
-    // Fallback: link WhatsApp
     const encoded = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encoded}`, "_blank");
   }, []);
@@ -373,7 +505,6 @@ export function useShareCard(): UseShareCardReturn {
     } catch (e: any) {
       if (e.name === "AbortError") return;
     }
-    // Fallback: download
     await downloadImageFromBlob(blob, "plakr-card.png");
   }, [downloadImageFromBlob]);
 
@@ -404,8 +535,8 @@ export function useShareCard(): UseShareCardReturn {
 }
 
 /**
- * ShareCardVisual — componente visual (mantido para compatibilidade)
- * Agora é apenas decorativo — a imagem real é gerada via Canvas 2D
+ * ShareCardVisual — componente visual mantido para compatibilidade de ref
+ * A imagem real é gerada via Canvas 2D (generateStoriesCanvas)
  */
 export function ShareCardVisual({
   data,
@@ -414,15 +545,6 @@ export function ShareCardVisual({
   data: ShareCardData;
   cardRef: React.RefObject<HTMLDivElement | null>;
 }) {
-  const finished = data.status === "finished";
-  const hasBet = data.predictedScoreA != null && data.predictedScoreB != null;
-  const hasResult = data.scoreA != null && data.scoreB != null;
-  const matchDateStr = new Date(data.matchDate).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
   return (
     <div
       ref={cardRef}
@@ -431,66 +553,10 @@ export function ShareCardVisual({
         left: "-9999px",
         top: "0",
         width: "360px",
+        height: "640px",
         opacity: 0,
         pointerEvents: "none",
-        background: "linear-gradient(135deg, #0f1117 0%, #1a1f2e 100%)",
-        borderRadius: "16px",
-        padding: "20px",
-        fontFamily: "'Inter', 'Syne', sans-serif",
-        color: "#ffffff",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
       }}
-    >
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{
-            width: "28px", height: "28px", borderRadius: "8px",
-            background: "#f5c518", display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "14px", fontWeight: "900", color: "#000",
-          }}>P!</div>
-          <span style={{ fontSize: "13px", fontWeight: "700", color: "#f5c518" }}>Plakr!</span>
-        </div>
-        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
-          {[data.tournamentName, data.roundName].filter(Boolean).join(" · ")}
-        </span>
-      </div>
-      {/* Times */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-        <div style={{ textAlign: "center" }}>
-          {data.teamAFlag && <img src={data.teamAFlag} alt="" style={{ width: "36px", height: "36px", objectFit: "contain", marginBottom: "4px" }} crossOrigin="anonymous" />}
-          <p style={{ fontSize: "12px", fontWeight: "700", margin: 0, lineHeight: 1.2 }}>{data.teamAName}</p>
-        </div>
-        <div style={{ textAlign: "center", minWidth: "60px" }}>
-          {hasResult && finished ? (
-            <span style={{ fontSize: "28px", fontWeight: "900" }}>{data.scoreA} × {data.scoreB}</span>
-          ) : (
-            <span style={{ fontSize: "18px", color: "rgba(255,255,255,0.3)" }}>VS</span>
-          )}
-        </div>
-        <div style={{ textAlign: "center" }}>
-          {data.teamBFlag && <img src={data.teamBFlag} alt="" style={{ width: "36px", height: "36px", objectFit: "contain", marginBottom: "4px" }} crossOrigin="anonymous" />}
-          <p style={{ fontSize: "12px", fontWeight: "700", margin: 0, lineHeight: 1.2 }}>{data.teamBName}</p>
-        </div>
-      </div>
-      {/* Palpite */}
-      {hasBet && (
-        <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "8px", padding: "8px", textAlign: "center", marginBottom: "8px" }}>
-          <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", margin: "0 0 2px" }}>Meu palpite</p>
-          <p style={{ fontSize: "18px", fontWeight: "700", color: "#f5c518", margin: 0 }}>
-            {data.predictedScoreA} × {data.predictedScoreB}
-          </p>
-        </div>
-      )}
-      {/* Pontuação */}
-      {data.pointsEarned != null && data.pointsEarned > 0 && (
-        <p style={{ textAlign: "center", fontSize: "14px", fontWeight: "700", color: "#22c55e", margin: "4px 0" }}>
-          +{data.pointsEarned} pts
-        </p>
-      )}
-      {/* Data */}
-      <p style={{ textAlign: "center", fontSize: "10px", color: "rgba(255,255,255,0.3)", margin: "8px 0 0" }}>{matchDateStr}</p>
-    </div>
+    />
   );
 }

@@ -2519,3 +2519,17 @@
 - [x] Blob gerado com sucesso: 159KB (vs 8KB antes) — imagem real com escudos, placar e logo
 - [x] Todos os botões funcionam: Instagram (Web Share API + fallback download), WhatsApp (Web Share API + fallback link), Download, Outros apps
 - [x] Modal exibido para todos os jogos (removida restrição hasBet || finished)
+
+## Card de Compartilhamento Stories — Redesign (03/04/2026) ✅
+- [x] Schema share_card_config na tabela platform_settings (JSON com copies, cores, emojis por estado)
+- [x] Gerador Canvas 2D Stories 1080x1920 com 5 estados (futuro, acerto exato, resultado correto, erro, sem palpite)
+- [x] Faixa dourada (#FFB800) no topo com logo + campeonato
+- [x] Banner de resultado com cor dinâmica (verde/dourado/vermelho/cinza)
+- [x] Copy de engajamento por estado (configurável via Admin)
+- [x] Assinatura "Jogue no Plakr! · plakr.io" no rodapé
+- [x] AdminShareCard.tsx — painel de personalização no Super Admin com preview em tempo real
+- [x] trpc.platform.getAdConfig retorna shareCardConfig; updateAdConfig salva shareCardConfig
+- [x] Rota /admin/share-card adicionada no App.tsx
+- [x] Item "Card de Compartilhamento" adicionado ao menu do AdminLayout
+- [x] PoolPage busca shareCardConfig via getAdConfig e passa para GameCard
+- [x] GameCard usa shareCardConfig na geração do canvas Stories

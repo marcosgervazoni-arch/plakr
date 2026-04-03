@@ -52,11 +52,12 @@ export const platformRouter = router({
   // adsEnabled = Publicidade Global (Adsterra) | adsLocalEnabled = Publicidade Local (banners próprios)
   getAdConfig: publicProcedure.query(async () => {
     const settings = await getPlatformSettings();
-    if (!settings) return { adsEnabled: false, adsLocalEnabled: false, adNetworkScripts: null };
+    if (!settings) return { adsEnabled: false, adsLocalEnabled: false, adNetworkScripts: null, shareCardConfig: null };
     return {
       adsEnabled: settings.adsEnabled ?? false,
       adsLocalEnabled: settings.adsLocalEnabled ?? false,
       adNetworkScripts: settings.adNetworkScripts ?? null,
+      shareCardConfig: settings.shareCardConfig ?? null,
     };
   }),
 
@@ -120,6 +121,14 @@ export const platformRouter = router({
       restrictedInviteMessage: z.string().max(500).optional().nullable(),
       cobaiaPoolId: z.number().int().positive().optional().nullable(),
       adNetworkScripts: z.record(z.string(), z.string()).optional().nullable(),
+      shareCardConfig: z.object({
+        future: z.object({ emoji: z.string(), title: z.string(), copy: z.string(), bgColor: z.string(), textColor: z.string() }),
+        exactHit: z.object({ emoji: z.string(), title: z.string(), copy: z.string(), bgColor: z.string(), textColor: z.string() }),
+        correctResult: z.object({ emoji: z.string(), title: z.string(), copy: z.string(), bgColor: z.string(), textColor: z.string() }),
+        miss: z.object({ emoji: z.string(), title: z.string(), copy: z.string(), bgColor: z.string(), textColor: z.string() }),
+        noBet: z.object({ emoji: z.string(), title: z.string(), copy: z.string(), bgColor: z.string(), textColor: z.string() }),
+        signatureText: z.string(),
+      }).optional().nullable(),
     }))
     .mutation(async ({ input, ctx }) => {
       await updatePlatformSettings(input, ctx.user.id);

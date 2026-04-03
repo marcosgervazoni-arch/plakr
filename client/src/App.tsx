@@ -58,6 +58,7 @@ import AdminRetrospectivas from "./pages/admin/AdminRetrospectivas";
 import AdminLandingPage from "./pages/admin/AdminLandingPage";
 import AdminPricing from "./pages/admin/AdminPricing";
 import AdminX1Duels from "./pages/admin/AdminX1Duels";
+import AdminShareCard from "./pages/admin/AdminShareCard";
 import X1ChallengePage from "./pages/X1ChallengePage";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useReferralCapture } from "./hooks/useReferralCapture";
@@ -122,6 +123,7 @@ function Router() {
       <Route path="/admin/landing-page" component={AdminLandingPage} />
       <Route path="/admin/pricing" component={AdminPricing} />
       <Route path="/admin/x1-duels" component={AdminX1Duels} />
+      <Route path="/admin/share-card" component={AdminShareCard} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

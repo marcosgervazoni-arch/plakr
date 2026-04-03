@@ -28,6 +28,7 @@ import {
   Users,
   Wallet,
   Zap,
+  Share2,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -51,7 +52,8 @@ export type AdminSection =
   | "retrospectivas"
   | "landing-page"
   | "pricing"
-  | "x1-duels";
+  | "x1-duels"
+  | "share-card";
 
 interface NavItem {
   id: AdminSection;
@@ -104,6 +106,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "broadcasts", label: "Broadcasts", icon: Megaphone, path: "/admin/broadcasts" },
       { id: "ads", label: "Publicidade", icon: Bell, path: "/admin/ads" },
       { id: "landing-page", label: "Página de Vendas", icon: LayoutTemplate, path: "/admin/landing-page" },
+      { id: "share-card", label: "Card de Compartilhamento", icon: Share2, path: "/admin/share-card" },
     ],
   },
   {

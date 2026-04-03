@@ -11,6 +11,64 @@ import {
   varchar,
 } from "drizzle-orm/mysql-core";
 
+// ─── TIPOS AUXILIARES ───────────────────────────────────────────────────────
+
+export interface ShareCardStateItem {
+  emoji: string;
+  title: string;
+  copy: string;
+  bgColor: string;   // hex, ex: "#00FF88"
+  textColor: string; // hex, ex: "#0B0F1A"
+}
+
+export interface ShareCardStateConfig {
+  future: ShareCardStateItem;
+  exactHit: ShareCardStateItem;
+  correctResult: ShareCardStateItem;
+  miss: ShareCardStateItem;
+  noBet: ShareCardStateItem;
+  signatureText: string; // ex: "Jogue no Plakr! · plakr.io"
+}
+
+export const DEFAULT_SHARE_CARD_CONFIG: ShareCardStateConfig = {
+  future: {
+    emoji: "⚡",
+    title: "MEU PALPITE",
+    copy: "Você faria o mesmo palpite? Entre e dispute comigo! 🏆",
+    bgColor: "#FFB800",
+    textColor: "#0B0F1A",
+  },
+  exactHit: {
+    emoji: "✅",
+    title: "ACERTEI O PLACAR!",
+    copy: "Tô voando no ranking! Vem disputar comigo no Plakr 🔥",
+    bgColor: "#00FF88",
+    textColor: "#0B0F1A",
+  },
+  correctResult: {
+    emoji: "🎯",
+    title: "RESULTADO CORRETO!",
+    copy: "Quase lá! Tô no caminho certo. Vem disputar comigo no Plakr",
+    bgColor: "#FFB800",
+    textColor: "#0B0F1A",
+  },
+  miss: {
+    emoji: "💀",
+    title: "ERREI FEIO",
+    copy: "Futebol é assim... 😅 Vem errar junto comigo!",
+    bgColor: "#FF3B3B",
+    textColor: "#FFFFFF",
+  },
+  noBet: {
+    emoji: "😤",
+    title: "NÃO PALPITEI",
+    copy: "Não vou deixar passar o próximo! Você teria acertado?",
+    bgColor: "#1E2435",
+    textColor: "#FFFFFF",
+  },
+  signatureText: "Jogue no Plakr! · plakr.io",
+};
+
 // ─── USUÁRIOS E PLATAFORMA ────────────────────────────────────────────────────
 
 export const users = mysqlTable("users", {
@@ -86,6 +144,8 @@ export const platformSettings = mysqlTable("platform_settings", {
   apiFootballLastSync: timestamp("apiFootballLastSync"),                           // última sync bem-sucedida
   apiFootballCircuitOpen: boolean("apiFootballCircuitOpen").default(false).notNull(), // circuit breaker aberto?
   apiFootballCircuitOpenAt: timestamp("apiFootballCircuitOpenAt"),                 // quando o circuit abriu
+  // ─── CARD DE COMPARTILHAMENTO STORIES ──────────────────────────────────────
+  shareCardConfig: json("shareCardConfig").$type<ShareCardStateConfig>(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   updatedBy: int("updatedBy").references(() => users.id),
 });

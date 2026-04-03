@@ -139,6 +139,7 @@ export default function PoolPage() {
     undefined,
     { staleTime: 5 * 60 * 1000 } // cache 5 min
   );
+  const { data: adConfig } = trpc.platform.getAdConfig.useQuery(undefined, { staleTime: 10 * 60 * 1000 });
 
   const { data: userData } = trpc.users.me.useQuery(undefined, { enabled: !!user, staleTime: 5 * 60 * 1000 });
   const isPro = !!(userData?.plan?.plan === "pro" && userData?.plan?.isActive);
@@ -890,6 +891,7 @@ export default function PoolPage() {
                                 handleBetSubmit={handleBetSubmit}
                                 placeBetPending={placeBet.isPending}
                                 myRankPosition={myPosition?.position}
+                                shareCardConfig={adConfig?.shareCardConfig}
                               />
                             );
                           })}
@@ -935,6 +937,7 @@ export default function PoolPage() {
                       placeBetPending={placeBet.isPending}
                       myRankPosition={myPosition?.position}
                       showPhaseLabel
+                      shareCardConfig={adConfig?.shareCardConfig}
                     />
                   );
                 })}
@@ -1402,11 +1405,11 @@ interface GameCardProps {
   placeBetPending: boolean;
   myRankPosition?: number | null;
   showPhaseLabel?: boolean;
+  shareCardConfig?: import("../../../drizzle/schema").ShareCardStateConfig | null;
 }
-
 function GameCard({
   game, myBet, open, finished, live, betA, betB, hasBet, poolId,
-  betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition, showPhaseLabel,
+  betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition, showPhaseLabel, shareCardConfig,
 }: GameCardProps) {
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -1454,6 +1457,7 @@ function GameCard({
     predictedScoreA: myBet?.predictedScoreA,
     predictedScoreB: myBet?.predictedScoreB,
     pointsEarned: myBet?.pointsEarned,
+    shareCardConfig: shareCardConfig ?? undefined,
   };
   // Abrir o modal: captura o Blob via Canvas 2D (não depende de DOM)
   const openShare = async () => {
