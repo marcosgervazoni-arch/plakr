@@ -2,6 +2,19 @@
  * ShareCard — geração de imagem de compartilhamento via Canvas 2D API
  * Formato Stories 9:16 (1080×1920) com 5 estados emocionais
  * Não depende de captura DOM — funciona em qualquer browser/mobile
+ *
+ * Layout vertical (1920px de altura):
+ *   0–14    : faixa dourada topo
+ *   14–230  : header (logo Plakr! + campeonato)
+ *   230–490 : banner emocional (emoji + título do estado)
+ *   490–780 : área de times (escudos + nomes) — SEM placar sobreposto
+ *   780–960 : placar grande / VS + data — zona exclusiva
+ *   960–1180: palpite do usuário
+ *  1180–1360: pontuação + badges de critérios
+ *  1360–1580: copy emocional
+ *  1580–1680: nome do bolão
+ *  1680–1906: rodapé dourado (assinatura)
+ *  1906–1920: faixa escura final
  */
 import { useRef, useCallback } from "react";
 import { DEFAULT_SHARE_CARD_CONFIG } from "../../../drizzle/schema";
@@ -97,6 +110,27 @@ function wrapText(
   return currentY;
 }
 
+/** Formata chave de fase para exibição amigável */
+function formatPhaseLabel(phase: string | null | undefined): string {
+  if (!phase) return "";
+  const map: Record<string, string> = {
+    regular_season: "Temporada Regular",
+    group_stage: "Fase de Grupos",
+    "1st_phase": "1ª Fase",
+    "2nd_phase": "2ª Fase",
+    "3rd_phase": "3ª Fase",
+    round_of_32: "16 Avos de Final",
+    round_of_16: "Oitavas de Final",
+    quarter_finals: "Quartas de Final",
+    semi_finals: "Semifinais",
+    third_place: "3º Lugar",
+    final: "Final",
+    apertura: "Apertura",
+    clausura: "Clausura",
+  };
+  return map[phase] ?? phase.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // ─── Determinar estado emocional ──────────────────────────────────────────────
 
 type CardState = "future" | "exactHit" | "correctResult" | "miss" | "noBet";
@@ -150,9 +184,9 @@ export async function generateStoriesCanvas(data: ShareCardData): Promise<HTMLCa
   ctx.fillRect(0, 0, W, H);
 
   // ── 2. Textura sutil (linhas diagonais) ───────────────────────────────────
-  ctx.strokeStyle = "rgba(255,255,255,0.025)";
+  ctx.strokeStyle = "rgba(255,255,255,0.018)";
   ctx.lineWidth = 1;
-  for (let i = -H; i < W + H; i += 60) {
+  for (let i = -H; i < W + H; i += 80) {
     ctx.beginPath();
     ctx.moveTo(i, 0);
     ctx.lineTo(i + H, H);
@@ -167,36 +201,50 @@ export async function generateStoriesCanvas(data: ShareCardData): Promise<HTMLCa
   ctx.fillStyle = topBarGrad;
   ctx.fillRect(0, 0, W, 14);
 
-  // ── 4. Header: Logo Plakr! ────────────────────────────────────────────────
-  const headerY = 80;
+  // ── 4. Header: Logo Plakr! + campeonato ──────────────────────────────────
+  // Zona: y=14 até y=230 (altura 216px)
+  const headerCenterY = 14 + 108; // centro vertical da zona header
 
   // Badge P!
+  const badgeSize = 96;
+  const badgeX = 60;
+  const badgeY = headerCenterY - badgeSize / 2;
   ctx.fillStyle = "#FFB800";
-  roundRect(ctx, 60, headerY, 100, 100, 24);
+  roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, 22);
   ctx.fill();
   ctx.fillStyle = "#0B0F1A";
-  ctx.font = "bold 52px Arial, sans-serif";
+  ctx.font = "bold 48px Arial, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("P!", 110, headerY + 68);
+  ctx.fillText("P!", badgeX + badgeSize / 2, badgeY + 66);
 
   // Nome Plakr!
   ctx.fillStyle = "#FFB800";
-  ctx.font = "bold 56px Arial, sans-serif";
+  ctx.font = "bold 54px Arial, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText("Plakr!", 180, headerY + 68);
+  ctx.fillText("Plakr!", badgeX + badgeSize + 20, headerCenterY + 18);
 
-  // Campeonato
-  const tournamentLabel = [data.tournamentName, data.roundName].filter(Boolean).join(" · ");
+  // Campeonato (direita)
+  const rawPhase = formatPhaseLabel(data.roundName);
+  const tournamentLabel = [data.tournamentName, rawPhase].filter(Boolean).join(" · ");
   if (tournamentLabel) {
-    ctx.fillStyle = "rgba(255,255,255,0.45)";
-    ctx.font = "36px Arial, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = "34px Arial, sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText(truncate(tournamentLabel, 28), W - 60, headerY + 68);
+    ctx.fillText(truncate(tournamentLabel, 26), W - 60, headerCenterY + 18);
   }
 
+  // Linha separadora sutil
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(40, 230);
+  ctx.lineTo(W - 40, 230);
+  ctx.stroke();
+
   // ── 5. Banner emocional (estado) ──────────────────────────────────────────
-  const bannerY = 240;
-  const bannerH = 200;
+  // Zona: y=250 até y=490 (altura 240px)
+  const bannerY = 250;
+  const bannerH = 240;
 
   // Fundo do banner com cor do estado
   ctx.fillStyle = stateItem.bgColor;
@@ -204,33 +252,34 @@ export async function generateStoriesCanvas(data: ShareCardData): Promise<HTMLCa
   ctx.fill();
 
   // Overlay escuro sutil para profundidade
-  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  ctx.fillStyle = "rgba(0,0,0,0.12)";
   roundRect(ctx, 40, bannerY, W - 80, bannerH, 32);
   ctx.fill();
 
   // Emoji grande
-  ctx.font = "80px Arial, sans-serif";
+  ctx.font = "100px Arial, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(stateItem.emoji, 80, bannerY + 118);
+  ctx.fillText(stateItem.emoji, 80, bannerY + 154);
 
   // Título do estado
   ctx.fillStyle = stateItem.textColor;
-  ctx.font = "bold 60px Arial, sans-serif";
+  ctx.font = "bold 68px Arial, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(stateItem.title, 200, bannerY + 108);
+  ctx.fillText(stateItem.title, 220, bannerY + 148);
 
-  // ── 6. Área de times ──────────────────────────────────────────────────────
+  // ── 6. Área de times — APENAS escudos + nomes, SEM placar ─────────────────
+  // Zona: y=510 até y=780 (altura 270px)
   const teamsAreaY = 510;
-  const teamAX = W / 4;
-  const teamBX = (W * 3) / 4;
-  const shieldSize = 200;
+  const shieldSize = 220;
+  const teamAX = W / 4;      // 270px do centro esquerdo
+  const teamBX = (W * 3) / 4; // 810px do centro direito
 
   const [imgA, imgB] = await Promise.all([
     data.teamAFlag ? loadImage(data.teamAFlag) : Promise.resolve(null),
     data.teamBFlag ? loadImage(data.teamBFlag) : Promise.resolve(null),
   ]);
 
-  // Escudo time A
+  // Escudo time A (centrado em teamAX, sem sobrepor o centro)
   if (imgA) {
     ctx.drawImage(imgA, teamAX - shieldSize / 2, teamsAreaY, shieldSize, shieldSize);
   } else {
@@ -258,122 +307,159 @@ export async function generateStoriesCanvas(data: ShareCardData): Promise<HTMLCa
     ctx.fillText(data.teamBName.substring(0, 2).toUpperCase(), teamBX, teamsAreaY + shieldSize / 2 + 28);
   }
 
-  // Nomes dos times
-  ctx.fillStyle = "#FFFFFF";
-  ctx.font = "bold 48px Arial, sans-serif";
+  // Nomes dos times (abaixo dos escudos)
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.font = "bold 46px Arial, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(truncate(data.teamAName, 14), teamAX, teamsAreaY + shieldSize + 60);
-  ctx.fillText(truncate(data.teamBName, 14), teamBX, teamsAreaY + shieldSize + 60);
+  ctx.fillText(truncate(data.teamAName, 13), teamAX, teamsAreaY + shieldSize + 56);
+  ctx.fillText(truncate(data.teamBName, 13), teamBX, teamsAreaY + shieldSize + 56);
 
-  // ── 7. Placar / VS ────────────────────────────────────────────────────────
-  const scoreCenterY = teamsAreaY + shieldSize / 2 + 30;
+  // ── 7. Placar / VS — zona exclusiva, abaixo dos times ─────────────────────
+  // Zona: y=800 até y=980 (altura 180px)
+  const scoreZoneY = 800;
+  const scoreCenterX = W / 2;
 
   if (finished && hasResult) {
-    // Placar real grande
+    // Placar real — números grandes no centro, separados dos escudos
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 160px Arial, sans-serif";
+    ctx.font = "bold 180px Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(`${data.scoreA}`, teamAX + 120, scoreCenterY + 60);
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    // Número A (esquerda do centro)
+    ctx.fillText(`${data.scoreA}`, scoreCenterX - 160, scoreZoneY + 150);
+    // Separador ×
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
     ctx.font = "bold 100px Arial, sans-serif";
-    ctx.fillText("×", W / 2, scoreCenterY + 50);
+    ctx.fillText("×", scoreCenterX, scoreZoneY + 130);
+    // Número B (direita do centro)
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 160px Arial, sans-serif";
-    ctx.fillText(`${data.scoreB}`, teamBX - 120, scoreCenterY + 60);
+    ctx.font = "bold 180px Arial, sans-serif";
+    ctx.fillText(`${data.scoreB}`, scoreCenterX + 160, scoreZoneY + 150);
   } else {
-    // VS com data
+    // VS com data do jogo
     ctx.fillStyle = "rgba(255,255,255,0.25)";
-    ctx.font = "bold 80px Arial, sans-serif";
+    ctx.font = "bold 90px Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("VS", W / 2, scoreCenterY + 40);
+    ctx.fillText("VS", scoreCenterX, scoreZoneY + 100);
     const dateStr = new Date(data.matchDate).toLocaleDateString("pt-BR", {
       day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
     });
     ctx.fillStyle = "#FFB800";
     ctx.font = "bold 44px Arial, sans-serif";
-    ctx.fillText(dateStr, W / 2, scoreCenterY + 110);
+    ctx.fillText(dateStr, scoreCenterX, scoreZoneY + 162);
   }
 
   // ── 8. Palpite do usuário ─────────────────────────────────────────────────
-  const betBoxY = teamsAreaY + shieldSize + 100;
-
+  // Zona: y=1020 até y=1240 (altura 220px)
+  const betBoxY = 1020;
   if (hasBet) {
-    // Box do palpite
-    ctx.fillStyle = "rgba(255,255,255,0.07)";
-    roundRect(ctx, 80, betBoxY, W - 160, 180, 28);
+    // Fundo do box
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    roundRect(ctx, 80, betBoxY, W - 160, 220, 28);
     ctx.fill();
-    ctx.strokeStyle = "rgba(255,184,0,0.35)";
+    ctx.strokeStyle = "rgba(255,184,0,0.4)";
     ctx.lineWidth = 2;
-    roundRect(ctx, 80, betBoxY, W - 160, 180, 28);
+    roundRect(ctx, 80, betBoxY, W - 160, 220, 28);
     ctx.stroke();
 
+    // Label
     ctx.fillStyle = "rgba(255,255,255,0.5)";
     ctx.font = "36px Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("MEU PALPITE", W / 2, betBoxY + 52);
+    ctx.fillText("MEU PALPITE", W / 2, betBoxY + 60);
 
+    // Placar do palpite
     ctx.fillStyle = "#FFB800";
-    ctx.font = "bold 88px Arial, sans-serif";
-    ctx.fillText(`${data.predictedScoreA}  ×  ${data.predictedScoreB}`, W / 2, betBoxY + 148);
+    ctx.font = "bold 110px Arial, sans-serif";
+    ctx.fillText(`${data.predictedScoreA}  ×  ${data.predictedScoreB}`, W / 2, betBoxY + 180);
   }
 
-  // ── 9. Pontuação ──────────────────────────────────────────────────────────
-  if (data.pointsEarned != null && data.pointsEarned > 0) {
-    const ptsY = betBoxY + (hasBet ? 220 : 20);
-    const ptsColor = state === "exactHit" ? "#00FF88" : state === "correctResult" ? "#FFB800" : "#FFFFFF";
+  // ── 9. Pontuação total (apenas em jogos finalizados) ──────────────────────
+  // Zona: y=1280 até y=1460 (altura 180px) — quando não há palpite, começa em 1060
+  const ptsZoneY = hasBet ? 1280 : 1060;
+  if (finished && data.pointsEarned != null && data.pointsEarned >= 0) {
+    const ptsColor = state === "exactHit" ? "#00FF88" : state === "correctResult" ? "#FFB800" : state === "miss" ? "#FF6B6B" : "rgba(255,255,255,0.5)";
+
+    // Badge de pontuação total
+    const ptsLabel = data.pointsEarned > 0 ? `+${data.pointsEarned} pts` : "0 pts";
     ctx.fillStyle = ptsColor;
-    ctx.font = "bold 72px Arial, sans-serif";
+    ctx.font = "bold 88px Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(`+${data.pointsEarned} pts`, W / 2, ptsY);
+    ctx.fillText(ptsLabel, W / 2, ptsZoneY + 88);
+
+    // Descrição do resultado
+    const resultDesc =
+      state === "exactHit" ? "Placar exato! 🎯" :
+      state === "correctResult" ? "Resultado correto!" :
+      state === "miss" ? "Não foi dessa vez..." :
+      state === "noBet" ? "Sem palpite nesta partida" : "";
+    if (resultDesc) {
+      ctx.fillStyle = "rgba(255,255,255,0.45)";
+      ctx.font = "40px Arial, sans-serif";
+      ctx.fillText(resultDesc, W / 2, ptsZoneY + 148);
+    }
   }
 
   // ── 10. Copy emocional ────────────────────────────────────────────────────
-  const copyBaseY = betBoxY + (hasBet ? 260 : 60);
-  ctx.fillStyle = "rgba(255,255,255,0.75)";
-  ctx.font = "44px Arial, sans-serif";
-  ctx.textAlign = "center";
-  wrapText(ctx, stateItem.copy, W / 2, copyBaseY, W - 160, 62);
+  // Posição dinâmica: abaixo da pontuação (se houver) ou do palpite
+  let copyZoneY: number;
+  if (finished && data.pointsEarned != null && data.pointsEarned >= 0) {
+    copyZoneY = ptsZoneY + 220;
+  } else if (hasBet) {
+    copyZoneY = betBoxY + 280;
+  } else {
+    copyZoneY = 1060;
+  }
+  // Garantir que o copy não ultrapasse a zona do bolão
+  copyZoneY = Math.min(copyZoneY, 1500);
 
-  // ── 11. Nome do bolão (se disponível) ─────────────────────────────────────
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  ctx.font = "48px Arial, sans-serif";
+  ctx.textAlign = "center";
+  wrapText(ctx, stateItem.copy, W / 2, copyZoneY + 50, W - 160, 70);
+
+  // ── 11. Nome do bolão ─────────────────────────────────────────────────────
+  // Fixo acima do rodapé
   if (data.poolName) {
-    const poolY = H - 260;
-    ctx.fillStyle = "rgba(255,255,255,0.12)";
-    roundRect(ctx, W / 2 - 300, poolY - 48, 600, 68, 18);
+    ctx.fillStyle = "rgba(255,255,255,0.1)";
+    roundRect(ctx, W / 2 - 320, 1680, 640, 72, 18);
     ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
     ctx.font = "36px Arial, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(truncate(data.poolName, 32), W / 2, poolY);
+    ctx.fillText(truncate(data.poolName, 30), W / 2, 1728);
   }
 
   // ── 12. Faixa de assinatura (rodapé) ─────────────────────────────────────
-  const footerY = H - 160;
-  const footerGrad = ctx.createLinearGradient(0, footerY, W, footerY + 160);
+  // Zona: y=1780 até y=1906 (altura 126px)
+  const footerY = 1780;
+  const footerH = 126;
+  const footerGrad = ctx.createLinearGradient(0, footerY, W, footerY + footerH);
   footerGrad.addColorStop(0, "#FFB800");
   footerGrad.addColorStop(1, "#FFD700");
   ctx.fillStyle = footerGrad;
-  ctx.fillRect(0, footerY, W, 160);
+  ctx.fillRect(0, footerY, W, footerH);
 
   // Overlay escuro sutil
-  ctx.fillStyle = "rgba(0,0,0,0.12)";
-  ctx.fillRect(0, footerY, W, 160);
+  ctx.fillStyle = "rgba(0,0,0,0.10)";
+  ctx.fillRect(0, footerY, W, footerH);
 
   // Badge P! no rodapé
+  const footerBadgeSize = 72;
   ctx.fillStyle = "#0B0F1A";
-  roundRect(ctx, 60, footerY + 30, 80, 80, 16);
+  roundRect(ctx, 60, footerY + (footerH - footerBadgeSize) / 2, footerBadgeSize, footerBadgeSize, 14);
   ctx.fill();
   ctx.fillStyle = "#FFB800";
-  ctx.font = "bold 40px Arial, sans-serif";
+  ctx.font = "bold 36px Arial, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("P!", 100, footerY + 82);
+  ctx.fillText("P!", 60 + footerBadgeSize / 2, footerY + (footerH - footerBadgeSize) / 2 + 50);
 
   // Texto assinatura
   ctx.fillStyle = "#0B0F1A";
-  ctx.font = "bold 52px Arial, sans-serif";
+  ctx.font = "bold 50px Arial, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText(cfg.signatureText, 160, footerY + 90);
+  ctx.fillText(cfg.signatureText, 60 + footerBadgeSize + 18, footerY + footerH / 2 + 18);
 
-  // Faixa escura no final
+  // ── 13. Faixa escura final ────────────────────────────────────────────────
   ctx.fillStyle = "#0B0F1A";
   ctx.fillRect(0, H - 14, W, 14);
 

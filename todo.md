@@ -2533,3 +2533,10 @@
 - [x] Item "Card de Compartilhamento" adicionado ao menu do AdminLayout
 - [x] PoolPage busca shareCardConfig via getAdConfig e passa para GameCard
 - [x] GameCard usa shareCardConfig na geração do canvas Stories
+
+## Card Stories — Correções de Layout (03/04/2026)
+- [x] Fix: sobreposição de escudos com números do placar (zonas verticais exclusivas)
+- [x] Fix: distribuição vertical — canvas 1920px dividido em 13 zonas proporcionais
+- [x] Fix: nome da fase "regular_season" traduzido via formatPhaseLabel()
+- [x] Add: pontuação total (+N pts) + descrição do resultado em jogos finalizados
+- [x] Fix: copy emocional com posição dinâmica (abaixo da pontuação ou do palpite)
