@@ -1437,50 +1437,7 @@ function GameCard({
     else { setSwipeOffset(0); }
     swipeStartY.current = null;
   };
-  // Abrir/fechar com animação
-  const openShare = () => {
-    setShareOpen(true);
-    requestAnimationFrame(() => requestAnimationFrame(() => setShareVisible(true)));
-  };
-  const closeShare = () => {
-    setShareVisible(false);
-    setSwipeOffset(0);
-    setTimeout(() => setShareOpen(false), 300);
-  };
-  // Gera preview do card quando o modal de compartilhamento abre
-  useEffect(() => {
-    if (!shareOpen) {
-      // Limpa a URL ao fechar para não vazar memória
-      if (cardPreviewUrl) URL.revokeObjectURL(cardPreviewUrl);
-      setCardPreviewUrl(null);
-      setCardPreviewBlob(null);
-      return;
-    }
-    if (!(hasBet || finished)) return;
-    let cancelled = false;
-    setCardPreviewLoading(true);
-    // Aguarda o ShareCardVisual estar montado antes de capturar
-    const timer = setTimeout(async () => {
-      try {
-        const blob = await captureBlob();
-        if (!cancelled && blob) {
-          setCardPreviewBlob(blob);
-          setCardPreviewUrl(URL.createObjectURL(blob));
-        }
-      } catch { /* silencioso */ } finally {
-        if (!cancelled) setCardPreviewLoading(false);
-      }
-    }, 400);
-    return () => { cancelled = true; clearTimeout(timer); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shareOpen]);
-
-  // Busca análise do palpite apenas quando o painel é aberto e o jogo está finalizado
-  const { data: betAnalysisText, isLoading: betAnalysisLoading } = trpc.pools.getBetAnalysis.useQuery(
-    { gameId: game.id, poolId },
-    { enabled: analysisOpen && finished && hasBet, staleTime: 10 * 60 * 1000 }
-  );
-  // Hook de compartilhamento com imagem
+  // Hook de compartilhamento com imagem (declarado antes do openShare para estar disponível)
   const { cardRef: shareCardRef, captureBlob, captureImage, downloadImage, downloadImageFromBlob, shareToInstagram, shareToInstagramFromBlob, shareToWhatsApp, shareToWhatsAppFromBlob, shareToOthers, shareToOthersFromBlob } = useShareCard();
   const shareCardData = {
     teamAName: game.teamAName ?? "Time A",
@@ -1498,7 +1455,43 @@ function GameCard({
     predictedScoreB: myBet?.predictedScoreB,
     pointsEarned: myBet?.pointsEarned,
   };
-  // Calcula urgência do prazoo
+  // Abrir o modal: captura o Blob via Canvas 2D (não depende de DOM)
+  const openShare = async () => {
+    // Inicia loading e abre o modal imediatamente
+    setCardPreviewLoading(true);
+    setShareOpen(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => setShareVisible(true)));
+    // Captura o card via Canvas 2D passando os dados diretamente
+    try {
+      const blob = await captureBlob(shareCardData);
+      if (blob) {
+        setCardPreviewBlob(blob);
+        setCardPreviewUrl(URL.createObjectURL(blob));
+      }
+    } catch (err) {
+      console.error("[ShareCard] Erro ao capturar preview:", err);
+    } finally {
+      setCardPreviewLoading(false);
+    }
+  };
+  const closeShare = () => {
+    setShareVisible(false);
+    setSwipeOffset(0);
+    setTimeout(() => {
+      setShareOpen(false);
+      // Limpa a URL ao fechar para não vazar memória
+      if (cardPreviewUrl) URL.revokeObjectURL(cardPreviewUrl);
+      setCardPreviewUrl(null);
+      setCardPreviewBlob(null);
+    }, 300);
+  };
+
+  // Busca análise do palpite apenas quando o painel é aberto e o jogo está finalizado
+  const { data: betAnalysisText, isLoading: betAnalysisLoading } = trpc.pools.getBetAnalysis.useQuery(
+    { gameId: game.id, poolId },
+    { enabled: analysisOpen && finished && hasBet, staleTime: 10 * 60 * 1000 }
+  );
+  // Calcula urgência do prazo
   const minutesUntilDeadline = open && !finished
     ? Math.floor((new Date(game.matchDate).getTime() - Date.now()) / 60000)
     : null;
@@ -1524,14 +1517,14 @@ function GameCard({
     setIsSharingWhatsApp(true);
     try {
       if (cardPreviewBlob) await shareToWhatsAppFromBlob(cardPreviewBlob, shareText);
-      else await shareToWhatsApp(shareText);
+      else await shareToWhatsApp(shareText, shareCardData);
     } finally { setIsSharingWhatsApp(false); }
   };
   const handleShareInstagram = async () => {
     setIsSharingInstagram(true);
     try {
       if (cardPreviewBlob) await shareToInstagramFromBlob(cardPreviewBlob);
-      else await shareToInstagram();
+      else await shareToInstagram(shareCardData);
     } finally { setIsSharingInstagram(false); }
   };
   const handleDownloadImage = async () => {
@@ -1539,7 +1532,7 @@ function GameCard({
     try {
       const filename = `plakr-${(game.teamAName ?? "time-a").toLowerCase().replace(/\s+/g, "-")}-vs-${(game.teamBName ?? "time-b").toLowerCase().replace(/\s+/g, "-")}.png`;
       if (cardPreviewBlob) await downloadImageFromBlob(cardPreviewBlob, filename);
-      else await downloadImage(filename);
+      else await downloadImage(shareCardData, filename);
     } catch {
       toast.error("Não foi possível baixar a imagem.");
     } finally { setIsDownloading(false); }
@@ -1552,7 +1545,7 @@ function GameCard({
     setIsSharingOthers(true);
     try {
       if (cardPreviewBlob) await shareToOthersFromBlob(cardPreviewBlob, shareText);
-      else await shareToOthers(shareText);
+      else await shareToOthers(shareText, shareCardData);
     } finally { setIsSharingOthers(false); }
   };
 
@@ -1761,7 +1754,7 @@ function GameCard({
         )}
 
         {/* Modal de compartilhamento — bottom-sheet (portal para document.body) */}
-        {shareOpen && (finished || hasBet) && createPortal(
+        {shareOpen && createPortal(
           <div
             style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
             onClick={(e) => { if (e.target === e.currentTarget) closeShare(); }}
@@ -2089,8 +2082,8 @@ function GameCard({
 
           </div>
         )}
-      {/* Card visual oculto para captura html2canvas */}
-      {(hasBet || finished) && <ShareCardVisual data={shareCardData} cardRef={shareCardRef} />}
+      {/* Card visual oculto para captura html2canvas — renderizado no body via portal para garantir dimensões corretas */}
+      {createPortal(<ShareCardVisual data={shareCardData} cardRef={shareCardRef} />, document.body)}
       </div>
     </div>
     </>

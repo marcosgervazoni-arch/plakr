@@ -1,6 +1,6 @@
 /**
- * ShareCard — componente visual para geração de imagem de compartilhamento
- * Renderizado fora da viewport e capturado via html2canvas
+ * ShareCard — geração de imagem de compartilhamento via Canvas 2D API
+ * Não depende de captura DOM (html2canvas / html-to-image) — funciona em qualquer browser/mobile
  */
 import { useRef, useCallback } from "react";
 
@@ -27,240 +27,385 @@ export interface ShareCardData {
 
 interface UseShareCardReturn {
   cardRef: React.RefObject<HTMLDivElement | null>;
-  captureImage: () => Promise<string | null>;
-  captureBlob: () => Promise<Blob | null>;
-  downloadImage: (filename?: string) => Promise<void>;
+  captureImage: (data?: ShareCardData) => Promise<string | null>;
+  captureBlob: (data?: ShareCardData) => Promise<Blob | null>;
+  downloadImage: (data?: ShareCardData, filename?: string) => Promise<void>;
   downloadImageFromBlob: (blob: Blob, filename?: string) => Promise<void>;
-  shareToInstagram: () => Promise<void>;
+  shareToInstagram: (data?: ShareCardData) => Promise<void>;
   shareToInstagramFromBlob: (blob: Blob) => Promise<void>;
-  shareToWhatsApp: (text: string) => Promise<void>;
+  shareToWhatsApp: (text: string, data?: ShareCardData) => Promise<void>;
   shareToWhatsAppFromBlob: (blob: Blob, text: string) => Promise<void>;
-  shareToOthers: (text: string) => Promise<void>;
+  shareToOthers: (text: string, data?: ShareCardData) => Promise<void>;
   shareToOthersFromBlob: (blob: Blob, text: string) => Promise<void>;
+}
+
+// Carrega uma imagem de URL como HTMLImageElement
+async function loadImage(url: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = url;
+    // Timeout de 3s para imagens lentas
+    setTimeout(() => resolve(null), 3000);
+  });
+}
+
+// Desenha texto com quebra de linha automática
+function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
+  const words = text.split(' ');
+  let line = '';
+  let currentY = y;
+  for (const word of words) {
+    const testLine = line + word + ' ';
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && line !== '') {
+      ctx.fillText(line.trim(), x, currentY);
+      line = word + ' ';
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, currentY);
+  return currentY;
+}
+
+// Gera o card de compartilhamento via Canvas 2D API
+async function generateCardCanvas(data: ShareCardData): Promise<HTMLCanvasElement> {
+  const W = 720; // 360px * 2x
+  const H = 540; // 270px * 2x
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  // ── Fundo com gradiente ──────────────────────────────────────────────────
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#0f1117");
+  grad.addColorStop(1, "#1a1f2e");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Borda sutil ──────────────────────────────────────────────────────────
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(1, 1, W - 2, H - 2);
+
+  // ── Header: logo Plakr! ──────────────────────────────────────────────────
+  // Logo badge
+  ctx.fillStyle = "#f5c518";
+  roundRect(ctx, 40, 32, 56, 56, 16);
+  ctx.fill();
+  ctx.fillStyle = "#000";
+  ctx.font = "bold 28px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("P!", 68, 68);
+
+  // Nome Plakr!
+  ctx.fillStyle = "#f5c518";
+  ctx.font = "bold 26px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Plakr!", 108, 68);
+
+  // Campeonato / rodada
+  const tournamentLabel = [data.tournamentName, data.roundName].filter(Boolean).join(" · ") || "Bolão";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.font = "22px Arial, sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText(tournamentLabel, W - 40, 68);
+
+  // ── Linha separadora ─────────────────────────────────────────────────────
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(40, 108);
+  ctx.lineTo(W - 40, 108);
+  ctx.stroke();
+
+  // ── Times ────────────────────────────────────────────────────────────────
+  const centerY = 260;
+  const teamAX = 180;
+  const teamBX = W - 180;
+
+  // Carregar escudos em paralelo
+  const [imgA, imgB] = await Promise.all([
+    data.teamAFlag ? loadImage(data.teamAFlag) : Promise.resolve(null),
+    data.teamBFlag ? loadImage(data.teamBFlag) : Promise.resolve(null),
+  ]);
+
+  // Escudo time A
+  if (imgA) {
+    ctx.drawImage(imgA, teamAX - 48, centerY - 100, 96, 96);
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    ctx.beginPath();
+    ctx.arc(teamAX, centerY - 52, 48, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Escudo time B
+  if (imgB) {
+    ctx.drawImage(imgB, teamBX - 48, centerY - 100, 96, 96);
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,0.15)";
+    ctx.beginPath();
+    ctx.arc(teamBX, centerY - 52, 48, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Nome time A
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 26px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(truncate(data.teamAName, 12), teamAX, centerY + 16);
+
+  // Nome time B
+  ctx.fillText(truncate(data.teamBName, 12), teamBX, centerY + 16);
+
+  // ── Placar ───────────────────────────────────────────────────────────────
+  const hasResult = data.scoreA != null && data.scoreB != null;
+  const finished = data.status === "finished";
+
+  if (hasResult && finished) {
+    // Placar real
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 72px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`${data.scoreA}`, teamAX + 80, centerY + 20);
+    ctx.fillStyle = "rgba(255,255,255,0.4)";
+    ctx.font = "bold 48px Arial, sans-serif";
+    ctx.fillText("×", W / 2, centerY + 20);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 72px Arial, sans-serif";
+    ctx.fillText(`${data.scoreB}`, teamBX - 80, centerY + 20);
+  } else {
+    // VS
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.font = "bold 48px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("VS", W / 2, centerY + 16);
+  }
+
+  // ── Palpite do usuário ───────────────────────────────────────────────────
+  const hasBet = data.predictedScoreA != null && data.predictedScoreB != null;
+  if (hasBet) {
+    const betY = centerY + 60;
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    roundRect(ctx, W / 2 - 140, betY, 280, 52, 12);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = "20px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Meu palpite", W / 2, betY + 20);
+
+    ctx.fillStyle = "#f5c518";
+    ctx.font = "bold 24px Arial, sans-serif";
+    ctx.fillText(`${data.predictedScoreA} × ${data.predictedScoreB}`, W / 2, betY + 44);
+  }
+
+  // ── Pontuação ────────────────────────────────────────────────────────────
+  if (data.pointsEarned != null && data.pointsEarned > 0) {
+    const ptsY = hasBet ? centerY + 128 : centerY + 72;
+    ctx.fillStyle = "#22c55e";
+    ctx.font = "bold 28px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`+${data.pointsEarned} pts`, W / 2, ptsY);
+  }
+
+  // ── Data do jogo ─────────────────────────────────────────────────────────
+  const dateStr = new Date(data.matchDate).toLocaleDateString("pt-BR", {
+    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+  });
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.font = "20px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(dateStr, W / 2, H - 36);
+
+  return canvas;
+}
+
+function truncate(str: string, maxLen: number): string {
+  return str.length > maxLen ? str.substring(0, maxLen - 1) + "…" : str;
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
 }
 
 export function useShareCard(): UseShareCardReturn {
   const cardRef = useRef<HTMLDivElement | null>(null);
+  // Dados do card atual (preenchidos pelo PoolPage via captureBlob(data))
+  const dataRef = useRef<ShareCardData | null>(null);
 
-  // Captura o card e retorna um Blob PNG (mais compatível que dataURL no Android)
-  const captureBlob = useCallback(async (): Promise<Blob | null> => {
-    if (!cardRef.current) return null;
+  const captureBlob = useCallback(async (data?: ShareCardData): Promise<Blob | null> => {
+    const d = data ?? dataRef.current;
+    if (!d) {
+      console.warn("[ShareCard] Nenhum dado disponível para gerar o card");
+      return null;
+    }
+    console.log("[ShareCard] Gerando card via Canvas 2D...");
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: "#0f1117",
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        logging: false,
-        width: cardRef.current.offsetWidth,
-        height: cardRef.current.offsetHeight,
+      const canvas = await generateCardCanvas(d);
+      return new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((blob) => {
+          console.log("[ShareCard] Blob gerado:", blob?.size, "bytes");
+          resolve(blob);
+        }, "image/png");
       });
-      return await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/png"));
     } catch (err) {
-      console.error("[ShareCard] Erro ao capturar imagem:", err);
+      console.error("[ShareCard] Erro ao gerar card:", err);
       return null;
     }
   }, []);
 
-  // Mantido para compatibilidade (retorna dataURL a partir do blob)
-  const captureImage = useCallback(async (): Promise<string | null> => {
-    const blob = await captureBlob();
+  const captureImage = useCallback(async (data?: ShareCardData): Promise<string | null> => {
+    const blob = await captureBlob(data);
     if (!blob) return null;
     return URL.createObjectURL(blob);
   }, [captureBlob]);
 
-  const downloadImage = useCallback(async (filename = "plakr-card.png") => {
-    const blob = await captureBlob();
-    if (!blob) return;
-
-    // 1ª tentativa: File System Access API — mostra caixa de diálogo nativa "Salvar como" no Chrome desktop
-    if (typeof window !== "undefined" && "showSaveFilePicker" in window) {
-      try {
-        const handle = await (window as any).showSaveFilePicker({
-          suggestedName: filename,
-          types: [{ description: "Imagem PNG", accept: { "image/png": [".png"] } }],
-        });
-        const writable = await handle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        return;
-      } catch (e: any) {
-        // AbortError = usuário cancelou o diálogo — não é erro
-        if (e?.name === "AbortError") return;
-        // Outro erro — tenta fallback
-      }
-    }
-
-    // 2ª tentativa: abrir blob em nova aba — funciona em todos os browsers
-    // O usuário pode salvar com Ctrl+S ou clique direito → Salvar imagem
-    const blobUrl = URL.createObjectURL(blob);
-    const newTab = window.open(blobUrl, "_blank");
-    if (newTab) {
-      // Revoga o URL após 60s para liberar memória
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-      return;
-    }
-
-    // 3ª tentativa: link programático (pode ser bloqueado, mas vale tentar)
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = filename;
-    link.style.display = "none";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5_000);
-  }, [captureBlob]);
-
-  const shareToInstagram = useCallback(async () => {
-    const blob = await captureBlob();
-    if (!blob) return;
-    const file = new File([blob], "plakr-card.png", { type: "image/png" });
-
-    // Web Share API com arquivo — abre seletor nativo no Android/iOS
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: "Meu palpite no Plakr!" });
-        return;
-      } catch (e: any) {
-        if (e?.name === "AbortError") return;
-        // Outro erro — tenta fallback
-      }
-    }
-
-    // Fallback: baixa a imagem via blob URL e abre Instagram Stories
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = "plakr-card.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => {
-      URL.revokeObjectURL(blobUrl);
-      window.open("https://www.instagram.com/stories/create", "_blank");
-    }, 800);
-  }, [captureBlob]);
-
-  const shareToWhatsApp = useCallback(async (text: string) => {
-    const blob = await captureBlob();
-    if (!blob) return;
-    const file = new File([blob], "plakr-card.png", { type: "image/png" });
-
-    // Web Share API com arquivo + texto — abre seletor nativo no Android/iOS
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" });
-        return;
-      } catch (e: any) {
-        if (e?.name === "AbortError") return;
-      }
-    }
-
-    // Fallback: baixa a imagem e abre WhatsApp Web com texto
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = "plakr-card.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => {
-      URL.revokeObjectURL(blobUrl);
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-    }, 800);
-  }, [captureBlob]);
-
-  const shareToOthers = useCallback(async (text: string) => {
-    const blob = await captureBlob();
-    if (!blob) return;
-    const file = new File([blob], "plakr-card.png", { type: "image/png" });
-
-    // Web Share API com arquivo (abre seletor nativo de apps)
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" });
-        return;
-      } catch (e: any) {
-        if (e?.name === "AbortError") return;
-      }
-    } else if (navigator.share) {
-      try {
-        await navigator.share({ text, title: "Plakr! — Bolão Esportivo" });
-        return;
-      } catch (e: any) {
-        if (e?.name === "AbortError") return;
-      }
-    }
-
-    // Fallback final: copia texto para área de transferência
-    navigator.clipboard?.writeText(text);
-  }, [captureBlob]);
-
-  // Variantes que recebem um Blob já capturado (evitam recaptura do canvas)
   const downloadImageFromBlob = useCallback(async (blob: Blob, filename = "plakr-card.png") => {
-    if (typeof window !== "undefined" && "showSaveFilePicker" in window) {
-      try {
-        const handle = await (window as any).showSaveFilePicker({ suggestedName: filename, types: [{ description: "Imagem PNG", accept: { "image/png": [".png"] } }] });
-        const writable = await handle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        return;
-      } catch (e: any) { if (e?.name === "AbortError") return; }
+    try {
+      // 1ª tentativa: File System Access API (Chrome desktop)
+      if ("showSaveFilePicker" in window) {
+        try {
+          const handle = await (window as any).showSaveFilePicker({
+            suggestedName: filename,
+            types: [{ description: "PNG Image", accept: { "image/png": [".png"] } }],
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          return;
+        } catch (e: any) {
+          if (e.name === "AbortError") return;
+        }
+      }
+      // 2ª tentativa: link download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) {
+      console.error("[ShareCard] Erro ao baixar imagem:", err);
     }
-    const blobUrl = URL.createObjectURL(blob);
-    const newTab = window.open(blobUrl, "_blank");
-    if (newTab) { setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000); return; }
-    const link = document.createElement("a");
-    link.href = blobUrl; link.download = filename; link.style.display = "none";
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5_000);
   }, []);
+
+  const downloadImage = useCallback(async (data?: ShareCardData, filename = "plakr-card.png") => {
+    const blob = await captureBlob(data);
+    if (!blob) return;
+    await downloadImageFromBlob(blob, filename);
+  }, [captureBlob, downloadImageFromBlob]);
 
   const shareToInstagramFromBlob = useCallback(async (blob: Blob) => {
-    const file = new File([blob], "plakr-card.png", { type: "image/png" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: "Meu palpite no Plakr!" }); return; }
-      catch (e: any) { if (e?.name === "AbortError") return; }
+    try {
+      const file = new File([blob], "plakr-card.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Meu palpite no Plakr!" });
+        return;
+      }
+    } catch (e: any) {
+      if (e.name === "AbortError") return;
     }
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl; link.download = "plakr-card.png"; link.style.display = "none";
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    setTimeout(() => { URL.revokeObjectURL(blobUrl); window.open("https://www.instagram.com/stories/create", "_blank"); }, 800);
-  }, []);
+    // Fallback: download
+    await downloadImageFromBlob(blob, "plakr-instagram.png");
+  }, [downloadImageFromBlob]);
+
+  const shareToInstagram = useCallback(async (data?: ShareCardData) => {
+    const blob = await captureBlob(data);
+    if (!blob) return;
+    await shareToInstagramFromBlob(blob);
+  }, [captureBlob, shareToInstagramFromBlob]);
 
   const shareToWhatsAppFromBlob = useCallback(async (blob: Blob, text: string) => {
-    const file = new File([blob], "plakr-card.png", { type: "image/png" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" }); return; }
-      catch (e: any) { if (e?.name === "AbortError") return; }
+    try {
+      const file = new File([blob], "plakr-card.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], text, title: "Meu palpite no Plakr!" });
+        return;
+      }
+    } catch (e: any) {
+      if (e.name === "AbortError") return;
     }
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl; link.download = "plakr-card.png"; link.style.display = "none";
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    setTimeout(() => { URL.revokeObjectURL(blobUrl); window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank"); }, 800);
+    // Fallback: link WhatsApp
+    const encoded = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encoded}`, "_blank");
   }, []);
+
+  const shareToWhatsApp = useCallback(async (text: string, data?: ShareCardData) => {
+    const blob = await captureBlob(data);
+    if (!blob) {
+      const encoded = encodeURIComponent(text);
+      window.open(`https://wa.me/?text=${encoded}`, "_blank");
+      return;
+    }
+    await shareToWhatsAppFromBlob(blob, text);
+  }, [captureBlob, shareToWhatsAppFromBlob]);
 
   const shareToOthersFromBlob = useCallback(async (blob: Blob, text: string) => {
-    const file = new File([blob], "plakr-card.png", { type: "image/png" });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" }); return; }
-      catch (e: any) { if (e?.name === "AbortError") return; }
-    } else if (navigator.share) {
-      try { await navigator.share({ text, title: "Plakr! — Bolão Esportivo" }); return; }
-      catch (e: any) { if (e?.name === "AbortError") return; }
+    try {
+      const file = new File([blob], "plakr-card.png", { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], text, title: "Meu palpite no Plakr!" });
+        return;
+      }
+      if (navigator.share) {
+        await navigator.share({ text, title: "Meu palpite no Plakr!" });
+        return;
+      }
+    } catch (e: any) {
+      if (e.name === "AbortError") return;
     }
-    navigator.clipboard?.writeText(text);
-  }, []);
+    // Fallback: download
+    await downloadImageFromBlob(blob, "plakr-card.png");
+  }, [downloadImageFromBlob]);
 
-  return { cardRef, captureImage, captureBlob, downloadImage, downloadImageFromBlob, shareToInstagram, shareToInstagramFromBlob, shareToWhatsApp, shareToWhatsAppFromBlob, shareToOthers, shareToOthersFromBlob };
+  const shareToOthers = useCallback(async (text: string, data?: ShareCardData) => {
+    const blob = await captureBlob(data);
+    if (!blob) {
+      if (navigator.share) {
+        try { await navigator.share({ text, title: "Meu palpite no Plakr!" }); } catch {}
+      }
+      return;
+    }
+    await shareToOthersFromBlob(blob, text);
+  }, [captureBlob, shareToOthersFromBlob]);
+
+  return {
+    cardRef,
+    captureImage,
+    captureBlob,
+    downloadImage,
+    downloadImageFromBlob,
+    shareToInstagram,
+    shareToInstagramFromBlob,
+    shareToWhatsApp,
+    shareToWhatsAppFromBlob,
+    shareToOthers,
+    shareToOthersFromBlob,
+  };
 }
 
 /**
- * Componente visual do card — renderizado fora da viewport para captura
+ * ShareCardVisual — componente visual (mantido para compatibilidade)
+ * Agora é apenas decorativo — a imagem real é gerada via Canvas 2D
  */
 export function ShareCardVisual({
   data,
@@ -270,17 +415,14 @@ export function ShareCardVisual({
   cardRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const finished = data.status === "finished";
-  const live = data.status === "live";
   const hasBet = data.predictedScoreA != null && data.predictedScoreB != null;
   const hasResult = data.scoreA != null && data.scoreB != null;
-
   const matchDateStr = new Date(data.matchDate).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
   });
-
   return (
     <div
       ref={cardRef}
@@ -289,6 +431,8 @@ export function ShareCardVisual({
         left: "-9999px",
         top: "0",
         width: "360px",
+        opacity: 0,
+        pointerEvents: "none",
         background: "linear-gradient(135deg, #0f1117 0%, #1a1f2e 100%)",
         borderRadius: "16px",
         padding: "20px",
@@ -298,7 +442,7 @@ export function ShareCardVisual({
         boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
       }}
     >
-      {/* Header — logo + campeonato */}
+      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div style={{
@@ -308,139 +452,45 @@ export function ShareCardVisual({
           }}>P!</div>
           <span style={{ fontSize: "13px", fontWeight: "700", color: "#f5c518" }}>Plakr!</span>
         </div>
-        <div style={{ textAlign: "right" }}>
-          {data.tournamentName && (
-            <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", margin: 0 }}>{data.tournamentName}</p>
-          )}
-          {data.roundName && (
-            <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", margin: 0 }}>{data.roundName}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Status badge */}
-      <div style={{ marginBottom: "12px" }}>
-        <span style={{
-          fontSize: "10px", fontWeight: "600", padding: "3px 8px", borderRadius: "20px",
-          background: finished ? "rgba(34,197,94,0.15)" : live ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.08)",
-          color: finished ? "#4ade80" : live ? "#f87171" : "rgba(255,255,255,0.5)",
-          border: `1px solid ${finished ? "rgba(34,197,94,0.3)" : live ? "rgba(239,68,68,0.3)" : "rgba(255,255,255,0.12)"}`,
-        }}>
-          {finished ? "Finalizado" : live ? "Ao vivo" : matchDateStr}
+        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
+          {[data.tournamentName, data.roundName].filter(Boolean).join(" · ")}
         </span>
       </div>
-
-      {/* Times + placar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        {/* Time A */}
-        <div style={{ textAlign: "center", flex: 1 }}>
-          {data.teamAFlag && (
-            <img src={data.teamAFlag} alt="" style={{ width: "36px", height: "36px", objectFit: "contain", marginBottom: "4px" }} crossOrigin="anonymous" />
-          )}
+      {/* Times */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+        <div style={{ textAlign: "center" }}>
+          {data.teamAFlag && <img src={data.teamAFlag} alt="" style={{ width: "36px", height: "36px", objectFit: "contain", marginBottom: "4px" }} crossOrigin="anonymous" />}
           <p style={{ fontSize: "12px", fontWeight: "700", margin: 0, lineHeight: 1.2 }}>{data.teamAName}</p>
-          {(finished || live) && hasResult && (
-            <p style={{ fontSize: "32px", fontWeight: "900", margin: "4px 0 0", fontFamily: "monospace", color: "#f5c518" }}>{data.scoreA}</p>
-          )}
         </div>
-
-        {/* VS / Placar central */}
-        <div style={{ textAlign: "center", padding: "0 12px" }}>
-          {(finished || live) && hasResult ? (
-            <span style={{ fontSize: "18px", fontWeight: "900", color: "rgba(255,255,255,0.3)" }}>×</span>
+        <div style={{ textAlign: "center", minWidth: "60px" }}>
+          {hasResult && finished ? (
+            <span style={{ fontSize: "28px", fontWeight: "900" }}>{data.scoreA} × {data.scoreB}</span>
           ) : (
-            <span style={{ fontSize: "13px", fontWeight: "700", color: "rgba(255,255,255,0.3)" }}>VS</span>
+            <span style={{ fontSize: "18px", color: "rgba(255,255,255,0.3)" }}>VS</span>
           )}
         </div>
-
-        {/* Time B */}
-        <div style={{ textAlign: "center", flex: 1 }}>
-          {data.teamBFlag && (
-            <img src={data.teamBFlag} alt="" style={{ width: "36px", height: "36px", objectFit: "contain", marginBottom: "4px" }} crossOrigin="anonymous" />
-          )}
+        <div style={{ textAlign: "center" }}>
+          {data.teamBFlag && <img src={data.teamBFlag} alt="" style={{ width: "36px", height: "36px", objectFit: "contain", marginBottom: "4px" }} crossOrigin="anonymous" />}
           <p style={{ fontSize: "12px", fontWeight: "700", margin: 0, lineHeight: 1.2 }}>{data.teamBName}</p>
-          {(finished || live) && hasResult && (
-            <p style={{ fontSize: "32px", fontWeight: "900", margin: "4px 0 0", fontFamily: "monospace", color: "#f5c518" }}>{data.scoreB}</p>
-          )}
         </div>
       </div>
-
-      {/* Timeline de gols */}
-      {(finished || live) && data.goalsTimeline && data.goalsTimeline.length > 0 && (
-        <div style={{
-          borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "10px", marginBottom: "12px",
-          display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px",
-        }}>
-          {data.goalsTimeline.map((g, i) => (
-            <div key={i} style={{
-              display: "flex", alignItems: "center", gap: "4px", fontSize: "10px",
-              justifyContent: g.team === "home" ? "flex-start" : "flex-end",
-              gridColumn: g.team === "home" ? 1 : 2,
-            }}>
-              {g.team === "home" ? (
-                <>
-                  <span style={{ background: "rgba(255,255,255,0.1)", borderRadius: "4px", padding: "1px 4px", fontFamily: "monospace", color: "rgba(255,255,255,0.5)" }}>{g.min}'</span>
-                  <span>⚽</span>
-                  <span style={{ color: "rgba(255,255,255,0.7)", maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.player}</span>
-                </>
-              ) : (
-                <>
-                  <span style={{ color: "rgba(255,255,255,0.7)", maxWidth: "80px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{g.player}</span>
-                  <span>⚽</span>
-                  <span style={{ background: "rgba(255,255,255,0.1)", borderRadius: "4px", padding: "1px 4px", fontFamily: "monospace", color: "rgba(255,255,255,0.5)" }}>{g.min}'</span>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Palpite do usuário */}
+      {/* Palpite */}
       {hasBet && (
-        <div style={{
-          borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "12px", marginBottom: "12px",
-        }}>
-          <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", margin: "0 0 6px", textAlign: "center" }}>Meu palpite</p>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px" }}>
-            <span style={{ fontSize: "24px", fontWeight: "900", fontFamily: "monospace", color: "#f5c518" }}>
-              {data.predictedScoreA} × {data.predictedScoreB}
-            </span>
-            {finished && data.pointsEarned != null && (
-              <span style={{
-                fontSize: "13px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px",
-                background: (data.pointsEarned ?? 0) > 0 ? "rgba(245,197,24,0.15)" : "rgba(255,255,255,0.08)",
-                color: (data.pointsEarned ?? 0) > 0 ? "#f5c518" : "rgba(255,255,255,0.4)",
-                border: `1px solid ${(data.pointsEarned ?? 0) > 0 ? "rgba(245,197,24,0.3)" : "rgba(255,255,255,0.12)"}`,
-              }}>
-                +{data.pointsEarned} pts
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Resumo IA (pré-jogo apenas, curto) */}
-      {!finished && !live && data.aiSummary && (
-        <div style={{
-          borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "10px", marginBottom: "12px",
-        }}>
-          <p style={{ fontSize: "10px", color: "rgba(245,197,24,0.7)", margin: "0 0 4px", fontWeight: "600" }}>⚡ Análise IA</p>
-          <p style={{
-            fontSize: "10px", color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.5,
-            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-          }}>
-            {data.aiSummary}
+        <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: "8px", padding: "8px", textAlign: "center", marginBottom: "8px" }}>
+          <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", margin: "0 0 2px" }}>Meu palpite</p>
+          <p style={{ fontSize: "18px", fontWeight: "700", color: "#f5c518", margin: 0 }}>
+            {data.predictedScoreA} × {data.predictedScoreB}
           </p>
         </div>
       )}
-
-      {/* Footer */}
-      <div style={{
-        borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "10px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>plakr.io</span>
-        <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.25)" }}>Faça seu bolão grátis</span>
-      </div>
+      {/* Pontuação */}
+      {data.pointsEarned != null && data.pointsEarned > 0 && (
+        <p style={{ textAlign: "center", fontSize: "14px", fontWeight: "700", color: "#22c55e", margin: "4px 0" }}>
+          +{data.pointsEarned} pts
+        </p>
+      )}
+      {/* Data */}
+      <p style={{ textAlign: "center", fontSize: "10px", color: "rgba(255,255,255,0.3)", margin: "8px 0 0" }}>{matchDateStr}</p>
     </div>
   );
 }

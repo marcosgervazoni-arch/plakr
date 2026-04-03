@@ -2512,3 +2512,10 @@
 - [x] Adaptar ações de compartilhamento para usar o Blob do preview já capturado (evitar recaptura dupla do canvas)
 - [x] Adicionadas funções *FromBlob no useShareCard (downloadImageFromBlob, shareToInstagramFromBlob, shareToWhatsAppFromBlob, shareToOthersFromBlob)
 - [x] GameCard armazena cardPreviewBlob e usa as funções *FromBlob com fallback para recaptura se blob não disponível
+
+## Bug — Botões do modal de compartilhamento não funcionam (03/04/2026)
+- [x] Causa raiz: html2canvas/html-to-image não suportam oklch (Tailwind 4) e não capturam elementos fora do viewport
+- [x] Solução: reescrito captureBlob para usar Canvas 2D API nativa (sem dependência de DOM)
+- [x] Blob gerado com sucesso: 159KB (vs 8KB antes) — imagem real com escudos, placar e logo
+- [x] Todos os botões funcionam: Instagram (Web Share API + fallback download), WhatsApp (Web Share API + fallback link), Download, Outros apps
+- [x] Modal exibido para todos os jogos (removida restrição hasBet || finished)
