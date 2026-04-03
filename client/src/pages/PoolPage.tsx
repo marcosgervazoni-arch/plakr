@@ -59,6 +59,7 @@ import {
   Swords,
 } from "lucide-react";
 import { useState, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
@@ -1487,6 +1488,7 @@ function GameCard({
   };
 
   return (
+    <>
     <div
       className={`bg-card transition-all border-l-2 border-[#FFB800]/60 ${
         live ? "bg-red-500/5" : finished ? "opacity-80" : ""
@@ -1689,14 +1691,18 @@ function GameCard({
           </div>
         )}
 
-        {/* Modal de compartilhamento — bottom-sheet */}
-        {shareOpen && (finished || hasBet) && (
+        {/* Modal de compartilhamento — bottom-sheet (portal para document.body) */}
+        {shareOpen && (finished || hasBet) && createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+            style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
             onClick={(e) => { if (e.target === e.currentTarget) setShareOpen(false); }}
           >
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShareOpen(false)} />
-            <div className="relative z-10 w-full max-w-sm mx-auto bg-card border border-border/40 rounded-t-2xl sm:rounded-2xl p-5 space-y-4 shadow-2xl">
+            {/* Backdrop opaco */}
+            <div
+              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 0 }}
+              onClick={() => setShareOpen(false)}
+            />
+            <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '24rem', margin: '0 auto' }} className="bg-card border border-border/40 rounded-t-2xl p-5 space-y-4 shadow-2xl">
               {/* Handle */}
               <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto sm:hidden" />
               {/* Header */}
@@ -1767,8 +1773,7 @@ function GameCard({
               </button>
             </div>
           </div>
-        )}
-
+        , document.body)}
         {/* Painel de análise expansível */}
         {analysisOpen && (
           <div className="mt-2 border-t border-border/20 pt-3 space-y-4">
@@ -1985,6 +1990,7 @@ function GameCard({
       {(hasBet || finished) && <ShareCardVisual data={shareCardData} cardRef={shareCardRef} />}
       </div>
     </div>
+    </>
   );
 }
 
