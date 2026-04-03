@@ -19,6 +19,27 @@ import { Err } from "../errors";
 import { getPhaseLabel } from "../../shared/phaseNames";
 import { inferTournamentFormat, inferTournamentFormatFromPhases } from "../../shared/tournamentFormat";
 
+// ─── Estado global de progresso do backfill de IA ────────────────────────────
+type AiBackfillJob = {
+  status: "idle" | "running" | "done" | "error";
+  total: number;
+  processed: number;
+  errors: number;
+  startedAt: Date | null;
+  finishedAt: Date | null;
+  message: string;
+};
+
+const aiBackfillJob: AiBackfillJob = {
+  status: "idle",
+  total: 0,
+  processed: 0,
+  errors: 0,
+  startedAt: null,
+  finishedAt: null,
+  message: "Nenhum job em andamento",
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function getIntegrationSettings() {
@@ -834,16 +855,18 @@ export const integrationsRouter = router({
    * Processa em lotes para não sobrecarregar a API de IA.
    */
   backfillAiPredictions: adminProcedure
-    .input(z.object({ batchSize: z.number().int().min(1).max(50).default(20) }))
-    .mutation(async ({ input, ctx }) => {
+    .input(z.object({}))
+    .mutation(async ({ ctx }) => {
+      if (aiBackfillJob.status === "running") {
+        return { started: false, message: "Já existe um processamento em andamento" };
+      }
+
       const db = await getDb();
       if (!db) throw Err.internal("DB unavailable");
 
-      logger.info(`[BackfillAI] Admin ${ctx.user.id} triggered aiPrediction backfill (batchSize=${input.batchSize})`);
-
       const now = new Date();
 
-      // Buscar jogos futuros sem aiPrediction, vinculados a torneios com API-Football
+      // Contar total de jogos pendentes
       const pendingGames = await db
         .select({
           id: gamesTable.id,
@@ -860,12 +883,27 @@ export const integrationsRouter = router({
             sql`${gamesTable.status} = 'scheduled'`,
             sql`${gamesTable.matchDate} > ${now}`,
           )
-        )
-        .limit(input.batchSize);
+        );
 
       if (pendingGames.length === 0) {
-        return { processed: 0, errors: 0, message: "Nenhum jogo pendente encontrado" };
+        aiBackfillJob.status = "done";
+        aiBackfillJob.total = 0;
+        aiBackfillJob.processed = 0;
+        aiBackfillJob.errors = 0;
+        aiBackfillJob.message = "Nenhum jogo pendente encontrado";
+        return { started: false, message: "Nenhum jogo pendente encontrado" };
       }
+
+      // Inicializar estado do job
+      aiBackfillJob.status = "running";
+      aiBackfillJob.total = pendingGames.length;
+      aiBackfillJob.processed = 0;
+      aiBackfillJob.errors = 0;
+      aiBackfillJob.startedAt = new Date();
+      aiBackfillJob.finishedAt = null;
+      aiBackfillJob.message = `Processando 0 de ${pendingGames.length} jogos...`;
+
+      logger.info(`[BackfillAI] Admin ${ctx.user.id} iniciou backfill de ${pendingGames.length} jogos`);
 
       // Buscar nomes dos torneios para contexto
       const tournamentIds = [...new Set(pendingGames.map(g => g.tournamentId))];
@@ -875,45 +913,63 @@ export const integrationsRouter = router({
         .where(sql`${tournaments.id} IN (${sql.join(tournamentIds.map(id => sql`${id}`), sql`, `)})`);
       const tournamentMap = Object.fromEntries(tournamentRows.map(t => [t.id, t.name]));
 
-      let processed = 0;
-      let errors = 0;
+      // Processar em background (não aguarda)
+      (async () => {
+        for (const game of pendingGames) {
+          try {
+            const fixtureId = game.externalId ? parseInt(game.externalId) : null;
+            let apiPercent: { home: number; draw: number; away: number } | null = null;
+            let apiAdvice: string | null = null;
 
-      for (const game of pendingGames) {
-        try {
-          const fixtureId = game.externalId ? parseInt(game.externalId) : null;
-          let apiPercent: { home: number; draw: number; away: number } | null = null;
-          let apiAdvice: string | null = null;
-
-          if (fixtureId) {
-            const apiPred = await fetchFixturePredictions(fixtureId).catch(() => null);
-            if (apiPred?.percent) {
-              apiPercent = {
-                home: parseInt(apiPred.percent.home) || 0,
-                draw: parseInt(apiPred.percent.draw) || 0,
-                away: parseInt(apiPred.percent.away) || 0,
-              };
-              apiAdvice = apiPred.advice ?? null;
+            if (fixtureId) {
+              const apiPred = await fetchFixturePredictions(fixtureId).catch(() => null);
+              if (apiPred?.percent) {
+                apiPercent = {
+                  home: parseInt(apiPred.percent.home) || 0,
+                  draw: parseInt(apiPred.percent.draw) || 0,
+                  away: parseInt(apiPred.percent.away) || 0,
+                };
+                apiAdvice = apiPred.advice ?? null;
+              }
             }
+
+            const prediction = await buildAiPrediction({
+              homeTeam: game.teamAName ?? "Time A",
+              awayTeam: game.teamBName ?? "Time B",
+              competition: tournamentMap[game.tournamentId] ?? "Campeonato",
+              matchDate: game.matchDate?.toISOString() ?? new Date().toISOString(),
+              apiPercent,
+              apiAdvice,
+            });
+
+            const dbInner = await getDb();
+            if (dbInner) {
+              await dbInner.update(gamesTable).set({ aiPrediction: prediction }).where(sql`${gamesTable.id} = ${game.id}`);
+            }
+            aiBackfillJob.processed++;
+            aiBackfillJob.message = `Processando ${aiBackfillJob.processed} de ${aiBackfillJob.total} jogos...`;
+            logger.info(`[BackfillAI] ${game.teamAName} × ${game.teamBName} — OK (${aiBackfillJob.processed}/${aiBackfillJob.total})`);
+          } catch (err) {
+            aiBackfillJob.errors++;
+            logger.error({ err }, `[BackfillAI] Erro no jogo ${game.id}`);
           }
-
-          const prediction = await buildAiPrediction({
-            homeTeam: game.teamAName ?? "Time A",
-            awayTeam: game.teamBName ?? "Time B",
-            competition: tournamentMap[game.tournamentId] ?? "Campeonato",
-            matchDate: game.matchDate?.toISOString() ?? new Date().toISOString(),
-            apiPercent,
-            apiAdvice,
-          });
-
-          await db.update(gamesTable).set({ aiPrediction: prediction }).where(sql`${gamesTable.id} = ${game.id}`);
-          processed++;
-          logger.info(`[BackfillAI] aiPrediction gerado para jogo ${game.id} (${game.teamAName} × ${game.teamBName})`);
-        } catch (err) {
-          errors++;
-          logger.error({ err }, `[BackfillAI] Erro ao gerar aiPrediction para jogo ${game.id}`);
         }
-      }
+        aiBackfillJob.status = "done";
+        aiBackfillJob.finishedAt = new Date();
+        aiBackfillJob.message = `Concluído: ${aiBackfillJob.processed} análises geradas, ${aiBackfillJob.errors} erros`;
+        logger.info(`[BackfillAI] Job finalizado — ${aiBackfillJob.processed}/${aiBackfillJob.total} processados`);
+      })().catch(err => {
+        aiBackfillJob.status = "error";
+        aiBackfillJob.message = `Erro inesperado: ${err?.message ?? "desconhecido"}`;
+        logger.error({ err }, "[BackfillAI] Erro fatal no job de background");
+      });
 
-      return { processed, errors, message: `${processed} jogos processados, ${errors} erros` };
+      return { started: true, message: `Iniciado: ${pendingGames.length} jogos serão processados em background` };
+    }),
+
+  getAiBackfillProgress: adminProcedure
+    .input(z.object({}))
+    .query(() => {
+      return { ...aiBackfillJob };
     }),
 });

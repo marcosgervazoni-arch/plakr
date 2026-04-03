@@ -2476,3 +2476,9 @@
 - [x] Adicionar endpoint backfillAiPredictions no integrations.ts para gerar análises em lote
 - [x] Adicionar botão "Gerar análises pré-jogo" no Admin → Integrações → Reprocessamento
 - [x] Fallback gracioso quando aiPrediction é null: mensagem "Análise sendo preparada..."
+
+## Melhoria — Backfill de análises pré-jogo sem limite de lotes
+- [x] Refatorar backfillAiPredictions para processar todos os jogos em background (sem batchSize)
+- [x] Adicionar estado de progresso em memória no servidor (jobId, total, processed, errors)
+- [x] Endpoint getAiBackfillProgress para polling do progresso
+- [x] Frontend: barra de progresso em tempo real + botão único "Gerar todas as análises"

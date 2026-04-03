@@ -166,12 +166,17 @@ export default function AdminIntegrations() {
   });
 
   // ─── Backfill de Análises Pré-Jogo ────────────────────────────────────────────
+  const { data: aiBackfillProgress, refetch: refetchAiProgress } = trpc.integrations.getAiBackfillProgress.useQuery(
+    {},
+    { refetchInterval: (query) => (query.state.data?.status === "running" ? 2000 : false) }
+  );
   const backfillAiMutation = trpc.integrations.backfillAiPredictions.useMutation({
     onSuccess: (data) => {
-      if (data.processed > 0) {
-        toast.success(`${data.processed} análises geradas${data.errors > 0 ? ` (${data.errors} erros)` : ''}`);
-      } else {
+      if (data.started) {
         toast.success(data.message);
+        refetchAiProgress();
+      } else {
+        toast.info(data.message);
       }
     },
     onError: (e: { message: string }) => toast.error(e.message),
@@ -930,28 +935,55 @@ export default function AdminIntegrations() {
                   <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Análises Pré-Jogo (IA)</p>
+                      {aiBackfillProgress?.status === "running" && (
+                        <span className="text-xs bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 font-medium animate-pulse">
+                          Em andamento
+                        </span>
+                      )}
+                      {aiBackfillProgress?.status === "done" && aiBackfillProgress.total > 0 && (
+                        <span className="text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full px-2 py-0.5 font-medium">
+                          Concluído
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Gera análise pré-jogo com probabilidades e recomendação da IA para jogos futuros que ainda não têm análise. Processa em lotes de 20.
+                      Gera análise pré-jogo com probabilidades e recomendação da IA para todos os jogos futuros que ainda não têm análise. O processamento ocorre em segundo plano.
                     </p>
+
+                    {/* Barra de progresso */}
+                    {aiBackfillProgress && aiBackfillProgress.status !== "idle" && aiBackfillProgress.total > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{aiBackfillProgress.message}</span>
+                          <span className="font-mono font-medium">
+                            {aiBackfillProgress.processed}/{aiBackfillProgress.total}
+                          </span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary transition-all duration-500"
+                            style={{ width: `${Math.round((aiBackfillProgress.processed / aiBackfillProgress.total) * 100)}%` }}
+                          />
+                        </div>
+                        {aiBackfillProgress.errors > 0 && (
+                          <p className="text-xs text-amber-500">⚠️ {aiBackfillProgress.errors} erros</p>
+                        )}
+                      </div>
+                    )}
+
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full gap-1.5 text-xs"
-                      disabled={backfillAiMutation.isPending}
-                      onClick={() => backfillAiMutation.mutate({ batchSize: 20 })}
+                      disabled={backfillAiMutation.isPending || aiBackfillProgress?.status === "running"}
+                      onClick={() => backfillAiMutation.mutate({})}
                     >
-                      {backfillAiMutation.isPending ? (
-                        <><Loader2 className="h-3 w-3 animate-spin" /> Gerando análises...</>
+                      {backfillAiMutation.isPending || aiBackfillProgress?.status === "running" ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Processando em segundo plano...</>
                       ) : (
-                        <><Sparkles className="h-3 w-3" /> Gerar análises pré-jogo</>
+                        <><Sparkles className="h-3 w-3" /> Gerar todas as análises pré-jogo</>
                       )}
                     </Button>
-                    {backfillAiMutation.data && (
-                      <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 space-y-0.5">
-                        <p>{backfillAiMutation.data.message}</p>
-                      </div>
-                    )}
                   </div>
 
                   {/* Recalculo de Formatos */}
