@@ -2574,3 +2574,16 @@
 - [x] sync.ts busca forma recente dos dois times em paralelo antes de gerar aiPrediction
 - [x] AiPredictionContext recebe homeForm/awayForm e os inclui no resultado
 - [x] UI exibe "Análise indisponível" com mensagem clara quando aiPrediction for null
+
+## Monetização — Nova Régua de Preços (Pendente)
+- [ ] Implementar tier "Starter" (R$ 9,90) no Stripe (novo produto/preço)
+- [ ] Atualizar shared/plans.ts para 5 tiers: free, starter, pro, clube, liga
+- [ ] Ajustar limites de cada tier no código (X1s, bolões, participantes, features)
+- [ ] Atualizar página /upgrade com comunicação segmentada por perfil (organizador vs participante)
+- [ ] Reescrever copy da /upgrade com benefícios por perfil e toggle visual
+- [ ] Implementar lock suave na análise IA para Free (probabilidades básicas visíveis, H2H/lesões/narrativa bloqueados com CTA)
+- [ ] Criar badges exclusivos Starter e Pro para participantes
+- [ ] Criar temas premium para card Stories (Pro e Clube)
+- [ ] Implementar perfil público avançado com estatísticas históricas (Pro+)
+- [ ] Adicionar trial de 7 dias para Starter via Stripe trial_period_days
+- [ ] Documentação: estrategia-monetizacao-v2.md já atualizada com nova régua

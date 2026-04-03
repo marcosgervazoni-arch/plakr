@@ -153,6 +153,21 @@ afterAll(async () => {
   if (!db) return;
   // Limpar dados de teste criados (best-effort)
   try {
+    const { notifications } = await import("../drizzle/schema");
+    const { inArray } = await import("drizzle-orm");
+    // Buscar IDs dos usuários de teste para limpar notificações
+    const testUsers = await db.select({ id: users.id })
+      .from(users)
+      .where(inArray(users.openId, [
+        `${TEST_PREFIX}-userA`,
+        `${TEST_PREFIX}-userB`,
+        `${TEST_PREFIX}-adm`,
+      ]));
+    if (testUsers.length > 0) {
+      const testUserIds = testUsers.map(u => u.id);
+      // Limpar notificações criadas pelo broadcast de teste
+      await db.delete(notifications).where(inArray(notifications.userId, testUserIds));
+    }
     await db.delete(poolMembers).where(eq(poolMembers.poolId, poolAId));
     await db.delete(poolMembers).where(eq(poolMembers.poolId, poolBId));
     await db.delete(pools).where(eq(pools.id, poolAId));
@@ -291,11 +306,13 @@ describe("[FIX-6] Usuário bloqueado não recebe notificações de broadcast", (
     const caller = appRouter.createCaller(adminCtx);
 
     // O broadcast deve executar sem erro — a filtragem de bloqueados é interna
-    // channels é um objeto, não um array
+    // IMPORTANTE: usar audience "free" para não vazar notificações para usuários reais.
+    // Os usuários de teste não têm plano pro, então audience="free" os inclui.
+    // O afterAll limpa as notificações criadas.
     const result = await caller.notifications.broadcast({
       title: `[Integration Test] ${TEST_PREFIX}`,
       content: "Teste de broadcast",
-      audience: "all",
+      audience: "free",
       channels: { inApp: true, push: false, email: false },
     });
 
