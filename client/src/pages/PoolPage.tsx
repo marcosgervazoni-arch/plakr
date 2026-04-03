@@ -240,30 +240,35 @@ export default function PoolPage() {
     // --- Pódio: dispara apenas na PRIMEIRA VEZ no bolão (localStorage) ---
     if (!podiumChecked.current) {
       podiumChecked.current = true;
-      const lsKey = `podium_${slug}_${user.id}`;
-      const seen = localStorage.getItem(lsKey); // null = nunca viu
+      try {
+        const lsKey = `podium_${slug}_${user.id}`;
+        const seen = localStorage.getItem(lsKey); // null = nunca viu
 
-      if (hasPoints) {
-        // Confetes: apenas 1º lugar, apenas se nunca chegou ao 1º neste bolão
-        if (myIdx === 0 && seen !== "1") {
-          localStorage.setItem(lsKey, "1");
-          setPodiumAnimation("confetti");
-          setTimeout(() => setPodiumAnimation("idle"), 2500);
-          lastPositionRef.current = myIdx;
-          return;
+        if (hasPoints) {
+          // Confetes: apenas 1º lugar, apenas se nunca chegou ao 1º neste bolão
+          if (myIdx === 0 && seen !== "1") {
+            localStorage.setItem(lsKey, "1");
+            setPodiumAnimation("confetti");
+            setTimeout(() => setPodiumAnimation("idle"), 2500);
+            lastPositionRef.current = myIdx;
+            return;
+          }
+          // Glow prata/bronze: apenas 2º/3º, apenas se nunca entrou no top-3 neste bolão
+          if (myIdx < 3 && seen === null) {
+            localStorage.setItem(lsKey, String(myIdx + 1));
+            setPodiumAnimation("enter"); // glow sem slide (controlado no CSS)
+            setTimeout(() => setPodiumAnimation("idle"), 1200);
+            lastPositionRef.current = myIdx;
+            return;
+          }
+          // Já viu o glow mas chegou ao 1º agora: atualiza o registro
+          if (myIdx === 0 && seen !== "1") {
+            localStorage.setItem(lsKey, "1");
+          }
         }
-        // Glow prata/bronze: apenas 2º/3º, apenas se nunca entrou no top-3 neste bolão
-        if (myIdx < 3 && seen === null) {
-          localStorage.setItem(lsKey, String(myIdx + 1));
-          setPodiumAnimation("enter"); // glow sem slide (controlado no CSS)
-          setTimeout(() => setPodiumAnimation("idle"), 1200);
-          lastPositionRef.current = myIdx;
-          return;
-        }
-        // Já viu o glow mas chegou ao 1º agora: atualiza o registro
-        if (myIdx === 0 && seen !== "1") {
-          localStorage.setItem(lsKey, "1");
-        }
+      } catch {
+        // localStorage pode estar bloqueado (Safari Private, Brave Shields)
+        // Ignora silenciosamente — animações são progressivas, não críticas
       }
     }
 
@@ -294,6 +299,37 @@ export default function PoolPage() {
       return next;
     });
   };
+
+  // ── filterCounts DEVE ficar antes dos early returns (Regra dos Hooks) ──────────
+  // Usa valores seguros com fallback para quando data ainda não carregou
+  const _myBetsItemsForFilter = Array.isArray(myBets) ? myBets : (myBets?.items ?? []);
+  const _betsByGameForFilter = new Map(_myBetsItemsForFilter.map((b) => [b.gameId, b]) ?? []);
+  const _deadlineMinutesForFilter = data?.rules?.bettingDeadlineMinutes ?? 60;
+  const _gamesForFilter = data?.games ?? [];
+
+  const filterCounts = useMemo(() => {
+    const c = { pending: 0, editable: 0, waiting: 0, correct: 0, wrong: 0, missed: 0 };
+    for (const g of _gamesForFilter) {
+      const deadline = new Date(new Date(g.matchDate).getTime() - _deadlineMinutesForFilter * 60 * 1000);
+      const deadlinePassed = Date.now() > deadline.getTime();
+      const myBet = _betsByGameForFilter.get(g.id);
+      let k: keyof typeof c;
+      if (!myBet) {
+        k = !deadlinePassed ? "pending" : "missed";
+      } else if (!deadlinePassed && myBet.resultType === "pending") {
+        k = "editable";
+      } else if (myBet.resultType === "pending") {
+        k = "waiting";
+      } else if (myBet.resultType === "exact" || myBet.resultType === "correct_result") {
+        k = "correct";
+      } else {
+        k = "wrong";
+      }
+      c[k]++;
+    }
+    return c;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_gamesForFilter, _myBetsItemsForFilter, _deadlineMinutesForFilter]);
 
   /* ── Loading ── */
   if (isLoading) {
@@ -379,7 +415,7 @@ export default function PoolPage() {
 
   const copyInviteLink = () => {
     const link = `${window.location.origin}/join/${pool.inviteToken}`;
-    navigator.clipboard.writeText(link);
+    try { navigator.clipboard.writeText(link); } catch { /* fallback silencioso */ }
     analytics.trackInviteSent({ pool_slug: slug ?? undefined, method: "copy" });
     toast.success("Link copiado!");
   };
@@ -392,6 +428,7 @@ export default function PoolPage() {
 
   // ── Classificação de jogos para filtros ───────────────────────────────────────
   type GameFilterKey = "all" | "pending" | "editable" | "waiting" | "correct" | "wrong" | "missed";
+  // classifyGameForFilter usa betsByGame e deadlineMinutes já definidos acima
   const classifyGameForFilter = (g: typeof games[0]): GameFilterKey => {
     const deadline = new Date(new Date(g.matchDate).getTime() - deadlineMinutes * 60 * 1000);
     const deadlinePassed = Date.now() > deadline.getTime();
@@ -404,16 +441,6 @@ export default function PoolPage() {
     if (myBet.resultType === "exact" || myBet.resultType === "correct_result") return "correct";
     return "wrong";
   };
-
-  const filterCounts = useMemo(() => {
-    const c = { pending: 0, editable: 0, waiting: 0, correct: 0, wrong: 0, missed: 0 };
-    for (const g of games) {
-      const k = classifyGameForFilter(g);
-      if (k in c) c[k as keyof typeof c]++;
-    }
-    return c;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [games, myBetsItems, deadlineMinutes]);
 
   const filterConfig: { key: GameFilterKey; label: string; count?: number; urgent?: boolean }[] = [
     { key: "all", label: "Todos" },
@@ -2107,7 +2134,7 @@ function ParticipantShareButton({ inviteToken, poolName }: { inviteToken: string
         // Usuário cancelou o compartilhamento — sem ação necessária
       }
     } else {
-      navigator.clipboard.writeText(inviteUrl);
+      try { navigator.clipboard.writeText(inviteUrl); } catch { /* fallback silencioso */ }
       analytics.trackInviteSent({ pool_slug: poolName, method: "copy" });
       toast.success("Link copiado!", { description: "Compartilhe com seus amigos." });
     }
