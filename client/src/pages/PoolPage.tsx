@@ -474,6 +474,10 @@ export default function PoolPage() {
 
   const INITIAL_GAMES_SHOWN = 5;
 
+  // Filtrar TODOS os jogos primeiro, depois fatiar para paginação (modo simples)
+  const simpleFilteredGames = applyGameFilter(games);
+  const simpleVisibleGames = showAllGames ? simpleFilteredGames : simpleFilteredGames.slice(0, INITIAL_GAMES_SHOWN);
+
   return (
     <AppShell>
     <div className="min-h-screen bg-background">
@@ -740,59 +744,43 @@ export default function PoolPage() {
             )}
 
             {/* ── Barra de filtros colapsável ── */}
+            {/* Chips de filtro — sempre visíveis, scroll horizontal com sombra */}
             {games.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-end">
-                  <button
-                    onClick={() => setShowFilters((v) => !v)}
-                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all ${
-                      activeFilter !== "all"
-                        ? "bg-[#FFB800]/10 border-[#FFB800]/40 text-[#FFB800]"
-                        : "border-border/40 text-muted-foreground hover:text-foreground hover:border-border"
-                    }`}
-                  >
-                    <Filter className="w-3.5 h-3.5" />
-                    Filtrar
-                    {activeFilter !== "all" && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FFB800]" />
-                    )}
-                  </button>
+              <div className="relative -mx-4">
+                <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 z-10 bg-gradient-to-r from-background to-transparent" />
+                <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10 bg-gradient-to-l from-background to-transparent" />
+                <div className="flex gap-2 overflow-x-auto pb-2 pt-0.5 scrollbar-hide px-4">
+                  {filterConfig.map((f) => {
+                    const isActive = activeFilter === f.key;
+                    const hasBadge = (f.count ?? 0) > 0;
+                    return (
+                      <button
+                        key={f.key}
+                        onClick={() => setActiveFilter(f.key)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+                          isActive
+                            ? "bg-[#FFB800] text-[#0B0F1A]"
+                            : "bg-card border border-border/40 text-muted-foreground hover:text-foreground hover:border-border"
+                        }`}
+                      >
+                        {f.label}
+                        {hasBadge && (
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
+                              isActive
+                                ? "bg-[#0B0F1A]/20 text-[#0B0F1A]"
+                                : f.urgent
+                                ? "bg-[#FF3B3B] text-white"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {f.count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-
-                {showFilters && (
-                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4">
-                    {filterConfig.map((f) => {
-                      const isActive = activeFilter === f.key;
-                      const hasBadge = (f.count ?? 0) > 0;
-                      return (
-                        <button
-                          key={f.key}
-                          onClick={() => setActiveFilter(f.key)}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
-                            isActive
-                              ? "bg-[#FFB800] text-[#0B0F1A]"
-                              : "bg-card border border-border/40 text-muted-foreground hover:text-foreground hover:border-border"
-                          }`}
-                        >
-                          {f.label}
-                          {hasBadge && (
-                            <span
-                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
-                                isActive
-                                  ? "bg-[#0B0F1A]/20 text-[#0B0F1A]"
-                                  : f.urgent
-                                  ? "bg-[#FF3B3B] text-white"
-                                  : "bg-muted text-muted-foreground"
-                              }`}
-                            >
-                              {f.count}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             )}
 
@@ -913,14 +901,14 @@ export default function PoolPage() {
             ) : (
               /* ── MODO SIMPLES: lista com "mostrar mais" ── */
               <div className="space-y-3">
-                {applyGameFilter(showAllGames ? games : games.slice(0, INITIAL_GAMES_SHOWN)).length === 0 && activeFilter !== "all" && (
+                {simpleFilteredGames.length === 0 && activeFilter !== "all" && (
                   <div className="text-center py-10 text-muted-foreground">
                     <Filter className="w-8 h-8 mx-auto mb-2 opacity-20" />
                     <p className="text-sm">Nenhum jogo nesta categoria.</p>
                     <button onClick={() => setActiveFilter("all")} className="text-xs text-primary mt-1 hover:underline">Ver todos</button>
                   </div>
                 )}
-                {applyGameFilter(showAllGames ? games : games.slice(0, INITIAL_GAMES_SHOWN)).map((game) => {
+                {simpleVisibleGames.map((game) => {
                   const myBet = betsByGame.get(game.id);
                   const open = isGameOpen(game.matchDate);
                   const finished = game.status === "finished";
@@ -949,7 +937,7 @@ export default function PoolPage() {
                     />
                   );
                 })}
-                {games.length > INITIAL_GAMES_SHOWN && (
+                {simpleFilteredGames.length > INITIAL_GAMES_SHOWN && (
                   <button
                     onClick={() => setShowAllGames((v) => !v)}
                     className="w-full py-3 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border/40 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors"
@@ -957,7 +945,7 @@ export default function PoolPage() {
                     <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showAllGames ? "rotate-180" : ""}`} />
                     {showAllGames
                       ? "Mostrar menos"
-                      : `Ver mais ${games.length - INITIAL_GAMES_SHOWN} jogo${games.length - INITIAL_GAMES_SHOWN !== 1 ? "s" : ""}`}
+                      : `Ver mais ${simpleFilteredGames.length - INITIAL_GAMES_SHOWN} jogo${simpleFilteredGames.length - INITIAL_GAMES_SHOWN !== 1 ? "s" : ""}`}
                   </button>
                 )}
               </div>

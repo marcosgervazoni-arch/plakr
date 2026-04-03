@@ -2491,3 +2491,9 @@
 ## UX — FAB e borda do GameCard
 - [x] Atualizar FAB "Palpites" para abrir aba Jogos com filtro "Falta palpitar" pré-ativado (em vez de /history)
 - [x] Adicionar borda amarela fina (#FFB800) nos cards de jogo
+
+## Bug — Filtros da PoolPage retornavam lista vazia (03/04/2026)
+- [x] Causa raiz: modo simples aplicava filtro APÓS o slice de paginação (INITIAL_GAMES_SHOWN)
+- [x] Correção: declarar simpleFilteredGames e simpleVisibleGames antes do return, filtro aplicado em todos os jogos
+- [x] Modo accordion já estava correto (applyGameFilter dentro de cada fase)
+- [x] Todos os filtros afetados: all, pending, editable, waiting, correct, wrong, missed
