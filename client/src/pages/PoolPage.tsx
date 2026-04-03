@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  AlertTriangle,
   ArrowLeft,
   Calendar,
   Check,
@@ -40,12 +41,14 @@ import {
   Copy,
   Crown,
   Download,
+  Filter,
   Info,
   Loader2,
   Lock,
   LogOut,
   Medal,
   MoreHorizontal,
+  PenLine,
   RefreshCw,
   ScrollText,
   Settings,
@@ -275,6 +278,11 @@ export default function PoolPage() {
 
   const [showAllGames, setShowAllGames] = useState(false);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(() => new Set([activePhaseKey ?? ""]));
+
+  // ── Filtros de palpite na aba Jogos ──────────────────────────────────────────
+  type FilterKey = "all" | "pending" | "editable" | "waiting" | "correct" | "wrong" | "missed";
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
+  const [showFilters, setShowFilters] = useState(false);
   // Estado do modal X1
   const [x1Modal, setX1Modal] = useState<{ open: boolean; opponentId: number; opponentName: string } | null>(null);
 
@@ -381,6 +389,46 @@ export default function PoolPage() {
     const open = isGameOpen(g.matchDate);
     return open && g.status !== "finished" && !betsByGame.has(g.id);
   }).length;
+
+  // ── Classificação de jogos para filtros ───────────────────────────────────────
+  type GameFilterKey = "all" | "pending" | "editable" | "waiting" | "correct" | "wrong" | "missed";
+  const classifyGameForFilter = (g: typeof games[0]): GameFilterKey => {
+    const deadline = new Date(new Date(g.matchDate).getTime() - deadlineMinutes * 60 * 1000);
+    const deadlinePassed = Date.now() > deadline.getTime();
+    const myBet = betsByGame.get(g.id);
+    if (!myBet) {
+      return !deadlinePassed ? "pending" : "missed";
+    }
+    if (!deadlinePassed && myBet.resultType === "pending") return "editable";
+    if (myBet.resultType === "pending") return "waiting";
+    if (myBet.resultType === "exact" || myBet.resultType === "correct_result") return "correct";
+    return "wrong";
+  };
+
+  const filterCounts = useMemo(() => {
+    const c = { pending: 0, editable: 0, waiting: 0, correct: 0, wrong: 0, missed: 0 };
+    for (const g of games) {
+      const k = classifyGameForFilter(g);
+      if (k in c) c[k as keyof typeof c]++;
+    }
+    return c;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [games, myBetsItems, deadlineMinutes]);
+
+  const filterConfig: { key: GameFilterKey; label: string; count?: number; urgent?: boolean }[] = [
+    { key: "all", label: "Todos" },
+    { key: "pending", label: "Falta palpitar", count: filterCounts.pending, urgent: true },
+    { key: "editable", label: "Editáveis", count: filterCounts.editable },
+    { key: "waiting", label: "Aguardando", count: filterCounts.waiting },
+    { key: "correct", label: "Acertei", count: filterCounts.correct },
+    { key: "wrong", label: "Errei", count: filterCounts.wrong },
+    { key: "missed", label: "Sem palpite", count: filterCounts.missed },
+  ];
+
+  const applyGameFilter = (gameList: typeof games) => {
+    if (activeFilter === "all") return gameList;
+    return gameList.filter((g) => classifyGameForFilter(g) === activeFilter);
+  };
 
   /* Stats para o hero */
   const finishedGames = games.filter((g) => g.status === "finished").length;
@@ -645,6 +693,82 @@ export default function PoolPage() {
 
           {/* ══ ABA JOGOS ══ */}
           <TabsContent value="games" className="space-y-3 mt-0">
+
+            {/* ── Banner de urgência ── */}
+            {games.length > 0 && filterCounts.pending > 0 && activeFilter !== "pending" && (
+              <button
+                onClick={() => { setActiveFilter("pending"); setShowFilters(true); }}
+                className="w-full flex items-center gap-3 bg-[#FFB800]/10 border border-[#FFB800]/30 rounded-xl px-4 py-3 text-left hover:bg-[#FFB800]/15 transition-colors"
+              >
+                <AlertTriangle className="w-5 h-5 text-[#FFB800] shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[#FFB800]">
+                    {filterCounts.pending}{" "}
+                    {filterCounts.pending === 1 ? "jogo aguarda seu palpite" : "jogos aguardam seu palpite"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Toque para ver e palpitar agora</p>
+                </div>
+                <PenLine className="w-4 h-4 text-[#FFB800] shrink-0" />
+              </button>
+            )}
+
+            {/* ── Barra de filtros colapsável ── */}
+            {games.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-end">
+                  <button
+                    onClick={() => setShowFilters((v) => !v)}
+                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-all ${
+                      activeFilter !== "all"
+                        ? "bg-[#FFB800]/10 border-[#FFB800]/40 text-[#FFB800]"
+                        : "border-border/40 text-muted-foreground hover:text-foreground hover:border-border"
+                    }`}
+                  >
+                    <Filter className="w-3.5 h-3.5" />
+                    Filtrar
+                    {activeFilter !== "all" && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FFB800]" />
+                    )}
+                  </button>
+                </div>
+
+                {showFilters && (
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4">
+                    {filterConfig.map((f) => {
+                      const isActive = activeFilter === f.key;
+                      const hasBadge = (f.count ?? 0) > 0;
+                      return (
+                        <button
+                          key={f.key}
+                          onClick={() => setActiveFilter(f.key)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all shrink-0 ${
+                            isActive
+                              ? "bg-[#FFB800] text-[#0B0F1A]"
+                              : "bg-card border border-border/40 text-muted-foreground hover:text-foreground hover:border-border"
+                          }`}
+                        >
+                          {f.label}
+                          {hasBadge && (
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
+                                isActive
+                                  ? "bg-[#0B0F1A]/20 text-[#0B0F1A]"
+                                  : f.urgent
+                                  ? "bg-[#FF3B3B] text-white"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {f.count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {games.length === 0 ? (
               <div className="text-center py-16 text-muted-foreground">
                 <Calendar className="w-10 h-10 mx-auto mb-3 opacity-20" />
@@ -654,14 +778,16 @@ export default function PoolPage() {
               /* ── MODO FASES: accordion por fase ── */
               <div className="space-y-2">
                 {gamesByPhase.map(([phaseKey, phaseGames]) => {
+                  const filteredPhaseGames = applyGameFilter(phaseGames);
+                  if (filteredPhaseGames.length === 0) return null;
                   const label = allGamesHaveRound && phaseKey.startsWith("round_")
                     ? `Rodada ${phaseKey.replace("round_", "")}`
                     : (phaseLabels.get(phaseKey) ?? getPhaseLabel(phaseKey));
                   const isExpanded = expandedPhases.has(phaseKey);
-                  const hasLive = phaseGames.some((g) => g.status === "live");
-                  const hasOpen = phaseGames.some((g) => g.status === "scheduled" && isGameOpen(g.matchDate));
-                  const allFinished = phaseGames.every((g) => g.status === "finished");
-                  const pendingBets = phaseGames.filter((g) => {
+                  const hasLive = filteredPhaseGames.some((g) => g.status === "live");
+                  const hasOpen = filteredPhaseGames.some((g) => g.status === "scheduled" && isGameOpen(g.matchDate));
+                  const allFinished = filteredPhaseGames.every((g) => g.status === "finished");
+                  const pendingBets = filteredPhaseGames.filter((g) => {
                     const open = isGameOpen(g.matchDate);
                     return open && g.status !== "finished" && !betsByGame.has(g.id);
                   }).length;
@@ -723,7 +849,7 @@ export default function PoolPage() {
                       {/* Jogos da fase */}
                       {isExpanded && (
                         <div className="divide-y divide-border/20">
-                          {phaseGames.map((game) => {
+                          {filteredPhaseGames.map((game) => {
                             const myBet = betsByGame.get(game.id);
                             const open = isGameOpen(game.matchDate);
                             const finished = game.status === "finished";
@@ -760,7 +886,14 @@ export default function PoolPage() {
             ) : (
               /* ── MODO SIMPLES: lista com "mostrar mais" ── */
               <div className="space-y-3">
-                {(showAllGames ? games : games.slice(0, INITIAL_GAMES_SHOWN)).map((game) => {
+                {applyGameFilter(showAllGames ? games : games.slice(0, INITIAL_GAMES_SHOWN)).length === 0 && activeFilter !== "all" && (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <Filter className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                    <p className="text-sm">Nenhum jogo nesta categoria.</p>
+                    <button onClick={() => setActiveFilter("all")} className="text-xs text-primary mt-1 hover:underline">Ver todos</button>
+                  </div>
+                )}
+                {applyGameFilter(showAllGames ? games : games.slice(0, INITIAL_GAMES_SHOWN)).map((game) => {
                   const myBet = betsByGame.get(game.id);
                   const open = isGameOpen(game.matchDate);
                   const finished = game.status === "finished";
