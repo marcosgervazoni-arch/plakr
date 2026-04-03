@@ -17,7 +17,7 @@
  */
 
 import logger from "../logger";
-import { fetchFixtures, fetchTeams, fetchFixtureEvents, fetchFixtureStatistics, fetchFixturePredictions, ApiFootballFixture } from "./client";
+import { fetchFixtures, fetchTeams, fetchFixtureEvents, fetchFixtureStatistics, fetchFixturePredictions, fetchTeamRecentForm, ApiFootballFixture } from "./client";
 import { getDb } from "../db";
 import {
   platformSettings,
@@ -472,6 +472,14 @@ export async function syncFixturesForTournament(options: {
                     }
                   : null;
 
+                // Buscar forma recente dos dois times em paralelo (plano Pro: /fixtures?team=X&last=5&status=FT)
+                const homeTeamApiId = fixture.teams.home.id;
+                const awayTeamApiId = fixture.teams.away.id;
+                const [homeForm, awayForm] = await Promise.all([
+                  fetchTeamRecentForm(homeTeamApiId, 5).catch(() => []),
+                  fetchTeamRecentForm(awayTeamApiId, 5).catch(() => []),
+                ]);
+
                 const prediction = await buildAiPrediction({
                   homeTeam: fixture.teams.home.name,
                   awayTeam: fixture.teams.away.name,
@@ -479,6 +487,8 @@ export async function syncFixturesForTournament(options: {
                   matchDate: fixture.fixture.date,
                   apiPercent,
                   apiAdvice: apiPred?.advice ?? null,
+                  homeForm,
+                  awayForm,
                 });
 
                 // prediction é null quando a API não retornou probabilidades

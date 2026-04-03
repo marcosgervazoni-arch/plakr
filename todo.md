@@ -2567,3 +2567,10 @@
 - [x] Corrigido ai-analysis.ts: buildAiPrediction retorna null se API não retornar dados — sem fallback LLM
 - [x] sync.ts atualizado: só salva aiPrediction se prediction != null; loga warning caso contrário
 - [x] LLM redige apenas o texto narrativo com base nos dados reais da API (probabilidades + advice)
+
+## Forma Recente + UI Análise Indisponível (03/04/2026)
+- [x] Investigado: homeForm/awayForm eram gerados pelo LLM (inventados) — removido
+- [x] Integrado fetchTeamRecentForm via /fixtures?team=X&last=5&status=FT (plano Pro)
+- [x] sync.ts busca forma recente dos dois times em paralelo antes de gerar aiPrediction
+- [x] AiPredictionContext recebe homeForm/awayForm e os inclui no resultado
+- [x] UI exibe "Análise indisponível" com mensagem clara quando aiPrediction for null

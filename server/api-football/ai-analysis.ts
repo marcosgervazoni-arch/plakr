@@ -246,6 +246,9 @@ export interface AiPredictionContext {
   // Probabilidades da API-Football (plano Pro — obrigatórias para exibir análise)
   apiPercent?: { home: number; draw: number; away: number } | null;
   apiAdvice?: string | null;
+  // Forma recente dos times (plano Pro — /fixtures?team=X&last=5&status=FT)
+  homeForm?: string[];
+  awayForm?: string[];
 }
 
 export interface AiPredictionResult {
@@ -310,8 +313,8 @@ Escreva apenas a análise, sem título.`;
     homeWin: home,
     draw,
     awayWin: away,
-    homeForm: [],
-    awayForm: [],
+    homeForm: ctx.homeForm ?? [],
+    awayForm: ctx.awayForm ?? [],
     aiRecommendation,
   };
 }

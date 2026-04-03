@@ -1935,22 +1935,16 @@ function GameCard({
                 )}
               </div>
             )}
-            {/* Fallback: painel vazio quando aiPrediction ainda não foi gerado */}
+            {/* Fallback: análise indisponível quando aiPrediction é null (API não retornou dados) */}
             {!finished && !game.aiPrediction && (
               <div className="bg-muted/20 rounded-xl p-4 flex flex-col items-center gap-2 border border-border/20">
-                <Sparkles className="w-4 h-4 text-primary/60 animate-pulse" />
-                <p className="text-xs text-muted-foreground text-center">Análise pré-jogo sendo preparada pela IA...</p>
-                <p className="text-[10px] text-muted-foreground/50 italic text-center">Disponível em breve.</p>
-              </div>
-            )}
-            {/* Fallback: aiSummary pré-jogo quando não há aiPrediction */}
-            {!finished && !game.aiPrediction && game.aiSummary && (
-              <div className="bg-muted/20 rounded-xl p-3 space-y-1.5">
-                <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> Análise pré-jogo
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-muted-foreground/50" />
+                  <p className="text-xs font-semibold text-muted-foreground/70">Análise indisponível</p>
+                </div>
+                <p className="text-[11px] text-muted-foreground/50 text-center leading-relaxed">
+                  Os dados desta partida ainda não estão disponíveis na API. A análise será gerada automaticamente após a sincronização.
                 </p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{game.aiSummary}</p>
-                <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA. Dado informativo — não é recomendação de aposta.</p>
               </div>
             )}
 

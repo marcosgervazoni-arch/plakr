@@ -411,3 +411,36 @@ export async function fetchFixturePredictions(
     return null; // endpoint pode não estar disponível no plano Free
   }
 }
+
+/**
+ * Busca os últimos N jogos de um time para extrair a forma recente (W/D/L).
+ * Endpoint: GET /fixtures?team={teamId}&last={n}&status=FT
+ * Consome 1 requisição. Disponível no plano Pro.
+ * Retorna array de "W", "D" ou "L" do mais recente ao mais antigo.
+ */
+export async function fetchTeamRecentForm(
+  teamId: number,
+  last = 5
+): Promise<string[]> {
+  try {
+    const data = await apiFootballRequest<any>("/fixtures", {
+      team: teamId,
+      last,
+      status: "FT",
+    });
+    const fixtures = data.response ?? [];
+    return fixtures.map((f: any) => {
+      const homeId = f.teams?.home?.id;
+      const homeGoals = f.goals?.home ?? 0;
+      const awayGoals = f.goals?.away ?? 0;
+      const isHome = homeId === teamId;
+      const teamGoals = isHome ? homeGoals : awayGoals;
+      const oppGoals = isHome ? awayGoals : homeGoals;
+      if (teamGoals > oppGoals) return "W";
+      if (teamGoals < oppGoals) return "L";
+      return "D";
+    });
+  } catch {
+    return [];
+  }
+}
