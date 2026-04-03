@@ -2482,3 +2482,8 @@
 - [x] Adicionar estado de progresso em memória no servidor (jobId, total, processed, errors)
 - [x] Endpoint getAiBackfillProgress para polling do progresso
 - [x] Frontend: barra de progresso em tempo real + botão único "Gerar todas as análises"
+
+## Melhoria — Geração automática semanal de análises pré-jogo + contador no admin
+- [x] Adicionar job semanal no cron.ts para gerar aiPrediction de todos os jogos futuros sem análise
+- [x] Endpoint getAiPendingCount para retornar contagem de jogos sem análise
+- [x] Badge "X jogos aguardando análise" no card de Análises Pré-Jogo no admin

@@ -972,4 +972,23 @@ export const integrationsRouter = router({
     .query(() => {
       return { ...aiBackfillJob };
     }),
+
+  getAiPendingCount: adminProcedure
+    .input(z.object({}))
+    .query(async () => {
+      const db = await getDb();
+      if (!db) return { count: 0 };
+      const now = new Date();
+      const rows = await db
+        .select({ id: gamesTable.id })
+        .from(gamesTable)
+        .where(
+          and(
+            isNull(gamesTable.aiPrediction),
+            sql`${gamesTable.status} = 'scheduled'`,
+            sql`${gamesTable.matchDate} > ${now}`
+          )
+        );
+      return { count: rows.length };
+    }),
 });

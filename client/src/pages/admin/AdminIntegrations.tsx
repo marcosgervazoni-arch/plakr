@@ -170,11 +170,13 @@ export default function AdminIntegrations() {
     {},
     { refetchInterval: (query) => (query.state.data?.status === "running" ? 2000 : false) }
   );
+  const { data: aiPendingData, refetch: refetchAiPending } = trpc.integrations.getAiPendingCount.useQuery({});
   const backfillAiMutation = trpc.integrations.backfillAiPredictions.useMutation({
     onSuccess: (data) => {
       if (data.started) {
         toast.success(data.message);
         refetchAiProgress();
+        refetchAiPending();
       } else {
         toast.info(data.message);
       }
@@ -935,16 +937,24 @@ export default function AdminIntegrations() {
                   <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Análises Pré-Jogo (IA)</p>
-                      {aiBackfillProgress?.status === "running" && (
-                        <span className="text-xs bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 font-medium animate-pulse">
-                          Em andamento
-                        </span>
-                      )}
-                      {aiBackfillProgress?.status === "done" && aiBackfillProgress.total > 0 && (
-                        <span className="text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full px-2 py-0.5 font-medium">
-                          Concluído
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {/* Badge de pendentes */}
+                        {aiBackfillProgress?.status !== "running" && aiPendingData && aiPendingData.count > 0 && (
+                          <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full px-2 py-0.5 font-medium">
+                            {aiPendingData.count} aguardando
+                          </span>
+                        )}
+                        {aiBackfillProgress?.status !== "running" && aiPendingData && aiPendingData.count === 0 && (
+                          <span className="text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full px-2 py-0.5 font-medium">
+                            Em dia
+                          </span>
+                        )}
+                        {aiBackfillProgress?.status === "running" && (
+                          <span className="text-xs bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 font-medium animate-pulse">
+                            Em andamento
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Gera análise pré-jogo com probabilidades e recomendação da IA para todos os jogos futuros que ainda não têm análise. O processamento ocorre em segundo plano.

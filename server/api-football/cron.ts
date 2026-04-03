@@ -22,9 +22,11 @@ import logger from "../logger";
 import { syncFixtures, syncResults } from "./sync";
 import { getDb } from "../db";
 import { tournaments, games as gamesTable } from "../../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { eq, isNull, and, sql } from "drizzle-orm";
 import { inferTournamentFormat, inferTournamentFormatFromPhases } from "../../shared/tournamentFormat";
-import { apiFootballRequest } from "./client";
+import { apiFootballRequest, fetchFixturePredictions } from "./client";
+import { buildAiPrediction } from "./ai-analysis";
+import { notifyOwner } from "../_core/notification";
 
 // ─── Helpers de agendamento ───────────────────────────────────────────────────
 
@@ -157,6 +159,98 @@ export function registerApiFootballCronJobs() {
     }
 
     logger.info(`[Cron][RecalcFormatos] Concluído: ${changed} torneios atualizados de ${apiLinked.length}`);
+  });
+
+  // Job 4: Gerar análises pré-jogo toda segunda-feira às 04:00 UTC
+  // Garante que novos jogos importados tenham aiPrediction disponível
+  // sem necessidade de ação manual do admin.
+  scheduleWeekly(1, 4, "gerarAnalisesPrejogo", async () => {
+    const db = await getDb();
+    if (!db) return;
+
+    const now = new Date();
+
+    // Buscar todos os jogos futuros sem análise
+    const pendingGames = await db
+      .select({
+        id: gamesTable.id,
+        externalId: gamesTable.externalId,
+        teamAName: gamesTable.teamAName,
+        teamBName: gamesTable.teamBName,
+        matchDate: gamesTable.matchDate,
+        tournamentId: gamesTable.tournamentId,
+      })
+      .from(gamesTable)
+      .where(
+        and(
+          isNull(gamesTable.aiPrediction),
+          sql`${gamesTable.status} = 'scheduled'`,
+          sql`${gamesTable.matchDate} > ${now}`
+        )
+      );
+
+    if (pendingGames.length === 0) {
+      logger.info("[Cron][AnalisesPrejogo] Nenhum jogo pendente");
+      return;
+    }
+
+    logger.info(`[Cron][AnalisesPrejogo] Iniciando geração para ${pendingGames.length} jogos`);
+
+    // Buscar nomes dos torneios
+    const tournamentIds = [...new Set(pendingGames.map(g => g.tournamentId))];
+    const tournamentRows = await db
+      .select({ id: tournaments.id, name: tournaments.name })
+      .from(tournaments)
+      .where(sql`${tournaments.id} IN (${sql.join(tournamentIds.map(id => sql`${id}`), sql`, `)})`);
+    const tournamentMap = Object.fromEntries(tournamentRows.map(t => [t.id, t.name]));
+
+    let processed = 0;
+    let errors = 0;
+
+    for (const game of pendingGames) {
+      try {
+        const fixtureId = game.externalId ? parseInt(game.externalId) : null;
+        let apiPercent: { home: number; draw: number; away: number } | null = null;
+        let apiAdvice: string | null = null;
+
+        if (fixtureId) {
+          const apiPred = await fetchFixturePredictions(fixtureId).catch(() => null);
+          if (apiPred?.percent) {
+            apiPercent = {
+              home: parseInt(apiPred.percent.home) || 0,
+              draw: parseInt(apiPred.percent.draw) || 0,
+              away: parseInt(apiPred.percent.away) || 0,
+            };
+            apiAdvice = apiPred.advice ?? null;
+          }
+        }
+
+        const prediction = await buildAiPrediction({
+          homeTeam: game.teamAName ?? "Time A",
+          awayTeam: game.teamBName ?? "Time B",
+          competition: tournamentMap[game.tournamentId] ?? "Campeonato",
+          matchDate: game.matchDate?.toISOString() ?? new Date().toISOString(),
+          apiPercent,
+          apiAdvice,
+        });
+
+        await db.update(gamesTable).set({ aiPrediction: prediction }).where(eq(gamesTable.id, game.id));
+        processed++;
+      } catch (err) {
+        errors++;
+        logger.error({ err }, `[Cron][AnalisesPrejogo] Erro no jogo ${game.id}`);
+      }
+    }
+
+    logger.info(`[Cron][AnalisesPrejogo] Concluído: ${processed} gerados, ${errors} erros`);
+
+    // Notificar o super admin se houve processamento
+    if (processed > 0) {
+      await notifyOwner({
+        title: "Análises pré-jogo geradas automaticamente",
+        content: `O job semanal gerou ${processed} análises pré-jogo${errors > 0 ? ` (${errors} erros)` : ""}. Todos os jogos futuros agora têm análise disponível.`,
+      }).catch(() => {});
+    }
   });
 
   logger.info("[ApiFootball][Cron] All API-Football cron jobs registered ✓");
