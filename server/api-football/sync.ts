@@ -461,7 +461,8 @@ export async function syncFixturesForTournament(options: {
           if (insertedId) {
             setImmediate(async () => {
               try {
-                // Tentar buscar probabilidades da API (pode não estar disponível no plano Free)
+                // Buscar probabilidades da API-Football (plano Pro: /predictions)
+                // Se a API não retornar dados, a análise não é gerada (nunca inventar)
                 const apiPred = await fetchFixturePredictions(fixture.fixture.id).catch(() => null);
                 const apiPercent = apiPred?.percent
                   ? {
@@ -480,10 +481,16 @@ export async function syncFixturesForTournament(options: {
                   apiAdvice: apiPred?.advice ?? null,
                 });
 
-                const db2 = await getDb();
-                if (db2) {
-                  await db2.update(games).set({ aiPrediction: prediction }).where(eq(games.id, insertedId));
-                  logger.info(`[ApiFootball] aiPrediction gerado para jogo ${insertedId} (${fixture.teams.home.name} × ${fixture.teams.away.name})`);
+                // prediction é null quando a API não retornou probabilidades
+                // Nesse caso não atualizamos o campo (mantém null no banco)
+                if (prediction) {
+                  const db2 = await getDb();
+                  if (db2) {
+                    await db2.update(games).set({ aiPrediction: prediction }).where(eq(games.id, insertedId));
+                    logger.info(`[ApiFootball] aiPrediction gerado para jogo ${insertedId} (${fixture.teams.home.name} × ${fixture.teams.away.name}) — fonte: API-Football`);
+                  }
+                } else {
+                  logger.warn(`[ApiFootball] Sem probabilidades da API para fixture ${fixture.fixture.id} — análise não gerada`);
                 }
               } catch (err) {
                 logger.error({ err }, `[ApiFootball] Erro ao gerar aiPrediction para fixture ${fixture.fixture.id}`);

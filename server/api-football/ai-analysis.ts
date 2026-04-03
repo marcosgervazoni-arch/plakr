@@ -243,7 +243,7 @@ export interface AiPredictionContext {
   awayTeam: string;
   competition: string;
   matchDate: string; // ISO string
-  // Probabilidades da API-Football (opcional — pode não estar disponível no plano Free)
+  // Probabilidades da API-Football (plano Pro — obrigatórias para exibir análise)
   apiPercent?: { home: number; draw: number; away: number } | null;
   apiAdvice?: string | null;
 }
@@ -260,114 +260,58 @@ export interface AiPredictionResult {
 /**
  * Gera o objeto aiPrediction para jogos pré-jogo.
  *
- * Estratégia:
- *  1. Se a API-Football retornou probabilidades, usa-as diretamente.
- *  2. Caso contrário, pede ao LLM para estimar probabilidades + forma + recomendação.
- *  3. Sempre gera o texto de recomendação via LLM para garantir qualidade.
+ * Regra crítica (plano Pro):
+ *  - As probabilidades SEMPRE vêm da API-Football (/predictions).
+ *  - O LLM é usado APENAS para redigir o texto narrativo da análise.
+ *  - Se a API não retornar probabilidades, retorna null (sem análise exibida).
+ *  - O LLM NUNCA estima ou inventa probabilidades.
  *
  * Salvo em games.aiPrediction.
  */
-export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPredictionResult> {
+export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPredictionResult | null> {
+  // Sem dados da API — não gera análise. Nunca inventar probabilidades.
+  if (!ctx.apiPercent) {
+    return null;
+  }
+
+  const { home, draw, away } = ctx.apiPercent;
   const dateStr = new Date(ctx.matchDate).toLocaleDateString("pt-BR", {
     day: "2-digit", month: "long", year: "numeric", timeZone: "America/Sao_Paulo",
   });
 
-  // Se temos probabilidades da API, usamos elas e só pedimos o texto ao LLM
-  if (ctx.apiPercent) {
-    const { home, draw, away } = ctx.apiPercent;
-
-    const prompt = `Escreva uma análise pré-jogo concisa para apostadores de bolão. Máximo 3 linhas. Tom de especialista esportivo brasileiro: direto, informativo, com personalidade — sem clichês. Mencione as probabilidades e dê uma dica de aposta. Sem emojis.
+  // LLM redige apenas o texto narrativo — com base nos dados reais da API
+  const prompt = `Escreva uma análise pré-jogo concisa para apostadores de bolão. Máximo 3 linhas. Tom de especialista esportivo brasileiro: direto, informativo, com personalidade — sem clichês. Mencione as probabilidades e dê uma dica de aposta. Sem emojis.
 
 Jogo: ${ctx.homeTeam} × ${ctx.awayTeam}
 Competição: ${ctx.competition}
 Data: ${dateStr}
-Probabilidades: ${ctx.homeTeam} vence ${home}% | Empate ${draw}% | ${ctx.awayTeam} vence ${away}%
+Probabilidades (fonte: API-Football): ${ctx.homeTeam} vence ${home}% | Empate ${draw}% | ${ctx.awayTeam} vence ${away}%
 ${ctx.apiAdvice ? `Conselho da API: ${ctx.apiAdvice}` : ""}
 
 Escreva apenas a análise, sem título.`;
 
-    let aiRecommendation = `${ctx.homeTeam} × ${ctx.awayTeam}: probabilidades apontam para ${home > away ? ctx.homeTeam : away > home ? ctx.awayTeam : "equilíbrio"}.`;
-    try {
-      const response = await invokeLLM({
-        messages: [
-          { role: "system", content: "Você é um analista esportivo brasileiro especializado em futebol. Escreve análises pré-jogo concisas e úteis para apostadores de bolão, sem exageros e sem emojis." },
-          { role: "user", content: prompt },
-        ],
-      });
-      const text = (response as any)?.choices?.[0]?.message?.content ?? "";
-      if (text.trim()) aiRecommendation = text.trim().slice(0, 400);
-    } catch { /* usa fallback */ }
-
-    return { homeWin: home, draw, awayWin: away, homeForm: [], awayForm: [], aiRecommendation };
-  }
-
-  // Sem dados da API: pede ao LLM probabilidades + forma + recomendação em JSON estruturado
-  const prompt = `Você é um analista de futebol brasileiro. Analise o confronto abaixo e retorne um JSON com:
-- homeWin: probabilidade de vitória do mandante (0-100, inteiro)
-- draw: probabilidade de empate (0-100, inteiro)
-- awayWin: probabilidade de vitória do visitante (0-100, inteiro)
-- homeForm: últimos 5 resultados do mandante como array de "W", "D" ou "L" (do mais recente ao mais antigo)
-- awayForm: últimos 5 resultados do visitante como array de "W", "D" ou "L"
-- aiRecommendation: análise de 2-3 linhas para apostadores, tom direto e informativo
-
-IMPORTANTE: homeWin + draw + awayWin deve somar exatamente 100.
-
-Jogo: ${ctx.homeTeam} × ${ctx.awayTeam}
-Competição: ${ctx.competition}
-Data: ${dateStr}`;
+  // Fallback de texto caso o LLM falhe — usa os dados reais da API
+  const favorite = home > away ? ctx.homeTeam : away > home ? ctx.awayTeam : "nenhum favorito claro";
+  let aiRecommendation = `${ctx.homeTeam} ${home}% | Empate ${draw}% | ${ctx.awayTeam} ${away}%. Favorito: ${favorite}.`;
+  if (ctx.apiAdvice) aiRecommendation += ` ${ctx.apiAdvice}.`;
 
   try {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "Você é um analista de futebol brasileiro. Responda APENAS com JSON válido, sem markdown, sem explicações." },
+        { role: "system", content: "Você é um analista esportivo brasileiro especializado em futebol. Escreve análises pré-jogo concisas e úteis para apostadores de bolão, com base nos dados fornecidos. Não inventa informações. Sem emojis." },
         { role: "user", content: prompt },
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "ai_prediction",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              homeWin: { type: "integer" },
-              draw: { type: "integer" },
-              awayWin: { type: "integer" },
-              homeForm: { type: "array", items: { type: "string" } },
-              awayForm: { type: "array", items: { type: "string" } },
-              aiRecommendation: { type: "string" },
-            },
-            required: ["homeWin", "draw", "awayWin", "homeForm", "awayForm", "aiRecommendation"],
-            additionalProperties: false,
-          },
-        },
-      },
     });
+    const text = (response as any)?.choices?.[0]?.message?.content ?? "";
+    if (text.trim()) aiRecommendation = text.trim().slice(0, 400);
+  } catch { /* usa fallback com dados reais */ }
 
-    const raw = (response as any)?.choices?.[0]?.message?.content ?? "{}";
-    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-
-    // Normalizar para garantir que soma = 100
-    const total = (parsed.homeWin ?? 0) + (parsed.draw ?? 0) + (parsed.awayWin ?? 0);
-    const normalize = (v: number) => total > 0 ? Math.round((v / total) * 100) : 33;
-
-    return {
-      homeWin: normalize(parsed.homeWin ?? 40),
-      draw: normalize(parsed.draw ?? 30),
-      awayWin: normalize(parsed.awayWin ?? 30),
-      homeForm: (parsed.homeForm ?? []).slice(0, 5),
-      awayForm: (parsed.awayForm ?? []).slice(0, 5),
-      aiRecommendation: (parsed.aiRecommendation ?? "").slice(0, 400),
-    };
-  } catch {
-    // Fallback neutro
-    return {
-      homeWin: 40,
-      draw: 30,
-      awayWin: 30,
-      homeForm: [],
-      awayForm: [],
-      aiRecommendation: `${ctx.homeTeam} recebe ${ctx.awayTeam} em jogo válido pelo ${ctx.competition}. Análise indisponível no momento.`,
-    };
-  }
+  return {
+    homeWin: home,
+    draw,
+    awayWin: away,
+    homeForm: [],
+    awayForm: [],
+    aiRecommendation,
+  };
 }

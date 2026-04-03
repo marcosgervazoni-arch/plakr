@@ -2540,3 +2540,30 @@
 - [x] Fix: nome da fase "regular_season" traduzido via formatPhaseLabel()
 - [x] Add: pontuação total (+N pts) + descrição do resultado em jogos finalizados
 - [x] Fix: copy emocional com posição dinâmica (abaixo da pontuação ou do palpite)
+
+## Card Stories — Redesign via Modelo Visual (pendente)
+- [ ] Gerva cria 1 modelo base do card Stories (Canva, Figma ou imagem anotada) no formato 9:16 com os elementos posicionados conforme desejado
+- [ ] Gerva envia o modelo para que o layout seja reproduzido fielmente no código do canvas (ShareCard.tsx)
+- [ ] Aplicar variações de cor/emoji/copy nos outros 4 estados (Acerto Exato, Resultado Correto, Errou, Sem Palpite) mantendo a estrutura do modelo base
+
+## Stripe — Ativação em Produção (pendente)
+- [ ] Concluir verificação KYC no painel do Stripe (dashboard.stripe.com) — identidade e dados bancários
+- [ ] Obter as chaves de produção (sk_live_ e pk_live_) após aprovação do Stripe
+- [ ] Inserir as chaves live em Settings → Payment no painel do Manus
+- [ ] Testar um pagamento real com valor mínimo (acima de R$ 0,50) para confirmar o fluxo completo
+
+## Bug: Estatísticas de Probabilidade Incorretas (03/04/2026)
+- [ ] Investigar origem das probabilidades (Grêmio 50%/50%/0%, Mirassol 10%/45%/45%)
+- [ ] Corrigir lógica de geração/busca das probabilidades de vitória
+- [ ] Garantir que os percentuais reflitam dados reais ou estimativas razoáveis
+
+## Diretrizes Registradas — API-Football (03/04/2026)
+- Plano contratado: **API-Football Pro** (não Free)
+- Todas as informações de jogo (probabilidades, estatísticas, forma recente) devem vir **exclusivamente da API-Football**
+- O LLM só deve ser usado para redigir o texto da análise, alimentado pelos dados reais da API — nunca para estimar ou inventar dados
+
+## Bug: Análises e Probabilidades sem Base em Dados Reais (03/04/2026)
+- [x] Auditado: /predictions (plano Pro) retorna percent.home/draw/away + advice
+- [x] Corrigido ai-analysis.ts: buildAiPrediction retorna null se API não retornar dados — sem fallback LLM
+- [x] sync.ts atualizado: só salva aiPrediction se prediction != null; loga warning caso contrário
+- [x] LLM redige apenas o texto narrativo com base nos dados reais da API (probabilidades + advice)
