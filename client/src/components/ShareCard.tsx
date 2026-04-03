@@ -28,10 +28,15 @@ export interface ShareCardData {
 interface UseShareCardReturn {
   cardRef: React.RefObject<HTMLDivElement | null>;
   captureImage: () => Promise<string | null>;
+  captureBlob: () => Promise<Blob | null>;
   downloadImage: (filename?: string) => Promise<void>;
+  downloadImageFromBlob: (blob: Blob, filename?: string) => Promise<void>;
   shareToInstagram: () => Promise<void>;
+  shareToInstagramFromBlob: (blob: Blob) => Promise<void>;
   shareToWhatsApp: (text: string) => Promise<void>;
+  shareToWhatsAppFromBlob: (blob: Blob, text: string) => Promise<void>;
   shareToOthers: (text: string) => Promise<void>;
+  shareToOthersFromBlob: (blob: Blob, text: string) => Promise<void>;
 }
 
 export function useShareCard(): UseShareCardReturn {
@@ -193,7 +198,65 @@ export function useShareCard(): UseShareCardReturn {
     navigator.clipboard?.writeText(text);
   }, [captureBlob]);
 
-  return { cardRef, captureImage, downloadImage, shareToInstagram, shareToWhatsApp, shareToOthers };
+  // Variantes que recebem um Blob já capturado (evitam recaptura do canvas)
+  const downloadImageFromBlob = useCallback(async (blob: Blob, filename = "plakr-card.png") => {
+    if (typeof window !== "undefined" && "showSaveFilePicker" in window) {
+      try {
+        const handle = await (window as any).showSaveFilePicker({ suggestedName: filename, types: [{ description: "Imagem PNG", accept: { "image/png": [".png"] } }] });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      } catch (e: any) { if (e?.name === "AbortError") return; }
+    }
+    const blobUrl = URL.createObjectURL(blob);
+    const newTab = window.open(blobUrl, "_blank");
+    if (newTab) { setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000); return; }
+    const link = document.createElement("a");
+    link.href = blobUrl; link.download = filename; link.style.display = "none";
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5_000);
+  }, []);
+
+  const shareToInstagramFromBlob = useCallback(async (blob: Blob) => {
+    const file = new File([blob], "plakr-card.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Meu palpite no Plakr!" }); return; }
+      catch (e: any) { if (e?.name === "AbortError") return; }
+    }
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl; link.download = "plakr-card.png"; link.style.display = "none";
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    setTimeout(() => { URL.revokeObjectURL(blobUrl); window.open("https://www.instagram.com/stories/create", "_blank"); }, 800);
+  }, []);
+
+  const shareToWhatsAppFromBlob = useCallback(async (blob: Blob, text: string) => {
+    const file = new File([blob], "plakr-card.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" }); return; }
+      catch (e: any) { if (e?.name === "AbortError") return; }
+    }
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl; link.download = "plakr-card.png"; link.style.display = "none";
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    setTimeout(() => { URL.revokeObjectURL(blobUrl); window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank"); }, 800);
+  }, []);
+
+  const shareToOthersFromBlob = useCallback(async (blob: Blob, text: string) => {
+    const file = new File([blob], "plakr-card.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], text, title: "Plakr! — Bolão Esportivo" }); return; }
+      catch (e: any) { if (e?.name === "AbortError") return; }
+    } else if (navigator.share) {
+      try { await navigator.share({ text, title: "Plakr! — Bolão Esportivo" }); return; }
+      catch (e: any) { if (e?.name === "AbortError") return; }
+    }
+    navigator.clipboard?.writeText(text);
+  }, []);
+
+  return { cardRef, captureImage, captureBlob, downloadImage, downloadImageFromBlob, shareToInstagram, shareToInstagramFromBlob, shareToWhatsApp, shareToWhatsAppFromBlob, shareToOthers, shareToOthersFromBlob };
 }
 
 /**

@@ -1412,6 +1412,7 @@ function GameCard({
   const [shareOpen, setShareOpen] = useState(false);
   const [shareVisible, setShareVisible] = useState(false); // controla animação slide-up
   const [cardPreviewUrl, setCardPreviewUrl] = useState<string | null>(null);
+  const [cardPreviewBlob, setCardPreviewBlob] = useState<Blob | null>(null);
   const [cardPreviewLoading, setCardPreviewLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharingInstagram, setIsSharingInstagram] = useState(false);
@@ -1452,6 +1453,7 @@ function GameCard({
       // Limpa a URL ao fechar para não vazar memória
       if (cardPreviewUrl) URL.revokeObjectURL(cardPreviewUrl);
       setCardPreviewUrl(null);
+      setCardPreviewBlob(null);
       return;
     }
     if (!(hasBet || finished)) return;
@@ -1460,8 +1462,11 @@ function GameCard({
     // Aguarda o ShareCardVisual estar montado antes de capturar
     const timer = setTimeout(async () => {
       try {
-        const url = await captureImage();
-        if (!cancelled && url) setCardPreviewUrl(url);
+        const blob = await captureBlob();
+        if (!cancelled && blob) {
+          setCardPreviewBlob(blob);
+          setCardPreviewUrl(URL.createObjectURL(blob));
+        }
       } catch { /* silencioso */ } finally {
         if (!cancelled) setCardPreviewLoading(false);
       }
@@ -1476,7 +1481,7 @@ function GameCard({
     { enabled: analysisOpen && finished && hasBet, staleTime: 10 * 60 * 1000 }
   );
   // Hook de compartilhamento com imagem
-  const { cardRef: shareCardRef, captureImage, downloadImage, shareToInstagram, shareToWhatsApp, shareToOthers } = useShareCard();
+  const { cardRef: shareCardRef, captureBlob, captureImage, downloadImage, downloadImageFromBlob, shareToInstagram, shareToInstagramFromBlob, shareToWhatsApp, shareToWhatsAppFromBlob, shareToOthers, shareToOthersFromBlob } = useShareCard();
   const shareCardData = {
     teamAName: game.teamAName ?? "Time A",
     teamBName: game.teamBName ?? "Time B",
@@ -1517,19 +1522,24 @@ function GameCard({
 
   const handleShareWhatsApp = async () => {
     setIsSharingWhatsApp(true);
-    try { await shareToWhatsApp(shareText); } finally { setIsSharingWhatsApp(false); }
+    try {
+      if (cardPreviewBlob) await shareToWhatsAppFromBlob(cardPreviewBlob, shareText);
+      else await shareToWhatsApp(shareText);
+    } finally { setIsSharingWhatsApp(false); }
   };
   const handleShareInstagram = async () => {
     setIsSharingInstagram(true);
-    try { await shareToInstagram(); } finally { setIsSharingInstagram(false); }
+    try {
+      if (cardPreviewBlob) await shareToInstagramFromBlob(cardPreviewBlob);
+      else await shareToInstagram();
+    } finally { setIsSharingInstagram(false); }
   };
   const handleDownloadImage = async () => {
     setIsDownloading(true);
     try {
       const filename = `plakr-${(game.teamAName ?? "time-a").toLowerCase().replace(/\s+/g, "-")}-vs-${(game.teamBName ?? "time-b").toLowerCase().replace(/\s+/g, "-")}.png`;
-      await downloadImage(filename);
-      // Não mostra toast — o download abre diálogo nativo (File System Access API) ou nova aba
-      // O usuário vê o resultado diretamente sem precisar de confirmação via toast
+      if (cardPreviewBlob) await downloadImageFromBlob(cardPreviewBlob, filename);
+      else await downloadImage(filename);
     } catch {
       toast.error("Não foi possível baixar a imagem.");
     } finally { setIsDownloading(false); }
@@ -1540,7 +1550,10 @@ function GameCard({
   };
   const handleShareOthers = async () => {
     setIsSharingOthers(true);
-    try { await shareToOthers(shareText); } finally { setIsSharingOthers(false); }
+    try {
+      if (cardPreviewBlob) await shareToOthersFromBlob(cardPreviewBlob, shareText);
+      else await shareToOthers(shareText);
+    } finally { setIsSharingOthers(false); }
   };
 
   return (

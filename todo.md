@@ -2507,3 +2507,8 @@
 - [x] Gesto swipe-down para fechar o bottom-sheet (threshold 80px)
 - [x] Preview do card visual (thumbnail html2canvas) dentro do modal antes de compartilhar
 - [x] Backdrop com fade-in/fade-out sincronizado com a animação do painel
+
+## Melhoria — Reutilizar imagem do preview no compartilhamento (03/04/2026)
+- [x] Adaptar ações de compartilhamento para usar o Blob do preview já capturado (evitar recaptura dupla do canvas)
+- [x] Adicionadas funções *FromBlob no useShareCard (downloadImageFromBlob, shareToInstagramFromBlob, shareToWhatsAppFromBlob, shareToOthersFromBlob)
+- [x] GameCard armazena cardPreviewBlob e usa as funções *FromBlob com fallback para recaptura se blob não disponível
