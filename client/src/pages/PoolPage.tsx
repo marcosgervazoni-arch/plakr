@@ -1515,7 +1515,7 @@ function GameCard({
         )}
 
         {/* Barra de ações — Compartilhar + Ver análise */}
-        {(hasBet || finished) && (
+        {(hasBet || finished || !finished) && (
           <div className="mt-3 border-t border-border/20 pt-2 flex items-center justify-between">
             <button
               onClick={() => setShareOpen((v) => !v)}
@@ -1622,7 +1622,7 @@ function GameCard({
           <div className="mt-2 border-t border-border/20 pt-3 space-y-4">
 
             {/* PRÉ-JOGO: probabilidades + últimos 5 jogos + análise da IA */}
-            {!finished && game.aiPrediction && (
+            {!finished && game.aiPrediction && game.aiPrediction.homeWin !== undefined && (
               <div className="space-y-3">
                 {/* Barra tripartida de probabilidade */}
                 <div className="space-y-1.5">
@@ -1676,6 +1676,14 @@ function GameCard({
                     <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA. Dado informativo — não é recomendação de aposta.</p>
                   </div>
                 )}
+              </div>
+            )}
+            {/* Fallback: painel vazio quando aiPrediction ainda não foi gerado */}
+            {!finished && !game.aiPrediction && (
+              <div className="bg-muted/20 rounded-xl p-4 flex flex-col items-center gap-2 border border-border/20">
+                <Sparkles className="w-4 h-4 text-primary/60 animate-pulse" />
+                <p className="text-xs text-muted-foreground text-center">Análise pré-jogo sendo preparada pela IA...</p>
+                <p className="text-[10px] text-muted-foreground/50 italic text-center">Disponível em breve.</p>
               </div>
             )}
             {/* Fallback: aiSummary pré-jogo quando não há aiPrediction */}

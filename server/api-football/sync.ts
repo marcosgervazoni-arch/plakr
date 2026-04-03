@@ -17,7 +17,7 @@
  */
 
 import logger from "../logger";
-import { fetchFixtures, fetchTeams, fetchFixtureEvents, fetchFixtureStatistics, ApiFootballFixture } from "./client";
+import { fetchFixtures, fetchTeams, fetchFixtureEvents, fetchFixtureStatistics, fetchFixturePredictions, ApiFootballFixture } from "./client";
 import { getDb } from "../db";
 import {
   platformSettings,
@@ -48,6 +48,7 @@ import {
   generateGameSummary,
   generateGameNarration,
   generateBetAnalysis,
+  buildAiPrediction,
 } from "./ai-analysis";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -437,7 +438,7 @@ export async function syncFixturesForTournament(options: {
         const isFinished = FINISHED_STATUSES.includes(fixtureStatus);
         const gameStatus = isFinished ? "finished" : "scheduled";
 
-        await db.insert(games).values({
+        const [insertedGame] = await db.insert(games).values({
           tournamentId: options.tournamentId,
           externalId,
           teamAName: fixture.teams.home.name,
@@ -453,6 +454,43 @@ export async function syncFixturesForTournament(options: {
           scoreB: isFinished ? (fixture.score.fulltime.away ?? undefined) : undefined,
         });
         gamesCreated++;
+
+        // Gerar aiPrediction para jogos futuros (fire-and-forget)
+        if (!isFinished) {
+          const insertedId = (insertedGame as any)?.insertId;
+          if (insertedId) {
+            setImmediate(async () => {
+              try {
+                // Tentar buscar probabilidades da API (pode não estar disponível no plano Free)
+                const apiPred = await fetchFixturePredictions(fixture.fixture.id).catch(() => null);
+                const apiPercent = apiPred?.percent
+                  ? {
+                      home: parseInt(apiPred.percent.home) || 0,
+                      draw: parseInt(apiPred.percent.draw) || 0,
+                      away: parseInt(apiPred.percent.away) || 0,
+                    }
+                  : null;
+
+                const prediction = await buildAiPrediction({
+                  homeTeam: fixture.teams.home.name,
+                  awayTeam: fixture.teams.away.name,
+                  competition: fixture.league.name,
+                  matchDate: fixture.fixture.date,
+                  apiPercent,
+                  apiAdvice: apiPred?.advice ?? null,
+                });
+
+                const db2 = await getDb();
+                if (db2) {
+                  await db2.update(games).set({ aiPrediction: prediction }).where(eq(games.id, insertedId));
+                  logger.info(`[ApiFootball] aiPrediction gerado para jogo ${insertedId} (${fixture.teams.home.name} × ${fixture.teams.away.name})`);
+                }
+              } catch (err) {
+                logger.error({ err }, `[ApiFootball] Erro ao gerar aiPrediction para fixture ${fixture.fixture.id}`);
+              }
+            });
+          }
+        }
       }
     }
   } catch (err) {

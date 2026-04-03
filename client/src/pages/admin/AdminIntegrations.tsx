@@ -30,6 +30,7 @@ import {
   XOctagon,
   PackagePlus,
   ListChecks,
+  Sparkles,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useState } from "react";
@@ -160,6 +161,18 @@ export default function AdminIntegrations() {
         toast.success(`Todos os ${data.total} torneios já estão com formato correto`);
       }
       refetchTournaments();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  // ─── Backfill de Análises Pré-Jogo ────────────────────────────────────────────
+  const backfillAiMutation = trpc.integrations.backfillAiPredictions.useMutation({
+    onSuccess: (data) => {
+      if (data.processed > 0) {
+        toast.success(`${data.processed} análises geradas${data.errors > 0 ? ` (${data.errors} erros)` : ''}`);
+      } else {
+        toast.success(data.message);
+      }
     },
     onError: (e: { message: string }) => toast.error(e.message),
   });
@@ -909,6 +922,34 @@ export default function AdminIntegrations() {
                         <p>✅ {backfillMutation.data.succeeded} processados com sucesso</p>
                         {backfillMutation.data.failed > 0 && <p>⚠️ {backfillMutation.data.failed} falhas</p>}
                         <p className="text-muted-foreground/70">{backfillMutation.data.requestsUsed} requisições usadas</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Backfill de Análises Pré-Jogo */}
+                  <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Análises Pré-Jogo (IA)</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Gera análise pré-jogo com probabilidades e recomendação da IA para jogos futuros que ainda não têm análise. Processa em lotes de 20.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 text-xs"
+                      disabled={backfillAiMutation.isPending}
+                      onClick={() => backfillAiMutation.mutate({ batchSize: 20 })}
+                    >
+                      {backfillAiMutation.isPending ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Gerando análises...</>
+                      ) : (
+                        <><Sparkles className="h-3 w-3" /> Gerar análises pré-jogo</>
+                      )}
+                    </Button>
+                    {backfillAiMutation.data && (
+                      <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 space-y-0.5">
+                        <p>{backfillAiMutation.data.message}</p>
                       </div>
                     )}
                   </div>

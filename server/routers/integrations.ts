@@ -11,6 +11,9 @@ import { getDb } from "../db";
 import { platformSettings, apiSyncLog, apiQuotaTracker, tournaments, games as gamesTable } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament, backfillGameData, getBackfillPendingCount } from "../api-football/sync";
+import { buildAiPrediction } from "../api-football/ai-analysis";
+import { fetchFixturePredictions } from "../api-football/client";
+import { and, isNull, lt, sql } from "drizzle-orm";
 import { fetchAccountStatus, apiFootballRequest, AccountSuspendedError } from "../api-football/client";
 import { Err } from "../errors";
 import { getPhaseLabel } from "../../shared/phaseNames";
@@ -824,5 +827,93 @@ export const integrationsRouter = router({
         triggeredByUserId: ctx.user.id,
       });
       return result;
+    }),
+
+  /**
+   * Gera aiPrediction para todos os jogos futuros que ainda não têm análise pré-jogo.
+   * Processa em lotes para não sobrecarregar a API de IA.
+   */
+  backfillAiPredictions: adminProcedure
+    .input(z.object({ batchSize: z.number().int().min(1).max(50).default(20) }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw Err.internal("DB unavailable");
+
+      logger.info(`[BackfillAI] Admin ${ctx.user.id} triggered aiPrediction backfill (batchSize=${input.batchSize})`);
+
+      const now = new Date();
+
+      // Buscar jogos futuros sem aiPrediction, vinculados a torneios com API-Football
+      const pendingGames = await db
+        .select({
+          id: gamesTable.id,
+          externalId: gamesTable.externalId,
+          teamAName: gamesTable.teamAName,
+          teamBName: gamesTable.teamBName,
+          matchDate: gamesTable.matchDate,
+          tournamentId: gamesTable.tournamentId,
+        })
+        .from(gamesTable)
+        .where(
+          and(
+            isNull(gamesTable.aiPrediction),
+            sql`${gamesTable.status} = 'scheduled'`,
+            sql`${gamesTable.matchDate} > ${now}`,
+          )
+        )
+        .limit(input.batchSize);
+
+      if (pendingGames.length === 0) {
+        return { processed: 0, errors: 0, message: "Nenhum jogo pendente encontrado" };
+      }
+
+      // Buscar nomes dos torneios para contexto
+      const tournamentIds = [...new Set(pendingGames.map(g => g.tournamentId))];
+      const tournamentRows = await db
+        .select({ id: tournaments.id, name: tournaments.name })
+        .from(tournaments)
+        .where(sql`${tournaments.id} IN (${sql.join(tournamentIds.map(id => sql`${id}`), sql`, `)})`);
+      const tournamentMap = Object.fromEntries(tournamentRows.map(t => [t.id, t.name]));
+
+      let processed = 0;
+      let errors = 0;
+
+      for (const game of pendingGames) {
+        try {
+          const fixtureId = game.externalId ? parseInt(game.externalId) : null;
+          let apiPercent: { home: number; draw: number; away: number } | null = null;
+          let apiAdvice: string | null = null;
+
+          if (fixtureId) {
+            const apiPred = await fetchFixturePredictions(fixtureId).catch(() => null);
+            if (apiPred?.percent) {
+              apiPercent = {
+                home: parseInt(apiPred.percent.home) || 0,
+                draw: parseInt(apiPred.percent.draw) || 0,
+                away: parseInt(apiPred.percent.away) || 0,
+              };
+              apiAdvice = apiPred.advice ?? null;
+            }
+          }
+
+          const prediction = await buildAiPrediction({
+            homeTeam: game.teamAName ?? "Time A",
+            awayTeam: game.teamBName ?? "Time B",
+            competition: tournamentMap[game.tournamentId] ?? "Campeonato",
+            matchDate: game.matchDate?.toISOString() ?? new Date().toISOString(),
+            apiPercent,
+            apiAdvice,
+          });
+
+          await db.update(gamesTable).set({ aiPrediction: prediction }).where(sql`${gamesTable.id} = ${game.id}`);
+          processed++;
+          logger.info(`[BackfillAI] aiPrediction gerado para jogo ${game.id} (${game.teamAName} × ${game.teamBName})`);
+        } catch (err) {
+          errors++;
+          logger.error({ err }, `[BackfillAI] Erro ao gerar aiPrediction para jogo ${game.id}`);
+        }
+      }
+
+      return { processed, errors, message: `${processed} jogos processados, ${errors} erros` };
     }),
 });

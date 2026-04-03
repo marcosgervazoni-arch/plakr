@@ -2468,3 +2468,11 @@
 - [x] Cron usa 3 estratégias: ID conhecido → rounds da API → fases no banco
 - [x] KNOWN_LEAGUE_FORMATS expandido com todos os 26 campeonatos estaduais brasileiros
 - [x] Campeonatos estaduais: Paulista, Gaúcho, Carioca, Mineiro, Baiano, Paranaense, Pernambucano, Cearense, Goiano, Catarinense, Capixaba e demais 15 estados
+
+## Bug — Análise pré-jogo no GameCard
+- [x] Bug 1: botão "Ver análise" só aparece após o usuário salvar um palpite (deveria aparecer sempre para jogos não iniciados)
+- [x] Bug 2: painel de análise expande vazio (conteúdo da IA não carrega / endpoint retorna erro)
+- [x] Implementar buildAiPrediction no ai-analysis.ts (probabilidades + forma + recomendação via LLM)
+- [x] Adicionar endpoint backfillAiPredictions no integrations.ts para gerar análises em lote
+- [x] Adicionar botão "Gerar análises pré-jogo" no Admin → Integrações → Reprocessamento
+- [x] Fallback gracioso quando aiPrediction é null: mensagem "Análise sendo preparada..."
