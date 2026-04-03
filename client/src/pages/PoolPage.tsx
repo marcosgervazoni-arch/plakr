@@ -1408,19 +1408,75 @@ function GameCard({
   game, myBet, open, finished, live, betA, betB, hasBet, poolId,
   betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition, showPhaseLabel,
 }: GameCardProps) {
-   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareVisible, setShareVisible] = useState(false); // controla animação slide-up
+  const [cardPreviewUrl, setCardPreviewUrl] = useState<string | null>(null);
+  const [cardPreviewLoading, setCardPreviewLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharingInstagram, setIsSharingInstagram] = useState(false);
   const [isSharingWhatsApp, setIsSharingWhatsApp] = useState(false);
   const [isSharingOthers, setIsSharingOthers] = useState(false);
+  // Swipe-down para fechar
+  const swipePanelRef = useRef<HTMLDivElement | null>(null);
+  const swipeStartY = useRef<number | null>(null);
+  const swipeDeltaY = useRef(0);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const handleSwipeStart = (e: React.TouchEvent) => {
+    swipeStartY.current = e.touches[0].clientY;
+    swipeDeltaY.current = 0;
+  };
+  const handleSwipeMove = (e: React.TouchEvent) => {
+    if (swipeStartY.current === null) return;
+    const delta = e.touches[0].clientY - swipeStartY.current;
+    if (delta > 0) { swipeDeltaY.current = delta; setSwipeOffset(delta); }
+  };
+  const handleSwipeEnd = () => {
+    if (swipeDeltaY.current > 80) { closeShare(); }
+    else { setSwipeOffset(0); }
+    swipeStartY.current = null;
+  };
+  // Abrir/fechar com animação
+  const openShare = () => {
+    setShareOpen(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => setShareVisible(true)));
+  };
+  const closeShare = () => {
+    setShareVisible(false);
+    setSwipeOffset(0);
+    setTimeout(() => setShareOpen(false), 300);
+  };
+  // Gera preview do card quando o modal de compartilhamento abre
+  useEffect(() => {
+    if (!shareOpen) {
+      // Limpa a URL ao fechar para não vazar memória
+      if (cardPreviewUrl) URL.revokeObjectURL(cardPreviewUrl);
+      setCardPreviewUrl(null);
+      return;
+    }
+    if (!(hasBet || finished)) return;
+    let cancelled = false;
+    setCardPreviewLoading(true);
+    // Aguarda o ShareCardVisual estar montado antes de capturar
+    const timer = setTimeout(async () => {
+      try {
+        const url = await captureImage();
+        if (!cancelled && url) setCardPreviewUrl(url);
+      } catch { /* silencioso */ } finally {
+        if (!cancelled) setCardPreviewLoading(false);
+      }
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shareOpen]);
+
   // Busca análise do palpite apenas quando o painel é aberto e o jogo está finalizado
   const { data: betAnalysisText, isLoading: betAnalysisLoading } = trpc.pools.getBetAnalysis.useQuery(
     { gameId: game.id, poolId },
     { enabled: analysisOpen && finished && hasBet, staleTime: 10 * 60 * 1000 }
   );
   // Hook de compartilhamento com imagem
-  const { cardRef: shareCardRef, downloadImage, shareToInstagram, shareToWhatsApp, shareToOthers } = useShareCard();
+  const { cardRef: shareCardRef, captureImage, downloadImage, shareToInstagram, shareToWhatsApp, shareToOthers } = useShareCard();
   const shareCardData = {
     teamAName: game.teamAName ?? "Time A",
     teamBName: game.teamBName ?? "Time B",
@@ -1672,7 +1728,7 @@ function GameCard({
         {(hasBet || finished || !finished) && (
           <div className="mt-3 border-t border-border/20 pt-2 flex items-center justify-between">
             <button
-              onClick={() => setShareOpen((v) => !v)}
+              onClick={() => { if (shareOpen) closeShare(); else openShare(); }}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-muted/30"
             >
               <Share2 className="w-3.5 h-3.5" />
@@ -1695,39 +1751,73 @@ function GameCard({
         {shareOpen && (finished || hasBet) && createPortal(
           <div
             style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
-            onClick={(e) => { if (e.target === e.currentTarget) setShareOpen(false); }}
+            onClick={(e) => { if (e.target === e.currentTarget) closeShare(); }}
           >
             {/* Backdrop opaco */}
             <div
-              style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 0 }}
-              onClick={() => setShareOpen(false)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'rgba(0,0,0,0.85)',
+                zIndex: 0,
+                opacity: shareVisible ? 1 : 0,
+                transition: 'opacity 0.3s ease',
+              }}
+              onClick={() => closeShare()}
             />
-            <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '24rem', margin: '0 auto' }} className="bg-card border border-border/40 rounded-t-2xl p-5 space-y-4 shadow-2xl">
-              {/* Handle */}
-              <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto sm:hidden" />
+            <div
+              ref={swipePanelRef}
+              onTouchStart={handleSwipeStart}
+              onTouchMove={handleSwipeMove}
+              onTouchEnd={handleSwipeEnd}
+              style={{
+                position: 'relative',
+                zIndex: 1,
+                width: '100%',
+                maxWidth: '24rem',
+                margin: '0 auto',
+                transform: `translateY(${shareVisible ? swipeOffset : '100%'}px)`,
+                transition: swipeOffset > 0 ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+                opacity: shareVisible ? 1 : 0,
+              }}
+              className="bg-card border border-border/40 rounded-t-2xl p-5 space-y-4 shadow-2xl"
+            >
+              {/* Handle drag indicator */}
+              <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto" />
               {/* Header */}
               <div className="text-center">
                 <p className="font-semibold text-sm">Compartilhar jogo</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Compartilhe o resultado e sua pontuação</p>
               </div>
-              {/* Preview do card */}
+              {/* Preview do card gerado */}
               <div className="rounded-xl overflow-hidden border border-border/20 bg-muted/10 flex items-center justify-center min-h-[80px]">
-                <div className="flex items-center gap-4 px-4 py-3 w-full">
-                  <div className="flex flex-col items-center gap-1 flex-1">
-                    {game.teamAFlag && <img src={game.teamAFlag} alt="" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
-                    <span className="text-xs font-semibold truncate max-w-[80px] text-center">{game.teamAName}</span>
-                    {finished && <span className="text-xl font-black font-mono">{game.scoreA}</span>}
+                {cardPreviewLoading && (
+                  <div className="flex flex-col items-center gap-2 py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">Gerando pré-visualização...</span>
                   </div>
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span className="text-xs text-muted-foreground font-medium">×</span>
-                    {hasBet && <span className="text-[10px] text-primary font-medium">{myBet?.predictedScoreA}×{myBet?.predictedScoreB}</span>}
+                )}
+                {!cardPreviewLoading && cardPreviewUrl && (
+                  <img src={cardPreviewUrl} alt="Preview do card" className="w-full h-auto object-contain rounded-xl" />
+                )}
+                {!cardPreviewLoading && !cardPreviewUrl && (
+                  <div className="flex items-center gap-4 px-4 py-3 w-full">
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      {game.teamAFlag && <img src={game.teamAFlag} alt="" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                      <span className="text-xs font-semibold truncate max-w-[80px] text-center">{game.teamAName}</span>
+                      {finished && <span className="text-xl font-black font-mono">{game.scoreA}</span>}
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-xs text-muted-foreground font-medium">×</span>
+                      {hasBet && <span className="text-[10px] text-primary font-medium">{myBet?.predictedScoreA}×{myBet?.predictedScoreB}</span>}
+                    </div>
+                    <div className="flex flex-col items-center gap-1 flex-1">
+                      {game.teamBFlag && <img src={game.teamBFlag} alt="" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
+                      <span className="text-xs font-semibold truncate max-w-[80px] text-center">{game.teamBName}</span>
+                      {finished && <span className="text-xl font-black font-mono">{game.scoreB}</span>}
+                    </div>
                   </div>
-                  <div className="flex flex-col items-center gap-1 flex-1">
-                    {game.teamBFlag && <img src={game.teamBFlag} alt="" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />}
-                    <span className="text-xs font-semibold truncate max-w-[80px] text-center">{game.teamBName}</span>
-                    {finished && <span className="text-xl font-black font-mono">{game.scoreB}</span>}
-                  </div>
-                </div>
+                )}
               </div>
               {/* Botões */}
               <div className="grid grid-cols-2 gap-2">
@@ -1766,7 +1856,7 @@ function GameCard({
               </div>
               {/* Fechar */}
               <button
-                onClick={() => setShareOpen(false)}
+                onClick={() => closeShare()}
                 className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 Fechar

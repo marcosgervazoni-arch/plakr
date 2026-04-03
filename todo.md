@@ -2501,3 +2501,9 @@
 ## Bug — Modal de Compartilhamento sem backdrop (03/04/2026)
 - [x] Modal de compartilhamento do GameCard sem backdrop sólido (transparente) e z-index inadequado no mobile
 - [x] Correção: createPortal renderiza no document.body (zIndex 9999), backdrop rgba(0,0,0,0.85) opaco, bottom-sheet fixo na tela
+
+## Melhorias Modal de Compartilhamento (03/04/2026)
+- [x] Animação slide-up ao abrir o bottom-sheet (translate-y-full → translate-y-0) com cubic-bezier nativo
+- [x] Gesto swipe-down para fechar o bottom-sheet (threshold 80px)
+- [x] Preview do card visual (thumbnail html2canvas) dentro do modal antes de compartilhar
+- [x] Backdrop com fade-in/fade-out sincronizado com a animação do painel
