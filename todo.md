@@ -2587,3 +2587,9 @@
 - [ ] Implementar perfil público avançado com estatísticas históricas (Pro+)
 - [ ] Adicionar trial de 7 dias para Starter via Stripe trial_period_days
 - [ ] Documentação: estrategia-monetizacao-v2.md já atualizada com nova régua
+
+## Bug: Organizador podia editar placar de torneios globais (03/04/2026)
+
+- [x] Backend: setGameResult verifica tournament.isGlobal — lança TRPCError FORBIDDEN para organizadores em torneios globais
+- [x] UI: OrganizerGames.tsx — canEdit verifica isGlobalTournament — botão de edição oculto + aviso informativo exibido
+- [x] Admin (role=admin) continua podendo editar qualquer jogo independente de isGlobal

@@ -44,9 +44,9 @@ import {
   updateGameResult,
   upsertPoolScoringRules,
 } from "../db";
-import { protectedProcedure, router } from "../_core/trpc";
+import { protectedProcedure, router } from "../\_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { Err, PoolErr } from "../errors";
-
 export const poolsGamesRouter = router({
   getGames: protectedProcedure
     .input(z.object({ poolId: z.number() }))
@@ -80,6 +80,18 @@ export const poolsGamesRouter = router({
       const game = await getGameById(input.gameId);
       if (!game || game.tournamentId !== pool.tournamentId) {
         throw PoolErr.gameNotFound();
+      }
+      // [RULE] Organizadores não podem editar resultados de torneios globais (importados via API)
+      // Apenas admins da plataforma podem sobrescrever resultados de torneios globais
+      if (ctx.user.role !== "admin") {
+        const { getTournamentById } = await import("../db");
+        const tournament = await getTournamentById(game.tournamentId);
+        if (tournament?.isGlobal) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Resultados de torneios globais são atualizados automaticamente pela plataforma. Apenas administradores podem sobrescrever.",
+          });
+        }
       }
       await updateGameResult(input.gameId, input.scoreA, input.scoreB, false);
       await createAdminLog(ctx.user.id, "set_result", "game", input.gameId, {

@@ -56,6 +56,8 @@ export default function OrganizerGames() {
     { enabled: !!slug }
   );
   const pool = poolData?.pool;
+  const tournament = poolData?.tournament as { isGlobal?: boolean } | null | undefined;
+  const isGlobalTournament = tournament?.isGlobal === true;
   const games: GameRow[] = (poolData?.games ?? []) as GameRow[];
 
   const { isPro, isProExpired } = useUserPlan();
@@ -156,6 +158,17 @@ export default function OrganizerGames() {
           </p>
         </div>
 
+        {/* Aviso: torneio global — resultados gerenciados pela plataforma */}
+        {isGlobalTournament && (
+          <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3">
+            <Trophy className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
+            <p className="text-sm text-blue-300">
+              Os resultados deste campeonato são atualizados automaticamente pela plataforma via API.
+              Você não precisa registrar placares manualmente.
+            </p>
+          </div>
+        )}
+
         {/* Sem campeonato vinculado */}
         {!hasTournament && (
           <div className="border border-dashed border-border/50 rounded-xl p-8 text-center space-y-3">
@@ -194,7 +207,8 @@ export default function OrganizerGames() {
                 const statusCfg = STATUS_CONFIG[(game.status as GameStatus)] ?? STATUS_CONFIG.scheduled;
                 const StatusIcon = statusCfg.icon;
                 const hasResult = game.scoreA !== null && game.scoreB !== null;
-                const canEdit = isPro && !isProExpired;
+                // Organizadores não podem editar placares de torneios globais (API-Football)
+                const canEdit = isPro && !isProExpired && !isGlobalTournament;
 
                 return (
                   <div
