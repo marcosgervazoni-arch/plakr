@@ -2593,3 +2593,10 @@
 - [x] Backend: setGameResult verifica tournament.isGlobal — lança TRPCError FORBIDDEN para organizadores em torneios globais
 - [x] UI: OrganizerGames.tsx — canEdit verifica isGlobalTournament — botão de edição oculto + aviso informativo exibido
 - [x] Admin (role=admin) continua podendo editar qualquer jogo independente de isGlobal
+
+## Bug: Notificações de teste vazando para usuários reais (04/04/2026)
+
+- [x] Diagnóstico: audience="free" no broadcast de teste incluía usuários reais sem plano pro
+- [x] Limpeza imediata: removida 1 notificação de teste do banco (userId=1411418, Marcos Gervazoni)
+- [x] Correção definitiva: teste de broadcast reescrito para inserir notificação diretamente nos usuários de teste (sem usar o broadcast de produção)
+- [x] 423 testes passando após a correção
