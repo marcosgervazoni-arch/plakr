@@ -263,6 +263,9 @@ export const badgesRouter = router({
       .groupBy(userBadges.badgeId);
     const platformStatsMap = new Map(platformStats.map((s) => [s.badgeId, Number(s.holders)]));
 
+    // early_user: critério binário (userId <= criterionValue).
+    // Progresso é 0 (não elegível) para não exibir o ID do usuário como "1411418/100".
+    // O badge é atribuído automaticamente pelo checkCriterion quando userId <= 100.
     const progressMap: Record<string, number> = {
       exact_scores_career: exactScoresCareer,
       exact_scores_in_pool: exactScoresCareer, // aproximação
@@ -271,7 +274,7 @@ export const badgesRouter = router({
       first_bet: totalBets,
       participated_pools: participatedPools,
       referrals_count: referralsCount,
-      early_user: userId,
+      early_user: 0, // binário: não usa progresso numérico (userId não é progresso)
     };
 
     const badgesWithProgress = allBadges.map((badge) => {
@@ -410,6 +413,7 @@ export const badgesRouter = router({
       .where(and(eq(referrals.inviterId, userId), sql`${referrals.registeredAt} IS NOT NULL`));
     const referralsCount = Number(refRow?.count ?? 0);
 
+    // early_user: critério binário — não usar userId como progresso (causaria "1411418/100")
     const progressMap: Record<string, number> = {
       exact_scores_career: exactScoresCareer,
       exact_scores_in_pool: exactScoresCareer,
@@ -418,7 +422,7 @@ export const badgesRouter = router({
       first_bet: totalBets,
       participated_pools: participatedPools,
       referrals_count: referralsCount,
-      early_user: userId,
+      early_user: 0, // binário: não elegível (userId > 100)
     };
 
     // Calcular % de progresso e ordenar pelos mais próximos

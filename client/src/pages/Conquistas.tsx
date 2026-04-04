@@ -195,14 +195,21 @@ export default function Conquistas() {
                           <div key={badge.id} className="flex flex-col items-center gap-1">
                             <BadgeCard badge={badge} size="lg" showStar />
                             {/* Barra de progresso para não conquistados */}
-                            {!badge.earned && (badge.criterionValue ?? 0) > 0 && (
+                            {!badge.earned && (badge.criterionType === "early_user" || badge.criterionType === "manual") ? (
+                              <div className="w-16 mt-0.5">
+                                <Progress value={0} className="h-1" />
+                                <p className="text-[10px] text-muted-foreground/50 text-center mt-0.5">
+                                  {badge.criterionType === "manual" ? "Manual" : "Não elegível"}
+                                </p>
+                              </div>
+                            ) : !badge.earned && (badge.criterionValue ?? 0) > 0 ? (
                               <div className="w-16 mt-0.5">
                                 <Progress value={badge.progressPercent ?? 0} className="h-1" />
                                 <p className="text-[10px] text-muted-foreground/50 text-center mt-0.5 tabular-nums">
                                   {badge.currentProgress ?? 0}/{badge.criterionValue}
                                 </p>
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         ))}
                       </div>

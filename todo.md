@@ -2600,3 +2600,11 @@
 - [x] Limpeza imediata: removida 1 notificação de teste do banco (userId=1411418, Marcos Gervazoni)
 - [x] Correção definitiva: teste de broadcast reescrito para inserir notificação diretamente nos usuários de teste (sem usar o broadcast de produção)
 - [x] 423 testes passando após a correção
+
+## Bug: Badge "Chegou Cedo" exibindo ID do usuário como progresso (04/04/2026)
+
+- [x] Diagnóstico: progressMap usava `userId` (1411418) como valor de progresso para `early_user`, causando exibição "1411418/100"
+- [x] Correção backend: progressMap agora usa `0` para `early_user` (critério binário, não numérico)
+- [x] Correção frontend Conquistas.tsx: badges early_user e manual mostram "Não elegível" / "Manual" em vez de número
+- [x] Correção BadgeCard.tsx: tooltip mostra "Apenas para os primeiros N usuários" e "Não elegível" para early_user
+- [x] 423 testes passando após a correção

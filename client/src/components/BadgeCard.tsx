@@ -238,6 +238,10 @@ export function BadgeCard({ badge, size = "md", showStar = false }: BadgeCardPro
 
         {badge.isManual ? (
           <p className="text-xs text-rose-400">Atribuição exclusiva pelo admin</p>
+        ) : badge.criterionType === "early_user" ? (
+          <p className="text-xs text-muted-foreground/70">
+            Apenas para os primeiros {badge.criterionValue} usuários da plataforma
+          </p>
         ) : badge.criterionType && badge.criterionValue !== undefined ? (
           <p className="text-xs text-muted-foreground/70">
             Meta: {badge.criterionType.replace(/_/g, " ")} ≥ {badge.criterionValue}
@@ -246,9 +250,11 @@ export function BadgeCard({ badge, size = "md", showStar = false }: BadgeCardPro
 
         {isEarned && badge.earnedAt ? (
           <p className="text-xs text-muted-foreground">
-            Conquistado em{" "}
+            Conquistado em{"\ "}
             {format(new Date(badge.earnedAt), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
           </p>
+        ) : !isEarned && badge.criterionType === "early_user" ? (
+          <p className="text-xs text-muted-foreground/50 italic">Não elegível</p>
         ) : !isEarned && progress > 0 ? (
           <p className="text-xs text-muted-foreground/70">
             Progresso: {progress}%
