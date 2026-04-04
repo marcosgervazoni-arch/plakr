@@ -194,9 +194,9 @@ export const badgesRouter = router({
   myProgress: protectedProcedure.query(async ({ ctx }) => {
     const db = await (await import("../../server/db")).getDb();
     if (!db) throw new Error("DB not available");
-    const { badges, userBadges, bets, games, poolMemberStats, referrals, users } =
+    const { badges, userBadges, bets, games, poolMemberStats, referrals, users, pools, poolMembers, x1Challenges } =
       await import("../../drizzle/schema");
-    const { eq, and, sql, desc } = await import("drizzle-orm");
+    const { eq, and, sql, desc, ne } = await import("drizzle-orm");
     const userId = ctx.user.id;
 
     const allBadges = await db.select().from(badges).where(eq(badges.isActive, true));
@@ -207,13 +207,14 @@ export const badgesRouter = router({
       .where(eq(userBadges.userId, userId));
     const earnedMap = new Map(earned.map((e) => [e.badgeId, e.earnedAt]));
 
-    // Calcular progresso por critério
+    // ── Precisão ──
     const [exactRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(bets)
       .where(and(eq(bets.userId, userId), eq(bets.resultType, "exact")));
     const exactScoresCareer = Number(exactRow?.count ?? 0);
 
+    // ── Zebra ──
     const [zebraRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(bets)
@@ -227,29 +228,114 @@ export const badgesRouter = router({
       );
     const zebraScoresCareer = Number(zebraRow?.count ?? 0);
 
+    // ── Ranking ──
     const [firstRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(poolMemberStats)
       .where(and(eq(poolMemberStats.userId, userId), eq(poolMemberStats.rankPosition, 1)));
     const firstPlacePools = Number(firstRow?.count ?? 0);
 
+    // ── Palpites ──
     const [totalBetsRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(bets)
       .where(eq(bets.userId, userId));
     const totalBets = Number(totalBetsRow?.count ?? 0);
 
+    // ── Participação em bolões ──
     const [poolsRow] = await db
       .select({ count: sql<number>`COUNT(DISTINCT ${bets.poolId})` })
       .from(bets)
       .where(eq(bets.userId, userId));
     const participatedPools = Number(poolsRow?.count ?? 0);
 
+    // ── Indicações ──
     const [refRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(referrals)
       .where(and(eq(referrals.inviterId, userId), sql`${referrals.registeredAt} IS NOT NULL`));
     const referralsCount = Number(refRow?.count ?? 0);
+
+    // ── Bolões criados ──
+    const [createdPoolRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(pools)
+      .where(eq(pools.ownerId, userId));
+    const createdPools = Number(createdPoolRow?.count ?? 0);
+
+    // ── Bolões organizados ──
+    const [organizedRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(poolMembers)
+      .where(and(eq(poolMembers.userId, userId), eq(poolMembers.role, "organizer")));
+    const organizedPools = Number(organizedRow?.count ?? 0);
+
+    // ── Palpites antecipados (>= 24h antes do jogo) ──
+    const earlyBetsData = await db
+      .select({ betCreatedAt: bets.createdAt, matchDate: games.matchDate })
+      .from(bets)
+      .innerJoin(games, eq(bets.gameId, games.id))
+      .where(eq(bets.userId, userId));
+    const earlyBetsCount = earlyBetsData.filter((b) => {
+      const betTime = new Date(b.betCreatedAt).getTime();
+      const matchTime = new Date(b.matchDate).getTime();
+      return matchTime - betTime >= 24 * 60 * 60 * 1000;
+    }).length;
+
+    // ── Membros trazidos via convite (máximo em um único bolão) ──
+    const organizerPools = await db
+      .select({ poolId: poolMembers.poolId })
+      .from(poolMembers)
+      .where(and(eq(poolMembers.userId, userId), eq(poolMembers.role, "organizer")));
+    let maxInviteMembers = 0;
+    for (const op of organizerPools) {
+      const [countRow] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(poolMembers)
+        .where(and(eq(poolMembers.poolId, op.poolId), sql`${poolMembers.joinSource} = 'link'`));
+      const cnt = Number(countRow?.count ?? 0);
+      if (cnt > maxInviteMembers) maxInviteMembers = cnt;
+    }
+
+    // ── X1: vitórias na carreira ──
+    const [x1WinsRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(x1Challenges)
+      .where(and(eq(x1Challenges.status, "concluded"), eq(x1Challenges.winnerId, userId)));
+    const x1WinsCareer = Number(x1WinsRow?.count ?? 0);
+
+    // ── X1: desafios enviados ──
+    const [x1SentRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(x1Challenges)
+      .where(eq(x1Challenges.challengerId, userId));
+    const x1ChallengesSent = Number(x1SentRow?.count ?? 0);
+
+    // ── X1: vitórias contra o líder ──
+    const [x1VsLeaderRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(x1Challenges)
+      .where(
+        and(
+          eq(x1Challenges.status, "concluded"),
+          eq(x1Challenges.winnerId, userId),
+          sql`${x1Challenges.opponentRankAtStart} = 1`
+        )
+      );
+    const x1WinsVsLeader = Number(x1VsLeaderRow?.count ?? 0);
+
+    // ── X1: vitórias contra ranking superior ──
+    const [x1VsHigherRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(x1Challenges)
+      .where(
+        and(
+          eq(x1Challenges.status, "concluded"),
+          eq(x1Challenges.winnerId, userId),
+          sql`${x1Challenges.opponentRankAtStart} < ${x1Challenges.challengerRankAtStart}`
+        )
+      );
+    const x1WinsVsHigher = Number(x1VsHigherRow?.count ?? 0);
 
     const [totalUsersRow] = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
     const totalUsers = Number(totalUsersRow?.count ?? 1);
@@ -263,18 +349,46 @@ export const badgesRouter = router({
       .groupBy(userBadges.badgeId);
     const platformStatsMap = new Map(platformStats.map((s) => [s.badgeId, Number(s.holders)]));
 
-    // early_user: critério binário (userId <= criterionValue).
-    // Progresso é 0 (não elegível) para não exibir o ID do usuário como "1411418/100".
-    // O badge é atribuído automaticamente pelo checkCriterion quando userId <= 100.
+    // ── progressMap completo ──
+    // early_user: critério binário (userId <= criterionValue) — não usar userId como progresso.
     const progressMap: Record<string, number> = {
+      // Precisão
       exact_scores_career: exactScoresCareer,
-      exact_scores_in_pool: exactScoresCareer, // aproximação
+      exact_scores_in_pool: exactScoresCareer,
+      // Zebra
       zebra_scores_career: zebraScoresCareer,
+      zebra_in_pool: zebraScoresCareer,
+      zebra_exact_score: zebraScoresCareer,
+      // Ranking
       first_place_pools: firstPlacePools,
+      top3_pools: firstPlacePools,
+      // Palpites
       first_bet: totalBets,
+      // Participação
       participated_pools: participatedPools,
+      // Indicações
       referrals_count: referralsCount,
-      early_user: 0, // binário: não usa progresso numérico (userId não é progresso)
+      // Comunidade
+      created_pool: createdPools,
+      organized_pools: organizedPools,
+      early_bet: earlyBetsCount,
+      pool_members_via_invite: maxInviteMembers,
+      all_bets_in_pool: totalBets > 0 ? 1 : 0, // binário: 1 se já apostou em todos de algum bolão
+      // X1
+      x1_wins_career: x1WinsCareer,
+      x1_challenges_sent: x1ChallengesSent,
+      x1_win_vs_leader: x1WinsVsLeader,
+      x1_win_vs_higher_rank: x1WinsVsHigher,
+      // Binários (sem progresso numérico útil)
+      early_user: 0,
+      manual: 0,
+      first_place_margin: firstPlacePools,
+      first_place_large_pool: firstPlacePools,
+      rank_jump: 0,
+      rank_hold_1st: firstPlacePools,
+      accuracy_in_pool: exactScoresCareer,
+      complete_pool_no_blank: totalBets > 0 ? 1 : 0,
+      consecutive_correct: exactScoresCareer,
     };
 
     const badgesWithProgress = allBadges.map((badge) => {
@@ -349,7 +463,7 @@ export const badgesRouter = router({
   nearestBadges: protectedProcedure.query(async ({ ctx }) => {
     const db = await (await import("../../server/db")).getDb();
     if (!db) return [];
-    const { badges, userBadges, bets, games, poolMemberStats, referrals } =
+    const { badges, userBadges, bets, games, poolMemberStats, referrals, pools, poolMembers, x1Challenges } =
       await import("../../drizzle/schema");
     const { eq, and, sql } = await import("drizzle-orm");
     const userId = ctx.user.id;
@@ -369,13 +483,14 @@ export const badgesRouter = router({
     const pending = allBadges.filter((b) => !earnedIds.has(b.id) && b.criterionValue > 0);
     if (pending.length === 0) return [];
 
-    // Calcular métricas de progresso (reutilizando a mesma lógica do myProgress)
+    // ── Precisão ──
     const [exactRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(bets)
       .where(and(eq(bets.userId, userId), eq(bets.resultType, "exact")));
     const exactScoresCareer = Number(exactRow?.count ?? 0);
 
+    // ── Zebra ──
     const [zebraRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(bets)
@@ -389,40 +504,142 @@ export const badgesRouter = router({
       );
     const zebraScoresCareer = Number(zebraRow?.count ?? 0);
 
+    // ── Ranking ──
     const [firstRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(poolMemberStats)
       .where(and(eq(poolMemberStats.userId, userId), eq(poolMemberStats.rankPosition, 1)));
     const firstPlacePools = Number(firstRow?.count ?? 0);
 
+    // ── Palpites ──
     const [totalBetsRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(bets)
       .where(eq(bets.userId, userId));
     const totalBets = Number(totalBetsRow?.count ?? 0);
 
+    // ── Participação ──
     const [poolsRow] = await db
       .select({ count: sql<number>`COUNT(DISTINCT ${bets.poolId})` })
       .from(bets)
       .where(eq(bets.userId, userId));
     const participatedPools = Number(poolsRow?.count ?? 0);
 
+    // ── Indicações ──
     const [refRow] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(referrals)
       .where(and(eq(referrals.inviterId, userId), sql`${referrals.registeredAt} IS NOT NULL`));
     const referralsCount = Number(refRow?.count ?? 0);
 
-    // early_user: critério binário — não usar userId como progresso (causaria "1411418/100")
+    // ── Bolões criados ──
+    const [createdPoolRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(pools)
+      .where(eq(pools.ownerId, userId));
+    const createdPools = Number(createdPoolRow?.count ?? 0);
+
+    // ── Bolões organizados ──
+    const [organizedRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(poolMembers)
+      .where(and(eq(poolMembers.userId, userId), eq(poolMembers.role, "organizer")));
+    const organizedPools = Number(organizedRow?.count ?? 0);
+
+    // ── Palpites antecipados ──
+    const earlyBetsData = await db
+      .select({ betCreatedAt: bets.createdAt, matchDate: games.matchDate })
+      .from(bets)
+      .innerJoin(games, eq(bets.gameId, games.id))
+      .where(eq(bets.userId, userId));
+    const earlyBetsCount = earlyBetsData.filter((b) => {
+      const betTime = new Date(b.betCreatedAt).getTime();
+      const matchTime = new Date(b.matchDate).getTime();
+      return matchTime - betTime >= 24 * 60 * 60 * 1000;
+    }).length;
+
+    // ── Membros via convite (máximo em um único bolão) ──
+    const organizerPools = await db
+      .select({ poolId: poolMembers.poolId })
+      .from(poolMembers)
+      .where(and(eq(poolMembers.userId, userId), eq(poolMembers.role, "organizer")));
+    let maxInviteMembers = 0;
+    for (const op of organizerPools) {
+      const [countRow] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(poolMembers)
+        .where(and(eq(poolMembers.poolId, op.poolId), sql`${poolMembers.joinSource} = 'link'`));
+      const cnt = Number(countRow?.count ?? 0);
+      if (cnt > maxInviteMembers) maxInviteMembers = cnt;
+    }
+
+    // ── X1 ──
+    const [x1WinsRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(x1Challenges)
+      .where(and(eq(x1Challenges.status, "concluded"), eq(x1Challenges.winnerId, userId)));
+    const x1WinsCareer = Number(x1WinsRow?.count ?? 0);
+
+    const [x1SentRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(x1Challenges)
+      .where(eq(x1Challenges.challengerId, userId));
+    const x1ChallengesSent = Number(x1SentRow?.count ?? 0);
+
+    const [x1VsLeaderRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(x1Challenges)
+      .where(
+        and(
+          eq(x1Challenges.status, "concluded"),
+          eq(x1Challenges.winnerId, userId),
+          sql`${x1Challenges.opponentRankAtStart} = 1`
+        )
+      );
+    const x1WinsVsLeader = Number(x1VsLeaderRow?.count ?? 0);
+
+    const [x1VsHigherRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(x1Challenges)
+      .where(
+        and(
+          eq(x1Challenges.status, "concluded"),
+          eq(x1Challenges.winnerId, userId),
+          sql`${x1Challenges.opponentRankAtStart} < ${x1Challenges.challengerRankAtStart}`
+        )
+      );
+    const x1WinsVsHigher = Number(x1VsHigherRow?.count ?? 0);
+
+    // ── progressMap completo ──
     const progressMap: Record<string, number> = {
       exact_scores_career: exactScoresCareer,
       exact_scores_in_pool: exactScoresCareer,
       zebra_scores_career: zebraScoresCareer,
+      zebra_in_pool: zebraScoresCareer,
+      zebra_exact_score: zebraScoresCareer,
       first_place_pools: firstPlacePools,
+      top3_pools: firstPlacePools,
       first_bet: totalBets,
       participated_pools: participatedPools,
       referrals_count: referralsCount,
-      early_user: 0, // binário: não elegível (userId > 100)
+      created_pool: createdPools,
+      organized_pools: organizedPools,
+      early_bet: earlyBetsCount,
+      pool_members_via_invite: maxInviteMembers,
+      all_bets_in_pool: totalBets > 0 ? 1 : 0,
+      x1_wins_career: x1WinsCareer,
+      x1_challenges_sent: x1ChallengesSent,
+      x1_win_vs_leader: x1WinsVsLeader,
+      x1_win_vs_higher_rank: x1WinsVsHigher,
+      early_user: 0,
+      manual: 0,
+      first_place_margin: firstPlacePools,
+      first_place_large_pool: firstPlacePools,
+      rank_jump: 0,
+      rank_hold_1st: firstPlacePools,
+      accuracy_in_pool: exactScoresCareer,
+      complete_pool_no_blank: totalBets > 0 ? 1 : 0,
+      consecutive_correct: exactScoresCareer,
     };
 
     // Calcular % de progresso e ordenar pelos mais próximos

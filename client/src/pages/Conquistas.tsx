@@ -285,11 +285,7 @@ export default function Conquistas() {
                           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                             {badge.description}
                           </p>
-                          {badge.platformPercent > 0 && (
-                            <p className="text-xs text-muted-foreground/50 mt-1">
-                              {badge.platformPercent}% dos usuários têm este badge
-                            </p>
-                          )}
+
                         </div>
                         {/* Data */}
                         {badge.earnedAt && (
@@ -318,11 +314,7 @@ export default function Conquistas() {
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
               Raridade dos Badges
             </h2>
-            {data && (
-              <span className="text-xs text-muted-foreground">
-                — base: {data.totalUsers} usuário{data.totalUsers !== 1 ? "s" : ""}
-              </span>
-            )}
+
           </div>
 
           <div className="bg-card border border-border/30 rounded-xl p-6">
@@ -390,9 +382,6 @@ export default function Conquistas() {
                           <span className={`text-xs font-semibold ${rarityConf.color}`}>
                             {rarityConf.label}
                           </span>
-                          <span className="text-xs text-muted-foreground tabular-nums">
-                            {badge.platformPercent}%
-                          </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -400,9 +389,7 @@ export default function Conquistas() {
                           value={badge.platformPercent}
                           className={`h-1.5 flex-1 ${isEarned ? "" : "opacity-40"}`}
                         />
-                        <span className="text-[10px] text-muted-foreground/50 tabular-nums w-16 text-right">
-                          {badge.holders} usuário{badge.holders !== 1 ? "s" : ""}
-                        </span>
+
                       </div>
                     </div>
                   );

@@ -240,7 +240,7 @@ export function BadgeCard({ badge, size = "md", showStar = false }: BadgeCardPro
           <p className="text-xs text-rose-400">Atribuição exclusiva pelo admin</p>
         ) : badge.criterionType === "early_user" ? (
           <p className="text-xs text-muted-foreground/70">
-            Apenas para os primeiros {badge.criterionValue} usuários da plataforma
+            Badge exclusivo para os primeiros usuários da plataforma
           </p>
         ) : badge.criterionType && badge.criterionValue !== undefined ? (
           <p className="text-xs text-muted-foreground/70">

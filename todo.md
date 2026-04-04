@@ -2608,3 +2608,14 @@
 - [x] Correção frontend Conquistas.tsx: badges early_user e manual mostram "Não elegível" / "Manual" em vez de número
 - [x] Correção BadgeCard.tsx: tooltip mostra "Apenas para os primeiros N usuários" e "Não elegível" para early_user
 - [x] 423 testes passando após a correção
+
+## Correção completa de badges e super admin (04/04/2026)
+
+- [x] Super admin concedido para Marcos Gervazoni (userId 1411418)
+- [x] progressMap expandido para cobrir todos os 27 critérios: x1_wins_career, x1_challenges_sent, x1_win_vs_leader, x1_win_vs_higher_rank, created_pool, organized_pools, early_bet, pool_members_via_invite, all_bets_in_pool, zebra_in_pool, zebra_exact_score, top3_pools, etc.
+- [x] Mesmo progressMap completo aplicado no nearestBadges (próximas conquistas)
+- [x] Removida exibição de "X% dos usuários têm este badge" da timeline de conquistas
+- [x] Removida exibição de "X usuários" na seção de raridade de badges
+- [x] Removida exibição de "base: N usuários" no cabeçalho da seção de raridade
+- [x] Tooltip do BadgeCard: early_user agora mostra "Badge exclusivo para os primeiros usuários da plataforma" (sem revelar a quantidade)
+- [x] 423 testes passando
