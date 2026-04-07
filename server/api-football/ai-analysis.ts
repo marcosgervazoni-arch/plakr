@@ -142,7 +142,7 @@ export async function generateGameSummary(ctx: GameSummaryContext): Promise<stri
     ? `Posse: ${ctx.statistics.homePossession}% × ${ctx.statistics.awayPossession}%. Finalizações: ${ctx.statistics.homeShots} × ${ctx.statistics.awayShots}.`
     : "";
 
-  const prompt = `Escreva um resumo narrativo conciso de uma partida de futebol em português brasileiro. Máximo 4 linhas. Tom jornalístico, direto, sem clichês. Não use emojis.
+  const prompt = `Escreva um resumo animado de uma partida de futebol em português brasileiro. Máximo 4 linhas. Tom de narrador empolgado estilo transmissão ao vivo — energético, direto, com personalidade. Comente o que rolou em campo: gols, quem dominou, algum momento marcante. NÃO sugira apostas, NÃO mencione odds. Deixe o leitor com vontade de ter assistido. Sem emojis.
 
 Dados da partida:
 - ${ctx.homeTeam} ${ctx.scoreA} × ${ctx.scoreB} ${ctx.awayTeam}
@@ -154,7 +154,7 @@ Escreva apenas o resumo, sem título ou introdução.`;
   try {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "Você é um jornalista esportivo brasileiro. Escreva resumos concisos e precisos de partidas de futebol." },
+        { role: "system", content: "Você é um narrador de futebol brasileiro com energia de transmissão ao vivo — estilo CazéTV. Escreve resumos animados e envolventes de partidas, focando no que aconteceu em campo. NUNCA menciona apostas, odds ou recomendações de resultado. Escreve em português brasileiro, sem emojis." },
         { role: "user", content: prompt },
       ],
     });
@@ -182,7 +182,7 @@ export async function generateBetAnalysis(ctx: BetAnalysisContext): Promise<stri
 
   const zebraLine = ctx.isZebra ? "O resultado foi uma zebra — a maioria apostou no outro lado." : "";
 
-  const prompt = `Escreva uma análise curta do palpite de um apostador em um bolão de futebol. Máximo 3 linhas. Tom de narrador de estádio brasileiro: animado, divertido, com personalidade — mas sem exagerar, sem ser forçado. Varie o estilo conforme o resultado: placar exato merece entusiasmo genuino, resultado correto merece reconhecimento, resultado errado merece um comentrio honesto e bem-humorado. Sem emojis. Sem repetir informações óbvias.
+  const prompt = `Escreva uma análise curta do palpite de um apostador em um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — animado, divertido, com personalidade, sem forçar. Varie conforme o resultado: placar exato merece entusiasmo genuíno, resultado correto merece reconhecimento, resultado errado merece um comentário honesto e bem-humorado. Foque no que aconteceu no jogo e no palpite — NUNCA mencione odds, apostas ou sugira qual resultado escolher. Sem emojis. Sem repetir informações óbvias.
 
 Dados:
 - Jogo: ${ctx.homeTeam} ${ctx.scoreA} × ${ctx.scoreB} ${ctx.awayTeam}
@@ -197,7 +197,7 @@ Escreva apenas a análise, sem título.`;
   try {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "Você é um narrador de estádio brasileiro com personalidade: animado, divertido e com um toque de humor natural. Analisa palpites de bolões como se estivesse comentando ao vivo — com entusiasmo quando o apostador acerta e com bom humor quando erra. Nunca exagera nem é forçado. Escreve em português brasileiro, sem emojis." },
+        { role: "system", content: "Você é um narrador de futebol brasileiro com energia de transmissão ao vivo — estilo CazéTV. Analisa palpites de bolões como se estivesse comentando ao vivo: entusiasmo genuíno quando o apostador acerta, bom humor quando erra. NUNCA sugere apostas, NUNCA menciona odds, NUNCA diz qual resultado era o certo. O foco é o que aconteceu no jogo e como o palpite se saiu. Escreve em português brasileiro, sem emojis." },
         { role: "user", content: prompt },
       ],
     });
@@ -302,13 +302,13 @@ export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPre
   });
 
   // LLM redige apenas o texto narrativo — com base nos dados reais da API
-  const prompt = `Escreva uma análise pré-jogo concisa para apostadores de bolão. Máximo 3 linhas. Tom de especialista esportivo brasileiro: direto, informativo, com personalidade — sem clichês. Mencione as probabilidades e dê uma dica de aposta. Sem emojis.
+  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Comente o contexto do jogo: quem tá em melhor momento, o que esperar do confronto, o que pode ser decisivo. NÃO sugira apostas, NÃO mencione odds, NÃO diga qual time apostar. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
 
 Jogo: ${ctx.homeTeam} × ${ctx.awayTeam}
 Competição: ${ctx.competition}
 Data: ${dateStr}
-Probabilidades (fonte: API-Football): ${ctx.homeTeam} vence ${home}% | Empate ${draw}% | ${ctx.awayTeam} vence ${away}%
-${ctx.apiAdvice ? `Conselho da API: ${ctx.apiAdvice}` : ""}
+Contexto (use para embasar a narrativa, não mencione os números diretamente): ${ctx.homeTeam} ${home}% de chance de vitória | Empate ${draw}% | ${ctx.awayTeam} ${away}%
+${ctx.apiAdvice ? `Contexto adicional: ${ctx.apiAdvice}` : ""}
 
 Escreva apenas a análise, sem título.`;
 
@@ -320,7 +320,7 @@ Escreva apenas a análise, sem título.`;
   try {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "Você é um analista esportivo brasileiro especializado em futebol. Escreve análises pré-jogo concisas e úteis para apostadores de bolão, com base nos dados fornecidos. Não inventa informações. Sem emojis." },
+        { role: "system", content: "Você é um narrador de futebol brasileiro com energia de transmissão ao vivo — estilo CazéTV. Escreve análises pré-jogo animadas e envolventes para bolões de palpites. Foca no contexto esportivo: momento dos times, o que esperar do jogo, o que pode ser decisivo. NUNCA sugere apostas, NUNCA menciona odds ou percentuais, NUNCA diz qual resultado escolher. O objetivo é deixar o usuário animado para fazer o próprio palpite. Escreve em português brasileiro, sem emojis." },
         { role: "user", content: prompt },
       ],
     });

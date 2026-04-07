@@ -1930,7 +1930,7 @@ function GameCard({
                       <Sparkles className="w-3.5 h-3.5" /> Análise da IA
                     </p>
                     <p className="text-xs text-muted-foreground leading-relaxed">{game.aiPrediction.aiRecommendation}</p>
-                    <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA. Dado informativo — não é recomendação de aposta.</p>
+                    <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA.</p>
                   </div>
                 )}
               </div>
