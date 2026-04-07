@@ -301,15 +301,29 @@ export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPre
     day: "2-digit", month: "long", year: "numeric", timeZone: "America/Sao_Paulo",
   });
 
-  // LLM redige apenas o texto narrativo — com base nos dados reais da API
-  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Comente o contexto do jogo: quem tá em melhor momento, o que esperar do confronto, o que pode ser decisivo. NÃO sugira apostas, NÃO mencione odds, NÃO diga qual time apostar. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
+  // Forma recente: converte array de W/D/L em texto legível
+  const formatForm = (form: string[], teamName: string): string => {
+    if (!form || form.length === 0) return "";
+    const results = form.slice(0, 5).map(r => r === "W" ? "V" : r === "D" ? "E" : "D").join("-");
+    const wins = form.filter(r => r === "W").length;
+    const draws = form.filter(r => r === "D").length;
+    const losses = form.filter(r => r === "L").length;
+    return `${teamName}: ${results} (${wins}V ${draws}E ${losses}D nos últimos ${form.length} jogos)`;
+  };
+  const homeFormText = formatForm(ctx.homeForm ?? [], ctx.homeTeam);
+  const awayFormText = formatForm(ctx.awayForm ?? [], ctx.awayTeam);
+  const formSection = (homeFormText || awayFormText)
+    ? `Forma recente:\n${homeFormText ? `- ${homeFormText}` : ""}\n${awayFormText ? `- ${awayFormText}` : ""}`
+    : "";
 
+  // LLM redige apenas o texto narrativo — com base nos dados reais da API
+  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use a forma recente dos times para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. NÃO sugira apostas, NÃO mencione odds, NÃO diga qual time apostar. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
 Jogo: ${ctx.homeTeam} × ${ctx.awayTeam}
 Competição: ${ctx.competition}
 Data: ${dateStr}
-Contexto (use para embasar a narrativa, não mencione os números diretamente): ${ctx.homeTeam} ${home}% de chance de vitória | Empate ${draw}% | ${ctx.awayTeam} ${away}%
+${formSection}
+Contexto de probabilidade (use para embasar a narrativa, não mencione os números diretamente): ${ctx.homeTeam} ${home}% de chance de vitória | Empate ${draw}% | ${ctx.awayTeam} ${away}%
 ${ctx.apiAdvice ? `Contexto adicional: ${ctx.apiAdvice}` : ""}
-
 Escreva apenas a análise, sem título.`;
 
   // Fallback de texto caso o LLM falhe — usa os dados reais da API
