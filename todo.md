@@ -2619,3 +2619,11 @@
 - [x] Removida exibição de "base: N usuários" no cabeçalho da seção de raridade
 - [x] Tooltip do BadgeCard: early_user agora mostra "Badge exclusivo para os primeiros usuários da plataforma" (sem revelar a quantidade)
 - [x] 423 testes passando
+
+## Bug: Análise de IA confunde cartão com gol no resumo da partida (05/04/2026)
+
+- [x] Causa raiz: API-Football retornou evento com type='Goal' para um cartão amarelo (dado incorreto da API)
+- [x] Banco limpo: goalsTimeline e aiSummary incorretos removidos do jogo 120646 (Grêmio x Remo 0x0)
+- [x] Novo resumo correto gerado e salvo: "Grêmio e Remo empataram sem gols..."
+- [x] Validação de consistência adicionada ao parseGoalsTimeline: se número de gols != scoreA+scoreB, descarta a timeline
+- [x] Validação aplicada nas duas chamadas do sync.ts (syncResults e backfill)

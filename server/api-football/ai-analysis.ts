@@ -50,21 +50,40 @@ export interface BetAnalysisContext {
 
 /**
  * Converte os eventos da API-Football em goalsTimeline normalizado.
+ *
+ * VALIDAÇÃO DE CONSISTÊNCIA: se o número de gols na timeline não bater
+ * com o placar final (scoreA + scoreB), retorna array vazio para evitar
+ * que a IA gere resumos com gols que não aconteceram (ex: cartão classificado
+ * erroneamente como gol pela API).
  */
 export function parseGoalsTimeline(
   events: FixtureEvent[],
-  homeTeamName: string
+  homeTeamName: string,
+  scoreA?: number | null,
+  scoreB?: number | null,
 ): Array<{ min: string; team: "home" | "away"; player: string; type: "goal" | "own_goal" | "penalty" }> {
-  return events
+  const goals = events
     .filter(e => e.type === "Goal")
     .map(e => ({
       min: String(e.time.elapsed) + (e.time.extra ? `+${e.time.extra}` : "") + "'",
-      team: e.team.name === homeTeamName ? "home" : "away",
+      team: e.team.name === homeTeamName ? "home" : "away" as "home" | "away",
       player: e.player.name,
-      type: e.detail === "Own Goal" ? "own_goal"
+      type: (e.detail === "Own Goal" ? "own_goal"
           : e.detail === "Penalty" ? "penalty"
-          : "goal",
+          : "goal") as "goal" | "own_goal" | "penalty",
     }));
+
+  // Validação: se placar conhecido, verificar consistência
+  if (scoreA !== null && scoreA !== undefined && scoreB !== null && scoreB !== undefined) {
+    const expectedTotal = scoreA + scoreB;
+    const actualTotal = goals.length;
+    if (actualTotal !== expectedTotal) {
+      // Timeline inconsistente com o placar — descartar para evitar desinformação
+      return [];
+    }
+  }
+
+  return goals;
 }
 
 /**

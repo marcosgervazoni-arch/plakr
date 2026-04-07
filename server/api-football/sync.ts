@@ -735,7 +735,7 @@ async function applyGameResult(
         fetchFixtureEvents(fixtureId),
         fetchFixtureStatistics(fixtureId),
       ]);
-      goalsTimeline = parseGoalsTimeline(events, existingGame.teamAName ?? "");
+      goalsTimeline = parseGoalsTimeline(events, existingGame.teamAName ?? "", scoreA, scoreB);
       matchStatistics = parseMatchStatistics(stats, existingGame.teamAName ?? "");
 
       // Salvar gols e estatísticas no banco
@@ -1139,7 +1139,7 @@ export async function backfillGameData(options: {
       ]);
       requestsUsed += 2;
 
-      const goalsTimeline = parseGoalsTimeline(events, game.teamAName ?? "");
+      const goalsTimeline = parseGoalsTimeline(events, game.teamAName ?? "", game.scoreA, game.scoreB);
       const matchStatistics = parseMatchStatistics(stats, game.teamAName ?? "");
 
       // Salvar no banco
