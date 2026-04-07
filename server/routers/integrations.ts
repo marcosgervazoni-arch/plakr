@@ -866,7 +866,9 @@ export const integrationsRouter = router({
 
       const now = new Date();
 
-      // Contar total de jogos pendentes
+      // Seleciona jogos agendados que:
+      // (a) não têm aiPrediction, OU
+      // (b) têm aiPrediction mas sem comparison (dados genéricos — regenerar)
       const pendingGames = await db
         .select({
           id: gamesTable.id,
@@ -879,9 +881,10 @@ export const integrationsRouter = router({
         .from(gamesTable)
         .where(
           and(
-            isNull(gamesTable.aiPrediction),
             sql`${gamesTable.status} = 'scheduled'`,
             sql`${gamesTable.matchDate} > ${now}`,
+            sql`${gamesTable.externalId} IS NOT NULL`,
+            sql`(${gamesTable.aiPrediction} IS NULL OR JSON_EXTRACT(${gamesTable.aiPrediction}, '$.comparison') IS NULL)`,
           )
         );
 
@@ -921,15 +924,29 @@ export const integrationsRouter = router({
             let apiPercent: { home: number; draw: number; away: number } | null = null;
             let apiAdvice: string | null = null;
 
+            let apiComparison: Parameters<typeof buildAiPrediction>[0]["apiComparison"] = null;
             if (fixtureId) {
               const apiPred = await fetchFixturePredictions(fixtureId).catch(() => null);
-              if (apiPred?.percent) {
+              const rawPercent = apiPred?.predictions?.percent;
+              if (rawPercent) {
                 apiPercent = {
-                  home: parseInt(apiPred.percent.home) || 0,
-                  draw: parseInt(apiPred.percent.draw) || 0,
-                  away: parseInt(apiPred.percent.away) || 0,
+                  home: parseInt(rawPercent.home) || 0,
+                  draw: parseInt(rawPercent.draw) || 0,
+                  away: parseInt(rawPercent.away) || 0,
                 };
-                apiAdvice = apiPred.advice ?? null;
+                apiAdvice = apiPred?.predictions?.advice ?? null;
+              }
+              const rawCmp = apiPred?.comparison;
+              if (rawCmp) {
+                apiComparison = {
+                  total: rawCmp.total ?? null,
+                  poisson: rawCmp.poisson_distribution ?? null,
+                  forme: rawCmp.forme ?? null,
+                  att: rawCmp.att ?? null,
+                  def: rawCmp.def ?? null,
+                  h2h: rawCmp.h2h ?? null,
+                  goals: rawCmp.goals ?? null,
+                };
               }
             }
 
@@ -940,6 +957,7 @@ export const integrationsRouter = router({
               matchDate: game.matchDate?.toISOString() ?? new Date().toISOString(),
               apiPercent,
               apiAdvice,
+              apiComparison,
             });
 
             const dbInner = await getDb();

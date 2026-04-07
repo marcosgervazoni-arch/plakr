@@ -2642,3 +2642,13 @@
 - [x] Fix 3: Job semanal syncTeams adicionado ao cron (Seg 02h UTC) — sincroniza times de todos os torneios vinculados
 - [x] Fix 4: gerarAnalisesPrejogo agora roda DIARIAMENTE às 05h UTC (era semanal) — jogos mid-week têm análise em até 24h
 - [x] Fix 5: Health tracking adicionado a todos os 5 jobs da API-Football — visível em Admin → Saúde do Sistema
+
+## Correção de Percentuais de Probabilidade — Sprint 06/04/2026
+
+- [x] Auditoria: identificar que API-Football retorna apenas 3 buckets fixos no campo `percent`
+- [x] Atualizar `fetchFixturePredictions` para retornar `FixturePredictionFull` com `comparison`
+- [x] Atualizar `buildAiPrediction` para salvar `comparison` e enriquecer análise do LLM com dados únicos por jogo
+- [x] Atualizar frontend (PoolPage.tsx) para usar `comparison.total` na barra de probabilidade
+- [x] Atualizar `backfillAiPredictions` para regenerar jogos sem `comparison` (1.602 jogos)
+- [x] Corrigir sync.ts e cron.ts para usar nova estrutura `FixturePredictionFull`
+- [x] 423 testes passando, 0 erros TypeScript

@@ -464,13 +464,25 @@ export async function syncFixturesForTournament(options: {
                 // Buscar probabilidades da API-Football (plano Pro: /predictions)
                 // Se a API não retornar dados, a análise não é gerada (nunca inventar)
                 const apiPred = await fetchFixturePredictions(fixture.fixture.id).catch(() => null);
-                const apiPercent = apiPred?.percent
+                const rawPercent = apiPred?.predictions?.percent;
+                const apiPercent = rawPercent
                   ? {
-                      home: parseInt(apiPred.percent.home) || 0,
-                      draw: parseInt(apiPred.percent.draw) || 0,
-                      away: parseInt(apiPred.percent.away) || 0,
+                      home: parseInt(rawPercent.home) || 0,
+                      draw: parseInt(rawPercent.draw) || 0,
+                      away: parseInt(rawPercent.away) || 0,
                     }
                   : null;
+                // Mapear comparison para o formato interno
+                const rawCmp = apiPred?.comparison;
+                const apiComparison = rawCmp ? {
+                  total: rawCmp.total ?? null,
+                  poisson: rawCmp.poisson_distribution ?? null,
+                  forme: rawCmp.forme ?? null,
+                  att: rawCmp.att ?? null,
+                  def: rawCmp.def ?? null,
+                  h2h: rawCmp.h2h ?? null,
+                  goals: rawCmp.goals ?? null,
+                } : null;
 
                 // Buscar forma recente dos dois times em paralelo (plano Pro: /fixtures?team=X&last=5&status=FT)
                 const homeTeamApiId = fixture.teams.home.id;
@@ -486,9 +498,10 @@ export async function syncFixturesForTournament(options: {
                   competition: fixture.league.name,
                   matchDate: fixture.fixture.date,
                   apiPercent,
-                  apiAdvice: apiPred?.advice ?? null,
+                  apiAdvice: apiPred?.predictions?.advice ?? null,
                   homeForm,
                   awayForm,
+                  apiComparison,
                 });
 
                 // prediction é null quando a API não retornou probabilidades

@@ -34,7 +34,7 @@ import { tournaments, games as gamesTable } from "../../drizzle/schema";
 import { eq, isNull, and, sql } from "drizzle-orm";
 import { inferTournamentFormat, inferTournamentFormatFromPhases } from "../../shared/tournamentFormat";
 import { apiFootballRequest, fetchFixturePredictions } from "./client";
-import { buildAiPrediction } from "./ai-analysis";
+import { buildAiPrediction, type AiPredictionContext } from "./ai-analysis";
 import { notifyOwner } from "../_core/notification";
 import { apiFootballCronHealth, recordJobRun } from "./cronHealth";
 
@@ -308,15 +308,29 @@ export function registerApiFootballCronJobs() {
           let apiPercent: { home: number; draw: number; away: number } | null = null;
           let apiAdvice: string | null = null;
 
+          let apiComparison: AiPredictionContext["apiComparison"] = null;
           if (fixtureId) {
             const apiPred = await fetchFixturePredictions(fixtureId).catch(() => null);
-            if (apiPred?.percent) {
+            const rawPercent = apiPred?.predictions?.percent;
+            if (rawPercent) {
               apiPercent = {
-                home: parseInt(apiPred.percent.home) || 0,
-                draw: parseInt(apiPred.percent.draw) || 0,
-                away: parseInt(apiPred.percent.away) || 0,
+                home: parseInt(rawPercent.home) || 0,
+                draw: parseInt(rawPercent.draw) || 0,
+                away: parseInt(rawPercent.away) || 0,
               };
-              apiAdvice = apiPred.advice ?? null;
+              apiAdvice = apiPred?.predictions?.advice ?? null;
+            }
+            const rawCmp = apiPred?.comparison;
+            if (rawCmp) {
+              apiComparison = {
+                total: rawCmp.total ?? null,
+                poisson: rawCmp.poisson_distribution ?? null,
+                forme: rawCmp.forme ?? null,
+                att: rawCmp.att ?? null,
+                def: rawCmp.def ?? null,
+                h2h: rawCmp.h2h ?? null,
+                goals: rawCmp.goals ?? null,
+              };
             }
           }
 
@@ -327,6 +341,7 @@ export function registerApiFootballCronJobs() {
             matchDate: game.matchDate?.toISOString() ?? new Date().toISOString(),
             apiPercent,
             apiAdvice,
+            apiComparison,
           });
 
           if (prediction) {

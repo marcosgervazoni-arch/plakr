@@ -266,11 +266,22 @@ export const games = mysqlTable("games", {
   importedFromSheets: boolean("importedFromSheets").default(false).notNull(),
   reminderSentAt: timestamp("reminderSentAt"), // controle de lembretes automáticos
   // ── Inteligência Esportiva ──────────────────────────────────────────────────
-  // Gerado pelo syncFixtures antes do jogo: { homeWin, draw, awayWin, homeForm, awayForm }
+  // Gerado pelo syncFixtures antes do jogo: probabilidades + comparison únicos por jogo
   aiPrediction: json("aiPrediction").$type<{
+    // Percentuais do modelo simplificado da API (3 buckets fixos — usar comparison.total para exibição)
     homeWin: number; draw: number; awayWin: number;
     homeForm: string[]; awayForm: string[];
     aiRecommendation: string;
+    // Dados ricos únicos por jogo (comparison da API-Football)
+    comparison?: {
+      total?: { home: string; away: string } | null;       // Score total combinado (%)
+      poisson?: { home: string; away: string } | null;     // Distribuição Poisson
+      forme?: { home: string; away: string } | null;       // Aproveitamento recente (%)
+      att?: { home: string; away: string } | null;         // Força de ataque (%)
+      def?: { home: string; away: string } | null;         // Força de defesa (%)
+      h2h?: { home: string; away: string } | null;         // Histórico H2H (%)
+      goals?: { home: string; away: string } | null;       // Média de gols (%)
+    } | null;
   } | null>(),
   // Gerado pelo syncResults após o jogo: resumo narrativo da partida (LLM)
   aiSummary: text("aiSummary"),

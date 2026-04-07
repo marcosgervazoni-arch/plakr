@@ -262,12 +262,22 @@ export interface AiPredictionContext {
   awayTeam: string;
   competition: string;
   matchDate: string; // ISO string
-  // Probabilidades da API-Football (plano Pro — obrigatórias para exibir análise)
+  // Probabilidades do modelo simplificado da API (3 buckets fixos)
   apiPercent?: { home: number; draw: number; away: number } | null;
   apiAdvice?: string | null;
   // Forma recente dos times (plano Pro — /fixtures?team=X&last=5&status=FT)
   homeForm?: string[];
   awayForm?: string[];
+  // Dados ricos de comparação únicos por jogo (comparison da API-Football)
+  apiComparison?: {
+    total?: { home: string; away: string } | null;
+    poisson?: { home: string; away: string } | null;
+    forme?: { home: string; away: string } | null;
+    att?: { home: string; away: string } | null;
+    def?: { home: string; away: string } | null;
+    h2h?: { home: string; away: string } | null;
+    goals?: { home: string; away: string } | null;
+  } | null;
 }
 
 export interface AiPredictionResult {
@@ -277,6 +287,16 @@ export interface AiPredictionResult {
   homeForm: string[];
   awayForm: string[];
   aiRecommendation: string;
+  // Dados ricos de comparação únicos por jogo — usados para exibição na barra de probabilidade
+  comparison?: {
+    total?: { home: string; away: string } | null;
+    poisson?: { home: string; away: string } | null;
+    forme?: { home: string; away: string } | null;
+    att?: { home: string; away: string } | null;
+    def?: { home: string; away: string } | null;
+    h2h?: { home: string; away: string } | null;
+    goals?: { home: string; away: string } | null;
+  } | null;
 }
 
 /**
@@ -316,13 +336,25 @@ export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPre
     ? `Forma recente:\n${homeFormText ? `- ${homeFormText}` : ""}\n${awayFormText ? `- ${awayFormText}` : ""}`
     : "";
 
+  // Dados de comparison únicos por jogo — enriquecem o contexto do LLM
+  const cmp = ctx.apiComparison;
+  const comparisonSection = cmp ? [
+    cmp.total ? `Score combinado: ${ctx.homeTeam} ${cmp.total.home} / ${ctx.awayTeam} ${cmp.total.away}` : "",
+    cmp.poisson ? `Distribuição Poisson: ${ctx.homeTeam} ${cmp.poisson.home} / ${ctx.awayTeam} ${cmp.poisson.away}` : "",
+    cmp.forme ? `Aproveitamento recente: ${ctx.homeTeam} ${cmp.forme.home} / ${ctx.awayTeam} ${cmp.forme.away}` : "",
+    cmp.att ? `Força de ataque: ${ctx.homeTeam} ${cmp.att.home} / ${ctx.awayTeam} ${cmp.att.away}` : "",
+    cmp.def ? `Força de defesa: ${ctx.homeTeam} ${cmp.def.home} / ${ctx.awayTeam} ${cmp.def.away}` : "",
+    cmp.h2h ? `Histórico H2H: ${ctx.homeTeam} ${cmp.h2h.home} / ${ctx.awayTeam} ${cmp.h2h.away}` : "",
+  ].filter(Boolean).join("\n") : "";
+
   // LLM redige apenas o texto narrativo — com base nos dados reais da API
-  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use a forma recente dos times para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. NÃO sugira apostas, NÃO mencione odds, NÃO diga qual time apostar. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
+  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use os dados abaixo para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. NÃO sugira apostas, NÃO mencione odds ou percentuais diretamente, NÃO diga qual time apostar. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
 Jogo: ${ctx.homeTeam} × ${ctx.awayTeam}
 Competição: ${ctx.competition}
 Data: ${dateStr}
 ${formSection}
-Contexto de probabilidade (use para embasar a narrativa, não mencione os números diretamente): ${ctx.homeTeam} ${home}% de chance de vitória | Empate ${draw}% | ${ctx.awayTeam} ${away}%
+${comparisonSection ? `Análise estatística:\n${comparisonSection}` : ""}
+Contexto de probabilidade (use para embasar a narrativa, não mencione os números): ${ctx.homeTeam} ${home}% de chance de vitória | Empate ${draw}% | ${ctx.awayTeam} ${away}%
 ${ctx.apiAdvice ? `Contexto adicional: ${ctx.apiAdvice}` : ""}
 Escreva apenas a análise, sem título.`;
 
@@ -342,6 +374,17 @@ Escreva apenas a análise, sem título.`;
     if (text.trim()) aiRecommendation = text.trim().slice(0, 400);
   } catch { /* usa fallback com dados reais */ }
 
+  // Normalizar comparison para o formato de armazenamento
+  const comparisonToSave = cmp ? {
+    total: cmp.total ?? null,
+    poisson: cmp.poisson ?? null,
+    forme: cmp.forme ?? null,
+    att: cmp.att ?? null,
+    def: cmp.def ?? null,
+    h2h: cmp.h2h ?? null,
+    goals: cmp.goals ?? null,
+  } : null;
+
   return {
     homeWin: home,
     draw,
@@ -349,5 +392,6 @@ Escreva apenas a análise, sem título.`;
     homeForm: ctx.homeForm ?? [],
     awayForm: ctx.awayForm ?? [],
     aiRecommendation,
+    comparison: comparisonToSave,
   };
 }

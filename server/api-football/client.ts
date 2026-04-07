@@ -366,6 +366,32 @@ export interface FixturePrediction {
 }
 
 /**
+ * Dados ricos de comparação entre os dois times, únicos por jogo.
+ * Retornados pelo endpoint /predictions junto com as probabilidades.
+ */
+export interface FixtureComparison {
+  forme: { home: string; away: string } | null;       // Aproveitamento recente (%)
+  att: { home: string; away: string } | null;         // Força de ataque (%)
+  def: { home: string; away: string } | null;         // Força de defesa (%)
+  poisson_distribution: { home: string; away: string } | null; // Distribuição Poisson
+  h2h: { home: string; away: string } | null;         // Histórico H2H (%)
+  goals: { home: string; away: string } | null;       // Média de gols (%)
+  total: { home: string; away: string } | null;       // Score total combinado (%)
+}
+
+/**
+ * Retorno completo do endpoint /predictions, incluindo probabilidades e comparison.
+ */
+export interface FixturePredictionFull {
+  predictions: FixturePrediction;
+  comparison: FixtureComparison;
+  teams?: {
+    home?: { last_5?: { form?: string; goals?: { for?: { average?: number }; against?: { average?: number } } } };
+    away?: { last_5?: { form?: string; goals?: { for?: { average?: number }; against?: { average?: number } } } };
+  };
+}
+
+/**
  * Busca os eventos de um jogo (gols, cartões, substituições).
  * Endpoint: GET /fixtures/events?fixture={fixtureId}
  * Consome 1 requisição.
@@ -400,13 +426,18 @@ export async function fetchFixtureStatistics(
  */
 export async function fetchFixturePredictions(
   fixtureId: number
-): Promise<FixturePrediction | null> {
+): Promise<FixturePredictionFull | null> {
   try {
-    const data = await apiFootballRequest<{ predictions: FixturePrediction }>("/predictions", {
+    const data = await apiFootballRequest<any>("/predictions", {
       fixture: fixtureId,
     });
     const resp = data.response[0] as any;
-    return resp?.predictions ?? null;
+    if (!resp?.predictions) return null;
+    return {
+      predictions: resp.predictions,
+      comparison: resp.comparison ?? null,
+      teams: resp.teams ?? null,
+    };
   } catch {
     return null; // endpoint pode não estar disponível no plano Free
   }
