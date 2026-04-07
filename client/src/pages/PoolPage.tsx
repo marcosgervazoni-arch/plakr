@@ -1890,40 +1890,28 @@ function GameCard({
             {/* PRÉ-JOGO: probabilidades + últimos 5 jogos + análise da IA */}
             {!finished && game.aiPrediction && game.aiPrediction.homeWin !== undefined && (
               <div className="space-y-3">
-                {/* Barra tripartida de probabilidade */}
-                {(() => {
-                  // Prioriza comparison.total (único por jogo) sobre percent (3 buckets genéricos)
-                  const cmpTotal = game.aiPrediction?.comparison?.total;
-                  const homeVal = cmpTotal ? parseFloat(cmpTotal.home) : game.aiPrediction!.homeWin;
-                  const awayVal = cmpTotal ? parseFloat(cmpTotal.away) : game.aiPrediction!.awayWin;
-                  // Para comparison.total não há empate — usamos o restante
-                  const drawVal = cmpTotal ? Math.max(0, 100 - homeVal - awayVal) : game.aiPrediction!.draw;
-                  return (
-                    <div className="space-y-1.5">
-                      <div className="flex h-2 rounded-full overflow-hidden">
-                        <div className="bg-primary/80" style={{ width: `${homeVal}%` }} />
-                        {drawVal > 0 && <div className="bg-muted-foreground/40" style={{ width: `${drawVal}%` }} />}
-                        <div className="bg-red-400/80" style={{ width: `${awayVal}%` }} />
-                      </div>
-                      <div className="flex justify-between text-[11px]">
-                        <div className="text-left">
-                          <span className="font-bold text-primary">{Math.round(homeVal)}%</span>
-                          <p className="text-muted-foreground">{game.teamAName} vence</p>
-                        </div>
-                        {drawVal > 0 && (
-                          <div className="text-center">
-                            <span className="font-bold text-muted-foreground">{Math.round(drawVal)}%</span>
-                            <p className="text-muted-foreground">Empate</p>
-                          </div>
-                        )}
-                        <div className="text-right">
-                          <span className="font-bold text-red-400">{Math.round(awayVal)}%</span>
-                          <p className="text-muted-foreground">{game.teamBName} vence</p>
-                        </div>
-                      </div>
+                {/* Barra tripartida de probabilidade — valores redistribuídos pelo backend */}
+                <div className="space-y-1.5">
+                  <div className="flex h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary/80" style={{ width: `${game.aiPrediction!.homeWin}%` }} />
+                    <div className="bg-muted-foreground/40" style={{ width: `${game.aiPrediction!.draw}%` }} />
+                    <div className="bg-red-400/80" style={{ width: `${game.aiPrediction!.awayWin}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <div className="text-left">
+                      <span className="font-bold text-primary">{game.aiPrediction!.homeWin}%</span>
+                      <p className="text-muted-foreground">{game.teamAName} vence</p>
                     </div>
-                  );
-                })()}
+                    <div className="text-center">
+                      <span className="font-bold text-muted-foreground">{game.aiPrediction!.draw}%</span>
+                      <p className="text-muted-foreground">Empate</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-red-400">{game.aiPrediction!.awayWin}%</span>
+                      <p className="text-muted-foreground">{game.teamBName} vence</p>
+                    </div>
+                  </div>
+                </div>
                 {/* Últimos 5 jogos */}
                 {(game.aiPrediction.homeForm?.length > 0 || game.aiPrediction.awayForm?.length > 0) && (
                   <div className="space-y-1.5">

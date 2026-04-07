@@ -310,13 +310,52 @@ export interface AiPredictionResult {
  *
  * Salvo em games.aiPrediction.
  */
+/**
+ * Redistribui comparison.total (home/away sem empate) em 3 valores que somam 100%.
+ *
+ * Estratégia: usa o apiPercent original como âncora para o empate.
+ * O empate é mantido do apiPercent, e home/away são redistribuídos proporcionalmente
+ * usando comparison.total como peso relativo.
+ *
+ * Exemplo:
+ *   apiPercent: home=10, draw=45, away=45
+ *   comparison.total: home=39.8%, away=60.2%
+ *   → pool disponível para home+away = 100 - 45 = 55%
+ *   → homeWin = 55 * (39.8/100) ≈ 22%
+ *   → awayWin = 55 * (60.2/100) ≈ 33%
+ *   → draw = 45%
+ */
+function redistributeWithComparison(
+  apiPercent: { home: number; draw: number; away: number },
+  cmpTotal: { home: string; away: string } | null | undefined,
+): { homeWin: number; draw: number; awayWin: number } {
+  if (!cmpTotal) {
+    return { homeWin: apiPercent.home, draw: apiPercent.draw, awayWin: apiPercent.away };
+  }
+  const cmpHome = parseFloat(cmpTotal.home) || 50;
+  const cmpAway = parseFloat(cmpTotal.away) || 50;
+  const cmpSum = cmpHome + cmpAway;
+  const drawPct = apiPercent.draw;
+  const pool = 100 - drawPct;
+  const homeWin = Math.round((pool * cmpHome) / cmpSum);
+  const awayWin = 100 - drawPct - homeWin;
+  return { homeWin, draw: drawPct, awayWin };
+}
+
 export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPredictionResult | null> {
   // Sem dados da API — não gera análise. Nunca inventar probabilidades.
   if (!ctx.apiPercent) {
     return null;
   }
 
-  const { home, draw, away } = ctx.apiPercent;
+  // Redistribuir percentuais usando comparison.total como peso único por jogo
+  const { homeWin, draw, awayWin } = redistributeWithComparison(
+    ctx.apiPercent,
+    ctx.apiComparison?.total,
+  );
+
+  // Nota: home/away do apiPercent não são mais usados diretamente — use homeWin/awayWin redistribuídos
+
   const dateStr = new Date(ctx.matchDate).toLocaleDateString("pt-BR", {
     day: "2-digit", month: "long", year: "numeric", timeZone: "America/Sao_Paulo",
   });
@@ -348,20 +387,20 @@ export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPre
   ].filter(Boolean).join("\n") : "";
 
   // LLM redige apenas o texto narrativo — com base nos dados reais da API
+  const favoriteLabel = homeWin > awayWin ? ctx.homeTeam : awayWin > homeWin ? ctx.awayTeam : "equilíbrio";
   const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use os dados abaixo para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. NÃO sugira apostas, NÃO mencione odds ou percentuais diretamente, NÃO diga qual time apostar. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
 Jogo: ${ctx.homeTeam} × ${ctx.awayTeam}
 Competição: ${ctx.competition}
 Data: ${dateStr}
 ${formSection}
 ${comparisonSection ? `Análise estatística:\n${comparisonSection}` : ""}
-Contexto de probabilidade (use para embasar a narrativa, não mencione os números): ${ctx.homeTeam} ${home}% de chance de vitória | Empate ${draw}% | ${ctx.awayTeam} ${away}%
-${ctx.apiAdvice ? `Contexto adicional: ${ctx.apiAdvice}` : ""}
+Contexto de probabilidade (use para embasar a narrativa, NÃO mencione os números): ${ctx.homeTeam} ${homeWin}% de chance de vitória | Empate ${draw}% | ${ctx.awayTeam} ${awayWin}%
 Escreva apenas a análise, sem título.`;
 
-  // Fallback de texto caso o LLM falhe — usa os dados reais da API
-  const favorite = home > away ? ctx.homeTeam : away > home ? ctx.awayTeam : "nenhum favorito claro";
-  let aiRecommendation = `${ctx.homeTeam} ${home}% | Empate ${draw}% | ${ctx.awayTeam} ${away}%. Favorito: ${favorite}.`;
-  if (ctx.apiAdvice) aiRecommendation += ` ${ctx.apiAdvice}.`;
+  // Fallback de texto caso o LLM falhe — narrativo, sem expor percentuais brutos
+  let aiRecommendation = favoriteLabel !== "equilíbrio"
+    ? `${favoriteLabel} chega como favorito para esse confronto. Análise baseada em dados estatísticos da temporada.`
+    : `Jogo equilibrado entre ${ctx.homeTeam} e ${ctx.awayTeam}. Qualquer resultado é possível.`;
 
   try {
     const response = await invokeLLM({
@@ -386,9 +425,9 @@ Escreva apenas a análise, sem título.`;
   } : null;
 
   return {
-    homeWin: home,
+    homeWin,
     draw,
-    awayWin: away,
+    awayWin,
     homeForm: ctx.homeForm ?? [],
     awayForm: ctx.awayForm ?? [],
     aiRecommendation,
