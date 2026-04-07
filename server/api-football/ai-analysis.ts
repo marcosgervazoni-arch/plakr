@@ -388,7 +388,7 @@ export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPre
 
   // LLM redige apenas o texto narrativo — com base nos dados reais da API
   const favoriteLabel = homeWin > awayWin ? ctx.homeTeam : awayWin > homeWin ? ctx.awayTeam : "equilíbrio";
-  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use os dados abaixo para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. NÃO sugira apostas, NÃO mencione odds ou percentuais diretamente, NÃO diga qual time apostar. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
+  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use os dados abaixo para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. NÃO sugira apostas, NÃO mencione odds ou percentuais diretamente, NÃO diga qual time apostar. NUNCA use expressões temporais relativas como "hoje", "amanhã", "agora", "neste momento" — o jogo pode ser em dias ou semanas. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
 Jogo: ${ctx.homeTeam} × ${ctx.awayTeam}
 Competição: ${ctx.competition}
 Data: ${dateStr}
@@ -405,7 +405,7 @@ Escreva apenas a análise, sem título.`;
   try {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "Você é um narrador de futebol brasileiro com energia de transmissão ao vivo — estilo CazéTV. Escreve análises pré-jogo animadas e envolventes para bolões de palpites. Foca no contexto esportivo: momento dos times, o que esperar do jogo, o que pode ser decisivo. NUNCA sugere apostas, NUNCA menciona odds ou percentuais, NUNCA diz qual resultado escolher. O objetivo é deixar o usuário animado para fazer o próprio palpite. Escreve em português brasileiro, sem emojis." },
+        { role: "system", content: "Você é um narrador de futebol brasileiro com energia de transmissão ao vivo — estilo CazéTV. Escreve análises pré-jogo animadas e envolventes para bolões de palpites. Foca no contexto esportivo: momento dos times, o que esperar do jogo, o que pode ser decisivo. NUNCA sugere apostas, NUNCA menciona odds ou percentuais, NUNCA diz qual resultado escolher. NUNCA usa expressões temporais relativas como 'hoje', 'amanhã', 'agora', 'neste momento' — o texto será lido em datas diferentes da geração. O objetivo é deixar o usuário animado para fazer o próprio palpite. Escreve em português brasileiro, sem emojis." },
         { role: "user", content: prompt },
       ],
     });

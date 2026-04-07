@@ -2660,3 +2660,8 @@
 - [x] Ocultar barra de probabilidade no frontend quando `predictionReliable = false`
 - [x] Passar `predictionReliable` como prop para o componente `GameCard`
 - [x] 423 testes passando, 0 erros TypeScript
+
+## Correção do Prompt do LLM — Expressões Temporais — Sprint 07/04/2026
+- [ ] Incluir data do jogo no prompt do buildAiPrediction
+- [ ] Proibir expressões temporais incorretas ("hoje", "amanhã", "agora") no prompt
+- [ ] Regenerar textos dos jogos afetados
