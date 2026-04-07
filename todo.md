@@ -2665,3 +2665,11 @@
 - [ ] Incluir data do jogo no prompt do buildAiPrediction
 - [ ] Proibir expressões temporais incorretas ("hoje", "amanhã", "agora") no prompt
 - [ ] Regenerar textos dos jogos afetados
+
+## Páginas Legais — Sprint 07/04/2026
+- [x] Redigir Política de Privacidade (LGPD, dados, direitos, contato)
+- [x] Redigir Termos de Uso (regras, plano Pro, IA, foro Farroupilha/RS)
+- [x] Criar página /privacy com layout Plakr
+- [x] Criar página /terms com layout Plakr
+- [x] Registrar rotas /privacy e /terms no App.tsx
+- [x] Rodapé da Home já possui links para /terms e /privacy

@@ -60,6 +60,8 @@ import AdminPricing from "./pages/admin/AdminPricing";
 import AdminX1Duels from "./pages/admin/AdminX1Duels";
 import AdminShareCard from "./pages/admin/AdminShareCard";
 import X1ChallengePage from "./pages/X1ChallengePage";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useReferralCapture } from "./hooks/useReferralCapture";
 
@@ -70,6 +72,8 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/" component={Home} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
       <Route path="/join/:token" component={JoinPool} />
       <Route path="/pools/public" component={PublicPools} />
       <Route path="/profile/:userId" component={PublicProfile} />
