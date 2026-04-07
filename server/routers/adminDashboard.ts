@@ -288,6 +288,7 @@ export const adminDashboardRouter = router({
     const { archivalCronHealth } = await import("../archival");
     const { emailCronHealth } = await import("../emailCron");
     const { x1PredictionResolverHealth } = await import("../jobs/x1-prediction-resolver");
+    const { apiFootballCronHealth } = await import("../api-football/cron");
 
     return {
       emailQueue: {
@@ -353,6 +354,47 @@ export const adminDashboardRouter = router({
           lastRunSuccess: x1PredictionResolverHealth.lastRunSuccess,
           lastError: x1PredictionResolverHealth.lastError,
           runCount: x1PredictionResolverHealth.runCount,
+        },
+        // ─── API-Football jobs ──────────────────────────────────────────────
+        apiSyncFixtures: {
+          name: "API-Football: Sync Fixtures",
+          interval: "2x/dia (06h e 18h UTC)",
+          lastRunAt: apiFootballCronHealth.syncFixtures.lastRunAt,
+          lastRunSuccess: apiFootballCronHealth.syncFixtures.lastRunSuccess,
+          lastError: apiFootballCronHealth.syncFixtures.lastError,
+          runCount: apiFootballCronHealth.syncFixtures.runCount,
+        },
+        apiSyncResults: {
+          name: "API-Football: Sync Results",
+          interval: "A cada 2h (últimos 7 dias)",
+          lastRunAt: apiFootballCronHealth.syncResults.lastRunAt,
+          lastRunSuccess: apiFootballCronHealth.syncResults.lastRunSuccess,
+          lastError: apiFootballCronHealth.syncResults.lastError,
+          runCount: apiFootballCronHealth.syncResults.runCount,
+        },
+        apiSyncTeams: {
+          name: "API-Football: Sync Times",
+          interval: "Semanal (Seg 02h UTC)",
+          lastRunAt: apiFootballCronHealth.syncTeams.lastRunAt,
+          lastRunSuccess: apiFootballCronHealth.syncTeams.lastRunSuccess,
+          lastError: apiFootballCronHealth.syncTeams.lastError,
+          runCount: apiFootballCronHealth.syncTeams.runCount,
+        },
+        apiRecalcFormatos: {
+          name: "API-Football: Recalc Formatos",
+          interval: "Semanal (Seg 03h UTC)",
+          lastRunAt: apiFootballCronHealth.recalcularFormatos.lastRunAt,
+          lastRunSuccess: apiFootballCronHealth.recalcularFormatos.lastRunSuccess,
+          lastError: apiFootballCronHealth.recalcularFormatos.lastError,
+          runCount: apiFootballCronHealth.recalcularFormatos.runCount,
+        },
+        apiAnalisesPrejogo: {
+          name: "API-Football: Análises Pré-Jogo",
+          interval: "Diário (05h UTC)",
+          lastRunAt: apiFootballCronHealth.gerarAnalisesPrejogo.lastRunAt,
+          lastRunSuccess: apiFootballCronHealth.gerarAnalisesPrejogo.lastRunSuccess,
+          lastError: apiFootballCronHealth.gerarAnalisesPrejogo.lastError,
+          runCount: apiFootballCronHealth.gerarAnalisesPrejogo.runCount,
         },
       },
     };

@@ -2635,3 +2635,10 @@
 - [x] batchSize aumentado de 50 para 400 (padrão 100) para processar todos os jogos de uma vez
 - [x] UI atualizada para mostrar quantidade de jogos durante o processamento
 - [x] 423 testes passando
+
+## Correções de Sincronização — Sessão Atual
+- [x] Fix 1: syncFixtures agora atualiza logos e nomes dos times em jogos existentes (antes só criava novos)
+- [x] Fix 2: syncResults expandido para janela de 7 dias (era 1 dia) — captura jogos adiados/remarcados
+- [x] Fix 3: Job semanal syncTeams adicionado ao cron (Seg 02h UTC) — sincroniza times de todos os torneios vinculados
+- [x] Fix 4: gerarAnalisesPrejogo agora roda DIARIAMENTE às 05h UTC (era semanal) — jogos mid-week têm análise em até 24h
+- [x] Fix 5: Health tracking adicionado a todos os 5 jobs da API-Football — visível em Admin → Saúde do Sistema

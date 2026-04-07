@@ -653,7 +653,17 @@ export async function syncFixtures(options: {
         if (existing) {
           await db
             .update(games)
-            .set({ matchDate, venue: fixture.fixture.venue?.name ?? null, phase, roundNumber })
+            .set({
+              matchDate,
+              venue: fixture.fixture.venue?.name ?? null,
+              phase,
+              roundNumber,
+              // Atualizar logos e nomes dos times (podem mudar na API)
+              teamAName: fixture.teams.home.name,
+              teamBName: fixture.teams.away.name,
+              teamAFlag: fixture.teams.home.logo,
+              teamBFlag: fixture.teams.away.logo,
+            })
             .where(eq(games.id, existing.id));
           gamesUpdated++;
         } else {
@@ -987,11 +997,13 @@ export async function syncResults(options: {
   let errorMessage: string | undefined;
   const syncStatusRef = { value: "success" as "success" | "error" | "partial" | "skipped" };
 
-  // Janela de busca: jogos que já deveriam ter terminado (até 2h atrás) até hoje
-  // Isso garante que jogos de ontem que não foram sincronizados também sejam capturados
+  // Janela de busca: últimos 7 dias até hoje
+  // Captura jogos adiados (PST/CANC/ABD) que foram remarcados e finalizados
+  // depois do período de sincronização original. 7 dias é seguro dentro da
+  // cota diária de 7500 requisições da API-Football.
   const now = new Date();
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const fromStr = yesterday.toISOString().slice(0, 10);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const fromStr = sevenDaysAgo.toISOString().slice(0, 10);
   const toStr = now.toISOString().slice(0, 10);
 
   for (const linked of linkedTournaments) {
