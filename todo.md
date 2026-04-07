@@ -2627,3 +2627,11 @@
 - [x] Novo resumo correto gerado e salvo: "Grêmio e Remo empataram sem gols..."
 - [x] Validação de consistência adicionada ao parseGoalsTimeline: se número de gols != scoreA+scoreB, descarta a timeline
 - [x] Validação aplicada nas duas chamadas do sync.ts (syncResults e backfill)
+
+## Bug: Contador de reprocessamento não reduzia (06/04/2026)
+
+- [x] Diagnóstico: backfill funcionava mas quando API não retornava stats, matchStatistics ficava null e o jogo continuava no contador
+- [x] Correção: quando API não retorna stats, salvar objeto sentinela com zeros (em vez de null) para marcar que o jogo foi processado
+- [x] batchSize aumentado de 50 para 400 (padrão 100) para processar todos os jogos de uma vez
+- [x] UI atualizada para mostrar quantidade de jogos durante o processamento
+- [x] 423 testes passando

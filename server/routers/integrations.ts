@@ -840,7 +840,7 @@ export const integrationsRouter = router({
    * Processa até 50 jogos por execução para não exceder a quota.
    */
   backfillGameData: adminProcedure
-    .input(z.object({ batchSize: z.number().min(1).max(100).default(50) }))
+    .input(z.object({ batchSize: z.number().min(1).max(500).default(100) }))
     .mutation(async ({ input, ctx }) => {
       logger.info(`[Backfill] Admin ${ctx.user.id} triggered backfill (batchSize=${input.batchSize})`);
       const result = await backfillGameData({

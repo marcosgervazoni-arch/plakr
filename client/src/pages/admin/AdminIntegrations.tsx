@@ -916,10 +916,10 @@ export default function AdminIntegrations() {
                       size="sm"
                       className="w-full gap-1.5 text-xs"
                       disabled={!integrationSettings?.apiFootballEnabled || backfillMutation.isPending || (backfillStatus?.pendingCount ?? 0) === 0}
-                      onClick={() => backfillMutation.mutate({ batchSize: 50 })}
+                      onClick={() => backfillMutation.mutate({ batchSize: 400 })}
                     >
                       {backfillMutation.isPending ? (
-                        <><Loader2 className="h-3 w-3 animate-spin" /> Reprocessando...</>
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Reprocessando ({backfillStatus?.pendingCount ?? 0} jogos)...</>
                       ) : (
                         <><BarChart2 className="h-3 w-3" /> Reprocessar jogos finalizados</>
                       )}
@@ -928,7 +928,7 @@ export default function AdminIntegrations() {
                       <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 space-y-0.5">
                         <p>✅ {backfillMutation.data.succeeded} processados com sucesso</p>
                         {backfillMutation.data.failed > 0 && <p>⚠️ {backfillMutation.data.failed} falhas</p>}
-                        <p className="text-muted-foreground/70">{backfillMutation.data.requestsUsed} requisições usadas</p>
+                        <p className="text-muted-foreground/70">{backfillMutation.data.requestsUsed} requisições usadas · contador atualizado</p>
                       </div>
                     )}
                   </div>

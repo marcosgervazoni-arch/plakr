@@ -736,7 +736,15 @@ async function applyGameResult(
         fetchFixtureStatistics(fixtureId),
       ]);
       goalsTimeline = parseGoalsTimeline(events, existingGame.teamAName ?? "", scoreA, scoreB);
-      matchStatistics = parseMatchStatistics(stats, existingGame.teamAName ?? "");
+      const rawStats = parseMatchStatistics(stats, existingGame.teamAName ?? "");
+      // Se a API não retornou estatísticas, salvar objeto sentinela para marcar que o jogo foi processado
+      matchStatistics = rawStats ?? {
+        homePossession: 0, awayPossession: 0,
+        homeShots: 0, awayShots: 0,
+        homeCorners: 0, awayCorners: 0,
+        homeYellow: 0, awayYellow: 0,
+        homeRed: 0, awayRed: 0,
+      };
 
       // Salvar gols e estatísticas no banco
       const db = await getDb();
@@ -1140,7 +1148,16 @@ export async function backfillGameData(options: {
       requestsUsed += 2;
 
       const goalsTimeline = parseGoalsTimeline(events, game.teamAName ?? "", game.scoreA, game.scoreB);
-      const matchStatistics = parseMatchStatistics(stats, game.teamAName ?? "");
+      const rawStats = parseMatchStatistics(stats, game.teamAName ?? "");
+      // Se a API não retornou estatísticas, salvar objeto sentinela para marcar que o jogo
+      // foi processado (evita que fique no contador de pendentes indefinidamente)
+      const matchStatistics = rawStats ?? {
+        homePossession: 0, awayPossession: 0,
+        homeShots: 0, awayShots: 0,
+        homeCorners: 0, awayCorners: 0,
+        homeYellow: 0, awayYellow: 0,
+        homeRed: 0, awayRed: 0,
+      };
 
       // Salvar no banco
       await db.update(games).set({ goalsTimeline, matchStatistics }).where(eq(games.id, game.id));
