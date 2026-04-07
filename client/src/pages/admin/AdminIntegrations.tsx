@@ -171,6 +171,13 @@ export default function AdminIntegrations() {
     { refetchInterval: (query) => (query.state.data?.status === "running" ? 2000 : false) }
   );
   const { data: aiPendingData, refetch: refetchAiPending } = trpc.integrations.getAiPendingCount.useQuery({});
+
+  // Refetch do contador de pendentes quando o job de IA terminar
+  useEffect(() => {
+    if (aiBackfillProgress?.status === "done" || aiBackfillProgress?.status === "error") {
+      refetchAiPending();
+    }
+  }, [aiBackfillProgress?.status, refetchAiPending]);
   const backfillAiMutation = trpc.integrations.backfillAiPredictions.useMutation({
     onSuccess: (data) => {
       if (data.started) {
