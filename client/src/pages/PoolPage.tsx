@@ -892,6 +892,7 @@ export default function PoolPage() {
                                 placeBetPending={placeBet.isPending}
                                 myRankPosition={myPosition?.position}
                                 shareCardConfig={adConfig?.shareCardConfig}
+                                predictionReliable={data?.predictionReliable ?? false}
                               />
                             );
                           })}
@@ -938,6 +939,7 @@ export default function PoolPage() {
                       myRankPosition={myPosition?.position}
                       showPhaseLabel
                       shareCardConfig={adConfig?.shareCardConfig}
+                      predictionReliable={data?.predictionReliable ?? false}
                     />
                   );
                 })}
@@ -1415,10 +1417,11 @@ interface GameCardProps {
   myRankPosition?: number | null;
   showPhaseLabel?: boolean;
   shareCardConfig?: import("../../../drizzle/schema").ShareCardStateConfig | null;
+  predictionReliable?: boolean;
 }
 function GameCard({
   game, myBet, open, finished, live, betA, betB, hasBet, poolId,
-  betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition, showPhaseLabel, shareCardConfig,
+  betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition, showPhaseLabel, shareCardConfig, predictionReliable,
 }: GameCardProps) {
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -1890,7 +1893,8 @@ function GameCard({
             {/* PRÉ-JOGO: probabilidades + últimos 5 jogos + análise da IA */}
             {!finished && game.aiPrediction && game.aiPrediction.homeWin !== undefined && (
               <div className="space-y-3">
-                {/* Barra tripartida de probabilidade — valores redistribuídos pelo backend */}
+                {/* Barra tripartida de probabilidade — exibida apenas em ligas com dados confiáveis (stddev_cmp >= 20) */}
+                {predictionReliable && (
                 <div className="space-y-1.5">
                   <div className="flex h-2 rounded-full overflow-hidden">
                     <div className="bg-primary/80" style={{ width: `${game.aiPrediction!.homeWin}%` }} />
@@ -1912,6 +1916,7 @@ function GameCard({
                     </div>
                   </div>
                 </div>
+                )}
                 {/* Últimos 5 jogos */}
                 {(game.aiPrediction.homeForm?.length > 0 || game.aiPrediction.awayForm?.length > 0) && (
                   <div className="space-y-1.5">

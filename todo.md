@@ -2652,3 +2652,11 @@
 - [x] Atualizar `backfillAiPredictions` para regenerar jogos sem `comparison` (1.602 jogos)
 - [x] Corrigir sync.ts e cron.ts para usar nova estrutura `FixturePredictionFull`
 - [x] 423 testes passando, 0 erros TypeScript
+
+## Critério de Confiança da Barra de Probabilidade — Sprint 07/04/2026
+
+- [x] Calcular stddev do comparison.total por liga no backend via `getPredictionReliability()` (stddev_cmp >= 20)
+- [x] Expor `predictionReliable` no retorno do `getBySlug`
+- [x] Ocultar barra de probabilidade no frontend quando `predictionReliable = false`
+- [x] Passar `predictionReliable` como prop para o componente `GameCard`
+- [x] 423 testes passando, 0 erros TypeScript

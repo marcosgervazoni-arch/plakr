@@ -266,7 +266,43 @@ export async function createTeam(data: InsertTeam): Promise<number> {
   return (result[0] as any).insertId;
 }
 
-// ─── GAMES ────────────────────────────────────────────────────────────────────
+// ─── GAMES ───────────────────────────────────────────────────────────────────────────────
+/**
+ * Calcula se as probabilidades pré-jogo de uma liga são confiáveis.
+ *
+ * Critério: stddev do comparison.total.home >= 20 para jogos agendados da liga.
+ * Ligas com stddev alto têm dados genuinamente variados por jogo (Copa do Mundo,
+ * Libertadores, Sudamericana). Ligas com stddev baixo usam buckets genéricos
+ * (Brasileirão Série A/B/C/D).
+ *
+ * Resultado é calculado dinamicamente — reflete o estado atual dos dados no banco.
+ */
+export async function getPredictionReliability(apiFootballLeagueId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const result = await db.execute(sql`
+      SELECT
+        STDDEV(CAST(
+          REPLACE(
+            JSON_UNQUOTE(JSON_EXTRACT(g.aiPrediction, '$.comparison.total.home')),
+            '%', ''
+          ) AS DECIMAL(5,1)
+        )) as stddev_cmp
+      FROM games g
+      JOIN tournaments t ON g.tournamentId = t.id
+      WHERE g.status = 'scheduled'
+        AND g.aiPrediction IS NOT NULL
+        AND JSON_EXTRACT(g.aiPrediction, '$.comparison.total.home') IS NOT NULL
+        AND t.apiFootballLeagueId = ${apiFootballLeagueId}
+    `);
+    const rows = result[0] as unknown as any[];
+    const stddev = parseFloat(rows?.[0]?.stddev_cmp ?? "0");
+    return stddev >= 20;
+  } catch {
+    return false;
+  }
+}
 
 export async function getGamesByTournament(tournamentId: number) {
   const db = await getDb();

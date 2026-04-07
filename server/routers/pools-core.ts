@@ -28,6 +28,7 @@ import {
   updatePool,
   upsertPoolScoringRules,
   saveFinalPositions,
+  getPredictionReliability,
 } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 import { Err, PoolErr } from "../errors";
@@ -106,7 +107,12 @@ export const poolsCoreRouter = router({
       const rules = await getPoolScoringRules(pool.id);
       const memberCount = await countPoolMembers(pool.id);
       const phases = await getTournamentPhases(pool.tournamentId);
-      return { pool, tournament, games: gameList, rules, memberCount, myRole: member?.role, phases };
+      // Calcular confiabilidade das probabilidades pré-jogo para esta liga
+      // stddev_cmp >= 20 indica dados suficientemente variados para exibir a barra
+      const predictionReliable = tournament?.apiFootballLeagueId
+        ? await getPredictionReliability(tournament.apiFootballLeagueId)
+        : false;
+      return { pool, tournament, games: gameList, rules, memberCount, myRole: member?.role, phases, predictionReliable };
     }),
 
   // ── Listar bolões públicos ─────────────────────────────────────────────────
