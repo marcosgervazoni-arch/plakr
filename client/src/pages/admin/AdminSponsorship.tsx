@@ -437,6 +437,61 @@ export default function AdminSponsorship() {
     }
   }, [existingSponsor, selectedPoolId]);
 
+  // ─── Queries e mutations de Badges Patrocinados ─────────────────────────
+  const badgeFileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingBadgeKey, setUploadingBadgeKey] = useState<string | null>(null);
+  const [pendingBadgeKey, setPendingBadgeKey] = useState<string | null>(null);
+  const { data: sponsorBadges, refetch: refetchBadges } = trpc.pools.badgeList.useQuery(
+    { poolId: selectedPoolId! },
+    { enabled: !!selectedPoolId && !!existingSponsor?.id }
+  );
+  const upsertBadgeMutation = trpc.pools.badgeUpsert.useMutation({
+    onSuccess: () => { toast.success("Badge salvo!"); refetchBadges(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const toggleBadgeMutation = trpc.pools.badgeToggle.useMutation({
+    onSuccess: () => refetchBadges(),
+    onError: (e) => toast.error(e.message),
+  });
+  const removeBadgeMutation = trpc.pools.badgeRemove.useMutation({
+    onSuccess: () => { toast.success("Badge removido."); refetchBadges(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const getBadgeForDynamic = (key: string) => sponsorBadges?.find((b) => b.dynamic === key);
+  const handleBadgeSvgUpload = async (file: File, dynamicKey: string) => {
+    if (!file.type.includes("svg") && !file.type.startsWith("image/")) {
+      toast.error("Apenas SVG ou imagens são permitidos."); return;
+    }
+    if (file.size > 1 * 1024 * 1024) { toast.error("Arquivo deve ter no máximo 1MB."); return; }
+    setUploadingBadgeKey(dynamicKey);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = (e.target?.result as string).split(",")[1];
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64, mimeType: file.type, filename: `badge-${dynamicKey}-${Date.now()}.${file.name.split(".").pop()}` }),
+        });
+        const data = await res.json();
+        if (data.url && selectedPoolId && existingSponsor?.id) {
+          const existing = getBadgeForDynamic(dynamicKey);
+          await upsertBadgeMutation.mutateAsync({
+            id: existing?.id,
+            poolId: selectedPoolId,
+            sponsorId: existingSponsor.id,
+            dynamic: dynamicKey as any,
+            badgeName: existing?.badgeName || DYNAMICS.find(d => d.key === dynamicKey)?.label || dynamicKey,
+            svgUrl: data.url,
+            isActive: existing?.isActive ?? false,
+          });
+        } else { toast.error("Erro ao enviar arquivo."); }
+        setUploadingBadgeKey(null);
+      };
+      reader.readAsDataURL(file);
+    } catch { toast.error("Erro ao enviar arquivo."); setUploadingBadgeKey(null); }
+  };
+
   const upsertMutation = trpc.pools.adminUpsertSponsor.useMutation({
     onSuccess: () => {
       toast.success("Patrocínio salvo com sucesso!");
@@ -875,7 +930,76 @@ export default function AdminSponsorship() {
                 </Section>
 
                 {/* Seção: Badges Patrocinados */}
-                <SponsorBadgesSection poolId={selectedPoolId} sponsorId={existingSponsor?.id} />
+                {existingSponsor?.id && (
+                  <Section id="badges" title="Badges Patrocinados" icon={Trophy} openSections={openSections} onToggle={toggleSection}>
+                    <p className="text-xs text-muted-foreground">Configure até 9 badges para este bolão. Cada dinâmica tem raridade fixa. Ative o toggle para disponibilizar o badge.</p>
+                    <input
+                      ref={badgeFileInputRef}
+                      type="file"
+                      accept="image/svg+xml,image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && pendingBadgeKey) handleBadgeSvgUpload(file, pendingBadgeKey);
+                        e.target.value = "";
+                      }}
+                    />
+                    <div className="space-y-2">
+                      {DYNAMICS.map((dyn) => {
+                        const badge = getBadgeForDynamic(dyn.key);
+                        const isUploading = uploadingBadgeKey === dyn.key;
+                        return (
+                          <div key={dyn.key} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/30">
+                            <div className="h-10 w-10 rounded-lg bg-muted/50 flex items-center justify-center shrink-0 overflow-hidden border border-border/40">
+                              {badge?.svgUrl ? (
+                                <img src={badge.svgUrl} alt={dyn.label} className="h-8 w-8 object-contain" />
+                              ) : (
+                                <Trophy className="h-5 w-5 text-muted-foreground/40" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">{dyn.label}</span>
+                                <span className={`text-xs font-medium ${dyn.rarityColor}`}>{dyn.rarity}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">{dyn.desc}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-xs"
+                                disabled={isUploading}
+                                onClick={() => { setPendingBadgeKey(dyn.key); badgeFileInputRef.current?.click(); }}
+                              >
+                                {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                                <span className="ml-1">{badge?.svgUrl ? "Trocar" : "SVG"}</span>
+                              </Button>
+                              {badge && (
+                                <>
+                                  <Switch
+                                    checked={badge.isActive}
+                                    onCheckedChange={(v) => toggleBadgeMutation.mutate({ id: badge.id, isActive: v })}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                    onClick={() => removeBadgeMutation.mutate({ id: badge.id })}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Section>
+                )}
 
                 {/* Seção: Compartilhamento */}
                 <Section id="sharing" title="Compartilhamento" icon={Bell} openSections={openSections} onToggle={toggleSection}>

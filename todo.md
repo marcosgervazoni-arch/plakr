@@ -2719,3 +2719,6 @@
 - [x] Frontend: seção "Conquistas Especiais" na página Conquistas.tsx (grid, moldura dourada lendário, tooltip com data e bolão)
 - [x] Notificação in-app ao conquistar badge patrocinado (com logo do patrocinador)
 - [x] Testes: 450 passando (zero falhas)
+
+## Ajuste UX — Badges Patrocinados no AdminSponsorship (Sprint 09/04/2026)
+- [ ] Mover SponsorBadgesSection para dentro do AdminSponsorship.tsx como seção colapsável (padrão visual das demais seções)
