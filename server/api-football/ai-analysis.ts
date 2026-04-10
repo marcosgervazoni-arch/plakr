@@ -332,8 +332,13 @@ function redistributeWithComparison(
   if (!cmpTotal) {
     return { homeWin: apiPercent.home, draw: apiPercent.draw, awayWin: apiPercent.away };
   }
-  const cmpHome = parseFloat(cmpTotal.home) || 50;
-  const cmpAway = parseFloat(cmpTotal.away) || 50;
+  const cmpHome = parseFloat(cmpTotal.home);
+  const cmpAway = parseFloat(cmpTotal.away);
+  // Se comparison.total retornou zeros (API sem dados de comparação reais),
+  // usar apiPercent diretamente — evita o fallback 50/50 que gera 34%/33%/33% em todos os jogos
+  if (!cmpHome && !cmpAway) {
+    return { homeWin: apiPercent.home, draw: apiPercent.draw, awayWin: apiPercent.away };
+  }
   const cmpSum = cmpHome + cmpAway;
   const drawPct = apiPercent.draw;
   const pool = 100 - drawPct;

@@ -1899,8 +1899,15 @@ function GameCard({
             {/* PRÉ-JOGO: probabilidades + últimos 5 jogos + análise da IA */}
             {!finished && game.aiPrediction && game.aiPrediction.homeWin !== undefined && (
               <div className="space-y-3">
-                {/* Barra tripartida de probabilidade — exibida apenas em ligas com dados confiáveis (stddev_cmp >= 20) */}
-                {predictionReliable && (
+                {/* Barra tripartida de probabilidade — exibida apenas em ligas com dados confiáveis (stddev_cmp >= 20)
+                     e quando os valores não são quase uniformes (diferença mínima de 5pp entre maior e menor,
+                     evitando exibir 34%/33%/33% que indica ausência de dados reais da API) */}
+                {predictionReliable && (() => {
+                  const { homeWin, draw, awayWin } = game.aiPrediction!;
+                  const maxVal = Math.max(homeWin, draw, awayWin);
+                  const minVal = Math.min(homeWin, draw, awayWin);
+                  return (maxVal - minVal) >= 5;
+                })() && (
                 <div className="space-y-1.5">
                   <div className="flex h-2 rounded-full overflow-hidden">
                     <div className="bg-primary/80" style={{ width: `${game.aiPrediction!.homeWin}%` }} />
