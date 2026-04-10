@@ -1,0 +1,1 @@
+ALTER TABLE `pool_sponsors` ADD `sponsoredNotificationActive` boolean DEFAULT false NOT NULL;

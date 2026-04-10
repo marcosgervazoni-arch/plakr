@@ -1055,6 +1055,7 @@ export const poolSponsors = mysqlTable("pool_sponsors", {
 
   // Notificação patrocinada de lembrete de rodada
   sponsoredNotificationText: text("sponsoredNotificationText"),
+  sponsoredNotificationActive: boolean("sponsoredNotificationActive").default(false).notNull(),
 
   // Notificação patrocinada de atualização de ranking
   rankingNotificationText: text("rankingNotificationText"),

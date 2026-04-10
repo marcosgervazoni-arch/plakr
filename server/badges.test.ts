@@ -252,12 +252,16 @@ describe("checkCriterion — Comunidade", () => {
 });
 
 describe("checkCriterion — Exclusivo", () => {
-  it("early_user: true quando userId <= 100 (Chegou Cedo)", async () => {
+  it("early_user: true quando posição por data de cadastro <= N (Chegou Cedo)", async () => {
+    // A implementação usa COUNT(*) de usuários com createdAt <= do usuário alvo
+    mockDb.select.mockReturnValue(makeChain([{ pos: 50 }]));
     expect(await checkCriterion(50, "early_user", 100)).toBe(true);
+    mockDb.select.mockReturnValue(makeChain([{ pos: 100 }]));
     expect(await checkCriterion(100, "early_user", 100)).toBe(true);
   });
 
-  it("early_user: false quando userId > 100", async () => {
+  it("early_user: false quando posição por data de cadastro > N", async () => {
+    mockDb.select.mockReturnValue(makeChain([{ pos: 101 }]));
     expect(await checkCriterion(101, "early_user", 100)).toBe(false);
   });
 
@@ -304,8 +308,13 @@ describe("calculateAndAssignBadges", () => {
 
   it("não atribui badge que o usuário já possui", async () => {
     mockDb.select
-      .mockReturnValueOnce(makeChain([badgeChuteCerto]))
-      .mockReturnValueOnce(makeChain([{ badgeId: 1 }])); // já possui
+      .mockReturnValueOnce(makeChain([badgeChuteCerto]))  // allBadges
+      .mockReturnValueOnce(makeChain([{ badgeId: 1 }]))  // earned
+      .mockReturnValueOnce(makeChain([{ count: 1 }]));   // checkCriterion (ainda qualifica, não revogar)
+
+    // Mock para db.delete (não deve ser chamado pois ainda qualifica)
+    const deleteChain = { where: vi.fn().mockResolvedValue({ affectedRows: 0 }) };
+    mockDb.delete.mockReturnValue(deleteChain);
 
     const result = await calculateAndAssignBadges(1);
     expect(result).toHaveLength(0);

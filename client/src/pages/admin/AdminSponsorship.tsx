@@ -58,6 +58,7 @@ interface SponsorForm {
   popupActive: boolean;
   showLogoOnShareCard: boolean;
   sponsoredNotificationText: string;
+  sponsoredNotificationActive: boolean;
   rankingNotificationText: string;
   rankingNotificationActive: boolean;
   isActive: boolean;
@@ -83,6 +84,7 @@ const EMPTY_FORM: SponsorForm = {
   popupActive: false,
   showLogoOnShareCard: false,
   sponsoredNotificationText: "",
+  sponsoredNotificationActive: false,
   rankingNotificationText: "",
   rankingNotificationActive: false,
   isActive: true,
@@ -427,6 +429,7 @@ export default function AdminSponsorship() {
         popupActive: existingSponsor.popupActive ?? false,
         showLogoOnShareCard: existingSponsor.showLogoOnShareCard ?? false,
         sponsoredNotificationText: existingSponsor.sponsoredNotificationText ?? "",
+        sponsoredNotificationActive: (existingSponsor as any).sponsoredNotificationActive ?? false,
         rankingNotificationText: (existingSponsor as any).rankingNotificationText ?? "",
         rankingNotificationActive: (existingSponsor as any).rankingNotificationActive ?? false,
         isActive: existingSponsor.isActive ?? true,
@@ -552,6 +555,9 @@ export default function AdminSponsorship() {
       popupActive: form.popupActive,
       showLogoOnShareCard: form.showLogoOnShareCard,
       sponsoredNotificationText: form.sponsoredNotificationText || null,
+      sponsoredNotificationActive: form.sponsoredNotificationActive,
+      rankingNotificationText: form.rankingNotificationText || null,
+      rankingNotificationActive: form.rankingNotificationActive,
       isActive: form.isActive,
       enabledForOrganizer: form.enabledForOrganizer,
     });
@@ -761,15 +767,12 @@ export default function AdminSponsorship() {
                       onCheckedChange={(v) => setForm((f) => ({ ...f, bannerActive: v }))}
                     />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className={`space-y-4 ${!form.bannerActive ? "opacity-50 pointer-events-none" : ""}`}>
                     <div className="space-y-1.5">
-                      <Label>URL da Imagem do Banner</Label>
-                      <Input
-                        placeholder="https://..."
+                      <Label>Imagem do Banner</Label>
+                      <LogoUploader
                         value={form.bannerImageUrl}
-                        onChange={(e) => setForm((f) => ({ ...f, bannerImageUrl: e.target.value }))}
-                        disabled={!form.bannerActive}
-                        className="disabled:opacity-50"
+                        onChange={(url) => setForm((f) => ({ ...f, bannerImageUrl: url }))}
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -778,8 +781,6 @@ export default function AdminSponsorship() {
                         placeholder="https://..."
                         value={form.bannerLinkUrl}
                         onChange={(e) => setForm((f) => ({ ...f, bannerLinkUrl: e.target.value }))}
-                        disabled={!form.bannerActive}
-                        className="disabled:opacity-50"
                       />
                     </div>
                   </div>
@@ -806,14 +807,13 @@ export default function AdminSponsorship() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>URL da Imagem</Label>
-                      <Input
-                        placeholder="https://..."
-                        value={form.popupImageUrl}
-                        onChange={(e) => setForm((f) => ({ ...f, popupImageUrl: e.target.value }))}
-                        disabled={!form.popupActive}
-                        className="disabled:opacity-50"
-                      />
+                      <Label>Imagem do Popup</Label>
+                      <div className={!form.popupActive ? "opacity-50 pointer-events-none" : ""}>
+                        <LogoUploader
+                          value={form.popupImageUrl}
+                          onChange={(url) => setForm((f) => ({ ...f, popupImageUrl: url }))}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-1.5">
@@ -884,23 +884,34 @@ export default function AdminSponsorship() {
 
                 {/* Seção: Notificações */}
                 <Section id="notifications" title="Notificações Patrocinadas" icon={Bell} openSections={openSections} onToggle={toggleSection}>
-                  <div className="space-y-1.5">
-                    <Label className="flex items-center gap-1">
-                      Notificação de Lembrete de Rodada
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground" /></TooltipTrigger>
-                          <TooltipContent>Usado nos lembretes de palpite enviados antes de cada rodada</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium flex items-center gap-1">
+                          <Bell className="h-3.5 w-3.5 text-brand" />
+                          Notificação de Lembrete de Rodada
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground" /></TooltipTrigger>
+                              <TooltipContent>Usado nos lembretes de palpite enviados antes de cada rodada</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Aparece como assinatura nos lembretes de rodada para membros deste bolão</p>
+                      </div>
+                      <Switch
+                        checked={form.sponsoredNotificationActive}
+                        onCheckedChange={(v) => setForm((f) => ({ ...f, sponsoredNotificationActive: v }))}
+                      />
+                    </div>
                     <Textarea
                       placeholder="Ex: Rodada 5 começa amanhã — lembrança da Cervejaria Dado Bier!"
                       value={form.sponsoredNotificationText}
                       onChange={(e) => setForm((f) => ({ ...f, sponsoredNotificationText: e.target.value }))}
                       rows={2}
+                      disabled={!form.sponsoredNotificationActive}
+                      className="disabled:opacity-50"
                     />
-                    <p className="text-xs text-muted-foreground">Aparece como assinatura nos lembretes de rodada para membros deste bolão</p>
                   </div>
 
                   <div className="border-t border-border/30 pt-4 space-y-3">
@@ -930,8 +941,13 @@ export default function AdminSponsorship() {
                 </Section>
 
                 {/* Seção: Badges Patrocinados */}
-                {existingSponsor?.id && (
+                {selectedPoolId && (
                   <Section id="badges" title="Badges Patrocinados" icon={Trophy} openSections={openSections} onToggle={toggleSection}>
+                    {!existingSponsor?.id && (
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs mb-2">
+                        ⚠️ Salve o patrocinador primeiro para poder fazer upload de SVGs e ativar badges.
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground">Configure até 9 badges para este bolão. Cada dinâmica tem raridade fixa. Ative o toggle para disponibilizar o badge.</p>
                     <input
                       ref={badgeFileInputRef}

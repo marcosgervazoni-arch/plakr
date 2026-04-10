@@ -31,6 +31,9 @@ const sponsorBaseSchema = z.object({
   popupActive: z.boolean().optional(),
   showLogoOnShareCard: z.boolean().optional(),
   sponsoredNotificationText: z.string().max(500).nullable().optional(),
+  sponsoredNotificationActive: z.boolean().optional(),
+  rankingNotificationText: z.string().max(500).nullable().optional(),
+  rankingNotificationActive: z.boolean().optional(),
   isActive: z.boolean().optional(),
 });
 
