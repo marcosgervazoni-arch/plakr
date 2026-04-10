@@ -2673,3 +2673,16 @@
 - [x] Criar página /terms com layout Plakr
 - [x] Registrar rotas /privacy e /terms no App.tsx
 - [x] Rodapé da Home já possui links para /terms e /privacy
+
+## Módulo de Naming Rights e Patrocínio de Bolões
+- [x] Schema: criar tabela pool_sponsors com todos os campos
+- [x] Migração SQL aplicada no banco
+- [x] Backend: tRPC router pools-sponsor.ts (upsert, get, delete, toggle, enableForOrganizer)
+- [x] Permissões: Super Admin acesso total; Organizador Pro Ilimitado acesso parcial (sem slug)
+- [x] Frontend: tela Admin → Patrocínio de Bolões (AdminSponsorship.tsx) com todos os campos
+- [x] Frontend: banner exclusivo do patrocinador na página do bolão (SponsorBanner)
+- [x] Frontend: mensagem de boas-vindas do patrocinador (SponsorWelcomeMessage)
+- [x] Frontend: popup configurável (título, texto, logo, botão+link, frequência, delay, toggle)
+- [x] Popup não substitui Adsterra — coexistem
+- [x] Testes vitest: 16 casos passando (439 total)
+- [ ] Card de compartilhamento: exibir logo do patrocinador quando configurado (backlog)

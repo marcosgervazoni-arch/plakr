@@ -69,6 +69,7 @@ import PoolBottomNav from "@/components/PoolBottomNav";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { AdBanner } from "@/components/AdBanner";
 import { AdInterleaved } from "@/components/AdInterleaved";
+import { SponsorBanner, SponsorPopup, SponsorWelcomeMessage } from "@/components/SponsorDisplay";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -676,6 +677,9 @@ export default function PoolPage() {
             <ShareCardPoolBanner poolId={pool.id} poolSlug={pool.slug} poolName={pool.name} />
           )}
 
+          {/* ── Banner do patrocinador (abaixo do hero, acima do invite banner) ── */}
+          {pool.id && <SponsorWelcomeMessage poolId={pool.id} userId={user?.id ?? 0} />}
+          {pool.id && <SponsorBanner poolId={pool.id} className="mx-4 mt-3" />}
           {/* Invite banner — organizador vê o banner completo; participante vê botão discreto de compartilhar (apenas se invitePermission === all_members) */}
           {pool.inviteToken && (
             isOrganizer
@@ -1319,6 +1323,8 @@ export default function PoolPage() {
         />
       )}
 
+      {/* ── Popup do patrocinador ── */}
+      {pool?.id && user?.id && <SponsorPopup poolId={pool.id} userId={user.id} />}
       {/* ── Barra de navegação inferior FAB ── */}
       <PoolBottomNav
         activeTab={activeTab}

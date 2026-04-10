@@ -1015,3 +1015,54 @@ export const gameBetAnalyses = mysqlTable("game_bet_analyses", {
   uniqUserGame: unique("uniq_user_game_pool").on(t.gameId, t.userId, t.poolId),
 }));
 export type GameBetAnalysis = typeof gameBetAnalyses.$inferSelect;
+
+// ─── PATROCÍNIO DE BOLÕES (Naming Rights) ────────────────────────────────────
+// Cada bolão pode ter um patrocinador configurado pelo Super Admin.
+// O organizador Pro Ilimitado pode editar campos parciais se enabledForOrganizer=true.
+// Slug customizado é exclusividade do Super Admin (nunca editável pelo organizador).
+export const poolSponsors = mysqlTable("pool_sponsors", {
+  id: int("id").autoincrement().primaryKey(),
+  poolId: int("poolId").notNull().unique().references(() => pools.id, { onDelete: "cascade" }),
+
+  // Identidade do patrocinador
+  sponsorName: varchar("sponsorName", { length: 255 }).notNull(),
+  sponsorLogoUrl: text("sponsorLogoUrl"),
+  // Naming rights — slug customizado (somente Super Admin)
+  customSlug: varchar("customSlug", { length: 128 }).unique(),
+
+  // Mensagem de boas-vindas exibida ao entrar no bolão
+  welcomeMessage: text("welcomeMessage"),
+  welcomeMessageActive: boolean("welcomeMessageActive").default(false).notNull(),
+
+  // Banner exclusivo dentro do bolão
+  bannerImageUrl: text("bannerImageUrl"),
+  bannerLinkUrl: text("bannerLinkUrl"),
+  bannerActive: boolean("bannerActive").default(false).notNull(),
+
+  // Popup patrocinado
+  popupTitle: varchar("popupTitle", { length: 255 }),
+  popupText: text("popupText"),
+  popupImageUrl: text("popupImageUrl"),
+  popupButtonText: varchar("popupButtonText", { length: 100 }),
+  popupButtonUrl: text("popupButtonUrl"),
+  popupFrequency: mysqlEnum("popupFrequency", ["once_per_member", "once_per_session", "always"])
+    .default("once_per_session"),
+  popupDelaySeconds: int("popupDelaySeconds").default(3).notNull(),
+  popupActive: boolean("popupActive").default(false).notNull(),
+
+  // Card de compartilhamento
+  showLogoOnShareCard: boolean("showLogoOnShareCard").default(false).notNull(),
+
+  // Notificação patrocinada
+  sponsoredNotificationText: text("sponsoredNotificationText"),
+
+  // Controle de acesso
+  isActive: boolean("isActive").default(true).notNull(),
+  enabledForOrganizer: boolean("enabledForOrganizer").default(false).notNull(), // se o organizador Pro Ilimitado pode editar
+  enabledByAdminId: int("enabledByAdminId").references(() => users.id),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PoolSponsor = typeof poolSponsors.$inferSelect;
+export type InsertPoolSponsor = typeof poolSponsors.$inferInsert;
