@@ -127,9 +127,11 @@ function Section({ id, title, icon: Icon, children, openSections, onToggle }: Se
 interface LogoUploaderProps {
   value: string;
   onChange: (url: string) => void;
+  hint?: string;
+  previewClass?: string;
 }
 
-function LogoUploader({ value, onChange }: LogoUploaderProps) {
+function LogoUploader({ value, onChange, hint, previewClass }: LogoUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -204,9 +206,12 @@ function LogoUploader({ value, onChange }: LogoUploaderProps) {
           }}
         />
       </div>
+      {hint && (
+        <p className="text-[11px] text-muted-foreground/60">{hint}</p>
+      )}
       {value && (
         <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
-          <img src={value} alt="Logo preview" className="h-8 w-8 object-contain rounded" />
+          <img src={value} alt="Preview" className={previewClass ?? "h-8 w-8 object-contain rounded"} />
           <span className="text-xs text-muted-foreground truncate flex-1">{value}</span>
           <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => onChange("")}>
             ×
@@ -317,6 +322,7 @@ function SponsorBadgesSection({ poolId, sponsorId }: SponsorBadgesSectionProps) 
       {openSections.includes("badges") && (
         <div className="p-4 space-y-3">
           <p className="text-xs text-muted-foreground">Configure até 9 badges para este bolão. Cada dinâmica tem raridade fixa. Ative o toggle para disponibilizar o badge.</p>
+          <p className="text-[11px] text-muted-foreground/60">SVG vetorial recomendado • 64×64 px (ou múltiplos) • fundo transparente • máx. 500 KB • PNG/JPG também aceitos</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -804,6 +810,8 @@ export default function AdminSponsorship() {
                     <LogoUploader
                       value={form.sponsorLogoUrl}
                       onChange={(url) => setForm((f) => ({ ...f, sponsorLogoUrl: url }))}
+                      hint="PNG, JPG ou SVG • 200×200 px recomendado (quadrado) • máx. 2 MB"
+                      previewClass="h-10 w-10 object-contain rounded"
                     />
                   </div>
 
@@ -857,6 +865,8 @@ export default function AdminSponsorship() {
                       <LogoUploader
                         value={form.bannerImageUrl}
                         onChange={(url) => setForm((f) => ({ ...f, bannerImageUrl: url }))}
+                        hint="PNG ou JPG • 1200×120 px recomendado (proporção 10:1) • máx. 2 MB • exibido com altura fixa de 120 px"
+                        previewClass="h-[60px] w-full object-cover rounded"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -896,6 +906,8 @@ export default function AdminSponsorship() {
                         <LogoUploader
                           value={form.popupImageUrl}
                           onChange={(url) => setForm((f) => ({ ...f, popupImageUrl: url }))}
+                          hint="PNG ou JPG • 600×300 px recomendado (2:1) • máx. 2 MB • exibido com altura máx. de 180 px"
+                          previewClass="h-[90px] w-full object-cover rounded"
                         />
                       </div>
                     </div>
@@ -1033,6 +1045,7 @@ export default function AdminSponsorship() {
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground">Configure até 9 badges para este bolão. Cada dinâmica tem raridade fixa. Ative o toggle para disponibilizar o badge.</p>
+          <p className="text-[11px] text-muted-foreground/60">SVG vetorial recomendado • 64×64 px (ou múltiplos) • fundo transparente • máx. 500 KB • PNG/JPG também aceitos</p>
                     <input
                       ref={badgeFileInputRef}
                       type="file"

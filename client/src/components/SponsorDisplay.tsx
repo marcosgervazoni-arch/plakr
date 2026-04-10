@@ -86,13 +86,13 @@ export function SponsorBanner({ poolId, sponsorId, className = "" }: SponsorBann
   const content = (
     <div
       className={`w-full overflow-hidden rounded-xl border border-border/30 bg-card/50 ${className}`}
-      style={{ maxHeight: "120px" }}
+      style={{ height: "120px" }}
     >
       <img
         src={sponsor.bannerImageUrl}
         alt={`Patrocinado por ${sponsor.sponsorName}`}
-        className="w-full h-full object-cover"
-        style={{ maxHeight: "120px", objectFit: "cover" }}
+        className="w-full h-full"
+        style={{ objectFit: "cover", objectPosition: "center" }}
       />
     </div>
   );
@@ -235,12 +235,12 @@ export function SponsorPopup({ poolId, userId, sponsorId }: SponsorPopupProps) {
       >
         {/* Imagem do popup */}
         {sponsor.popupImageUrl && (
-          <div className="w-full" style={{ maxHeight: "180px", overflow: "hidden" }}>
+          <div className="w-full" style={{ height: "180px", overflow: "hidden" }}>
             <img
               src={sponsor.popupImageUrl}
               alt={sponsor.sponsorName}
-              className="w-full object-cover"
-              style={{ maxHeight: "180px" }}
+              className="w-full h-full"
+              style={{ objectFit: "cover", objectPosition: "center" }}
             />
           </div>
         )}
