@@ -2686,3 +2686,16 @@
 - [x] Popup não substitui Adsterra — coexistem
 - [x] Testes vitest: 16 casos passando (439 total)
 - [ ] Card de compartilhamento: exibir logo do patrocinador quando configurado (backlog)
+
+## Módulo de Relatório de Patrocínio — Sprint 09/04/2026
+- [x] Schema: tabela pool_sponsor_events (impressões, cliques, popups)
+- [x] Migração SQL aplicada
+- [x] Backend: procedure trackSponsorEvent (publicProcedure, fire-and-forget)
+- [x] Backend: procedure getSponsorReport (admin, métricas agregadas por bolão)
+- [x] Frontend: rastrear impressão/clique no SponsorBanner
+- [x] Frontend: rastrear exibição/clique no SponsorPopup
+- [x] Frontend: rastrear exibição da SponsorWelcomeMessage
+- [x] Frontend: tela AdminSponsorReport.tsx com métricas e gráfico
+- [x] Frontend: exportação PDF do relatório (via window.print)
+- [x] Atualizar proposta comercial com o relatório implementado
+- [x] Testes Vitest: 13 novos casos (450 total passando)

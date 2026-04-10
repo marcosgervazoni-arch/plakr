@@ -60,6 +60,7 @@ import AdminPricing from "./pages/admin/AdminPricing";
 import AdminX1Duels from "./pages/admin/AdminX1Duels";
 import AdminShareCard from "./pages/admin/AdminShareCard";
 import AdminSponsorship from "./pages/admin/AdminSponsorship";
+import AdminSponsorReport from "./pages/admin/AdminSponsorReport";
 import X1ChallengePage from "./pages/X1ChallengePage";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -126,6 +127,7 @@ function Router() {
       <Route path="/admin/import-logs" component={AdminImportLogs} />
       <Route path="/admin/retrospectivas" component={AdminRetrospectivas} />
       <Route path="/admin/sponsorship" component={AdminSponsorship} />
+      <Route path="/admin/sponsorship-report" component={AdminSponsorReport} />
       <Route path="/admin/landing-page" component={AdminLandingPage} />
       <Route path="/admin/pricing" component={AdminPricing} />
       <Route path="/admin/x1-duels" component={AdminX1Duels} />

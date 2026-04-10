@@ -55,7 +55,8 @@ export type AdminSection =
   | "pricing"
   | "x1-duels"
   | "share-card"
-  | "sponsorship";
+  | "sponsorship"
+  | "sponsorship-report";
 
 interface NavItem {
   id: AdminSection;
@@ -108,6 +109,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "broadcasts", label: "Broadcasts", icon: Megaphone, path: "/admin/broadcasts" },
       { id: "ads", label: "Publicidade", icon: Bell, path: "/admin/ads" },
       { id: "sponsorship", label: "Patrocínio de Bolões", icon: Handshake, path: "/admin/sponsorship" },
+      { id: "sponsorship-report", label: "Relatório de Patrocínio", icon: BarChart3, path: "/admin/sponsorship-report" },
       { id: "landing-page", label: "Página de Vendas", icon: LayoutTemplate, path: "/admin/landing-page" },
       { id: "share-card", label: "Card de Compartilhamento", icon: Share2, path: "/admin/share-card" },
     ],

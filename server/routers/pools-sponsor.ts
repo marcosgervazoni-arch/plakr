@@ -233,6 +233,105 @@ export const poolsSponsorRouter = router({
       return { success: true };
     }),
 
+  // ─── TRACK EVENT: rastrear impressão/clique (fire-and-forget) ────────────
+  trackSponsorEvent: protectedProcedure
+    .input(z.object({
+      poolId: z.number(),
+      sponsorId: z.number(),
+      eventType: z.enum(["banner_impression", "banner_click", "popup_impression", "popup_click", "welcome_impression"]),
+      sessionId: z.string().max(64).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const db = await (await import("../db")).getDb();
+        if (!db) return { success: false };
+        const { poolSponsorEvents } = await import("../../drizzle/schema");
+        await db.insert(poolSponsorEvents).values({
+          poolId: input.poolId,
+          sponsorId: input.sponsorId,
+          eventType: input.eventType,
+          sessionId: input.sessionId ?? null,
+        });
+        return { success: true };
+      } catch {
+        return { success: false };
+      }
+    }),
+
+  // ─── GET SPONSOR REPORT (Admin): métricas agregadas por bolão ───────────
+  getSponsorReport: adminProcedure
+    .input(z.object({ poolId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await (await import("../db")).getDb();
+      if (!db) return null;
+      const { poolSponsorEvents, poolSponsors, pools, poolMembers } = await import("../../drizzle/schema");
+      const { eq, count, and, gte, sql } = await import("drizzle-orm");
+
+      const [sponsor] = await db
+        .select()
+        .from(poolSponsors)
+        .where(eq(poolSponsors.poolId, input.poolId))
+        .limit(1);
+
+      if (!sponsor) return null;
+
+      const [pool] = await db
+        .select({ name: pools.name })
+        .from(pools)
+        .where(eq(pools.id, input.poolId))
+        .limit(1);
+
+      const [memberCountResult] = await db
+        .select({ total: count() })
+        .from(poolMembers)
+        .where(eq(poolMembers.poolId, input.poolId));
+
+      // Totais por tipo de evento
+      const events = await db
+        .select({ eventType: poolSponsorEvents.eventType, total: count() })
+        .from(poolSponsorEvents)
+        .where(eq(poolSponsorEvents.sponsorId, sponsor.id))
+        .groupBy(poolSponsorEvents.eventType);
+
+      // Eventos por dia (30 dias)
+      const dailyEvents = await db
+        .select({
+          date: sql<string>`DATE(${poolSponsorEvents.createdAt})`,
+          eventType: poolSponsorEvents.eventType,
+          total: count(),
+        })
+        .from(poolSponsorEvents)
+        .where(and(
+          eq(poolSponsorEvents.sponsorId, sponsor.id),
+          gte(poolSponsorEvents.createdAt, sql`DATE_SUB(NOW(), INTERVAL 30 DAY)`)
+        ))
+        .groupBy(sql`DATE(${poolSponsorEvents.createdAt})`, poolSponsorEvents.eventType)
+        .orderBy(sql`DATE(${poolSponsorEvents.createdAt})`);
+
+      const totals = {
+        banner_impression: 0, banner_click: 0,
+        popup_impression: 0, popup_click: 0,
+        welcome_impression: 0,
+      };
+      for (const e of events) totals[e.eventType] = Number(e.total);
+
+      const bannerCtr = totals.banner_impression > 0
+        ? ((totals.banner_click / totals.banner_impression) * 100).toFixed(1) : "0.0";
+      const popupCtr = totals.popup_impression > 0
+        ? ((totals.popup_click / totals.popup_impression) * 100).toFixed(1) : "0.0";
+
+      return {
+        sponsor,
+        poolName: pool?.name ?? "",
+        memberCount: Number(memberCountResult?.total ?? 0),
+        totals,
+        bannerCtr,
+        popupCtr,
+        dailyEvents,
+        generatedAt: new Date().toISOString(),
+      };
+    }),
+
   // ─── ENABLE FOR ORGANIZER (Admin): liberar edição para o organizador ─────
   adminEnableForOrganizer: adminProcedure
     .input(z.object({ poolId: z.number(), enabled: z.boolean() }))

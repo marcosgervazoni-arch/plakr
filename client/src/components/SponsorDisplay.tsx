@@ -4,13 +4,32 @@
  * Exporta:
  *   - SponsorBanner: banner clicável do patrocinador (abaixo do hero)
  *   - SponsorPopup: popup configurável com botão+link
- *   - SponsorWelcome: mensagem de boas-vindas (exibida uma vez por membro)
+ *   - SponsorWelcomeMessage: mensagem de boas-vindas (exibida uma vez por membro)
  *   - useSponsorData: hook para buscar dados do patrocinador
+ *
+ * Rastreamento de eventos (fire-and-forget):
+ *   - banner_impression: quando o banner é exibido
+ *   - banner_click: quando o banner é clicado
+ *   - popup_impression: quando o popup aparece
+ *   - popup_click: quando o botão do popup é clicado
+ *   - welcome_impression: quando a mensagem de boas-vindas é exibida
  */
 import { trpc } from "@/lib/trpc";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+// ─── Utilitário: sessionId anônimo ───────────────────────────────────────────
+
+function getSessionId(): string {
+  const key = "plakr_session_id";
+  let id = sessionStorage.getItem(key);
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem(key, id);
+  }
+  return id;
+}
 
 // ─── Hook: buscar dados do patrocinador ──────────────────────────────────────
 
@@ -21,15 +40,46 @@ export function useSponsorData(poolId: number | undefined) {
   );
 }
 
+// ─── Hook: rastrear eventos de patrocínio ────────────────────────────────────
+
+function useSponsorTracker(poolId: number, sponsorId: number | undefined) {
+  const trackMutation = trpc.pools.trackSponsorEvent.useMutation();
+
+  const track = useCallback((
+    eventType: "banner_impression" | "banner_click" | "popup_impression" | "popup_click" | "welcome_impression"
+  ) => {
+    if (!sponsorId) return;
+    trackMutation.mutate({
+      poolId,
+      sponsorId,
+      eventType,
+      sessionId: getSessionId(),
+    });
+  }, [poolId, sponsorId, trackMutation]);
+
+  return track;
+}
+
 // ─── SponsorBanner ───────────────────────────────────────────────────────────
 
 interface SponsorBannerProps {
   poolId: number;
+  sponsorId?: number;
   className?: string;
 }
 
-export function SponsorBanner({ poolId, className = "" }: SponsorBannerProps) {
+export function SponsorBanner({ poolId, sponsorId, className = "" }: SponsorBannerProps) {
   const { data: sponsor } = useSponsorData(poolId);
+  const track = useSponsorTracker(poolId, sponsorId);
+  const trackedRef = useRef(false);
+
+  // Rastrear impressão uma vez quando o banner aparecer
+  useEffect(() => {
+    if (sponsor?.bannerActive && sponsor.bannerImageUrl && !trackedRef.current) {
+      trackedRef.current = true;
+      track("banner_impression");
+    }
+  }, [sponsor, track]);
 
   if (!sponsor || !sponsor.bannerActive || !sponsor.bannerImageUrl) return null;
 
@@ -55,6 +105,7 @@ export function SponsorBanner({ poolId, className = "" }: SponsorBannerProps) {
         rel="noopener noreferrer"
         className="block"
         aria-label={`Banner patrocinado por ${sponsor.sponsorName}`}
+        onClick={() => track("banner_click")}
       >
         {content}
       </a>
@@ -69,16 +120,27 @@ export function SponsorBanner({ poolId, className = "" }: SponsorBannerProps) {
 interface SponsorWelcomeProps {
   poolId: number;
   userId: number;
+  sponsorId?: number;
 }
 
-export function SponsorWelcomeMessage({ poolId, userId }: SponsorWelcomeProps) {
+export function SponsorWelcomeMessage({ poolId, userId, sponsorId }: SponsorWelcomeProps) {
   const { data: sponsor } = useSponsorData(poolId);
+  const track = useSponsorTracker(poolId, sponsorId);
   const [dismissed, setDismissed] = useState(false);
+  const trackedRef = useRef(false);
   const lsKey = `sponsor_welcome_${poolId}_${userId}`;
 
   useEffect(() => {
     if (localStorage.getItem(lsKey)) setDismissed(true);
   }, [lsKey]);
+
+  // Rastrear impressão quando a mensagem aparecer pela primeira vez
+  useEffect(() => {
+    if (sponsor?.welcomeMessageActive && sponsor.welcomeMessage && !dismissed && !trackedRef.current) {
+      trackedRef.current = true;
+      track("welcome_impression");
+    }
+  }, [sponsor, dismissed, track]);
 
   if (!sponsor || !sponsor.welcomeMessageActive || !sponsor.welcomeMessage || dismissed) return null;
 
@@ -116,12 +178,15 @@ export function SponsorWelcomeMessage({ poolId, userId }: SponsorWelcomeProps) {
 interface SponsorPopupProps {
   poolId: number;
   userId: number;
+  sponsorId?: number;
 }
 
-export function SponsorPopup({ poolId, userId }: SponsorPopupProps) {
+export function SponsorPopup({ poolId, userId, sponsorId }: SponsorPopupProps) {
   const { data: sponsor } = useSponsorData(poolId);
+  const track = useSponsorTracker(poolId, sponsorId);
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const trackedRef = useRef(false);
 
   const lsKey = `sponsor_popup_${poolId}_${userId}`;
   const sessionKey = `sponsor_popup_session_${poolId}`;
@@ -129,7 +194,6 @@ export function SponsorPopup({ poolId, userId }: SponsorPopupProps) {
   useEffect(() => {
     if (!sponsor || !sponsor.popupActive || !sponsor.popupTitle) return;
 
-    // Verificar frequência
     const freq = sponsor.popupFrequency ?? "once_per_session";
     if (freq === "once_per_member" && localStorage.getItem(lsKey)) return;
     if (freq === "once_per_session" && sessionStorage.getItem(sessionKey)) return;
@@ -141,6 +205,14 @@ export function SponsorPopup({ poolId, userId }: SponsorPopupProps) {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [sponsor, lsKey, sessionKey]);
+
+  // Rastrear impressão quando o popup aparecer
+  useEffect(() => {
+    if (visible && !trackedRef.current) {
+      trackedRef.current = true;
+      track("popup_impression");
+    }
+  }, [visible, track]);
 
   const handleClose = () => {
     setVisible(false);
@@ -183,7 +255,9 @@ export function SponsorPopup({ poolId, userId }: SponsorPopupProps) {
                 className="w-7 h-7 rounded-md object-contain"
               />
             )}
-            <p className="text-xs text-muted-foreground">Patrocinado por <span className="font-semibold text-foreground">{sponsor.sponsorName}</span></p>
+            <p className="text-xs text-muted-foreground">
+              Patrocinado por <span className="font-semibold text-foreground">{sponsor.sponsorName}</span>
+            </p>
           </div>
 
           {/* Título */}
@@ -202,7 +276,10 @@ export function SponsorPopup({ poolId, userId }: SponsorPopupProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1"
-                onClick={handleClose}
+                onClick={() => {
+                  track("popup_click");
+                  handleClose();
+                }}
               >
                 <Button className="w-full bg-brand hover:bg-brand/90 text-brand-foreground gap-1.5">
                   {sponsor.popupButtonText}

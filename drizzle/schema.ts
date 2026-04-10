@@ -1066,3 +1066,23 @@ export const poolSponsors = mysqlTable("pool_sponsors", {
 });
 export type PoolSponsor = typeof poolSponsors.$inferSelect;
 export type InsertPoolSponsor = typeof poolSponsors.$inferInsert;
+
+// ─── EVENTOS DE PATROCÍNIO (rastreamento de impressões e cliques) ─────────────
+export const poolSponsorEvents = mysqlTable("pool_sponsor_events", {
+  id: int("id").primaryKey().autoincrement(),
+  poolId: int("poolId").notNull().references(() => pools.id, { onDelete: "cascade" }),
+  sponsorId: int("sponsorId").notNull().references(() => poolSponsors.id, { onDelete: "cascade" }),
+  // Tipo do evento
+  eventType: mysqlEnum("eventType", [
+    "banner_impression",   // banner foi exibido
+    "banner_click",        // banner foi clicado
+    "popup_impression",    // popup foi exibido
+    "popup_click",         // botão do popup foi clicado
+    "welcome_impression",  // mensagem de boas-vindas foi exibida
+  ]).notNull(),
+  // Identificação anônima do usuário (não vincula a userId para privacidade)
+  sessionId: varchar("sessionId", { length: 64 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PoolSponsorEvent = typeof poolSponsorEvents.$inferSelect;
+export type InsertPoolSponsorEvent = typeof poolSponsorEvents.$inferInsert;
