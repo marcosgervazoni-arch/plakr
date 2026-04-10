@@ -446,8 +446,13 @@ export default function AdminSponsorship() {
   const [pendingBadgeKey, setPendingBadgeKey] = useState<string | null>(null);
   const { data: sponsorBadges, refetch: refetchBadges } = trpc.pools.badgeList.useQuery(
     { poolId: selectedPoolId! },
-    { enabled: !!selectedPoolId && !!existingSponsor?.id }
+    { enabled: !!selectedPoolId }
   );
+  // Mutation silenciosa para auto-salvar patrocinador antes de configurar badges
+  const silentUpsertMutation = trpc.pools.adminUpsertSponsor.useMutation({
+    onSuccess: () => refetchSponsor(),
+    onError: (e) => toast.error(`Erro ao salvar patrocinador: ${e.message}`),
+  });
   const upsertBadgeMutation = trpc.pools.badgeUpsert.useMutation({
     onSuccess: () => { toast.success("Badge salvo!"); refetchBadges(); },
     onError: (e) => toast.error(e.message),
@@ -466,8 +471,45 @@ export default function AdminSponsorship() {
       toast.error("Apenas SVG ou imagens são permitidos."); return;
     }
     if (file.size > 1 * 1024 * 1024) { toast.error("Arquivo deve ter no máximo 1MB."); return; }
+    if (!selectedPoolId) return;
+    if (!form.sponsorName) { toast.error("Preencha o nome do patrocinador antes de configurar badges."); return; }
     setUploadingBadgeKey(dynamicKey);
     try {
+      // Auto-salvar patrocinador silenciosamente se ainda não existe
+      let sponsorId = existingSponsor?.id;
+      if (!sponsorId) {
+        await silentUpsertMutation.mutateAsync({
+          poolId: selectedPoolId,
+          sponsorName: form.sponsorName,
+          sponsorLogoUrl: form.sponsorLogoUrl || null,
+          customSlug: form.customSlug || null,
+          welcomeMessage: form.welcomeMessage || null,
+          welcomeMessageActive: form.welcomeMessageActive,
+          bannerImageUrl: form.bannerImageUrl || null,
+          bannerLinkUrl: form.bannerLinkUrl || null,
+          bannerActive: form.bannerActive,
+          popupTitle: form.popupTitle || null,
+          popupText: form.popupText || null,
+          popupImageUrl: form.popupImageUrl || null,
+          popupButtonText: form.popupButtonText || null,
+          popupButtonUrl: form.popupButtonUrl || null,
+          popupFrequency: form.popupFrequency,
+          popupDelaySeconds: form.popupDelaySeconds,
+          popupActive: form.popupActive,
+          showLogoOnShareCard: form.showLogoOnShareCard,
+          sponsoredNotificationText: form.sponsoredNotificationText || null,
+          sponsoredNotificationActive: form.sponsoredNotificationActive,
+          rankingNotificationText: form.rankingNotificationText || null,
+          rankingNotificationActive: form.rankingNotificationActive,
+          isActive: form.isActive,
+          enabledForOrganizer: form.enabledForOrganizer,
+        });
+        // Buscar o sponsor recém-criado para obter o id
+        const freshSponsor = await refetchSponsor();
+        sponsorId = freshSponsor.data?.id;
+      }
+      if (!sponsorId) { toast.error("Erro ao salvar patrocinador."); setUploadingBadgeKey(null); return; }
+
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64 = (e.target?.result as string).split(",")[1];
@@ -477,12 +519,12 @@ export default function AdminSponsorship() {
           body: JSON.stringify({ base64, mimeType: file.type, filename: `badge-${dynamicKey}-${Date.now()}.${file.name.split(".").pop()}` }),
         });
         const data = await res.json();
-        if (data.url && selectedPoolId && existingSponsor?.id) {
+        if (data.url) {
           const existing = getBadgeForDynamic(dynamicKey);
           await upsertBadgeMutation.mutateAsync({
             id: existing?.id,
             poolId: selectedPoolId,
-            sponsorId: existingSponsor.id,
+            sponsorId,
             dynamic: dynamicKey as any,
             badgeName: existing?.badgeName || DYNAMICS.find(d => d.key === dynamicKey)?.label || dynamicKey,
             svgUrl: data.url,
@@ -583,39 +625,56 @@ export default function AdminSponsorship() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* ── Coluna esquerda: lista de bolões ── */}
           <div className="lg:col-span-1 space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar bolão..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+            {/* Mobile: dropdown select */}
+            <div className="lg:hidden">
+              <select
+                value={selectedPoolId ?? ""}
+                onChange={(e) => setSelectedPoolId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/50"
+              >
+                <option value="">Selecione um bolão...</option>
+                {(pools ?? []).map((pool) => (
+                  <option key={pool.id} value={pool.id}>{pool.name} (/{pool.slug})</option>
+                ))}
+              </select>
             </div>
 
-            <div className="space-y-1 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
-              {loadingPools ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : filteredPools.length === 0 ? (
-                <p className="text-center text-muted-foreground text-sm py-8">Nenhum bolão encontrado.</p>
-              ) : (
-                filteredPools.map((pool) => (
-                  <button
-                    key={pool.id}
-                    onClick={() => setSelectedPoolId(pool.id)}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                      selectedPoolId === pool.id
-                        ? "bg-brand/15 text-brand font-medium"
-                        : "hover:bg-muted/50 text-foreground"
-                    }`}
-                  >
-                    <div className="font-medium truncate">{pool.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">/{pool.slug}</div>
-                  </button>
-                ))
-              )}
+            {/* Desktop: lista vertical com busca e scroll interno */}
+            <div className="hidden lg:block space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar bolão..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              <div className="space-y-1 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
+                {loadingPools ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : filteredPools.length === 0 ? (
+                  <p className="text-center text-muted-foreground text-sm py-8">Nenhum bolão encontrado.</p>
+                ) : (
+                  filteredPools.map((pool) => (
+                    <button
+                      key={pool.id}
+                      onClick={() => setSelectedPoolId(pool.id)}
+                      className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                        selectedPoolId === pool.id
+                          ? "bg-brand/15 text-brand font-medium"
+                          : "hover:bg-muted/50 text-foreground"
+                      }`}
+                    >
+                      <div className="font-medium truncate">{pool.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">/{pool.slug}</div>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
@@ -943,9 +1002,9 @@ export default function AdminSponsorship() {
                 {/* Seção: Badges Patrocinados */}
                 {selectedPoolId && (
                   <Section id="badges" title="Badges Patrocinados" icon={Trophy} openSections={openSections} onToggle={toggleSection}>
-                    {!existingSponsor?.id && (
+                    {!existingSponsor?.id && !form.sponsorName && (
                       <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs mb-2">
-                        ⚠️ Salve o patrocinador primeiro para poder fazer upload de SVGs e ativar badges.
+                        ⚠️ Preencha o nome do patrocinador (seção Identidade) antes de configurar badges.
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground">Configure até 9 badges para este bolão. Cada dinâmica tem raridade fixa. Ative o toggle para disponibilizar o badge.</p>
@@ -986,28 +1045,27 @@ export default function AdminSponsorship() {
                                 variant="outline"
                                 size="sm"
                                 className="h-7 px-2 text-xs"
-                                disabled={isUploading}
+                                disabled={isUploading || (!existingSponsor?.id && !form.sponsorName)}
                                 onClick={() => { setPendingBadgeKey(dyn.key); badgeFileInputRef.current?.click(); }}
                               >
                                 {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                                 <span className="ml-1">{badge?.svgUrl ? "Trocar" : "SVG"}</span>
                               </Button>
+                              <Switch
+                                checked={badge?.isActive ?? false}
+                                disabled={!badge}
+                                onCheckedChange={(v) => badge && toggleBadgeMutation.mutate({ id: badge.id, isActive: v })}
+                              />
                               {badge && (
-                                <>
-                                  <Switch
-                                    checked={badge.isActive}
-                                    onCheckedChange={(v) => toggleBadgeMutation.mutate({ id: badge.id, isActive: v })}
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                                    onClick={() => removeBadgeMutation.mutate({ id: badge.id })}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                                  onClick={() => removeBadgeMutation.mutate({ id: badge.id })}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
                               )}
                             </div>
                           </div>
