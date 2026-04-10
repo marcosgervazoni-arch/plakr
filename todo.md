@@ -2699,3 +2699,11 @@
 - [x] Frontend: exportação PDF do relatório (via window.print)
 - [x] Atualizar proposta comercial com o relatório implementado
 - [x] Testes Vitest: 13 novos casos (450 total passando)
+
+## Bugs e Melhorias — AdminSponsorship (Sprint 09/04/2026)
+- [x] BUG: perda de foco nos inputs da tela AdminSponsorship — corrigido: Section extraído para fora do componente principal (evita recriação a cada render)
+- [x] BUG: upload de logo do patrocinador não funcionava — corrigido: componente LogoUploader via /api/upload com validação de tipo e tamanho
+- [x] FEATURE: notificação patrocinada de atualização de ranking — campos rankingNotificationText e rankingNotificationActive adicionados ao schema e ao scoring.ts
+- [x] Migração SQL aplicada (0052_curved_sphinx.sql)
+- [x] Testes: 450 passando (zero falhas)
+- [x] FEAT: notificação patrocinada enviada aos membros do bolão na atualização do ranking

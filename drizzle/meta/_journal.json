@@ -365,6 +365,13 @@
       "when": 1775780831153,
       "tag": "0051_cool_shard",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "5",
+      "when": 1775781883538,
+      "tag": "0052_curved_sphinx",
+      "breakpoints": true
     }
   ]
 }

@@ -1053,8 +1053,12 @@ export const poolSponsors = mysqlTable("pool_sponsors", {
   // Card de compartilhamento
   showLogoOnShareCard: boolean("showLogoOnShareCard").default(false).notNull(),
 
-  // Notificação patrocinada
+  // Notificação patrocinada de lembrete de rodada
   sponsoredNotificationText: text("sponsoredNotificationText"),
+
+  // Notificação patrocinada de atualização de ranking
+  rankingNotificationText: text("rankingNotificationText"),
+  rankingNotificationActive: boolean("rankingNotificationActive").default(false).notNull(),
 
   // Controle de acesso
   isActive: boolean("isActive").default(true).notNull(),

@@ -2,19 +2,21 @@
  * AdminSponsorship — Gerenciamento de Patrocínio de Bolões (Naming Rights)
  * Exclusivo para Super Admin.
  * Permite configurar patrocinador por bolão: nome, logo, banner, popup, slug customizado.
+ *
+ * CORREÇÃO: Section extraído para fora do componente principal para evitar
+ * recriação a cada render (causava perda de foco nos inputs).
  */
 import AdminLayout from "@/components/AdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
   Handshake,
@@ -22,18 +24,16 @@ import {
   Loader2,
   Save,
   Trash2,
-  ToggleLeft,
-  ToggleRight,
   ChevronDown,
   ChevronRight,
   Image,
-  Link2,
   Bell,
   MessageSquare,
   Megaphone,
   UserCheck,
-  Globe,
   Info,
+  Upload,
+  Trophy,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -58,6 +58,8 @@ interface SponsorForm {
   popupActive: boolean;
   showLogoOnShareCard: boolean;
   sponsoredNotificationText: string;
+  rankingNotificationText: string;
+  rankingNotificationActive: boolean;
   isActive: boolean;
   enabledForOrganizer: boolean;
 }
@@ -81,9 +83,135 @@ const EMPTY_FORM: SponsorForm = {
   popupActive: false,
   showLogoOnShareCard: false,
   sponsoredNotificationText: "",
+  rankingNotificationText: "",
+  rankingNotificationActive: false,
   isActive: true,
   enabledForOrganizer: false,
 };
+
+// ─── Componente Section (FORA do componente principal para evitar re-criação) ─
+
+interface SectionProps {
+  id: string;
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+  openSections: string[];
+  onToggle: (id: string) => void;
+}
+
+function Section({ id, title, icon: Icon, children, openSections, onToggle }: SectionProps) {
+  const isOpen = openSections.includes(id);
+  return (
+    <div className="border border-border/50 rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        className="w-full flex items-center gap-2 px-4 py-3 bg-card/50 hover:bg-card/80 transition-colors text-left"
+      >
+        <Icon className="h-4 w-4 text-brand" />
+        <span className="font-medium text-sm flex-1">{title}</span>
+        {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+      </button>
+      {isOpen && <div className="p-4 space-y-4">{children}</div>}
+    </div>
+  );
+}
+
+// ─── Componente de upload de logo ─────────────────────────────────────────────
+
+interface LogoUploaderProps {
+  value: string;
+  onChange: (url: string) => void;
+}
+
+function LogoUploader({ value, onChange }: LogoUploaderProps) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Apenas imagens são permitidas.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Imagem deve ter no máximo 2MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = (e.target?.result as string).split(",")[1];
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            base64,
+            mimeType: file.type,
+            filename: `sponsor-logo-${Date.now()}.${file.name.split(".").pop()}`,
+          }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          onChange(data.url);
+          toast.success("Logo enviado com sucesso!");
+        } else {
+          toast.error("Erro ao enviar logo.");
+        }
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error("Erro ao enviar logo.");
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input
+          placeholder="https://... ou faça upload abaixo"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="shrink-0"
+        >
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          <span className="ml-1 hidden sm:inline">{uploading ? "Enviando..." : "Upload"}</span>
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+            e.target.value = "";
+          }}
+        />
+      </div>
+      {value && (
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
+          <img src={value} alt="Logo preview" className="h-8 w-8 object-contain rounded" />
+          <span className="text-xs text-muted-foreground truncate flex-1">{value}</span>
+          <Button type="button" variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => onChange("")}>
+            ×
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
@@ -125,6 +253,8 @@ export default function AdminSponsorship() {
         popupActive: existingSponsor.popupActive ?? false,
         showLogoOnShareCard: existingSponsor.showLogoOnShareCard ?? false,
         sponsoredNotificationText: existingSponsor.sponsoredNotificationText ?? "",
+        rankingNotificationText: (existingSponsor as any).rankingNotificationText ?? "",
+        rankingNotificationActive: (existingSponsor as any).rankingNotificationActive ?? false,
         isActive: existingSponsor.isActive ?? true,
         enabledForOrganizer: existingSponsor.enabledForOrganizer ?? false,
       });
@@ -153,14 +283,6 @@ export default function AdminSponsorship() {
   const toggleMutation = trpc.pools.adminToggleSponsor.useMutation({
     onSuccess: (_, vars) => {
       toast.success(vars.isActive ? "Patrocínio ativado." : "Patrocínio desativado.");
-      refetchSponsor();
-    },
-    onError: (e) => toast.error(e.message),
-  });
-
-  const enableOrganizerMutation = trpc.pools.adminEnableForOrganizer.useMutation({
-    onSuccess: (_, vars) => {
-      toast.success(vars.enabled ? "Organizador pode editar o patrocínio." : "Edição pelo organizador desativada.");
       refetchSponsor();
     },
     onError: (e) => toast.error(e.message),
@@ -204,25 +326,6 @@ export default function AdminSponsorship() {
       isActive: form.isActive,
       enabledForOrganizer: form.enabledForOrganizer,
     });
-  };
-
-  // ─── Seção colapsável ─────────────────────────────────────────────────────
-  const Section = ({ id, title, icon: Icon, children }: { id: string; title: string; icon: React.ElementType; children: React.ReactNode }) => {
-    const isOpen = openSections.includes(id);
-    return (
-      <div className="border border-border/50 rounded-lg overflow-hidden">
-        <button
-          type="button"
-          onClick={() => toggleSection(id)}
-          className="w-full flex items-center gap-2 px-4 py-3 bg-card/50 hover:bg-card/80 transition-colors text-left"
-        >
-          <Icon className="h-4 w-4 text-brand" />
-          <span className="font-medium text-sm flex-1">{title}</span>
-          {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-        </button>
-        {isOpen && <div className="p-4 space-y-4">{children}</div>}
-      </div>
-    );
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -343,7 +446,7 @@ export default function AdminSponsorship() {
                 </Card>
 
                 {/* Seção: Identidade */}
-                <Section id="identity" title="Identidade do Patrocinador" icon={Handshake}>
+                <Section id="identity" title="Identidade do Patrocinador" icon={Handshake} openSections={openSections} onToggle={toggleSection}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label>Nome do Patrocinador *</Label>
@@ -355,37 +458,34 @@ export default function AdminSponsorship() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="flex items-center gap-1">
-                        URL do Logo
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground" /></TooltipTrigger>
-                            <TooltipContent>URL pública da imagem do logo do patrocinador</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        Slug Customizado
+                        <Badge variant="outline" className="text-[10px] ml-1 border-brand/30 text-brand">Exclusivo Admin</Badge>
                       </Label>
-                      <Input
-                        placeholder="https://..."
-                        value={form.sponsorLogoUrl}
-                        onChange={(e) => setForm((f) => ({ ...f, sponsorLogoUrl: e.target.value }))}
-                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground text-sm shrink-0">/pool/</span>
+                        <Input
+                          placeholder="dado-bier-brasileirao"
+                          value={form.customSlug}
+                          onChange={(e) => setForm((f) => ({ ...f, customSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
                     <Label className="flex items-center gap-1">
-                      Slug Customizado
-                      <Badge variant="outline" className="text-[10px] ml-1 border-brand/30 text-brand">Exclusivo Admin</Badge>
+                      Logo do Patrocinador
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground" /></TooltipTrigger>
+                          <TooltipContent>Cole uma URL pública ou faça upload direto da imagem (máx. 2MB)</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground text-sm">/pool/</span>
-                      <Input
-                        placeholder="dado-bier-brasileirao"
-                        value={form.customSlug}
-                        onChange={(e) => setForm((f) => ({ ...f, customSlug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
-                        className="flex-1"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Apenas letras minúsculas, números e hífens. Deixe vazio para manter o slug original.</p>
+                    <LogoUploader
+                      value={form.sponsorLogoUrl}
+                      onChange={(url) => setForm((f) => ({ ...f, sponsorLogoUrl: url }))}
+                    />
                   </div>
 
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
@@ -405,7 +505,7 @@ export default function AdminSponsorship() {
                 </Section>
 
                 {/* Seção: Mensagem de boas-vindas */}
-                <Section id="welcome" title="Mensagem de Boas-vindas" icon={MessageSquare}>
+                <Section id="welcome" title="Mensagem de Boas-vindas" icon={MessageSquare} openSections={openSections} onToggle={toggleSection}>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm text-muted-foreground">Exibida ao entrar no bolão (uma vez por membro)</p>
                     <Switch
@@ -424,7 +524,7 @@ export default function AdminSponsorship() {
                 </Section>
 
                 {/* Seção: Banner */}
-                <Section id="banner" title="Banner Exclusivo no Bolão" icon={Image}>
+                <Section id="banner" title="Banner Exclusivo no Bolão" icon={Image} openSections={openSections} onToggle={toggleSection}>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm text-muted-foreground">Banner visível para todos os membros do bolão</p>
                     <Switch
@@ -457,7 +557,7 @@ export default function AdminSponsorship() {
                 </Section>
 
                 {/* Seção: Popup */}
-                <Section id="popup" title="Popup Patrocinado" icon={Megaphone}>
+                <Section id="popup" title="Popup Patrocinado" icon={Megaphone} openSections={openSections} onToggle={toggleSection}>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm text-muted-foreground">Popup exibido na página do bolão</p>
                     <Switch
@@ -553,8 +653,55 @@ export default function AdminSponsorship() {
                   </div>
                 </Section>
 
-                {/* Seção: Compartilhamento e Notificação */}
-                <Section id="sharing" title="Compartilhamento e Notificação" icon={Bell}>
+                {/* Seção: Notificações */}
+                <Section id="notifications" title="Notificações Patrocinadas" icon={Bell} openSections={openSections} onToggle={toggleSection}>
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-1">
+                      Notificação de Lembrete de Rodada
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger><Info className="h-3 w-3 text-muted-foreground" /></TooltipTrigger>
+                          <TooltipContent>Usado nos lembretes de palpite enviados antes de cada rodada</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <Textarea
+                      placeholder="Ex: Rodada 5 começa amanhã — lembrança da Cervejaria Dado Bier!"
+                      value={form.sponsoredNotificationText}
+                      onChange={(e) => setForm((f) => ({ ...f, sponsoredNotificationText: e.target.value }))}
+                      rows={2}
+                    />
+                    <p className="text-xs text-muted-foreground">Aparece como assinatura nos lembretes de rodada para membros deste bolão</p>
+                  </div>
+
+                  <div className="border-t border-border/30 pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium flex items-center gap-1">
+                          <Trophy className="h-3.5 w-3.5 text-brand" />
+                          Notificação de Atualização do Ranking
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Enviada aos membros sempre que o ranking do bolão for atualizado</p>
+                      </div>
+                      <Switch
+                        checked={form.rankingNotificationActive}
+                        onCheckedChange={(v) => setForm((f) => ({ ...f, rankingNotificationActive: v }))}
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Ex: 🏆 Ranking atualizado! Veja sua posição — patrocínio Cervejaria Dado Bier."
+                      value={form.rankingNotificationText}
+                      onChange={(e) => setForm((f) => ({ ...f, rankingNotificationText: e.target.value }))}
+                      rows={2}
+                      disabled={!form.rankingNotificationActive}
+                      className="disabled:opacity-50"
+                    />
+                    <p className="text-xs text-muted-foreground">Texto da notificação enviada após cada atualização de pontuação neste bolão</p>
+                  </div>
+                </Section>
+
+                {/* Seção: Compartilhamento */}
+                <Section id="sharing" title="Compartilhamento" icon={Bell} openSections={openSections} onToggle={toggleSection}>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                     <div>
                       <p className="text-sm font-medium">Logo no Card de Compartilhamento</p>
@@ -564,16 +711,6 @@ export default function AdminSponsorship() {
                       checked={form.showLogoOnShareCard}
                       onCheckedChange={(v) => setForm((f) => ({ ...f, showLogoOnShareCard: v }))}
                     />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Texto de Notificação Patrocinada</Label>
-                    <Textarea
-                      placeholder="Ex: Rodada 5 começa amanhã — lembrança da Cervejaria Dado Bier!"
-                      value={form.sponsoredNotificationText}
-                      onChange={(e) => setForm((f) => ({ ...f, sponsoredNotificationText: e.target.value }))}
-                      rows={2}
-                    />
-                    <p className="text-xs text-muted-foreground">Usado nas notificações de lembrete de rodada para membros deste bolão</p>
                   </div>
                 </Section>
 

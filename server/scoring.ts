@@ -422,6 +422,36 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
         });
       }
 
+      // 🎯 Notificação patrocinada de ranking (se bolão tiver patrocinador ativo com rankingNotificationActive)
+      try {
+        const { poolSponsors } = await import("../drizzle/schema");
+        const { and: andOp } = await import("drizzle-orm");
+        const [sponsor] = await db
+          .select()
+          .from(poolSponsors)
+          .where(andOp(eq(poolSponsors.poolId, pool.id), eq(poolSponsors.isActive, true)))
+          .limit(1);
+        if (sponsor && (sponsor as any).rankingNotificationActive && (sponsor as any).rankingNotificationText) {
+          const sponsorText = ((sponsor as any).rankingNotificationText as string)
+            .replace("{posicao}", String(position))
+            .replace("{pontos}", String(totalPoints))
+            .replace("{bolao}", pool.name);
+          await createNotification({
+            userId,
+            poolId: pool.id,
+            type: "ranking_update",
+            title: `🏆 Ranking atualizado — ${pool.name}`,
+            message: sponsorText,
+            actionUrl: `/pool/${pool.slug}`,
+            actionLabel: "Ver ranking",
+            priority: "normal",
+            category: "ranking_update",
+          });
+        }
+      } catch (sponsorErr) {
+        logger.warn({ userId, poolId: pool.id, sponsorErr }, "[Scoring] Notificação patrocinada de ranking falhou (não crítico)");
+      }
+
       // 📣 Push de pódio: envia apenas para usuários que entraram no top-3
       // Usa o canal pushRankingUpdate (respeita preferências do usuário)
       if (position <= 3) {
