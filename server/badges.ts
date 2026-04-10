@@ -366,8 +366,14 @@ export async function checkCriterion(
     // ── EXCLUSIVO ─────────────────────────────────────────────────────────────
 
     case "early_user": {
-      // Um dos primeiros N usuários (id <= N)
-      return userId <= criterionValue;
+      // Um dos primeiros N usuários por ordem de cadastro (createdAt)
+      // Não usamos userId <= N pois os IDs são gerados pelo OAuth e começam em números altos
+      const [posRow] = await db
+        .select({ pos: sql<number>`COUNT(*)` })
+        .from(users)
+        .where(sql`${users.createdAt} <= (SELECT createdAt FROM users WHERE id = ${userId})`);
+      const position = Number(posRow?.pos ?? 9999);
+      return position <= criterionValue;
     }
 
     case "manual": {
