@@ -2707,3 +2707,15 @@
 - [x] Migração SQL aplicada (0052_curved_sphinx.sql)
 - [x] Testes: 450 passando (zero falhas)
 - [x] FEAT: notificação patrocinada enviada aos membros do bolão na atualização do ranking
+
+## Badges Patrocinados (Sprint 09/04/2026)
+- [x] Schema: tabela pool_sponsor_badges (dinâmica, raridade fixa, svgUrl, nome, ativo, janela de tempo)
+- [x] Schema: tabela user_sponsor_badges (usuário, badge, poolId, conquistado em)
+- [x] Migração SQL aplicada
+- [x] Backend: procedures badgeUpsert, badgeList, badgeToggle, badgeRemove, badgeMyBadges, badgeAward
+- [x] Backend: gatilhos de atribuição automática (participação, palpiteiro fiel, pódio, placar exato, zebra detector, campeão, rodada perfeita, vetrano)
+- [x] Raridade fixa por dinâmica (não configurável pelo admin)
+- [x] Frontend: seção Badges na AdminSponsorship (9 dinâmicas, toggle, upload SVG, pré-visualização)
+- [x] Frontend: seção "Conquistas Especiais" na página Conquistas.tsx (grid, moldura dourada lendário, tooltip com data e bolão)
+- [x] Notificação in-app ao conquistar badge patrocinado (com logo do patrocinador)
+- [x] Testes: 450 passando (zero falhas)

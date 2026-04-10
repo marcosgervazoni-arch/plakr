@@ -1090,3 +1090,70 @@ export const poolSponsorEvents = mysqlTable("pool_sponsor_events", {
 });
 export type PoolSponsorEvent = typeof poolSponsorEvents.$inferSelect;
 export type InsertPoolSponsorEvent = typeof poolSponsorEvents.$inferInsert;
+
+// ─── BADGES PATROCINADOS ──────────────────────────────────────────────────────
+// Cada dinâmica de badge configurada para um bolão patrocinado.
+// A raridade é FIXA por dinâmica — não configurável pelo admin.
+export const SPONSOR_BADGE_DYNAMICS = [
+  "participation",      // Participação         → Comum
+  "faithful_bettor",    // Palpiteiro Fiel       → Incomum
+  "podium",             // Pódio (top 3)         → Raro
+  "exact_score",        // Placar Exato          → Raro
+  "zebra_detector",     // Zebra Detector        → Épico
+  "champion",           // Campeão (1º lugar)    → Épico
+  "perfect_round",      // Rodada Perfeita       → Lendário
+  "veteran",            // Veterano (2+ edições) → Incomum
+  "manual",             // Manual (admin)        → definida pelo admin
+] as const;
+
+export type SponsorBadgeDynamic = typeof SPONSOR_BADGE_DYNAMICS[number];
+
+// Raridade fixa por dinâmica
+export const SPONSOR_BADGE_RARITY: Record<SponsorBadgeDynamic, string> = {
+  participation:    "common",
+  faithful_bettor:  "uncommon",
+  podium:           "rare",
+  exact_score:      "rare",
+  zebra_detector:   "epic",
+  champion:         "epic",
+  perfect_round:    "legendary",
+  veteran:          "uncommon",
+  manual:           "rare",
+};
+
+export const poolSponsorBadges = mysqlTable("pool_sponsor_badges", {
+  id: int("id").primaryKey().autoincrement(),
+  poolId: int("poolId").notNull().references(() => pools.id, { onDelete: "cascade" }),
+  sponsorId: int("sponsorId").notNull().references(() => poolSponsors.id, { onDelete: "cascade" }),
+
+  // Dinâmica que dispara a atribuição deste badge
+  dynamic: mysqlEnum("dynamic", SPONSOR_BADGE_DYNAMICS).notNull(),
+
+  // Identidade do badge
+  badgeName: varchar("badgeName", { length: 255 }).notNull(),
+  svgUrl: text("svgUrl"),                  // URL do SVG no S3 (null = usa badge genérico)
+
+  // Janela de tempo (opcional — para edição limitada)
+  availableFrom: timestamp("availableFrom"),
+  availableUntil: timestamp("availableUntil"),
+
+  // Estado
+  isActive: boolean("isActive").default(false).notNull(),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PoolSponsorBadge = typeof poolSponsorBadges.$inferSelect;
+export type InsertPoolSponsorBadge = typeof poolSponsorBadges.$inferInsert;
+
+// Badges conquistados por usuários em bolões patrocinados
+export const userSponsorBadges = mysqlTable("user_sponsor_badges", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sponsorBadgeId: int("sponsorBadgeId").notNull().references(() => poolSponsorBadges.id, { onDelete: "cascade" }),
+  poolId: int("poolId").notNull().references(() => pools.id, { onDelete: "cascade" }),
+  awardedAt: timestamp("awardedAt").defaultNow().notNull(),
+  awardedByAdminId: int("awardedByAdminId").references(() => users.id), // preenchido apenas em atribuição manual
+});
+export type UserSponsorBadge = typeof userSponsorBadges.$inferSelect;
+export type InsertUserSponsorBadge = typeof userSponsorBadges.$inferInsert;

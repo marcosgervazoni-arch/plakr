@@ -398,7 +398,113 @@ export default function Conquistas() {
             )}
           </div>
         </section>
+
+        {/* ── SEÇÃO 4: CONQUISTAS ESPECIAIS (BADGES PATROCINADOS) ── */}
+        <SponsorBadgesSection />
+
       </div>
     </AppShell>
+  );
+}
+
+// ─── Componente: Conquistas Especiais ───────────────────────────────────────────────────
+
+const SPONSOR_RARITY_CONFIG: Record<string, { label: string; color: string; border: string }> = {
+  common:    { label: "Comum",    color: "text-slate-400",  border: "border-slate-400/30" },
+  uncommon:  { label: "Incomum",  color: "text-green-400",  border: "border-green-400/30" },
+  rare:      { label: "Raro",     color: "text-blue-400",   border: "border-blue-400/30" },
+  epic:      { label: "Épico",    color: "text-purple-400", border: "border-purple-400/30" },
+  legendary: { label: "Lendário", color: "text-yellow-400", border: "border-yellow-400/40" },
+  special:   { label: "Especial", color: "text-orange-400", border: "border-orange-400/30" },
+};
+
+const DYNAMIC_RARITY: Record<string, string> = {
+  participation:   "common",
+  faithful_bettor: "uncommon",
+  podium:          "rare",
+  exact_score:     "rare",
+  zebra_detector:  "epic",
+  champion:        "epic",
+  perfect_round:   "legendary",
+  veteran:         "uncommon",
+  manual:          "special",
+};
+
+function SponsorBadgesSection() {
+  const { user } = useAuth();
+  const { data: myBadges, isLoading } = trpc.pools.badgeMyBadges.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  if (isLoading) return (
+    <section className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-brand" />
+        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Conquistas Especiais</h2>
+      </div>
+      <div className="bg-card border border-border/30 rounded-xl p-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {[1,2,3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        </div>
+      </div>
+    </section>
+  );
+
+  if (!myBadges || myBadges.length === 0) return null;
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-brand" />
+        <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+          Conquistas Especiais
+        </h2>
+        <Badge variant="secondary" className="text-xs">
+          {myBadges.length} conquistado{myBadges.length !== 1 ? "s" : ""}
+        </Badge>
+      </div>
+      <div className="bg-card border border-border/30 rounded-xl p-6">
+        <p className="text-xs text-muted-foreground mb-4">Badges exclusivos de bolões patrocinados. Raros e intransferíveis.</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {myBadges.map((badge) => {
+            const rarity = DYNAMIC_RARITY[badge.dynamic] ?? "special";
+            const rarityConf = SPONSOR_RARITY_CONFIG[rarity] ?? SPONSOR_RARITY_CONFIG.special;
+            return (
+              <div
+                key={badge.id}
+                className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 bg-gradient-to-b from-card/80 to-card/40 ${rarityConf.border} group cursor-default`}
+              >
+                {rarity === "legendary" && (
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-yellow-400/10 to-transparent pointer-events-none" />
+                )}
+                <div className="h-14 w-14 rounded-lg bg-muted/40 flex items-center justify-center overflow-hidden border border-border/30">
+                  {badge.svgUrl ? (
+                    <img src={badge.svgUrl} alt={badge.badgeName} className="h-12 w-12 object-contain" />
+                  ) : (
+                    <Trophy className="h-7 w-7 text-brand/60" />
+                  )}
+                </div>
+                <p className="text-xs font-semibold text-center leading-tight line-clamp-2">{badge.badgeName}</p>
+                <span className={`text-[10px] font-bold uppercase tracking-wide ${rarityConf.color}`}>{rarityConf.label}</span>
+                <div className="flex items-center gap-1 mt-auto">
+                  {badge.sponsorLogoUrl && (
+                    <img src={badge.sponsorLogoUrl} alt={badge.sponsorName} className="h-4 w-4 object-contain rounded" />
+                  )}
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">{badge.sponsorName}</span>
+                </div>
+                {/* Tooltip com data e bolão */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-10 pointer-events-none">
+                  <div className="bg-popover border border-border rounded-lg px-3 py-2 text-xs shadow-lg whitespace-nowrap">
+                    <p className="font-medium">{badge.poolName}</p>
+                    <p className="text-muted-foreground">{badge.awardedAt ? format(new Date(badge.awardedAt), "dd MMM yyyy", { locale: ptBR }) : ""}</p>
+                  </div>
+                  <div className="w-2 h-2 bg-popover border-r border-b border-border rotate-45 -mt-1" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }

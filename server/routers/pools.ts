@@ -24,6 +24,7 @@ import { poolsCommunicationRouter } from "./pools-communication";
 import { poolsAdminRouter } from "./pools-admin";
 import { poolsRetrospectiveRouter } from "./pools-retrospective";
 import { poolsSponsorRouter } from "./pools-sponsor";
+import { poolsSponsorBadgesRouter } from "./pools-sponsor-badges";
 
 export const poolsRouter = mergeRouters(
   poolsCoreRouter,
@@ -33,4 +34,5 @@ export const poolsRouter = mergeRouters(
   poolsAdminRouter,
   poolsRetrospectiveRouter,
   poolsSponsorRouter,
+  poolsSponsorBadgesRouter,
 );
