@@ -36,6 +36,8 @@ import {
   Trophy,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -444,10 +446,33 @@ export default function AdminSponsorship() {
   const badgeFileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingBadgeKey, setUploadingBadgeKey] = useState<string | null>(null);
   const [pendingBadgeKey, setPendingBadgeKey] = useState<string | null>(null);
+  // Estado do modal de atribuição manual de badge
+  const [manualBadgeDialogOpen, setManualBadgeDialogOpen] = useState(false);
+  const [manualBadgeSponsorBadgeId, setManualBadgeSponsorBadgeId] = useState<number | null>(null);
+  const [manualBadgeSelectedUsers, setManualBadgeSelectedUsers] = useState<number[]>([]);
+  const [manualBadgeMemberSearch, setManualBadgeMemberSearch] = useState("");
   const { data: sponsorBadges, refetch: refetchBadges } = trpc.pools.badgeList.useQuery(
     { poolId: selectedPoolId! },
     { enabled: !!selectedPoolId }
   );
+  // Query de membros do bolão selecionado (para o modal de atribuição manual)
+  const { data: poolMembersData } = trpc.pools.getMembers.useQuery(
+    { poolId: selectedPoolId!, limit: 200 },
+    { enabled: !!selectedPoolId && manualBadgeDialogOpen }
+  );
+  const poolMembersList = Array.isArray(poolMembersData) ? poolMembersData : (poolMembersData?.items ?? []);
+
+  // Mutation de atribuição manual de badge
+  const awardManualMutation = trpc.pools.badgeAwardManual.useMutation({
+    onSuccess: (res) => {
+      toast.success(`Badge atribuído para ${res.awarded} usuário(s)!`);
+      setManualBadgeDialogOpen(false);
+      setManualBadgeSelectedUsers([]);
+      refetchBadges();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   // Mutation silenciosa para auto-salvar patrocinador antes de configurar badges
   const silentUpsertMutation = trpc.pools.adminUpsertSponsor.useMutation({
     onSuccess: () => refetchSponsor(),
@@ -1023,6 +1048,7 @@ export default function AdminSponsorship() {
                       {DYNAMICS.map((dyn) => {
                         const badge = getBadgeForDynamic(dyn.key);
                         const isUploading = uploadingBadgeKey === dyn.key;
+                        const isManual = dyn.key === "manual";
                         return (
                           <div key={dyn.key} className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/30">
                             <div className="h-10 w-10 rounded-lg bg-muted/50 flex items-center justify-center shrink-0 overflow-hidden border border-border/40">
@@ -1051,6 +1077,24 @@ export default function AdminSponsorship() {
                                 {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                                 <span className="ml-1">{badge?.svgUrl ? "Trocar" : "SVG"}</span>
                               </Button>
+                              {/* Botão de atribuição manual — exclusivo para a dinâmica "manual" */}
+                              {isManual && badge && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs border-orange-400/40 text-orange-400 hover:bg-orange-400/10"
+                                  onClick={() => {
+                                    setManualBadgeSponsorBadgeId(badge.id);
+                                    setManualBadgeSelectedUsers([]);
+                                    setManualBadgeMemberSearch("");
+                                    setManualBadgeDialogOpen(true);
+                                  }}
+                                >
+                                  <UserCheck className="h-3 w-3" />
+                                  <span className="ml-1">Atribuir</span>
+                                </Button>
+                              )}
                               <Switch
                                 checked={badge?.isActive ?? false}
                                 disabled={!badge}
@@ -1094,6 +1138,92 @@ export default function AdminSponsorship() {
           </div>
         </div>
       </div>
+
+      {/* ── Dialog: Atribuição Manual de Badge ── */}
+      <Dialog open={manualBadgeDialogOpen} onOpenChange={(open) => { setManualBadgeDialogOpen(open); if (!open) setManualBadgeSelectedUsers([]); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-orange-400" />
+              Atribuir Badge Manual
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Selecione um ou mais membros do bolão para receber o badge <span className="font-semibold text-orange-400">Manual</span>.
+            </p>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar membro..."
+                value={manualBadgeMemberSearch}
+                onChange={(e) => setManualBadgeMemberSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="max-h-64 overflow-y-auto space-y-1 border border-border/40 rounded-lg p-2">
+              {poolMembersList.length === 0 ? (
+                <p className="text-center text-muted-foreground text-sm py-4">Nenhum membro encontrado.</p>
+              ) : (
+                poolMembersList
+                  .filter((m: any) => {
+                    const name = (m.user?.name ?? m.memberUser?.name ?? "").toLowerCase();
+                    return name.includes(manualBadgeMemberSearch.toLowerCase());
+                  })
+                  .map((m: any) => {
+                    const user = m.user ?? m.memberUser;
+                    const userId = user?.id ?? m.member?.userId;
+                    const userName = user?.name ?? `Usuário #${userId}`;
+                    const isSelected = manualBadgeSelectedUsers.includes(userId);
+                    return (
+                      <label
+                        key={userId}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                          isSelected ? "bg-orange-400/10 border border-orange-400/30" : "hover:bg-muted/50"
+                        }`}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            setManualBadgeSelectedUsers((prev) =>
+                              checked ? [...prev, userId] : prev.filter((id) => id !== userId)
+                            );
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{userName}</p>
+                        </div>
+                      </label>
+                    );
+                  })
+              )}
+            </div>
+            {manualBadgeSelectedUsers.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {manualBadgeSelectedUsers.length} usuário(s) selecionado(s)
+              </p>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setManualBadgeDialogOpen(false)}>Cancelar</Button>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              disabled={manualBadgeSelectedUsers.length === 0 || !manualBadgeSponsorBadgeId || awardManualMutation.isPending}
+              onClick={() => {
+                if (!manualBadgeSponsorBadgeId || !selectedPoolId) return;
+                awardManualMutation.mutate({
+                  sponsorBadgeId: manualBadgeSponsorBadgeId,
+                  poolId: selectedPoolId,
+                  userIds: manualBadgeSelectedUsers,
+                });
+              }}
+            >
+              {awardManualMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <UserCheck className="h-4 w-4 mr-1" />}
+              Atribuir Badge
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

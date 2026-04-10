@@ -408,6 +408,38 @@ export async function scheduleBetReminders(): Promise<void> {
             category: "game_reminder",
           });
         }
+
+        // 🎯 Notificação patrocinada de lembrete de rodada (se bolão tiver patrocinador ativo com sponsoredNotificationActive)
+        try {
+          const { poolSponsors } = await import("../drizzle/schema");
+          const { and: andOp, eq: eqOp } = await import("drizzle-orm");
+          const [sponsor] = await db
+            .select()
+            .from(poolSponsors)
+            .where(andOp(eqOp(poolSponsors.poolId, pool.id), eqOp(poolSponsors.isActive, true)))
+            .limit(1);
+          if (sponsor && (sponsor as any).sponsoredNotificationActive && (sponsor as any).sponsoredNotificationText) {
+            const sponsorText = ((sponsor as any).sponsoredNotificationText as string)
+              .replace("{bolao}", pool.name)
+              .replace("{jogo}", `${g.homeTeamName} × ${g.awayTeamName}`)
+              .replace("{hora}", matchTime);
+            for (const { userId } of members) {
+              await createNotification({
+                userId,
+                poolId: pool.id,
+                type: "game_reminder",
+                title: `⏰ Lembrete — ${pool.name}`,
+                message: sponsorText,
+                actionUrl: `/pool/${pool.slug}`,
+                actionLabel: "Fazer palpite",
+                priority: "normal",
+                category: "game_reminder",
+              });
+            }
+          }
+        } catch (sponsorErr) {
+          logger.warn({ poolId: pool.id, sponsorErr }, "[Email] Notificação patrocinada de lembrete falhou (não crítico)");
+        }
       }
     }
   } catch (err) {
