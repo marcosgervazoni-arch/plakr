@@ -325,7 +325,7 @@ export default function AdminIntegrations() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <Accordion type="multiple" defaultValue={["analytics", "api-football", "campeonatos"]} className="space-y-2">
+          <Accordion type="single" collapsible className="space-y-2">
 
             {/* ══ GRUPO 1 — ANALYTICS E PUBLICIDADE ══ */}
             <AccordionItem value="analytics" className="border border-border/50 rounded-xl overflow-hidden">

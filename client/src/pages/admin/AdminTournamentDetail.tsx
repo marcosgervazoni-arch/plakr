@@ -473,7 +473,7 @@ export default function AdminTournamentDetail() {
 
         {/* Teams accordion */}
         {teams.length > 0 && (
-          <Accordion type="single" collapsible defaultValue="teams">
+          <Accordion type="single" collapsible>
             <AccordionItem value="teams" className="border border-border/50 rounded-xl px-4">
               <AccordionTrigger className="hover:no-underline py-3">
                 <div className="flex items-center gap-2">
@@ -512,7 +512,7 @@ export default function AdminTournamentDetail() {
 
         {/* Phases accordion */}
         {orderedPhases.length > 0 ? (
-          <Accordion type="multiple" defaultValue={orderedPhases.slice(0, 2).map(p => p.key)}>
+          <Accordion type="single" collapsible>
             {orderedPhases.map((phase) => (
               <AccordionItem key={phase.key} value={phase.key} className="border border-border/50 rounded-xl px-4 mb-3">
                 <AccordionTrigger className="hover:no-underline py-3">

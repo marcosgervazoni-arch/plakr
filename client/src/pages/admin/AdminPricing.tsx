@@ -240,8 +240,8 @@ export default function AdminPricing() {
     stripeUnlimitedAnnualPrice: 89900,
   });
 
-  // Acordeões abertos por padrão: Pro e Ilimitado (os que têm Price IDs)
-  const [openPlans, setOpenPlans] = useState<string[]>(["pro", "unlimited"]);
+  // Acordeões iniciam fechados — comportamento exclusivo (abrir um fecha o outro)
+  const [openPlans, setOpenPlans] = useState<string[]>([]);
 
   useEffect(() => {
     if (settings) {
@@ -263,7 +263,7 @@ export default function AdminPricing() {
 
   const togglePlan = (id: string) => {
     setOpenPlans((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+      prev.includes(id) ? [] : [id]
     );
   };
 

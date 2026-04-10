@@ -233,7 +233,7 @@ export default function AdminAds() {
             </Button>
           </div>
 
-          <Accordion type="multiple" defaultValue={["config", "anuncios"]} className="space-y-2">
+          <Accordion type="single" collapsible className="space-y-2">
 
             {/* ══ GRUPO 1 — CONFIGURAÇÕES ══ */}
             <AccordionItem value="config" className="border border-border/50 rounded-xl overflow-hidden">

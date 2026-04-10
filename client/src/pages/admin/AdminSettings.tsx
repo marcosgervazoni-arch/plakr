@@ -211,7 +211,7 @@ export default function AdminSettings() {
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <Accordion type="multiple" defaultValue={["monetizacao", "regras"]} className="space-y-2">
+          <Accordion type="single" collapsible className="space-y-2">
 
             {/* ══════════════════════════════════════════════════════════════
                 GRUPO 1 — MONETIZAÇÃO E PAGAMENTOS

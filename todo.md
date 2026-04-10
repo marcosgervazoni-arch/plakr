@@ -2722,3 +2722,9 @@
 
 ## Ajuste UX — Badges Patrocinados no AdminSponsorship (Sprint 09/04/2026)
 - [ ] Mover SponsorBadgesSection para dentro do AdminSponsorship.tsx como seção colapsável (padrão visual das demais seções)
+
+## Padronização de Acordeons/Colapsáveis (Sprint 10/04/2026)
+- [ ] Mapear todos os arquivos com openSections/colapsáveis no projeto
+- [ ] Regra: iniciar fechados (openSections = []) em todas as telas
+- [ ] Regra: comportamento exclusivo (abrir um fecha o outro) em todas as telas
+- [ ] EXCETO: página de jogos dos bolões (mantém comportamento atual)

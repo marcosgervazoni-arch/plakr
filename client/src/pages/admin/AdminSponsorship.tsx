@@ -235,7 +235,7 @@ interface SponsorBadgesSectionProps {
 }
 
 function SponsorBadgesSection({ poolId, sponsorId }: SponsorBadgesSectionProps) {
-  const [openSections, setOpenSections] = useState<string[]>(["badges"]);
+  const [openSections, setOpenSections] = useState<string[]>([]);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingUploadKey, setPendingUploadKey] = useState<string | null>(null);
@@ -393,7 +393,7 @@ export default function AdminSponsorship() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPoolId, setSelectedPoolId] = useState<number | null>(null);
   const [form, setForm] = useState<SponsorForm>(EMPTY_FORM);
-  const [openSections, setOpenSections] = useState<string[]>(["identity", "banner", "popup"]);
+  const [openSections, setOpenSections] = useState<string[]>([]);
 
   // Buscar lista de bolões
   const { data: pools, isLoading: loadingPools } = trpc.pools.adminList.useQuery({ limit: 200 });
@@ -527,7 +527,7 @@ export default function AdminSponsorship() {
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const toggleSection = (id: string) => {
-    setOpenSections((prev) => prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]);
+    setOpenSections((prev) => prev.includes(id) ? [] : [id]);
   };
 
   const handleSave = () => {
