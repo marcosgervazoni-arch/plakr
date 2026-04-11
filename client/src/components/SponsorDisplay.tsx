@@ -83,9 +83,11 @@ export function SponsorBanner({ poolId, sponsorId, className = "" }: SponsorBann
 
   if (!sponsor || !sponsor.bannerActive || !sponsor.bannerImageUrl) return null;
 
-  const content = (
+  // O className (ex: "mx-4 mt-3") deve ser aplicado no wrapper externo,
+  // não no div interno, para garantir alinhamento correto em ambos os casos (com/sem link)
+  const inner = (
     <div
-      className={`w-full overflow-hidden rounded-xl border border-border/30 bg-card/50 ${className}`}
+      className="w-full overflow-hidden rounded-xl border border-border/30 bg-card/50"
       style={{ height: "120px" }}
     >
       <img
@@ -103,16 +105,16 @@ export function SponsorBanner({ poolId, sponsorId, className = "" }: SponsorBann
         href={sponsor.bannerLinkUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="block"
+        className={`block ${className}`}
         aria-label={`Banner patrocinado por ${sponsor.sponsorName}`}
         onClick={() => track("banner_click")}
       >
-        {content}
+        {inner}
       </a>
     );
   }
 
-  return content;
+  return <div className={className}>{inner}</div>;
 }
 
 // ─── SponsorWelcomeMessage ────────────────────────────────────────────────────
