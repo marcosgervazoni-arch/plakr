@@ -2728,3 +2728,6 @@
 - [ ] Regra: iniciar fechados (openSections = []) em todas as telas
 - [ ] Regra: comportamento exclusivo (abrir um fecha o outro) em todas as telas
 - [ ] EXCETO: página de jogos dos bolões (mantém comportamento atual)
+- [x] Banner: corrigir altura real para 150px (era 120px) e usar object-cover para preencher no mobile
+- [x] Banner: atualizar hint de dimensão para 800×150 px no AdminSponsorship
+- [x] Popup: centralizar verticalmente no mobile (estava alinhado à base da tela)

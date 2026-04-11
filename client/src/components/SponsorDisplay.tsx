@@ -88,13 +88,13 @@ export function SponsorBanner({ poolId, sponsorId, className = "" }: SponsorBann
   const inner = (
     <div
       className="w-full overflow-hidden rounded-xl border border-border/30 bg-card/50"
-      style={{ height: "120px" }}
+      style={{ height: "150px" }}
     >
       <img
         src={sponsor.bannerImageUrl}
         alt={`Patrocinado por ${sponsor.sponsorName}`}
         className="w-full h-full"
-        style={{ objectFit: "contain", objectPosition: "center" }}
+        style={{ objectFit: "cover", objectPosition: "center" }}
       />
     </div>
   );
@@ -230,7 +230,7 @@ export function SponsorPopup({ poolId, userId, sponsorId }: SponsorPopupProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={handleClose}
     >
       <div

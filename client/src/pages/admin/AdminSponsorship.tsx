@@ -871,7 +871,7 @@ export default function AdminSponsorship() {
                       <LogoUploader
                         value={form.bannerImageUrl}
                         onChange={(url) => setForm((f) => ({ ...f, bannerImageUrl: url }))}
-                        hint="PNG ou JPG • 800×120 px recomendado (proporção 6.7:1) • máx. 2 MB • exibido com altura fixa de 120 px, imagem centralizada"
+                        hint="PNG ou JPG • 800×150 px recomendado (proporção 5.3:1) • máx. 2 MB • exibido com altura fixa de 150 px, imagem centralizada"
                         previewClass="h-[60px] w-full object-cover rounded"
                       />
                     </div>
