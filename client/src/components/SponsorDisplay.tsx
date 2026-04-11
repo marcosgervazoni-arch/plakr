@@ -92,7 +92,7 @@ export function SponsorBanner({ poolId, sponsorId, className = "" }: SponsorBann
         src={sponsor.bannerImageUrl}
         alt={`Patrocinado por ${sponsor.sponsorName}`}
         className="w-full h-full"
-        style={{ objectFit: "cover", objectPosition: "center" }}
+        style={{ objectFit: "contain", objectPosition: "center" }}
       />
     </div>
   );
@@ -150,12 +150,12 @@ export function SponsorWelcomeMessage({ poolId, userId, sponsorId }: SponsorWelc
   };
 
   return (
-    <div className="mx-4 mt-3 px-4 py-3 rounded-xl bg-brand/10 border border-brand/25 flex items-start gap-3">
+    <div className="mx-4 mt-3 px-4 py-3 rounded-xl bg-brand/10 border border-brand/25 flex items-stretch gap-3">
       {sponsor.sponsorLogoUrl && (
         <img
           src={sponsor.sponsorLogoUrl}
           alt={sponsor.sponsorName}
-          className="w-8 h-8 rounded-md object-contain shrink-0"
+          className="w-auto max-w-[56px] min-w-[32px] rounded-md object-contain shrink-0 self-stretch"
         />
       )}
       <div className="flex-1 min-w-0">
@@ -189,7 +189,9 @@ export function SponsorPopup({ poolId, userId, sponsorId }: SponsorPopupProps) {
   const trackedRef = useRef(false);
 
   const lsKey = `sponsor_popup_${poolId}_${userId}`;
-  const sessionKey = `sponsor_popup_session_${poolId}`;
+  // Inclui updatedAt do patrocinador na chave para forçar reexibição após atualizações
+  const sponsorVersion = sponsor ? String(sponsor.updatedAt ?? sponsor.id ?? poolId) : String(poolId);
+  const sessionKey = `sponsor_popup_session_${poolId}_${sponsorVersion}`;
 
   useEffect(() => {
     if (!sponsor || !sponsor.popupActive || !sponsor.popupTitle) return;

@@ -101,6 +101,8 @@ export const poolsSponsorRouter = router({
           popupDelaySeconds: poolSponsors.popupDelaySeconds,
           popupActive: poolSponsors.popupActive,
           showLogoOnShareCard: poolSponsors.showLogoOnShareCard,
+          id: poolSponsors.id,
+          updatedAt: poolSponsors.updatedAt,
         })
         .from(poolSponsors)
         .where(
