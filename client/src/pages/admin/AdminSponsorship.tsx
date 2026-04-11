@@ -153,9 +153,10 @@ function LogoUploader({ value, onChange, hint, previewClass }: LogoUploaderProps
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            base64,
-            mimeType: file.type,
-            filename: `sponsor-logo-${Date.now()}.${file.name.split(".").pop()}`,
+            data: `data:${file.type};base64,${base64}`,
+            contentType: file.type,
+            fileName: `sponsor-logo-${Date.now()}.${file.name.split(".").pop()}`,
+            folder: "sponsors",
           }),
         });
         const data = await res.json();
@@ -264,6 +265,10 @@ function SponsorBadgesSection({ poolId, sponsorId }: SponsorBadgesSectionProps) 
     onError: (e) => toast.error(e.message),
   });
 
+  const uploadSvgMutation = trpc.badges.uploadIcon.useMutation({
+    onError: (e) => toast.error(e.message),
+  });
+
   const removeBadge = trpc.pools.badgeRemove.useMutation({
     onSuccess: () => { toast.success("Badge removido."); refetchBadges(); },
     onError: (e) => toast.error(e.message),
@@ -281,13 +286,12 @@ function SponsorBadgesSection({ poolId, sponsorId }: SponsorBadgesSectionProps) 
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64 = (e.target?.result as string).split(",")[1];
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ base64, mimeType: file.type, filename: `badge-${dynamicKey}-${Date.now()}.${file.name.split(".").pop()}` }),
+        const uploadResult = await uploadSvgMutation.mutateAsync({
+          filename: `badge-${dynamicKey}-${Date.now()}.svg`,
+          contentBase64: base64,
         });
-        const data = await res.json();
-        if (data.url && poolId && sponsorId) {
+        const url = uploadResult?.url;
+        if (url && poolId && sponsorId) {
           const existing = getBadgeForDynamic(dynamicKey);
           await upsertBadge.mutateAsync({
             id: existing?.id,
@@ -295,7 +299,7 @@ function SponsorBadgesSection({ poolId, sponsorId }: SponsorBadgesSectionProps) 
             sponsorId,
             dynamic: dynamicKey as any,
             badgeName: existing?.badgeName || DYNAMICS.find(d => d.key === dynamicKey)?.label || dynamicKey,
-            svgUrl: data.url,
+            svgUrl: url,
             isActive: existing?.isActive ?? false,
           });
         } else { toast.error("Erro ao enviar arquivo."); }
@@ -496,6 +500,9 @@ export default function AdminSponsorship() {
     onSuccess: () => { toast.success("Badge removido."); refetchBadges(); },
     onError: (e) => toast.error(e.message),
   });
+  const uploadSvgIconMutation = trpc.badges.uploadIcon.useMutation({
+    onError: (e) => toast.error(e.message),
+  });
   const getBadgeForDynamic = (key: string) => sponsorBadges?.find((b) => b.dynamic === key);
   const handleBadgeSvgUpload = async (file: File, dynamicKey: string) => {
     if (!file.type.includes("svg") && !file.type.startsWith("image/")) {
@@ -544,13 +551,12 @@ export default function AdminSponsorship() {
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64 = (e.target?.result as string).split(",")[1];
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ base64, mimeType: file.type, filename: `badge-${dynamicKey}-${Date.now()}.${file.name.split(".").pop()}` }),
+        const uploadResult = await uploadSvgIconMutation.mutateAsync({
+          filename: `badge-${dynamicKey}-${Date.now()}.svg`,
+          contentBase64: base64,
         });
-        const data = await res.json();
-        if (data.url) {
+        const svgUrl = uploadResult?.url;
+        if (svgUrl) {
           const existing = getBadgeForDynamic(dynamicKey);
           await upsertBadgeMutation.mutateAsync({
             id: existing?.id,
@@ -558,7 +564,7 @@ export default function AdminSponsorship() {
             sponsorId,
             dynamic: dynamicKey as any,
             badgeName: existing?.badgeName || DYNAMICS.find(d => d.key === dynamicKey)?.label || dynamicKey,
-            svgUrl: data.url,
+            svgUrl,
             isActive: existing?.isActive ?? false,
           });
         } else { toast.error("Erro ao enviar arquivo."); }
