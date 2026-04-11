@@ -237,15 +237,24 @@ export function SponsorPopup({ poolId, userId, sponsorId }: SponsorPopupProps) {
         className="w-full max-w-sm bg-card rounded-2xl border border-border/50 shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Imagem do popup */}
+        {/* Imagem do popup — altura automática, sem corte */}
         {sponsor.popupImageUrl && (
-          <div className="w-full" style={{ height: "180px", overflow: "hidden" }}>
+          <div className="relative w-full">
             <img
               src={sponsor.popupImageUrl}
               alt={sponsor.sponsorName}
-              className="w-full h-full"
-              style={{ objectFit: "cover", objectPosition: "center" }}
+              className="w-full block"
+              style={{ objectFit: "contain", maxHeight: "320px" }}
             />
+            {/* Botão fechar sobreposto no canto superior direito da imagem */}
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="Fechar popup"
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         )}
 
@@ -291,13 +300,17 @@ export function SponsorPopup({ poolId, userId, sponsorId }: SponsorPopupProps) {
                 </Button>
               </a>
             )}
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              className={sponsor.popupButtonText && sponsor.popupButtonUrl ? "shrink-0" : "flex-1"}
-            >
-              Fechar
-            </Button>
+            {/* Botão Fechar na barra inferior: só aparece quando não há imagem (o × na imagem já cumpre essa função)
+                ou quando há apenas o botão de ação sem imagem */}
+            {!sponsor.popupImageUrl && (
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className={sponsor.popupButtonText && sponsor.popupButtonUrl ? "shrink-0" : "flex-1"}
+              >
+                Fechar
+              </Button>
+            )}
           </div>
         </div>
       </div>
