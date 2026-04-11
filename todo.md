@@ -2731,3 +2731,4 @@
 - [x] Banner: corrigir altura real para 150px (era 120px) e usar object-cover para preencher no mobile
 - [x] Banner: atualizar hint de dimensão para 800×150 px no AdminSponsorship
 - [x] Popup: centralizar verticalmente no mobile (estava alinhado à base da tela)
+- [x] Mensagem de boas-vindas: trocar localStorage por sessionStorage (reaparece a cada sessão, some ao fechar)

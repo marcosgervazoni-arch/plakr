@@ -130,11 +130,13 @@ export function SponsorWelcomeMessage({ poolId, userId, sponsorId }: SponsorWelc
   const track = useSponsorTracker(poolId, sponsorId);
   const [dismissed, setDismissed] = useState(false);
   const trackedRef = useRef(false);
-  const lsKey = `sponsor_welcome_${poolId}_${userId}`;
+  // Usa sessionStorage: a mensagem reaparece a cada nova sessão (atualização de página / nova aba),
+  // mas some quando o usuário clica em fechar durante a sessão atual.
+  const ssKey = `sponsor_welcome_session_${poolId}_${userId}`;
 
   useEffect(() => {
-    if (localStorage.getItem(lsKey)) setDismissed(true);
-  }, [lsKey]);
+    if (sessionStorage.getItem(ssKey)) setDismissed(true);
+  }, [ssKey]);
 
   // Rastrear impressão quando a mensagem aparecer pela primeira vez
   useEffect(() => {
@@ -147,7 +149,7 @@ export function SponsorWelcomeMessage({ poolId, userId, sponsorId }: SponsorWelc
   if (!sponsor || !sponsor.welcomeMessageActive || !sponsor.welcomeMessage || dismissed) return null;
 
   const handleDismiss = () => {
-    localStorage.setItem(lsKey, "1");
+    sessionStorage.setItem(ssKey, "1");
     setDismissed(true);
   };
 
