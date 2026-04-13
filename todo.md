@@ -2732,3 +2732,6 @@
 - [x] Banner: atualizar hint de dimensão para 800×150 px no AdminSponsorship
 - [x] Popup: centralizar verticalmente no mobile (estava alinhado à base da tela)
 - [x] Mensagem de boas-vindas: trocar localStorage por sessionStorage (reaparece a cada sessão, some ao fechar)
+- [x] Stripe produção: inserir chaves live (pk_live, sk_live) nas variáveis de ambiente
+- [x] Stripe produção: atualizar products.ts com os 4 Price IDs (Pro mensal/anual, Ilimitado mensal/anual)
+- [x] Stripe produção: configurar webhook endpoint e inserir whsec_ secret

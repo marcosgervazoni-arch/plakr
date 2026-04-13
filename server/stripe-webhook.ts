@@ -16,9 +16,9 @@ export function registerStripeWebhook(app: Express) {
     express.raw({ type: "application/json" }),
     async (req: Request, res: Response) => {
       const sig = req.headers["stripe-signature"] as string;
-      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? "";
-      // Usar chave do banco como prioridade (configurada via Admin → Configurações)
+      // Usar configurações do banco como prioridade (configuradas via Admin → Configurações)
       const platformConfig = await getPlatformSettings();
+      const webhookSecret = (platformConfig as any)?.stripeWebhookSecret || process.env.STRIPE_WEBHOOK_SECRET || "";
       const stripeSecretKey = (platformConfig as any)?.stripeSecretKey || process.env.STRIPE_SECRET_KEY || "";
       const stripe = new Stripe(stripeSecretKey, { apiVersion: "2026-02-25.clover" });
 
