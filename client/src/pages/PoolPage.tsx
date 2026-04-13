@@ -1899,37 +1899,7 @@ function GameCard({
             {/* PRÉ-JOGO: probabilidades + últimos 5 jogos + análise da IA */}
             {!finished && game.aiPrediction && game.aiPrediction.homeWin !== undefined && (
               <div className="space-y-3">
-                {/* Barra tripartida de probabilidade — exibida apenas em ligas com dados confiáveis (stddev_cmp >= 20)
-                     e quando os valores não são quase uniformes (diferença mínima de 5pp entre maior e menor,
-                     evitando exibir 34%/33%/33% que indica ausência de dados reais da API) */}
-                {predictionReliable && (() => {
-                  const { homeWin, draw, awayWin } = game.aiPrediction!;
-                  const maxVal = Math.max(homeWin, draw, awayWin);
-                  const minVal = Math.min(homeWin, draw, awayWin);
-                  return (maxVal - minVal) >= 5;
-                })() && (
-                <div className="space-y-1.5">
-                  <div className="flex h-2 rounded-full overflow-hidden">
-                    <div className="bg-primary/80" style={{ width: `${game.aiPrediction!.homeWin}%` }} />
-                    <div className="bg-muted-foreground/40" style={{ width: `${game.aiPrediction!.draw}%` }} />
-                    <div className="bg-red-400/80" style={{ width: `${game.aiPrediction!.awayWin}%` }} />
-                  </div>
-                  <div className="flex justify-between text-[11px]">
-                    <div className="text-left">
-                      <span className="font-bold text-primary">{game.aiPrediction!.homeWin}%</span>
-                      <p className="text-muted-foreground">{game.teamAName} vence</p>
-                    </div>
-                    <div className="text-center">
-                      <span className="font-bold text-muted-foreground">{game.aiPrediction!.draw}%</span>
-                      <p className="text-muted-foreground">Empate</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-bold text-red-400">{game.aiPrediction!.awayWin}%</span>
-                      <p className="text-muted-foreground">{game.teamBName} vence</p>
-                    </div>
-                  </div>
-                </div>
-                )}
+                {/* Barra de probabilidade removida — mantida apenas análise de IA */}
                 {/* Últimos 5 jogos */}
                 {(game.aiPrediction.homeForm?.length > 0 || game.aiPrediction.awayForm?.length > 0) && (
                   <div className="space-y-1.5">

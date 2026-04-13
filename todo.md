@@ -2735,3 +2735,4 @@
 - [x] Stripe produção: inserir chaves live (pk_live, sk_live) nas variáveis de ambiente
 - [x] Stripe produção: atualizar products.ts com os 4 Price IDs (Pro mensal/anual, Ilimitado mensal/anual)
 - [x] Stripe produção: configurar webhook endpoint e inserir whsec_ secret
+- [x] Remover barra de estatísticas/probabilidade dos cards de jogos
