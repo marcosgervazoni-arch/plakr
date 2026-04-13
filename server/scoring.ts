@@ -324,8 +324,16 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
       );
 
       await updateBetScore(bet.id, {
-        pointsEarned: breakdown.total,
-        resultType: breakdown.resultType,
+        pointsEarned:        breakdown.total,
+        resultType:          breakdown.resultType,
+        pointsExactScore:    breakdown.pointsExactScore,
+        pointsCorrectResult: breakdown.pointsCorrectResult,
+        pointsTotalGoals:    breakdown.pointsTotalGoals,
+        pointsGoalDiff:      breakdown.pointsGoalDiff,
+        pointsOneTeamGoals:  breakdown.pointsOneTeamGoals,
+        pointsLandslide:     breakdown.pointsLandslide,
+        pointsZebra:         breakdown.pointsZebra,
+        isZebra:             breakdown.isZebra,
       });
     }
 
@@ -334,14 +342,24 @@ export async function processGameScoring(gameId: number, scoreA: number, scoreB:
     for (const { member } of members) {
       const allBets = await getBetsByPool(pool.id, member.userId);
       const totalPoints = allBets.reduce((sum, b) => sum + (b.pointsEarned ?? 0), 0);
-      const exactCount = allBets.filter((b) => b.resultType === "exact").length;
-      const correctCount = allBets.filter((b) => b.resultType === "correct_result").length;
+      const exactCount        = allBets.filter((b) => b.resultType === "exact").length;
+      const correctCount      = allBets.filter((b) => b.resultType === "correct_result").length;
+      const goalDiffCount     = allBets.filter((b) => (b.pointsGoalDiff     ?? 0) > 0).length;
+      const oneTeamGoalsCount = allBets.filter((b) => (b.pointsOneTeamGoals ?? 0) > 0).length;
+      const totalGoalsCount   = allBets.filter((b) => (b.pointsTotalGoals   ?? 0) > 0).length;
+      const landslideCount    = allBets.filter((b) => (b.pointsLandslide    ?? 0) > 0).length;
+      const zebraCount        = allBets.filter((b) => (b.pointsZebra        ?? 0) > 0).length;
 
       await upsertPoolMemberStats(pool.id, member.userId, {
         totalPoints,
-        exactScoreCount: exactCount,
+        exactScoreCount:    exactCount,
         correctResultCount: correctCount,
-        totalBets: allBets.length,
+        totalBets:          allBets.length,
+        goalDiffCount,
+        oneTeamGoalsCount,
+        totalGoalsCount,
+        landslideCount,
+        zebraCount,
       });
     }
 

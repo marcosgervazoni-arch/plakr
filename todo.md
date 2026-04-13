@@ -2736,3 +2736,6 @@
 - [x] Stripe produção: atualizar products.ts com os 4 Price IDs (Pro mensal/anual, Ilimitado mensal/anual)
 - [x] Stripe produção: configurar webhook endpoint e inserir whsec_ secret
 - [x] Remover barra de estatísticas/probabilidade dos cards de jogos
+- [x] Scoring Gap 1: expandir updateBetScore com todos os campos do breakdown
+- [x] Scoring Gap 2: corrigir upsertPoolMemberStats com 5 contadores faltantes
+- [x] Scoring: criar script recalculate-breakdown.mjs para reprocessamento histórico
