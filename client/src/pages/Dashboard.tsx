@@ -35,7 +35,8 @@ import {
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
+import { ConquistasContent } from "./Conquistas";
 import { DashboardSkeleton } from "@/components/Skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorCard } from "@/components/ErrorCard";
@@ -219,10 +220,50 @@ function ShareCardDashboardItem({
   );
 }
 
+// ─── ABAS DO DASHBOARD ──────────────────────────────────────────────────────
+
+function DashboardTabs() {
+  const search = useSearch();
+  const [, navigate] = useLocation();
+  const params = new URLSearchParams(search);
+  const activeTab = params.get("tab") ?? "visao-geral";
+
+  const tabs = [
+    { id: "visao-geral", label: "Visão Geral" },
+    { id: "conquistas", label: "Conquistas" },
+  ];
+
+  return (
+    <div className="flex gap-1 p-1 bg-muted/40 rounded-lg border border-border/30">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => {
+            if (tab.id === "visao-geral") {
+              navigate("/dashboard", { replace: true });
+            } else {
+              navigate(`/dashboard?tab=${tab.id}`, { replace: true });
+            }
+          }}
+          className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            activeTab === tab.id
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user, isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const search = useSearch();
+  const activeTab = new URLSearchParams(search).get("tab") ?? "visao-geral";
 
   const { data: userData } = trpc.users.me.useQuery(undefined, { enabled: isAuthenticated });
   const { data: pools = [], isLoading: poolsLoading, error: poolsError, refetch: refetchPools } = trpc.users.myPools.useQuery(undefined, { enabled: isAuthenticated });
@@ -455,6 +496,14 @@ export default function Dashboard() {
           {/* Em mobile: order-2 (aparece depois do perfil); em desktop: order-none */}
           <div className="space-y-6 order-2 lg:order-none">
 
+            {/* Abas de navegação */}
+            <DashboardTabs />
+
+            {/* Conteúdo condicional por aba */}
+            {activeTab === "conquistas" ? (
+              <ConquistasContent />
+            ) : (
+            <>
             {/* My pools */}
             <section data-tour="my-pools">
               <div className="flex items-center justify-between mb-3">
@@ -771,6 +820,8 @@ export default function Dashboard() {
                 )}
               </div>
             </section>
+            </>
+            )}
 
           </div>
         </div>

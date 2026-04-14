@@ -148,7 +148,7 @@ const DEFAULT_PREFS: Prefs = {
   emailAd: false,
 };
 
-export default function NotificationPreferences() {
+export function NotificationPreferencesContent() {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.notifications.getPreferences.useQuery();
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
@@ -217,32 +217,22 @@ export default function NotificationPreferences() {
 
   if (isLoading) {
     return (
-      <AppShell>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        </div>
-      </AppShell>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
     );
   }
 
   const pushUnavailable = permission === "unsupported" || !pushEnabled;
 
   return (
-    <AppShell>
-      <div className="max-w-2xl mx-auto px-4 py-6 lg:py-10 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 py-6 lg:py-10 space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Link href="/notifications">
-            <Button variant="ghost" size="icon" className="w-8 h-8">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="font-bold text-2xl" style={{ fontFamily: "'Syne', sans-serif" }}>
-              Preferências de Notificação
-            </h1>
-            <p className="text-sm text-muted-foreground">Configure como e quando ser notificado.</p>
-          </div>
+        <div>
+          <h1 className="font-bold text-2xl" style={{ fontFamily: "'Syne', sans-serif" }}>
+            Preferências de Notificação
+          </h1>
+          <p className="text-sm text-muted-foreground">Configure como e quando ser notificado.</p>
         </div>
 
         {/* ─── In-App ─── */}
@@ -366,6 +356,13 @@ export default function NotificationPreferences() {
           </Button>
         </div>
       </div>
+  );
+}
+
+export default function NotificationPreferences() {
+  return (
+    <AppShell>
+      <NotificationPreferencesContent />
     </AppShell>
   );
 }

@@ -66,9 +66,9 @@ function BadgeSkeleton() {
   );
 }
 
-// ─── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
+/// ─── COMPONENTE PRINCIPAL (exportado para uso no Dashboard) ──────────────────────
 
-export default function Conquistas() {
+export function ConquistasContent() {
   const { user } = useAuth();
   const { trackBadgeUnlocked } = useAnalytics();
   const { data, isLoading } = trpc.badges.myProgress.useQuery(undefined, {
@@ -108,15 +108,11 @@ export default function Conquistas() {
   const platformRanking = [...allBadges].sort((a, b) => a.platformPercent - b.platformPercent);
 
   return (
-    <AppShell>
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 py-6 space-y-8">
         {/* ── CABEÇALHO ── */}
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-                <ChevronLeft className="h-4 w-4" />
-              </Link>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <Trophy className="h-6 w-6 text-brand" />
                 Conquistas
@@ -403,6 +399,15 @@ export default function Conquistas() {
         <SponsorBadgesSection />
 
       </div>
+  );
+}
+
+// ─── PÁGINA WRAPPER (mantida para compatibilidade com links diretos) ──────────
+
+export default function Conquistas() {
+  return (
+    <AppShell>
+      <ConquistasContent />
     </AppShell>
   );
 }

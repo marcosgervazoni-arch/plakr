@@ -61,8 +61,8 @@ const navSections = [
     id: "conquistas",
     label: "Conquistas",
     icon: Award,
-    href: "/conquistas",
-    matchFn: (loc: string) => loc === "/conquistas",
+    href: "/dashboard?tab=conquistas",
+    matchFn: (loc: string) => loc.startsWith("/dashboard") && loc.includes("tab=conquistas"),
   },
 ];
 
@@ -335,11 +335,11 @@ export default function AppShell({ children }: AppShellProps) {
       {/* Preferências de Notificação + Logout */}
       {isAuthenticated && (
         <div className="p-3 border-t border-border/30 space-y-0.5">
-          <Link href="/notification-preferences" onClick={() => setSidebarOpen(false)}>
+          <Link href="/notifications?tab=preferencias" onClick={() => setSidebarOpen(false)}>
             <button
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
-                location === "/notification-preferences"
+                location.startsWith("/notifications") && location.includes("tab=preferencias")
                   ? "bg-primary/10 text-primary font-medium"
                   : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
               )}

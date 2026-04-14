@@ -7,7 +7,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import PoolPage from "./pages/PoolPage";
-import PoolSettings from "./pages/PoolSettings";
 import JoinPool from "./pages/JoinPool";
 
 import PublicPools from "./pages/PublicPools";

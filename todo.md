@@ -217,3 +217,10 @@
 - [x] U4: SponsorBadgesSection já estava dentro do AdminSponsorship.tsx como seção colapsável (implementado em sessão anterior)
 - [ ] C2: Dividir AdminIntegrations.tsx em sub-componentes menores
 - [x] S2: Ocultar rotas admin prematuras — /admin/x1-duels e /admin/referrals removidos do menu AdminLayout (rotas preservadas, apenas ocultas do nav)
+
+## Sprint E — Consolidação de Navegação (Auditoria)
+- [ ] N1: Remover PoolSettings.tsx (arquivo morto) e rota /enter-pool (rota fantasma)
+- [ ] N2: Redirecionar / → /dashboard para usuários autenticados
+- [ ] N3: Mover Conquistas para seção/aba dentro do Dashboard (eliminar rota separada)
+- [ ] N4: Mover NotificationPreferences para aba dentro de /notifications (eliminar rota separada)
+- [ ] N5: Consolidar rotas admin redundantes em abas de telas existentes (system→settings, import-logs→tournaments/:id, retrospectivas→pools, landing-page→settings, pricing→settings)

@@ -5,6 +5,7 @@
  * customCode por seção: quando preenchido, tem prioridade total sobre o conteúdo padrão.
  */
 import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import BadgeShowcase from "@/components/BadgeShowcase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, Infinity as InfinityIcon, CalendarDays } from "lucide-react";
@@ -425,7 +426,15 @@ function CustomOrDefault({ customCode, children }: { customCode: string | null |
 export default function Home() {
   const { data: config } = trpc.landingPage.getConfig.useQuery();
   const { user, loading: authLoading } = useAuth();
+  const [, navigate] = useLocation();
   const loginUrl = getLoginUrl("/dashboard");
+
+  // Redirecionar usuários autenticados para o dashboard
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
   const upgradeLoginUrl = getLoginUrl("/upgrade");
 
   const heroHeadline = config?.heroHeadline ?? "Faça seu bolão com a galera";
