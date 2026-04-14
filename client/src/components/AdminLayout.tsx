@@ -98,7 +98,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "users", label: "Usuários", icon: Users, path: "/admin/users" },
       { id: "badges", label: "Badges", icon: Award, path: "/admin/badges" },
-      { id: "x1-duels", label: "Duelos X1", icon: Swords, path: "/admin/x1-duels" },
+      // { id: "x1-duels", label: "Duelos X1", icon: Swords, path: "/admin/x1-duels" }, // PENDENTE: funcionalidade incompleta
     ],
   },
   {
@@ -121,7 +121,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "subscriptions", label: "Assinaturas", icon: CreditCard, path: "/admin/subscriptions" },
       { id: "pricing", label: "Preços", icon: Tag, path: "/admin/pricing" },
-      { id: "referrals", label: "Programa de Convites", icon: Zap, path: "/admin/referrals" },
+      // { id: "referrals", label: "Programa de Convites", icon: Zap, path: "/admin/referrals" }, // PENDENTE: funcionalidade incompleta
     ],
   },
   {

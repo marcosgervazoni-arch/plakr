@@ -210,9 +210,10 @@
 - [x] U1: Unificar /my-profile e /profile/:userId — /my-profile redireciona para /profile/me; PublicProfile.tsx exibe seções de edição (avatar, plano, convites, notificações, conta) quando isOwnProfile=true
 - [x] U2: Adicionar link "Preferências" no rodapé do sidebar (AppShell.tsx) apontando para /notification-preferences, com highlight ativo
 - [x] P1: Otimizar queries N+1 — getPoolsWhereOnlyOrganizer: N queries → 1 query SQL com subquery; saveFinalPositions: N INSERTs → 1 INSERT em lote
-- [ ] U4: Mover SponsorBadgesSection para dentro do AdminSponsorship.tsx
+- [x] U4: SponsorBadgesSection já estava dentro do AdminSponsorship.tsx como seção colapsável (verificado no Sprint D)
 
 ## Sprint D — Limpeza
-- [ ] C3: Remover console.log de debug do servidor e cliente
+- [x] C3: Auditar console.log — todos os 29 logs existentes são legítimos (catch blocks, error boundaries, push/maps/share); nenhum debug para remover
+- [x] U4: SponsorBadgesSection já estava dentro do AdminSponsorship.tsx como seção colapsável (implementado em sessão anterior)
 - [ ] C2: Dividir AdminIntegrations.tsx em sub-componentes menores
-- [ ] S2: Ocultar rotas admin prematuras (/admin/referrals, /admin/x1-duels)
+- [x] S2: Ocultar rotas admin prematuras — /admin/x1-duels e /admin/referrals removidos do menu AdminLayout (rotas preservadas, apenas ocultas do nav)
