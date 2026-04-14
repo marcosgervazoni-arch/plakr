@@ -332,9 +332,22 @@ export default function AppShell({ children }: AppShellProps) {
         </div>
       )}
 
-      {/* Logout */}
+      {/* Preferências de Notificação + Logout */}
       {isAuthenticated && (
-        <div className="p-3 border-t border-border/30">
+        <div className="p-3 border-t border-border/30 space-y-0.5">
+          <Link href="/notification-preferences" onClick={() => setSidebarOpen(false)}>
+            <button
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left",
+                location === "/notification-preferences"
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              )}
+            >
+              <Settings className="w-4 h-4 shrink-0" />
+              <span>Preferências</span>
+            </button>
+          </Link>
           <button
             onClick={() => {
               setSidebarOpen(false);

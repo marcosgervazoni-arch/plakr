@@ -855,35 +855,29 @@ export async function getOldestMember(poolId: number, excludeUserId: number): Pr
 
 /**
  * Retorna todos os bolões onde o usuário é o único organizador.
+ * Otimizado: uma única query SQL com subquery em vez de N queries em loop.
  */
 export async function getPoolsWhereOnlyOrganizer(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  // Bolões onde este usuário é organizador
-  const ownedPools = await db
+
+  // Subquery: pool_ids que têm APENAS este usuário como organizador
+  // (nenhum outro membro com role="organizer" no mesmo pool)
+  const rows = await db
     .select({ poolId: poolMembers.poolId })
     .from(poolMembers)
-    .where(and(eq(poolMembers.userId, userId), eq(poolMembers.role, "organizer")));
-
-  const result = [];
-  for (const { poolId } of ownedPools) {
-    // Verificar se há outro organizador
-    const otherOrganizers = await db
-      .select()
-      .from(poolMembers)
-      .where(
-        and(
-          eq(poolMembers.poolId, poolId),
-          eq(poolMembers.role, "organizer"),
-          sql`${poolMembers.userId} != ${userId}`
-        )
+    .where(
+      and(
+        eq(poolMembers.userId, userId),
+        eq(poolMembers.role, "organizer"),
+        sql`${poolMembers.poolId} NOT IN (
+          SELECT pool_id FROM pool_members
+          WHERE role = 'organizer' AND user_id != ${userId}
+        )`
       )
-      .limit(1);
-    if (otherOrganizers.length === 0) {
-      result.push(poolId);
-    }
-  }
-  return result;
+    );
+
+  return rows.map((r: { poolId: number }) => r.poolId);
 }
 
 /**
@@ -975,11 +969,15 @@ export async function saveFinalPositions(
   if (!db) return;
   const { poolFinalPositions } = await import("../drizzle/schema");
   const totalParticipants = ranking.length;
-  for (const entry of ranking) {
-    await db
-      .insert(poolFinalPositions)
-      .ignore()
-      .values({
+  if (ranking.length === 0) return;
+
+  // INSERT em lote: uma única query em vez de N queries individuais
+  const now = new Date();
+  await db
+    .insert(poolFinalPositions)
+    .ignore()
+    .values(
+      ranking.map((entry) => ({
         userId: entry.userId,
         poolId,
         poolName,
@@ -987,9 +985,9 @@ export async function saveFinalPositions(
         position: entry.position,
         totalPoints: entry.totalPoints,
         totalParticipants,
-        finishedAt: new Date(),
-      });
-  }
+        finishedAt: now,
+      }))
+    );
 }
 
 /**

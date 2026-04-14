@@ -207,8 +207,9 @@
 - [x] D1: Declarar índices explícitos no drizzle/schema.ts — 14 índices adicionados em 7 tabelas (games, bets, notifications, poolMembers, poolMemberStats, emailQueue, adminLogs); migração aplicada
 
 ## Sprint C — UX e Navegação
-- [ ] U1: Unificar /my-profile e /profile/:userId em página única com modo de edição
-- [ ] U2: Corrigir acesso às rotas /conquistas e /notification-preferences no sidebar
+- [x] U1: Unificar /my-profile e /profile/:userId — /my-profile redireciona para /profile/me; PublicProfile.tsx exibe seções de edição (avatar, plano, convites, notificações, conta) quando isOwnProfile=true
+- [x] U2: Adicionar link "Preferências" no rodapé do sidebar (AppShell.tsx) apontando para /notification-preferences, com highlight ativo
+- [x] P1: Otimizar queries N+1 — getPoolsWhereOnlyOrganizer: N queries → 1 query SQL com subquery; saveFinalPositions: N INSERTs → 1 INSERT em lote
 - [ ] U4: Mover SponsorBadgesSection para dentro do AdminSponsorship.tsx
 
 ## Sprint D — Limpeza
