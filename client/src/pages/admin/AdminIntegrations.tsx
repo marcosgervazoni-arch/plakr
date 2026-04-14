@@ -143,21 +143,42 @@ export default function AdminIntegrations() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
   const { data: backfillStatus, refetch: refetchBackfill } = trpc.integrations.getBackfillStatus.useQuery();
-  const backfillAiSummariesMutation = trpc.integrations.backfillAiSummaries.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Resumos de IA: ${data.succeeded} gerados, ${data.failed} falhas`);
-      refetchBackfill();
-    },
-    onError: (e: { message: string }) => toast.error(e.message),
-  });
-  const backfillMutation = trpc.integrations.backfillGameData.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Backfill concluído: ${data.succeeded} processados, ${data.failed} falhas (${data.requestsUsed} req usadas)`);
+  const backfillAiSummariesMutation = trpc.integrations.backfillAiSummaries.useMutation();
+  const backfillMutation = trpc.integrations.backfillGameData.useMutation();
+
+  const [isReprocessing, setIsReprocessing] = useState(false);
+  const [reprocessResult, setReprocessResult] = useState<{ statsProcessed: number; aiGenerated: number; failed: number } | null>(null);
+
+  const handleReprocessar = async () => {
+    setIsReprocessing(true);
+    setReprocessResult(null);
+    let statsProcessed = 0;
+    let aiGenerated = 0;
+    let failed = 0;
+    try {
+      // Passo 1: buscar estatísticas dos jogos sem matchStatistics
+      if ((backfillStatus?.pendingCount ?? 0) > 0) {
+        const r1 = await backfillMutation.mutateAsync({ batchSize: 400 });
+        statsProcessed = r1.succeeded;
+        failed += r1.failed;
+      }
+      // Passo 2: gerar resumos de IA para jogos sem aiSummary
+      if ((backfillStatus?.aiSummaryPendingCount ?? 0) > 0) {
+        const r2 = await backfillAiSummariesMutation.mutateAsync({ batchSize: 50 });
+        aiGenerated = r2.succeeded;
+        failed += r2.failed;
+      }
+      setReprocessResult({ statsProcessed, aiGenerated, failed });
+      toast.success(`Reprocessamento concluído: ${statsProcessed} estatísticas + ${aiGenerated} resumos de IA`);
       refetchBackfill();
       refetchLogs();
-    },
-    onError: (e: { message: string }) => toast.error(e.message),
-  });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erro desconhecido";
+      toast.error(msg);
+    } finally {
+      setIsReprocessing(false);
+    }
+  };
 
   // ─── Recalculo de Formatos ────────────────────────────────────────────────
   const recalcularFormatosMutation = trpc.integrations.recalcularFormatos.useMutation({
@@ -904,16 +925,15 @@ export default function AdminIntegrations() {
                     </div>
                   </div>
 
-                  {/* Backfill de Estatísticas */}
+                  {/* Reprocessamento unificado: estatísticas + resumos de IA */}
                   <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Reprocessamento</p>
-                      {backfillStatus && backfillStatus.pendingCount > 0 && (
+                      {backfillStatus && ((backfillStatus.pendingCount ?? 0) + (backfillStatus.aiSummaryPendingCount ?? 0)) > 0 ? (
                         <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full px-2 py-0.5 font-medium">
-                          {backfillStatus.pendingCount} pendentes
+                          {(backfillStatus.pendingCount ?? 0) + (backfillStatus.aiSummaryPendingCount ?? 0)} pendentes
                         </span>
-                      )}
-                      {backfillStatus && backfillStatus.pendingCount === 0 && (
+                      ) : (
                         <span className="text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full px-2 py-0.5 font-medium">
                           Em dia
                         </span>
@@ -921,70 +941,28 @@ export default function AdminIntegrations() {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Reprocessa jogos finalizados sem estatísticas ou análises de IA.
-                      {backfillStatus && backfillStatus.pendingCount > 0
-                        ? ` ${backfillStatus.pendingCount} jogo${backfillStatus.pendingCount !== 1 ? "s" : ""} aguardando.`
-                        : " Todos os jogos estão atualizados."}
+                      {backfillStatus && (backfillStatus.pendingCount ?? 0) > 0 && ` ${backfillStatus.pendingCount} sem estatísticas.`}
+                      {backfillStatus && (backfillStatus.aiSummaryPendingCount ?? 0) > 0 && ` ${backfillStatus.aiSummaryPendingCount} sem resumo de IA.`}
+                      {backfillStatus && (backfillStatus.pendingCount ?? 0) === 0 && (backfillStatus.aiSummaryPendingCount ?? 0) === 0 && " Todos os jogos estão atualizados."}
                     </p>
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full gap-1.5 text-xs"
-                      disabled={!integrationSettings?.apiFootballEnabled || backfillMutation.isPending || (backfillStatus?.pendingCount ?? 0) === 0}
-                      onClick={() => backfillMutation.mutate({ batchSize: 400 })}
+                      disabled={!integrationSettings?.apiFootballEnabled || isReprocessing || ((backfillStatus?.pendingCount ?? 0) + (backfillStatus?.aiSummaryPendingCount ?? 0)) === 0}
+                      onClick={handleReprocessar}
                     >
-                      {backfillMutation.isPending ? (
-                        <><Loader2 className="h-3 w-3 animate-spin" /> Reprocessando ({backfillStatus?.pendingCount ?? 0} jogos)...</>
+                      {isReprocessing ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Reprocessando...</>
                       ) : (
                         <><BarChart2 className="h-3 w-3" /> Reprocessar jogos finalizados</>
                       )}
                     </Button>
-                    {backfillMutation.data && (
+                    {reprocessResult && (
                       <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 space-y-0.5">
-                        <p>✅ {backfillMutation.data.succeeded} processados com sucesso</p>
-                        {backfillMutation.data.failed > 0 && <p>⚠️ {backfillMutation.data.failed} falhas</p>}
-                        <p className="text-muted-foreground/70">{backfillMutation.data.requestsUsed} requisições usadas · contador atualizado</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Backfill de Resumos de IA (pós-jogo) */}
-                  <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Resumos de IA (pós-jogo)</p>
-                      {backfillStatus && (backfillStatus.aiSummaryPendingCount ?? 0) > 0 && (
-                        <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full px-2 py-0.5 font-medium">
-                          {backfillStatus.aiSummaryPendingCount} pendentes
-                        </span>
-                      )}
-                      {backfillStatus && (backfillStatus.aiSummaryPendingCount ?? 0) === 0 && (
-                        <span className="text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full px-2 py-0.5 font-medium">
-                          Em dia
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Gera aiSummary e narração de IA para jogos finalizados que ainda não têm resumo.
-                      {backfillStatus && (backfillStatus.aiSummaryPendingCount ?? 0) > 0
-                        ? ` ${backfillStatus.aiSummaryPendingCount} jogo${(backfillStatus.aiSummaryPendingCount ?? 0) !== 1 ? "s" : ""} aguardando.`
-                        : " Todos os jogos estão com resumo de IA."}
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full gap-1.5 text-xs"
-                      disabled={backfillAiSummariesMutation.isPending || (backfillStatus?.aiSummaryPendingCount ?? 0) === 0}
-                      onClick={() => backfillAiSummariesMutation.mutate({ batchSize: 50 })}
-                    >
-                      {backfillAiSummariesMutation.isPending ? (
-                        <><Loader2 className="h-3 w-3 animate-spin" /> Gerando resumos...</>
-                      ) : (
-                        <><Sparkles className="h-3 w-3" /> Gerar resumos de IA pós-jogo</>
-                      )}
-                    </Button>
-                    {backfillAiSummariesMutation.data && (
-                      <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 space-y-0.5">
-                        <p>✅ {backfillAiSummariesMutation.data.succeeded} resumos gerados</p>
-                        {backfillAiSummariesMutation.data.failed > 0 && <p>⚠️ {backfillAiSummariesMutation.data.failed} falhas</p>}
+                        {reprocessResult.statsProcessed > 0 && <p>✅ {reprocessResult.statsProcessed} estatísticas atualizadas</p>}
+                        {reprocessResult.aiGenerated > 0 && <p>✅ {reprocessResult.aiGenerated} resumos de IA gerados</p>}
+                        {reprocessResult.failed > 0 && <p>⚠️ {reprocessResult.failed} falhas</p>}
                       </div>
                     )}
                   </div>
