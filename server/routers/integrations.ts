@@ -10,7 +10,7 @@ import logger from "../logger";
 import { getDb } from "../db";
 import { platformSettings, apiSyncLog, apiQuotaTracker, tournaments, games as gamesTable } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
-import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament, backfillGameData, getBackfillPendingCount } from "../api-football/sync";
+import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament, backfillGameData, getBackfillPendingCount, backfillAiSummaries, getAiSummaryPendingCount } from "../api-football/sync";
 import { buildAiPrediction } from "../api-football/ai-analysis";
 import { fetchFixturePredictions } from "../api-football/client";
 import { and, isNull, lt, sql } from "drizzle-orm";
@@ -725,12 +725,28 @@ export const integrationsRouter = router({
       }),
 
   /**
-   * Retorna quantos jogos finalizados estão sem estatísticas (precisam de backfill).
+   * Retorna quantos jogos finalizados estão sem estatísticas (precisam de backfill)
+   * e quantos estão sem aiSummary (precisam de backfill de IA).
    */
   getBackfillStatus: adminProcedure.query(async () => {
-    const pendingCount = await getBackfillPendingCount();
-    return { pendingCount };
+    const [pendingCount, aiSummaryPendingCount] = await Promise.all([
+      getBackfillPendingCount(),
+      getAiSummaryPendingCount(),
+    ]);
+    return { pendingCount, aiSummaryPendingCount };
   }),
+
+  /**
+   * Gera aiSummary/aiNarration para jogos finalizados que já têm estatísticas
+   * mas ainda não têm resumo de IA. Processa até 50 jogos por execução.
+   */
+  backfillAiSummaries: adminProcedure
+    .input(z.object({ batchSize: z.number().min(1).max(200).default(50) }))
+    .mutation(async ({ input, ctx }) => {
+      logger.info(`[BackfillAiSummary] Admin ${ctx.user.id} triggered (batchSize=${input.batchSize})`);
+      const result = await backfillAiSummaries({ batchSize: input.batchSize });
+      return result;
+    }),
 
   /**
    * Recalcula o formato de todos os torneios importados via API-Football.

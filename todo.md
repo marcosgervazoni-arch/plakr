@@ -194,3 +194,4 @@
 - [ ] [BACKLOG] Exibir estatísticas de breakdown no perfil do usuário (goalDiffCount, zebraCount, etc.)
 - [ ] [BACKLOG] Preview ao vivo de banner/popup no AdminSponsorship
 - [ ] [BACKLOG] Frequência configurável da mensagem de boas-vindas (a cada sessão vs uma vez por membro)
+- [x] Backfill de aiSummary: nova procedure backfillAiSummaries + botão no admin com contador correto

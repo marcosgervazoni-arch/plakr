@@ -1242,3 +1242,91 @@ export async function getBackfillPendingCount(): Promise<number> {
     );
   return row?.total ?? 0;
 }
+
+/**
+ * Backfill de aiSummary/aiNarration para jogos finalizados que já têm
+ * matchStatistics mas ainda não têm resumo de IA gerado.
+ */
+export async function backfillAiSummaries(options: {
+  batchSize?: number;
+}): Promise<{ processed: number; succeeded: number; failed: number }> {
+  const db = await getDb();
+  if (!db) return { processed: 0, succeeded: 0, failed: 0 };
+  const batchSize = options.batchSize ?? 50;
+
+  const pendingGames = await db
+    .select({
+      id: games.id,
+      teamAName: games.teamAName,
+      teamBName: games.teamBName,
+      scoreA: games.scoreA,
+      scoreB: games.scoreB,
+      goalsTimeline: games.goalsTimeline,
+      matchStatistics: games.matchStatistics,
+    })
+    .from(games)
+    .where(
+      and(
+        eq(games.status, "finished"),
+        isNull(games.aiSummary),
+        sql`${games.externalId} IS NOT NULL`
+      )
+    )
+    .limit(batchSize);
+
+  let processed = 0;
+  let succeeded = 0;
+  let failed = 0;
+
+  logger.info(`[BackfillAiSummary] Starting for ${pendingGames.length} games`);
+
+  for (const game of pendingGames) {
+    try {
+      const allBets = await getBetsByGameAllPools(game.id);
+      const betsByPool: Map<number, Array<{ id: number; userId: number; predictedScoreA: number | null; predictedScoreB: number | null; poolId: number }>> = new Map();
+      for (const bet of allBets) {
+        if (!betsByPool.has(bet.poolId)) betsByPool.set(bet.poolId, []);
+        betsByPool.get(bet.poolId)!.push(bet);
+      }
+      await generateAiTextsForGame({
+        gameId: game.id,
+        homeTeam: game.teamAName ?? "Casa",
+        awayTeam: game.teamBName ?? "Visitante",
+        scoreA: game.scoreA ?? 0,
+        scoreB: game.scoreB ?? 0,
+        goalsTimeline: (game.goalsTimeline as Array<{ min: string; team: "home" | "away"; player: string; type: "goal" | "own_goal" | "penalty" }>) ?? [],
+        matchStatistics: game.matchStatistics as ReturnType<typeof parseMatchStatistics>,
+        betsByPool,
+      });
+      succeeded++;
+      logger.info(`[BackfillAiSummary] Game ${game.id} OK`);
+    } catch (err) {
+      failed++;
+      logger.error({ err, gameId: game.id }, "[BackfillAiSummary] Failed");
+    }
+    processed++;
+  }
+
+  logger.info(`[BackfillAiSummary] Done: processed=${processed} succeeded=${succeeded} failed=${failed}`);
+  return { processed, succeeded, failed };
+}
+
+/**
+ * Retorna quantos jogos finalizados estão sem aiSummary (precisam de backfill de IA).
+ */
+export async function getAiSummaryPendingCount(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const { count } = await import("drizzle-orm");
+  const [row] = await db
+    .select({ total: count() })
+    .from(games)
+    .where(
+      and(
+        eq(games.status, "finished"),
+        isNull(games.aiSummary),
+        sql`${games.externalId} IS NOT NULL`
+      )
+    );
+  return row?.total ?? 0;
+}
