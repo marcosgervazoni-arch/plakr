@@ -35,12 +35,24 @@ import {
   users,
 } from "../drizzle/schema";
 
+import mysql from "mysql2/promise";
+
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: mysql.Pool | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // Cria o pool com keepAlive para evitar ECONNRESET após longos períodos de inatividade
+      _pool = mysql.createPool({
+        uri: process.env.DATABASE_URL,
+        waitForConnections: true,
+        connectionLimit: 10,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
+        idleTimeout: 60000,
+      });
+      _db = drizzle(_pool as any);
     } catch (error) {
       logger.warn({ err: error }, "[Database] Failed to connect");
       _db = null;

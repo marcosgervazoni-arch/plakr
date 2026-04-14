@@ -195,3 +195,23 @@
 - [ ] [BACKLOG] Preview ao vivo de banner/popup no AdminSponsorship
 - [ ] [BACKLOG] Frequência configurável da mensagem de boas-vindas (a cada sessão vs uma vez por membro)
 - [x] Backfill de aiSummary: nova procedure backfillAiSummaries + botão no admin com contador correto
+
+## Sprint A — Bugs Críticos (Revisão Técnica)
+- [x] B2: Corrigir prompt LLM — incluir data real do jogo, proibir "hoje"/"amanhã" (corrigido em sessão anterior)
+- [x] S3: Automatizar backfill de aiSummary no cron de resultados (syncResults) — backfillAiSummaries chamado em background ao final do syncResults quando resultsApplied > 0
+- [x] B3: Corrigir ECONNRESET no pool MySQL — getDb() agora usa mysql2 createPool com enableKeepAlive:true, waitForConnections:true (conexões ociosas não morrem mais após hibernação)
+
+## Sprint B — Débito de Código
+- [ ] C1: Extrair GameCard e sub-componentes do PoolPage.tsx para arquivos separados
+- [ ] C4: Dividir server/db.ts em módulos por domínio (pools, games, users, etc.)
+- [ ] D1: Declarar índices explícitos no drizzle/schema.ts (notifications, games)
+
+## Sprint C — UX e Navegação
+- [ ] U1: Unificar /my-profile e /profile/:userId em página única com modo de edição
+- [ ] U2: Corrigir acesso às rotas /conquistas e /notification-preferences no sidebar
+- [ ] U4: Mover SponsorBadgesSection para dentro do AdminSponsorship.tsx
+
+## Sprint D — Limpeza
+- [ ] C3: Remover console.log de debug do servidor e cliente
+- [ ] C2: Dividir AdminIntegrations.tsx em sub-componentes menores
+- [ ] S2: Ocultar rotas admin prematuras (/admin/referrals, /admin/x1-duels)

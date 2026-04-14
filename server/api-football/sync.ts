@@ -1107,6 +1107,14 @@ export async function syncResults(options: {
     `[ApiFootball] syncResults done: applied=${resultsApplied} req=${requestsUsed} duration=${durationMs}ms`
   );
 
+  // Após sincronizar resultados, gerar aiSummary para jogos que ainda não têm
+  // (executa em background para não bloquear o retorno do cron)
+  if (resultsApplied > 0) {
+    backfillAiSummaries({ batchSize: 20 }).catch((e) =>
+      logger.error({ err: e }, "[AI][AutoBackfill] Error running automatic aiSummary backfill")
+    );
+  }
+
   return { resultsApplied, requestsUsed, error: errorMessage };
 }
 
