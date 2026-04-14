@@ -97,11 +97,13 @@ export default function CreatePool() {
   ];
 
   const defaultRules = [
-    { label: "Placar exato", pts: 10 },
-    { label: "Resultado correto", pts: 5 },
-    { label: "Bônus total de gols", pts: 2 },
-    { label: "Bônus diferença de gols", pts: 2 },
-    { label: "Bônus zebra", pts: 3 },
+    { label: "Placar exato", pts: 10, desc: "Acertou o placar completo" },
+    { label: "Resultado correto", pts: 5, desc: "Acertou quem ganhou ou empate" },
+    { label: "Bônus total de gols", pts: 3, desc: "Acertou a soma de gols da partida" },
+    { label: "Bônus saldo de gols", pts: 3, desc: "Acertou a diferença de gols" },
+    { label: "Bônus gols de um time", pts: 2, desc: "Acertou os gols de pelo menos um time" },
+    { label: "Bônus goleada", pts: 5, desc: "Previu e ocorreu goleada (≥4 gols de diferença)" },
+    { label: "Bônus zebra", pts: 1, desc: "Acertou resultado de zebra (azarão com 75%+ de chance de perder)" },
   ];
 
   return (
@@ -316,14 +318,17 @@ export default function CreatePool() {
           <div className="bg-card border border-border/30 rounded-xl overflow-hidden">
             <div className="divide-y divide-border/20">
               {defaultRules.map((rule) => (
-                <div key={rule.label} className="px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">{rule.label}</span>
-                    <Badge className="text-xs py-0 px-1.5 bg-primary/10 text-primary border-primary/20">
-                      <Crown className="w-2.5 h-2.5 mr-1" /> Personalizável no Pro
-                    </Badge>
+                <div key={rule.label} className="px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-medium">{rule.label}</span>
+                      <Badge className="text-xs py-0 px-1.5 bg-primary/10 text-primary border-primary/20 shrink-0">
+                        <Crown className="w-2.5 h-2.5 mr-1" /> Pro
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{rule.desc}</p>
                   </div>
-                  <span className="font-mono font-bold text-sm text-primary">{rule.pts} pts</span>
+                  <span className="font-mono font-bold text-sm text-primary shrink-0">{rule.pts} pts</span>
                 </div>
               ))}
             </div>

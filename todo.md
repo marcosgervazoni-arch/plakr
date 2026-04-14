@@ -236,4 +236,7 @@
 ## Sprint G — Melhorias Pós-Auditoria
 - [ ] G1: Stripe — Customer Portal: botão "Gerenciar Assinatura" no perfil/upgrade que abre portal Stripe para cancelamento e troca de plano
 - [ ] G2: Badges — job de reprocessamento retroativo com botão no painel admin (calcular badges para todos os usuários)
+- [x] Tela de criação do bolão: incluir todas as regras de pontuação faltantes (goleada, um time, bonuç de gol de time) na seção "Regras de Pontuação"
 - [ ] G3: Bug — análises de IA (aiSummary, statsData, goalsTimeline) não aparecem nos cards de jogos encerrados na PoolPage
+- [ ] [BACKLOG] Dashboard Admin: indicador de Naming Rights com valor contratado (requer campo contractValueBrl no banco + processo comercial definido — ver docs/backlog/dashboard-monetization-indicators.md)
+- [ ] [BACKLOG] Dashboard Admin: card Adsterra com receita via API Publisher (requer adsterraApiKey em platformSettings + UI em Integrações — ver docs/backlog/dashboard-monetization-indicators.md)
