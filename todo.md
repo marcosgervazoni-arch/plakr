@@ -202,9 +202,9 @@
 - [x] B3: Corrigir ECONNRESET no pool MySQL — getDb() agora usa mysql2 createPool com enableKeepAlive:true, waitForConnections:true (conexões ociosas não morrem mais após hibernação)
 
 ## Sprint B — Débito de Código
-- [ ] C1: Extrair GameCard e sub-componentes do PoolPage.tsx para arquivos separados
-- [ ] C4: Dividir server/db.ts em módulos por domínio (pools, games, users, etc.)
-- [ ] D1: Declarar índices explícitos no drizzle/schema.ts (notifications, games)
+- [x] C1: Extrair GameCard e sub-componentes do PoolPage.tsx — GameCard movido para client/src/components/GameCard.tsx (PoolPage.tsx: 2491→1749 linhas)
+- [ ] C4: Dividir server/db.ts em módulos por domínio (pools, games, users, etc.) — ADIADO: 36 arquivos importam db.ts; risco alto de quebra em cascata sem benefício imediato
+- [x] D1: Declarar índices explícitos no drizzle/schema.ts — 14 índices adicionados em 7 tabelas (games, bets, notifications, poolMembers, poolMemberStats, emailQueue, adminLogs); migração aplicada
 
 ## Sprint C — UX e Navegação
 - [ ] U1: Unificar /my-profile e /profile/:userId em página única com modo de edição

@@ -386,6 +386,13 @@
       "when": 1775813966617,
       "tag": "0054_sour_calypso",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "5",
+      "when": 1776173451786,
+      "tag": "0055_thick_the_phantom",
+      "breakpoints": true
     }
   ]
 }

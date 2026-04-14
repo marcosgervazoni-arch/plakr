@@ -1,6 +1,7 @@
 import {
   boolean,
   decimal,
+  index,
   int,
   json,
   mysqlEnum,
@@ -301,8 +302,12 @@ export const games = mysqlTable("games", {
   } | null>(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
-
+},
+(t) => [
+  index("games_tournamentId_idx").on(t.tournamentId),
+  index("games_status_idx").on(t.status),
+  index("games_matchDate_idx").on(t.matchDate),
+]);
 export type Game = typeof games.$inferSelect;
 export type InsertGame = typeof games.$inferInsert;
 
@@ -383,7 +388,10 @@ export const poolMembers = mysqlTable(
       .default("active").notNull(),
     paymentRequestedAt: timestamp("paymentRequestedAt"), // quando o participante clicou em "Já paguei"
   },
-  (t) => [unique("pool_member_unique").on(t.poolId, t.userId)]
+  (t) => [
+    unique("pool_member_unique").on(t.poolId, t.userId),
+    index("pool_members_userId_idx").on(t.userId),
+  ]
 );
 
 export type PoolMember = typeof poolMembers.$inferSelect;
@@ -449,7 +457,11 @@ export const poolMemberStats = mysqlTable(
     rankPosition: int("rankPosition"),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
-  (t) => [unique("pool_member_stats_unique").on(t.poolId, t.userId)]
+  (t) => [
+    unique("pool_member_stats_unique").on(t.poolId, t.userId),
+    index("pool_member_stats_poolId_idx").on(t.poolId),
+    index("pool_member_stats_userId_idx").on(t.userId),
+  ]
 );
 
 export type PoolMemberStats = typeof poolMemberStats.$inferSelect;
@@ -486,7 +498,12 @@ export const bets = mysqlTable(
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
-  (t) => [unique("bet_unique").on(t.poolId, t.userId, t.gameId)]
+  (t) => [
+    unique("bet_unique").on(t.poolId, t.userId, t.gameId),
+    index("bets_poolId_idx").on(t.poolId),
+    index("bets_userId_idx").on(t.userId),
+    index("bets_gameId_idx").on(t.gameId),
+  ]
 );
 
 export type Bet = typeof bets.$inferSelect;
@@ -525,7 +542,11 @@ export const notifications = mysqlTable("notifications", {
   priority: mysqlEnum("priority", ["low", "normal", "high", "urgent"]).default("normal").notNull(),
   category: varchar("category", { length: 100 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+},
+(t) => [
+  index("notifications_userId_idx").on(t.userId),
+  index("notifications_isRead_idx").on(t.isRead),
+]);
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
@@ -591,7 +612,10 @@ export const emailQueue = mysqlTable("email_queue", {
   errorMessage: text("errorMessage"),
   sentAt: timestamp("sentAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+},
+(t) => [
+  index("email_queue_status_idx").on(t.status),
+]);
 
 // ─── PUBLICIDADE ──────────────────────────────────────────────────────────────
 
@@ -641,7 +665,11 @@ export const adminLogs = mysqlTable("admin_logs", {
   level: mysqlEnum("level", ["info", "warn", "error"]).default("info").notNull(),
   ipAddress: varchar("ipAddress", { length: 45 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+},
+(t) => [
+  index("admin_logs_adminId_idx").on(t.adminId),
+  index("admin_logs_createdAt_idx").on(t.createdAt),
+]);
 
 // ─── TEMPLATES DE MENSAGENS AUTOMÁTICAS ─────────────────────────────────────
 export const notificationTemplates = mysqlTable("notification_templates", {
