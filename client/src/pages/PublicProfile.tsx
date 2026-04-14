@@ -53,6 +53,30 @@ type PublicProfileData = {
   radarData: { subject: string; value: number; fullMark: number }[];
 };
 
+function ManageSubscriptionButton() {
+  const portalMutation = trpc.stripe.createPortalSession.useMutation({
+    onSuccess: ({ portalUrl }) => {
+      if (portalUrl) window.open(portalUrl, "_blank");
+    },
+    onError: (err) => toast.error(err.message || "Erro ao abrir portal de assinatura."),
+  });
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="w-full gap-2 justify-between"
+      onClick={() => portalMutation.mutate({ origin: window.location.origin })}
+      disabled={portalMutation.isPending}
+    >
+      <span className="flex items-center gap-2">
+        <Shield className="w-4 h-4" />
+        {portalMutation.isPending ? "Abrindo portal..." : "Gerenciar assinatura"}
+      </span>
+      <ChevronRight className="w-4 h-4" />
+    </Button>
+  );
+}
+
 export default function PublicProfile() {
   const { userId: userIdParam } = useParams<{ userId: string }>();
   const { user: currentUser, isAuthenticated } = useAuth();
@@ -616,11 +640,14 @@ export default function PublicProfile() {
                 </div>
               )}
               {(isPro || isUnlimited) && (
-                <Link href="/payments">
-                  <Button variant="ghost" size="sm" className="w-full gap-2 text-muted-foreground hover:text-foreground justify-between">
-                    Ver histórico de pagamentos <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </Link>
+                <div className="space-y-1">
+                  <ManageSubscriptionButton />
+                  <Link href="/payments">
+                    <Button variant="ghost" size="sm" className="w-full gap-2 text-muted-foreground hover:text-foreground justify-between">
+                      Ver histórico de pagamentos <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </div>
               )}
             </div>
 

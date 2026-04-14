@@ -162,11 +162,19 @@ export default function AdminIntegrations() {
         statsProcessed = r1.succeeded;
         failed += r1.failed;
       }
-      // Passo 2: gerar resumos de IA para jogos sem aiSummary
+      // Passo 2: gerar resumos de IA para jogos sem aiSummary (loop até zerar)
       if ((backfillStatus?.aiSummaryPendingCount ?? 0) > 0) {
-        const r2 = await backfillAiSummariesMutation.mutateAsync({ batchSize: 50 });
-        aiGenerated = r2.succeeded;
-        failed += r2.failed;
+        let remaining = backfillStatus?.aiSummaryPendingCount ?? 0;
+        let loopCount = 0;
+        const maxLoops = 20; // segurança: máx 20 lotes (1000 jogos)
+        while (remaining > 0 && loopCount < maxLoops) {
+          const r2 = await backfillAiSummariesMutation.mutateAsync({ batchSize: 50 });
+          aiGenerated += r2.succeeded;
+          failed += r2.failed;
+          remaining -= r2.processed;
+          loopCount++;
+          if (r2.processed === 0) break; // sem mais pendentes
+        }
       }
       setReprocessResult({ statsProcessed, aiGenerated, failed });
       toast.success(`Reprocessamento concluído: ${statsProcessed} estatísticas + ${aiGenerated} resumos de IA`);

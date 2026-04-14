@@ -153,7 +153,7 @@
 
 ## PENDENTE — Bugs Ativos
 
-- [ ] **BUG:** Estatísticas e análises não aparecem nos cards de jogos da PoolPage (investigar exibição para jogos encerrados)
+- [x] **BUG:** Estatísticas e análises não aparecem nos cards — causa raiz: 328 jogos sem aiSummary no banco; backfill loop automático implementado no painel admin (processa até zerar pendentes em lotes de 50)
 - [ ] **BUG:** Compartilhamento GameCard — estado de loading ainda pode ser compartilhado entre botões em edge cases
 - [ ] **BUG:** E-mail de broadcast não está sendo entregue (aguardando integração com provedor externo: Resend/SendGrid)
 - [ ] **BUG:** Push Web (browser push) de broadcast não está sendo entregue (depende de VAPID keys configuradas)
@@ -232,3 +232,8 @@
 - [x] SEC-4: Corrigir useInviteCode — era publicProcedure com newUserId no input (vetor de abuso); agora é protectedProcedure usando ctx.user.id
 - [ ] SEC-5: Stripe — implementar portal do cliente e fluxo de cancelamento de assinatura
 - [ ] SEC-6: Revisar CSP — 'unsafe-inline' e 'unsafe-eval' em scriptSrc são permissivos; avaliar nonce-based CSP para produção
+
+## Sprint G — Melhorias Pós-Auditoria
+- [ ] G1: Stripe — Customer Portal: botão "Gerenciar Assinatura" no perfil/upgrade que abre portal Stripe para cancelamento e troca de plano
+- [ ] G2: Badges — job de reprocessamento retroativo com botão no painel admin (calcular badges para todos os usuários)
+- [ ] G3: Bug — análises de IA (aiSummary, statsData, goalsTimeline) não aparecem nos cards de jogos encerrados na PoolPage
