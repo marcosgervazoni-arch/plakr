@@ -870,36 +870,41 @@ export default function PoolPage() {
                       {/* Jogos da fase */}
                       {isExpanded && (
                         <div className="divide-y divide-border/20">
-                          {filteredPhaseGames.map((game) => {
-                            const myBet = betsByGame.get(game.id);
-                            const open = isGameOpen(game.matchDate);
-                            const finished = game.status === "finished";
-                            const live = game.status === "live";
-                            const betA = betInputs[game.id]?.a ?? (myBet ? String(myBet.predictedScoreA) : "");
-                            const betB = betInputs[game.id]?.b ?? (myBet ? String(myBet.predictedScoreB) : "");
-                            const hasBet = !!myBet;
-                            return (
-                              <GameCard
-                                key={game.id}
-                                game={game}
-                                myBet={myBet}
-                                open={open}
-                                finished={finished}
-                                live={live}
-                                betA={betA}
-                                betB={betB}
-                                hasBet={hasBet}
-                                poolId={pool.id}
-                                betInputs={betInputs}
-                                setBetInputs={setBetInputs}
-                                handleBetSubmit={handleBetSubmit}
-                                placeBetPending={placeBet.isPending}
-                                myRankPosition={myPosition?.position}
-                                shareCardConfig={adConfig?.shareCardConfig}
-                                predictionReliable={data?.predictionReliable ?? false}
-                              />
-                            );
-                          })}
+                          <AdInterleaved
+                            items={filteredPhaseGames}
+                            showAds={!isPro}
+                            interval={4}
+                            renderItem={(game) => {
+                              const myBet = betsByGame.get(game.id);
+                              const open = isGameOpen(game.matchDate);
+                              const finished = game.status === "finished";
+                              const live = game.status === "live";
+                              const betA = betInputs[game.id]?.a ?? (myBet ? String(myBet.predictedScoreA) : "");
+                              const betB = betInputs[game.id]?.b ?? (myBet ? String(myBet.predictedScoreB) : "");
+                              const hasBet = !!myBet;
+                              return (
+                                <GameCard
+                                  key={game.id}
+                                  game={game}
+                                  myBet={myBet}
+                                  open={open}
+                                  finished={finished}
+                                  live={live}
+                                  betA={betA}
+                                  betB={betB}
+                                  hasBet={hasBet}
+                                  poolId={pool.id}
+                                  betInputs={betInputs}
+                                  setBetInputs={setBetInputs}
+                                  handleBetSubmit={handleBetSubmit}
+                                  placeBetPending={placeBet.isPending}
+                                  myRankPosition={myPosition?.position}
+                                  shareCardConfig={adConfig?.shareCardConfig}
+                                  predictionReliable={data?.predictionReliable ?? false}
+                                />
+                              );
+                            }}
+                          />
                         </div>
                       )}
                     </div>
@@ -916,37 +921,42 @@ export default function PoolPage() {
                     <button onClick={() => setActiveFilter("all")} className="text-xs text-primary mt-1 hover:underline">Ver todos</button>
                   </div>
                 )}
-                {simpleVisibleGames.map((game) => {
-                  const myBet = betsByGame.get(game.id);
-                  const open = isGameOpen(game.matchDate);
-                  const finished = game.status === "finished";
-                  const live = game.status === "live";
-                  const betA = betInputs[game.id]?.a ?? (myBet ? String(myBet.predictedScoreA) : "");
-                  const betB = betInputs[game.id]?.b ?? (myBet ? String(myBet.predictedScoreB) : "");
-                  const hasBet = !!myBet;
-                  return (
-                    <GameCard
-                      key={game.id}
-                      game={game}
-                      myBet={myBet}
-                      open={open}
-                      finished={finished}
-                      live={live}
-                      betA={betA}
-                      betB={betB}
-                      hasBet={hasBet}
-                      poolId={pool.id}
-                      betInputs={betInputs}
-                      setBetInputs={setBetInputs}
-                      handleBetSubmit={handleBetSubmit}
-                      placeBetPending={placeBet.isPending}
-                      myRankPosition={myPosition?.position}
-                      showPhaseLabel
-                      shareCardConfig={adConfig?.shareCardConfig}
-                      predictionReliable={data?.predictionReliable ?? false}
-                    />
-                  );
-                })}
+                <AdInterleaved
+                  items={simpleVisibleGames}
+                  showAds={!isPro}
+                  interval={4}
+                  renderItem={(game) => {
+                    const myBet = betsByGame.get(game.id);
+                    const open = isGameOpen(game.matchDate);
+                    const finished = game.status === "finished";
+                    const live = game.status === "live";
+                    const betA = betInputs[game.id]?.a ?? (myBet ? String(myBet.predictedScoreA) : "");
+                    const betB = betInputs[game.id]?.b ?? (myBet ? String(myBet.predictedScoreB) : "");
+                    const hasBet = !!myBet;
+                    return (
+                      <GameCard
+                        key={game.id}
+                        game={game}
+                        myBet={myBet}
+                        open={open}
+                        finished={finished}
+                        live={live}
+                        betA={betA}
+                        betB={betB}
+                        hasBet={hasBet}
+                        poolId={pool.id}
+                        betInputs={betInputs}
+                        setBetInputs={setBetInputs}
+                        handleBetSubmit={handleBetSubmit}
+                        placeBetPending={placeBet.isPending}
+                        myRankPosition={myPosition?.position}
+                        showPhaseLabel
+                        shareCardConfig={adConfig?.shareCardConfig}
+                        predictionReliable={data?.predictionReliable ?? false}
+                      />
+                    );
+                  }}
+                />
                 {simpleFilteredGames.length > INITIAL_GAMES_SHOWN && (
                   <button
                     onClick={() => setShowAllGames((v) => !v)}

@@ -2739,3 +2739,4 @@
 - [x] Scoring Gap 1: expandir updateBetScore com todos os campos do breakdown
 - [x] Scoring Gap 2: corrigir upsertPoolMemberStats com 5 contadores faltantes
 - [x] Scoring: criar script recalculate-breakdown.mjs para reprocessamento histórico
+- [x] Ads entre jogos na tela de palpites (modo simples e modo fases, interval=4, apenas free)
