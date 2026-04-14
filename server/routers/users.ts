@@ -592,9 +592,11 @@ export const usersRouter = router({
     };
   }),
 
-  useInviteCode: publicProcedure
-    .input(z.object({ inviteCode: z.string().min(1), newUserId: z.number() }))
-    .mutation(async ({ input }) => {
+  // [SEC] Corrigido: era publicProcedure com newUserId no input (vetor de abuso — qualquer um podia registrar convite em nome de outro usuário)
+  useInviteCode: protectedProcedure
+    .input(z.object({ inviteCode: z.string().min(1) }))
+    .mutation(async ({ input, ctx }) => {
+      const newUserId = ctx.user.id;
       const db = await (await import("../db")).getDb();
       if (!db) return { success: false };
       const { eq, and, isNull } = await import("drizzle-orm");
@@ -605,10 +607,10 @@ export const usersRouter = router({
         .where(and(eq(referrals.inviteCode, input.inviteCode), isNull(referrals.inviteeId)))
         .limit(1);
       if (!invite) return { success: false };
-      if (invite.inviterId === input.newUserId) return { success: false };
+      if (invite.inviterId === newUserId) return { success: false };
       await db
         .update(referrals)
-        .set({ inviteeId: input.newUserId, registeredAt: new Date() })
+        .set({ inviteeId: newUserId, registeredAt: new Date() })
         .where(eq(referrals.id, invite.id));
       const { calculateAndAssignBadges } = await import("../badges");
       await calculateAndAssignBadges(invite.inviterId).catch(() => {});

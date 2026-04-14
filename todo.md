@@ -224,3 +224,11 @@
 - [ ] N3: Mover Conquistas para seção/aba dentro do Dashboard (eliminar rota separada)
 - [ ] N4: Mover NotificationPreferences para aba dentro de /notifications (eliminar rota separada)
 - [ ] N5: Consolidar rotas admin redundantes em abas de telas existentes (system→settings, import-logs→tournaments/:id, retrospectivas→pools, landing-page→settings, pricing→settings)
+
+## Sprint F — Auditoria de Segurança
+- [x] SEC-1: Atualizar @trpc/server 11.6.0 → 11.16.0 (CVE GHSA-43p4-m455-4f4j corrigido)
+- [x] SEC-2: Atualizar axios 1.13.6 → 1.15.0 (CVE GHSA-jr5f-v2jv-69x6 corrigido)
+- [x] SEC-3: Registrar router /api/v1 no Express com rate limiting 60req/min (estava inacessível — arquivo morto)
+- [x] SEC-4: Corrigir useInviteCode — era publicProcedure com newUserId no input (vetor de abuso); agora é protectedProcedure usando ctx.user.id
+- [ ] SEC-5: Stripe — implementar portal do cliente e fluxo de cancelamento de assinatura
+- [ ] SEC-6: Revisar CSP — 'unsafe-inline' e 'unsafe-eval' em scriptSrc são permissivos; avaliar nonce-based CSP para produção

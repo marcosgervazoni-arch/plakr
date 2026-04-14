@@ -11,6 +11,7 @@ import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
 import { registerOgRoutes, registerLandingOgRoute } from "../og";
 import { registerApiDocs } from "../api-docs";
+import v1Router from "../api/v1";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -73,6 +74,8 @@ async function startServer() {
   app.use("/api/oauth", rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false }));
   app.use("/api/upload", rateLimit({ windowMs: 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false }));
   app.use("/api/trpc", rateLimit({ windowMs: 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false }));
+  // [S6] Rate limiting para API pública v1 (60 req/min por IP)
+  app.use("/api/v1", rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false }));
 
   // ⚠️ Stripe webhook MUST be registered BEFORE express.json() for signature verification
   registerStripeWebhook(app);
@@ -117,6 +120,9 @@ async function startServer() {
 
   // Landing page OG SSR — inject dynamic ogImageUrl for social bots on root
   registerLandingOgRoute(app);
+
+  // Public REST API v1 (API key authenticated)
+  app.use("/api/v1", v1Router);
 
   // API Documentation (Swagger UI)
   registerApiDocs(app);

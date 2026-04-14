@@ -98,7 +98,7 @@ export function useReferralCapture() {
     // Disparar evento de cadastro no GA4 e Facebook Pixel
     analytics.trackSignUp({ method: "oauth" });
     // Aplicar o código de convite
-    useInviteCode.mutate({ inviteCode: refCode, newUserId: me.id });
+    useInviteCode.mutate({ inviteCode: refCode });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.id]);
 }
