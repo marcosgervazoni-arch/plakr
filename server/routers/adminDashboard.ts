@@ -78,8 +78,8 @@ export const adminDashboardRouter = router({
   getEnrichedStats: adminProcedure.query(async () => {
     const db = await (await import("../db")).getDb();
     if (!db) return null;
-    const { users: usersT, pools: poolsT, bets: betsT, tournaments: tourT, userPlans: plansT } = await import("../../drizzle/schema");
-    const { count, eq, ne, gte, and, sql } = await import("drizzle-orm");
+    const { users: usersT, pools: poolsT, bets: betsT, tournaments: tourT, userPlans: plansT, poolSponsors, poolSponsorEvents } = await import("../../drizzle/schema");
+    const { count, eq, ne, gte, and, sql, inArray } = await import("drizzle-orm");
 
     const now = new Date();
     const todayStart = new Date(now);
@@ -109,6 +109,20 @@ export const adminDashboardRouter = router({
       db.select({ c: count() }).from(betsT).where(gte(betsT.createdAt, todayStart)),
     ]);
 
+    // Naming rights
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const [[activeSponsors], sponsorEventsMonth] = await Promise.all([
+      db.select({ c: count() }).from(poolSponsors).where(eq(poolSponsors.isActive, true)),
+      db.select({ eventType: poolSponsorEvents.eventType, c: count() })
+        .from(poolSponsorEvents)
+        .where(gte(poolSponsorEvents.createdAt, thirtyDaysAgo))
+        .groupBy(poolSponsorEvents.eventType),
+    ]);
+    const sponsorImpressions = sponsorEventsMonth.filter(e => e.eventType === 'banner_impression').reduce((s, e) => s + Number(e.c), 0);
+    const sponsorClicks = sponsorEventsMonth.filter(e => e.eventType === 'banner_click' || e.eventType === 'popup_click').reduce((s, e) => s + Number(e.c), 0);
+    const sponsorCtr = sponsorImpressions > 0 ? Math.round((sponsorClicks / sponsorImpressions) * 1000) / 10 : 0;
+
     // MRR estimado: bolões Pro ativos × preço configurado
     const settings = await getPlatformSettings();
     const monthlyPrice = settings?.stripeMonthlyPrice ?? 2990; // centavos
@@ -131,6 +145,11 @@ export const adminDashboardRouter = router({
       mrrBrl: mrrCents / 100,
       arrBrl: (mrrCents * 12) / 100,
       conversionRate,
+      // Naming rights
+      activeSponsors: Number(activeSponsors?.c ?? 0),
+      sponsorImpressions,
+      sponsorClicks,
+      sponsorCtr,
     };
   }),
 
