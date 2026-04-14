@@ -6,6 +6,7 @@
 import AppShell from "@/components/AppShell";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,7 +61,7 @@ export default function CreatePool() {
 
   const tournaments = tournamentsData ?? [];
   const activePools = (myPools ?? []).filter((p: any) => p.status === "active");
-  const isPro = user?.role === "admin"; // simplified — real: check user_plans
+  const { isPro } = useUserPlan();
   const atLimit = !isPro && activePools.length >= 2;
 
   const createMutation = trpc.pools.create.useMutation({
