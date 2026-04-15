@@ -285,14 +285,15 @@ export default function PublicProfile() {
 
               {/* Actions */}
               <div className="flex items-center gap-2 pb-1 flex-wrap">
-                {(user as any).whatsappLink && (
+                {/* [SEC] Validação de protocolo: apenas https:// e https://wa.me/ são permitidos */}
+                {(user as any).whatsappLink && /^https:\/\//i.test((user as any).whatsappLink) && (
                   <a href={(user as any).whatsappLink} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm" className="gap-2 text-green-500 border-green-500/30 hover:bg-green-500/10">
                       <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                     </Button>
                   </a>
                 )}
-                {(user as any).telegramLink && (
+                {(user as any).telegramLink && /^https:\/\//i.test((user as any).telegramLink) && (
                   <a href={(user as any).telegramLink} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm" className="gap-2 text-blue-400 border-blue-400/30 hover:bg-blue-400/10">
                       <Send className="w-3.5 h-3.5" /> Telegram

@@ -41,7 +41,7 @@ export const poolsCoreRouter = router({
       tournamentId: z.number(),
       accessType: z.enum(["public", "private_link"]).default("private_link"),
       invitePermission: z.enum(["organizer_only", "all_members"]).default("organizer_only"),
-      description: z.string().optional(),
+      description: z.string().max(1000).optional(), // [SEC] limite de payload
     }))
     .mutation(async ({ input, ctx }) => {
       const settings = await getPlatformSettings();
@@ -269,15 +269,15 @@ export const poolsCoreRouter = router({
   update: protectedProcedure
     .input(z.object({
       poolId: z.number(),
-      name: z.string().optional(),
-      description: z.string().optional(),
-      logoUrl: z.string().optional(),
+      name: z.string().max(100).optional(),
+      description: z.string().max(1000).optional(), // [SEC] limite de payload
+      logoUrl: z.string().url().max(2048).optional(), // [SEC] limite de URL
       accessType: z.enum(["public", "private_link"]).optional(),
       invitePermission: z.enum(["organizer_only", "all_members"]).optional(),
       tournamentId: z.number().optional(),
       entryFee: z.number().nullable().optional(),
-      entryQrCodeUrl: z.string().nullable().optional(),
-      pixKey: z.string().nullable().optional(),
+      entryQrCodeUrl: z.string().url().max(2048).nullable().optional(),
+      pixKey: z.string().max(100).nullable().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const { poolId, entryFee, entryQrCodeUrl, pixKey, ...rest } = input;

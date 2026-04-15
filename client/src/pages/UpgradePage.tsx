@@ -29,7 +29,7 @@ import {
   Sparkles,
   CalendarDays,
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -229,9 +229,57 @@ export default function UpgradePage() {
     checkoutMutation.mutate({ tier, billing, origin: window.location.origin });
   };
 
+  // [UX] Detecta retorno do checkout Stripe e exibe banner de confirmação
+  const checkoutStatus = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("checkout");
+  }, []);
+
+  const [showSuccessBanner, setShowSuccessBanner] = useState(checkoutStatus === "success");
+  const [showCancelledBanner, setShowCancelledBanner] = useState(checkoutStatus === "cancelled");
+
+  useEffect(() => {
+    if (checkoutStatus === "success") {
+      // Limpa o param da URL sem recarregar a página
+      const url = new URL(window.location.href);
+      url.searchParams.delete("checkout");
+      url.searchParams.delete("tier");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [checkoutStatus]);
+
   return (
     <AppShell>
       <div className="max-w-5xl mx-auto px-4 py-8 lg:py-12 space-y-12">
+
+        {/* ── Banner pós-checkout ── */}
+        {showSuccessBanner && (
+          <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 flex items-start gap-4">
+            <CheckCircle2 className="w-6 h-6 text-green-500 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold text-green-400 text-lg">Pagamento confirmado! 🎉</p>
+              <p className="text-muted-foreground text-sm mt-1">
+                Seu plano já está ativo. Recarregue a página ou acesse seu painel para começar a usar todos os recursos.
+              </p>
+              <div className="flex gap-3 mt-3">
+                <Link href="/dashboard">
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">Ir para o painel →</Button>
+                </Link>
+                <Button size="sm" variant="ghost" onClick={() => setShowSuccessBanner(false)}>Fechar</Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showCancelledBanner && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-5 flex items-start gap-4">
+            <XCircle className="w-5 h-5 text-yellow-500 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="font-semibold text-yellow-400">Checkout cancelado</p>
+              <p className="text-muted-foreground text-sm mt-1">Nenhuma cobrança foi realizada. Escolha um plano abaixo quando quiser continuar.</p>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => setShowCancelledBanner(false)}>✕</Button>
+          </div>
+        )}
 
         {/* ── Hero ── */}
         <div className="text-center space-y-3">

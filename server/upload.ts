@@ -53,6 +53,18 @@ const ALLOWED_TYPES: Record<string, { ext: string; category: string }> = {
   "application/x-zip-compressed": { ext: "zip", category: "docs" },
 };
 
+// [SEC] Magic bytes para validação de conteúdo real do arquivo (previne spoofing de MIME type)
+const MAGIC_BYTES: Record<string, (buf: Buffer) => boolean> = {
+  "image/jpeg":  (b) => b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF,
+  "image/jpg":   (b) => b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF,
+  "image/png":   (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47,
+  "image/gif":   (b) => b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46,
+  "image/webp":  (b) => b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50,
+  "application/pdf": (b) => b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46,
+  "video/mp4":   (b) => (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) ||
+                        (b[0] === 0x00 && b[1] === 0x00 && b[2] === 0x00),
+};
+
 const SIZE_LIMITS: Record<string, number> = {
   images:  5  * 1024 * 1024,  //  5 MB
   videos:  50 * 1024 * 1024,  // 50 MB
@@ -106,6 +118,13 @@ export function registerUploadRoute(app: Express) {
       // Decode base64
       const base64Data = data.replace(/^data:[^;]+;base64,/, "");
       const buffer = Buffer.from(base64Data, "base64");
+
+      // [SEC] Valida magic bytes para tipos com assinatura conhecida
+      const magicCheck = MAGIC_BYTES[contentType];
+      if (magicCheck && buffer.length >= 12 && !magicCheck(buffer)) {
+        logger.warn({ userId: user.id, contentType, folder }, "[Upload] Magic bytes mismatch — possível spoofing de MIME type");
+        return res.status(400).json({ error: "O conteúdo do arquivo não corresponde ao tipo declarado." });
+      }
 
       const maxSize = SIZE_LIMITS[typeInfo.category] ?? 16 * 1024 * 1024;
       if (buffer.byteLength > maxSize) {

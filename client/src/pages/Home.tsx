@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, Infinity as InfinityIcon, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import DOMPurify from "dompurify";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -416,7 +417,9 @@ function LandingPricingSection({
 // ─── Helper: renderiza customCode ou conteúdo padrão ─────────────────────────
 function CustomOrDefault({ customCode, children }: { customCode: string | null | undefined; children: React.ReactNode }) {
   if (customCode && customCode.trim()) {
-    return <div dangerouslySetInnerHTML={{ __html: customCode }} />;
+    // [SEC] Sanitiza o HTML customizado antes de renderizar para prevenir XSS stored
+    const sanitized = DOMPurify.sanitize(customCode, { ADD_TAGS: ["iframe", "script"], ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "scrolling"] });
+    return <div dangerouslySetInnerHTML={{ __html: sanitized }} />;
   }
   return <>{children}</>;
 }

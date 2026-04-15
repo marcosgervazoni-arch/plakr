@@ -242,3 +242,10 @@
 - [ ] [BACKLOG] Dashboard Admin: card Adsterra com receita via API Publisher (requer adsterraApiKey em platformSettings + UI em Integrações — ver docs/backlog/dashboard-monetization-indicators.md)
 - [x] Dashboard Admin: redesign com 3 zonas visuais (Saúde Operacional, Financeiro, Produto) + gráfico multi-série + ações contextuais + naming rights integrado
 - [x] PoolPage: corrigir isPro para usar useUserPlan() em vez de lógica local (plan === 'pro')
+
+## Segurança — Auditoria (Abr/2026)
+- [x] Segurança: sanitizar customCode com DOMPurify em Home.tsx (XSS stored)
+- [x] Segurança: validar protocolo de whatsappLink/telegramLink no servidor (javascript: links)
+- [x] Segurança: adicionar .max() em description e logoUrl no pools-core.ts
+- [x] Segurança: validar MIME type por magic bytes no servidor (upload de imagens/vídeos)
+- [x] UX: banner pós-checkout na UpgradePage (sucesso e cancelamento) com CTA para o painel
