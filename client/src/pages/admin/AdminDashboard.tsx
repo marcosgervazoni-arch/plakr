@@ -142,7 +142,7 @@ export default function AdminDashboard() {
   const emailStatus: HealthStatus = (health?.emailQueue.failed ?? 0) > 0 ? "error" : (health?.emailQueue.pending ?? 0) > 10 ? "warn" : "ok";
   const stripeStatus: HealthStatus = !health?.integrations.stripe.keysConfigured ? "error" : !health?.integrations.stripe.isLive ? "warn" : "ok";
   const cronErrors = health?.cronJobs ? Object.values(health.cronJobs).filter((j: any) => j.lastRunSuccess === false).length : 0;
-  const cronStatus: HealthStatus = cronErrors > 0 ? "error" : "ok";
+  const cronStatus: HealthStatus = cronErrors > 2 ? "error" : cronErrors > 0 ? "warn" : "ok";
   const pendingCount = pending?.length ?? 0;
   const pendingStatus: HealthStatus = pendingCount > 5 ? "error" : pendingCount > 0 ? "warn" : "ok";
   const expiringStatus: HealthStatus = (subs?.expiringSoon ?? 0) > 0 ? "warn" : "ok";
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
     {
       label: "Cron Jobs",
       status: cronStatus,
-      value: cronStatus === "error" ? `${cronErrors} com falha` : "Todos operacionais",
+      value: cronStatus !== "ok" ? `${cronErrors} com falha` : "Todos operacionais",
       path: "/admin/system",
     },
     {
@@ -240,7 +240,7 @@ export default function AdminDashboard() {
     {
       title: "Palpites Hoje",
       value: enriched.betsToday.toLocaleString("pt-BR"),
-      sub: `${enriched.totalBets.toLocaleString("pt-BR")} no total`,
+      sub: `${enriched.totalBets.toLocaleString("pt-BR")} total · ${enriched.wau} usuários/sem.`,
       icon: Target, color: "text-primary", bg: "bg-primary/10",
     },
     {
