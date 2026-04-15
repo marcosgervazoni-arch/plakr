@@ -241,3 +241,4 @@
 - [ ] [BACKLOG] Dashboard Admin: indicador de Naming Rights com valor contratado (requer campo contractValueBrl no banco + processo comercial definido — ver docs/backlog/dashboard-monetization-indicators.md)
 - [ ] [BACKLOG] Dashboard Admin: card Adsterra com receita via API Publisher (requer adsterraApiKey em platformSettings + UI em Integrações — ver docs/backlog/dashboard-monetization-indicators.md)
 - [x] Dashboard Admin: redesign com 3 zonas visuais (Saúde Operacional, Financeiro, Produto) + gráfico multi-série + ações contextuais + naming rights integrado
+- [x] PoolPage: corrigir isPro para usar useUserPlan() em vez de lógica local (plan === 'pro')

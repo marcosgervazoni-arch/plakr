@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -145,7 +146,7 @@ export default function PoolPage() {
   const { data: adConfig } = trpc.platform.getAdConfig.useQuery(undefined, { staleTime: 10 * 60 * 1000 });
 
   const { data: userData } = trpc.users.me.useQuery(undefined, { enabled: !!user, staleTime: 5 * 60 * 1000 });
-  const isPro = !!(userData?.plan?.plan === "pro" && userData?.plan?.isActive);
+  const { isPro } = useUserPlan();
 
   const placeBet = trpc.bets.placeBet.useMutation({
     onSuccess: (_, vars) => {
