@@ -281,3 +281,7 @@
 ## Sprint O — Interface para Renomear Slug do Bolão
 - [x] Backend: procedure checkSlugAvailability e updateSlug no pools-core.ts
 - [x] Frontend: seção de edição de slug nas configurações do bolão com validação em tempo real
+
+## Sprint P — Open Graph Dinâmico por Bolão
+- [x] Backend: endpoint SSR de metatags OG para /pool/:slug e /join/:token
+- [x] Servidor: middleware OG integrado antes do handler do Vite/SPA

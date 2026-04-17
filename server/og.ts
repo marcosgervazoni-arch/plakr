@@ -7,8 +7,7 @@
  * Usuários reais passam adiante para o React SPA.
  */
 import type { Express } from "express";
-import { getPoolByInviteToken } from "./db";
-import { getTournamentById } from "./db";
+import { getPoolByInviteToken, getPoolBySlugOrRedirect, getTournamentById } from "./db";
 
 /** User-Agents conhecidos de crawlers/bots de preview */
 const BOT_UA_PATTERN =
@@ -117,6 +116,54 @@ export function registerLandingOgRoute(app: Express): void {
 }
 
 export function registerOgRoutes(app: Express): void {
+  // ── /pool/:slug — metatags dinâmicas do bolão ──────────────────────────────
+  app.get("/pool/:slug", async (req, res, next) => {
+    const ua = req.headers["user-agent"] ?? "";
+    if (!isBot(ua)) return next();
+
+    const { slug } = req.params;
+    const origin = `${req.protocol}://${req.headers.host}`;
+    const pageUrl = `${origin}/pool/${slug}`;
+    const fallbackImage = `${origin}/og-default.png`;
+
+    try {
+      const result = await getPoolBySlugOrRedirect(slug);
+      if (!result) return next(); // bolão não encontrado: deixa o SPA tratar
+
+      const pool = result.pool;
+      // Se o slug foi redirecionado, atualizar a URL canônica
+      const canonicalUrl = result.redirectedTo
+        ? `${origin}/pool/${result.redirectedTo}`
+        : pageUrl;
+
+      let tournamentName = "";
+      try {
+        const tournament = await getTournamentById(pool.tournamentId);
+        tournamentName = tournament?.name ?? "";
+      } catch { /* não crítico */ }
+
+      const title = `${pool.name} — Plakr!`;
+      const description = pool.description
+        ? pool.description
+        : tournamentName
+        ? `Bolão de ${tournamentName}. Entre agora e faça seus palpites!`
+        : "Participe deste bolão de apostas esportivas. Entre agora e faça seus palpites!";
+      const imageUrl = pool.logoUrl ?? fallbackImage;
+
+      const html = buildOgHtml({ title, description, imageUrl, pageUrl: canonicalUrl });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    } catch {
+      const html = buildOgHtml({
+        title: "Bolão — Plakr!",
+        description: "Participe deste bolão de apostas esportivas!",
+        imageUrl: fallbackImage,
+        pageUrl,
+      });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    }
+  });
+
+  // ── /join/:token — metatags dinâmicas do convite ──────────────────────────
   app.get("/join/:token", async (req, res, next) => {
     const ua = req.headers["user-agent"] ?? "";
 
