@@ -70,6 +70,24 @@ export const platformRouter = router({
     };
   }),
 
+  // Defaults de pontuação visíveis para usuários autenticados (usados na tela de criação do bolão)
+  // Não expõe dados sensíveis — apenas os valores padrão de pontuação configurados pelo admin
+  getDefaultScoringRules: protectedProcedure.query(async () => {
+    const settings = await getPlatformSettings();
+    return {
+      exactScorePoints:       settings?.defaultScoringExact                        ?? 10,
+      correctResultPoints:    settings?.defaultScoringCorrect                       ?? 5,
+      totalGoalsPoints:       settings?.defaultScoringBonusGoals                   ?? 3,
+      goalDiffPoints:         settings?.defaultScoringBonusDiff                    ?? 3,
+      oneTeamGoalsPoints:     (settings as any)?.defaultScoringBonusOneTeam        ?? 2,
+      landslidePoints:        (settings as any)?.defaultScoringBonusLandslide      ?? 5,
+      landslideMinDiff:       (settings as any)?.defaultLandslideMinDiff           ?? 4,
+      zebraPoints:            settings?.defaultScoringBonusUpset                   ?? 1,
+      zebraThreshold:         (settings as any)?.defaultZebraThreshold             ?? 75,
+      bettingDeadlineMinutes: 60,
+    };
+  }),
+
   getSettings: adminProcedure.query(async () => {
     const settings = await getPlatformSettings();
     if (!settings) return null;

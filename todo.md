@@ -289,3 +289,13 @@
 - [x] BUG: criação de bolão não-Pro inseria linha vazia em pool_scoring_rules com defaults do banco (em vez de não inserir nada e herdar defaults da plataforma dinamicamente)
 - [x] Correção: upsertPoolScoringRules só é chamado se houver pelo menos um valor customizado definido pelo usuário
 - [x] Adicionadas rotas /api/og/pool/:slug e /api/og/join/:token no Express (para uso futuro quando o proxy rotear /api/* corretamente)
+
+## Sprint Q — Correção de Bugs: Regras de Pontuação
+
+- [x] Bug corrigido: criação de bolão não-Pro não deve inserir linha vazia em pool_scoring_rules
+- [x] Bug corrigido: criação de bolão pelo Admin não deve inserir linha vazia em pool_scoring_rules
+- [x] Bug corrigido: CreatePool.tsx usava DEFAULT_RULES hardcoded em vez dos defaults reais da plataforma
+- [x] Nova procedure: platform.getDefaultScoringRules expõe defaults de pontuação para usuários autenticados
+- [x] CreatePool.tsx agora busca e sincroniza os defaults reais da plataforma ao abrir a tela
+- [x] Botão "Restaurar padrões" no CreatePool.tsx agora usa os defaults reais da plataforma
+- [x] Auditoria: PoolRules.tsx usa getScoringRulesPublic corretamente (sem hardcoded problemático)

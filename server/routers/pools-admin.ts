@@ -7,7 +7,6 @@ import {
   addPoolMember,
   createAdminLog,
   createPool,
-  upsertPoolScoringRules,
 } from "../db";
 import { adminProcedure, router } from "../_core/trpc";
 import { Err } from "../errors";
@@ -90,7 +89,7 @@ export const poolsAdminRouter = router({
         ownerId: ctx.user.id,
       });
       await addPoolMember(poolId, ctx.user.id, "organizer");
-      await upsertPoolScoringRules(poolId, {}, ctx.user.id);
+      // Não inserir linha vazia em pool_scoring_rules — bolão herda defaults da plataforma dinamicamente
       await createAdminLog(ctx.user.id, "admin_create_pool", "pool", poolId, { name: input.name });
       return { poolId, slug, inviteToken };
     }),

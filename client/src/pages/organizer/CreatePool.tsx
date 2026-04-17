@@ -34,7 +34,7 @@ import {
   Lock,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,8 @@ interface ScoringRules {
   bettingDeadlineMinutes: number;
 }
 
-const DEFAULT_RULES: ScoringRules = {
+// Fallback local usado apenas enquanto os defaults reais da plataforma ainda não carregaram
+const FALLBACK_RULES: ScoringRules = {
   exactScorePoints: 10,
   correctResultPoints: 5,
   totalGoalsPoints: 3,
@@ -168,7 +169,27 @@ export default function CreatePool() {
   }, [customName, customSeason, createTournamentMutation]);
 
   // Seção 4 — Regras de pontuação
-  const [rules, setRules] = useState<ScoringRules>({ ...DEFAULT_RULES });
+  // Inicializa com FALLBACK_RULES e sincroniza com os defaults reais da plataforma quando carregarem
+  const [rules, setRules] = useState<ScoringRules>({ ...FALLBACK_RULES });
+  const [rulesInitialized, setRulesInitialized] = useState(false);
+  const { data: platformDefaults } = trpc.platform.getDefaultScoringRules.useQuery();
+  useEffect(() => {
+    if (platformDefaults && !rulesInitialized) {
+      setRules({
+        exactScorePoints:       platformDefaults.exactScorePoints,
+        correctResultPoints:    platformDefaults.correctResultPoints,
+        totalGoalsPoints:       platformDefaults.totalGoalsPoints,
+        goalDiffPoints:         platformDefaults.goalDiffPoints,
+        oneTeamGoalsPoints:     platformDefaults.oneTeamGoalsPoints,
+        landslidePoints:        platformDefaults.landslidePoints,
+        landslideMinDiff:       platformDefaults.landslideMinDiff,
+        zebraPoints:            platformDefaults.zebraPoints,
+        zebraThreshold:         platformDefaults.zebraThreshold,
+        bettingDeadlineMinutes: platformDefaults.bettingDeadlineMinutes,
+      });
+      setRulesInitialized(true);
+    }
+  }, [platformDefaults, rulesInitialized]);
 
   // Seção 5 — Inscrição
   const [hasEntryFee, setHasEntryFee] = useState(false);
@@ -705,7 +726,7 @@ export default function CreatePool() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => setRules({ ...DEFAULT_RULES })}
+                  onClick={() => setRules(platformDefaults ? { ...platformDefaults } : { ...FALLBACK_RULES })}
                   className="text-xs text-muted-foreground hover:text-primary transition-colors"
                 >
                   Restaurar padrões
