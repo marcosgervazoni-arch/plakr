@@ -305,3 +305,11 @@
 - [x] Na criação de bolão free: salvar os defaults vigentes da plataforma em pool_scoring_rules (congelar no momento da criação)
 - [x] Na criação de bolão pelo admin: idem
 - [x] Atualizar testes para refletir novo comportamento
+
+## Sprint T — Hub de Duelos (Arena pública do bolão)
+
+- [x] Backend: procedure getPoolStats no x1.ts (estatísticas do bolão: total, pendentes, ativos, encerrados, top vencedor)
+- [x] Frontend: X1DuelsTab enriquecido com bloco de estatísticas do bolão (Arena)
+- [x] Frontend: seletor de adversário inline (sem redirecionar para o Ranking)
+- [x] Frontend: botão "Duelos" substitui "Jogos" na barra de navegação inferior
+- [x] Frontend: onChallenge abre o X1ChallengeModal diretamente da aba Duelos

@@ -1,11 +1,12 @@
 /**
- * X1DuelsTab — Aba "Duelos" na PoolPage
+ * X1DuelsTab — Arena pública de Duelos do bolão
  *
  * Exibe todos os desafios do bolão com:
+ *  - Bloco de estatísticas do bolão (total, pendentes, em andamento, encerrados, top vencedor)
+ *  - Seus duelos em destaque (pendentes recebidos com CTA aceitar/recusar)
  *  - Filtro: "Meus Duelos" | "Todos"
- *  - Cards de desafio com status visual, participantes e ações
- *  - Botão de aceitar/recusar para desafios pendentes recebidos
- *  - Link para a página de detalhe do duelo
+ *  - Cards de desafio com status visual, participantes e placar
+ *  - Seletor de adversário para desafiar direto da aba
  */
 
 import { useState } from "react";
@@ -13,7 +14,10 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Swords, Clock, CheckCircle2, XCircle, Trophy, Minus, AlertCircle } from "lucide-react";
+import {
+  Loader2, Swords, Clock, CheckCircle2, XCircle, Trophy,
+  Minus, AlertCircle, Plus, Crown, Users, ChevronRight,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Link } from "wouter";
@@ -21,7 +25,8 @@ import { toast } from "sonner";
 
 interface X1DuelsTabProps {
   poolId: number;
-  onChallenge?: () => void;
+  poolSlug: string;
+  onChallenge?: (opponentId: number, opponentName: string) => void;
 }
 
 type FilterType = "mine" | "all";
@@ -60,7 +65,7 @@ const STATUS_CONFIG = {
 };
 
 const CHALLENGE_TYPE_LABELS: Record<string, string> = {
-  score_duel: "Disputa de palpites — quem pontua mais?",
+  score_duel: "Disputa de palpites",
   prediction: "Previsão de campeonato",
 };
 
@@ -76,9 +81,10 @@ const SCOPE_TYPE_LABELS: Record<string, string> = {
   next_n_games: "Próximos jogos",
 };
 
-export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
+export default function X1DuelsTab({ poolId, poolSlug, onChallenge }: X1DuelsTabProps) {
   const { user } = useAuth();
   const [filter, setFilter] = useState<FilterType>("mine");
+  const [showOpponentPicker, setShowOpponentPicker] = useState(false);
 
   const { data, isLoading, refetch } = trpc.x1.getByPool.useQuery(
     { poolId, filter },
@@ -88,6 +94,16 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
   const { data: myStats } = trpc.x1.getMyStats.useQuery(
     { poolId },
     { enabled: !!poolId && !!user }
+  );
+
+  const { data: poolStats } = trpc.x1.getPoolStats.useQuery(
+    { poolId },
+    { enabled: !!poolId }
+  );
+
+  const { data: membersData } = trpc.pools.getMembers.useQuery(
+    { poolId },
+    { enabled: !!poolId && showOpponentPicker }
   );
 
   const accept = trpc.x1.accept.useMutation({
@@ -111,10 +127,49 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
     (c) => c.status === "pending" && c.challengedId === user?.id
   );
 
+  // Lista de membros disponíveis para desafiar (excluindo o próprio usuário)
+  const availableOpponents = membersData
+    ? (Array.isArray(membersData) ? membersData : (membersData?.items ?? []))
+        .filter(({ user: u }: any) => u?.id !== user?.id)
+    : [];
+
   return (
     <div className="space-y-4">
-      {/* Stats rápidas do usuário */}
-      {myStats && user && (
+
+      {/* ── Estatísticas do bolão ── */}
+      {poolStats && (
+        <div className="bg-card/60 border border-border/30 rounded-xl p-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+            Arena do Bolão
+          </p>
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            {[
+              { label: "Total", value: poolStats.total, color: "text-foreground" },
+              { label: "Pendentes", value: poolStats.pending, color: "text-amber-400" },
+              { label: "Ativos", value: poolStats.active, color: "text-blue-400" },
+              { label: "Encerrados", value: poolStats.concluded, color: "text-emerald-400" },
+            ].map((s) => (
+              <div key={s.label} className="text-center">
+                <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">{s.label}</p>
+              </div>
+            ))}
+          </div>
+          {poolStats.topWinner && (
+            <div className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/15 rounded-lg px-3 py-2">
+              <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Mais vitórias:{" "}
+                <span className="font-semibold text-amber-300">{poolStats.topWinner.name}</span>
+                <span className="text-muted-foreground/60"> ({poolStats.topWinner.wins}V)</span>
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Suas estatísticas pessoais ── */}
+      {myStats && user && (myStats.wins > 0 || myStats.losses > 0 || myStats.draws > 0 || myStats.active > 0) && (
         <div className="grid grid-cols-4 gap-2">
           {[
             { label: "Vitórias", value: myStats.wins, color: "text-emerald-400" },
@@ -133,7 +188,7 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
         </div>
       )}
 
-      {/* Alertas de desafios pendentes recebidos */}
+      {/* ── Alertas de desafios pendentes recebidos ── */}
       {pendingReceived.length > 0 && (
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
           <div className="flex items-center gap-2 mb-2">
@@ -191,7 +246,48 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
         </div>
       )}
 
-      {/* Filtros + botão novo desafio */}
+      {/* ── Seletor de adversário ── */}
+      {showOpponentPicker && (
+        <div className="bg-card/80 border border-primary/20 rounded-xl p-3">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold">Escolha um adversário</p>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs text-muted-foreground"
+              onClick={() => setShowOpponentPicker(false)}
+            >
+              Cancelar
+            </Button>
+          </div>
+          {availableOpponents.length === 0 ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-1.5 max-h-60 overflow-y-auto">
+              {availableOpponents.map(({ user: u }: any) => (
+                <button
+                  key={u.id}
+                  onClick={() => {
+                    setShowOpponentPicker(false);
+                    if (onChallenge) onChallenge(u.id, u.name ?? "");
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-primary/10 transition-colors text-left"
+                >
+                  <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center text-xs font-bold shrink-0">
+                    {u.name?.charAt(0)?.toUpperCase() ?? "?"}
+                  </div>
+                  <span className="text-sm font-medium flex-1 truncate">{u.name ?? "Participante"}</span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/50 shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Filtros + botão novo desafio ── */}
       <div className="flex items-center gap-2">
         <div className="flex bg-card/60 border border-border/30 rounded-lg p-0.5 flex-1">
           {(["mine", "all"] as FilterType[]).map((f) => (
@@ -208,19 +304,17 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
             </button>
           ))}
         </div>
-        {onChallenge && (
-          <Button
-            size="sm"
-            className="h-8 gap-1.5 shrink-0 bg-primary/90 hover:bg-primary"
-            onClick={onChallenge}
-          >
-            <Swords className="w-3.5 h-3.5" />
-            Desafiar
-          </Button>
-        )}
+        <Button
+          size="sm"
+          className="h-8 gap-1.5 shrink-0 bg-primary/90 hover:bg-primary"
+          onClick={() => setShowOpponentPicker((v) => !v)}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Desafiar
+        </Button>
       </div>
 
-      {/* Lista de desafios */}
+      {/* ── Lista de desafios ── */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -231,12 +325,12 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
           <p className="text-sm font-medium text-muted-foreground">
             {filter === "mine" ? "Você ainda não tem duelos neste bolão." : "Nenhum duelo neste bolão ainda."}
           </p>
-          {filter === "mine" && onChallenge && (
+          {filter === "mine" && (
             <Button
               size="sm"
               variant="outline"
               className="mt-3 gap-1.5"
-              onClick={onChallenge}
+              onClick={() => setShowOpponentPicker(true)}
             >
               <Swords className="w-3.5 h-3.5" />
               Criar primeiro duelo
@@ -250,9 +344,6 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
             const StatusIcon = statusCfg.icon;
             const isMine = c.challengerId === user?.id || c.challengedId === user?.id;
             const iAmChallenger = c.challengerId === user?.id;
-            const myPoints = iAmChallenger ? c.challengerPoints : c.challengedPoints;
-            const oppPoints = iAmChallenger ? c.challengedPoints : c.challengerPoints;
-            const opponent = iAmChallenger ? c.challenged : c.challenger;
             const isWinner = c.winnerId === user?.id;
             const isDraw = c.status === "concluded" && c.winnerId === null;
 
@@ -337,7 +428,7 @@ export default function X1DuelsTab({ poolId, onChallenge }: X1DuelsTabProps) {
                     </div>
                   </div>
 
-                  {/* Footer: data */}
+                  {/* Footer: data + resultado pessoal */}
                   <div className="mt-2.5 pt-2 border-t border-border/20 flex items-center justify-between">
                     <span className="text-[10px] text-muted-foreground">
                       {formatDistanceToNow(new Date(c.createdAt), { addSuffix: true, locale: ptBR })}

@@ -1232,9 +1232,9 @@ export default function PoolPage() {
             {data?.pool.id && (
               <X1DuelsTab
                 poolId={data.pool.id}
-                onChallenge={() => {
-                  toast.info("Acesse a aba Ranking para desafiar um participante.");
-                  setActiveTab("ranking");
+                poolSlug={slug ?? ""}
+                onChallenge={(opponentId, opponentName) => {
+                  setX1Modal({ open: true, opponentId, opponentName });
                 }}
               />
             )}

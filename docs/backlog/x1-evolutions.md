@@ -72,3 +72,27 @@
 **Dependências:** X1 individual com dados suficientes (pelo menos 1 mês de uso).
 
 **Impacto:** Alto (engajamento competitivo). **Esforço:** Baixo.
+
+---
+
+## [X1-EVO-006] Hub de acompanhamento e histórico de X1s
+
+**Contexto:** A mecânica do X1 está bem definida, mas falta visibilidade. Hoje o apostador não tem um lugar central para ver seus duelos em andamento, pendentes de resposta e já encerrados. A feature existe mas fica "escondida".
+
+**Ideia:** Criar um hub dedicado de X1s — dentro do bolão (aba "Duelos" já existe no menu) e/ou no dashboard/perfil do usuário — que consolide:
+- X1s pendentes de resposta (com CTA de aceitar/recusar)
+- X1s em andamento (placar ao vivo, jogos restantes)
+- X1s encerrados (resultado, diferença de pontos, histórico de rivalidade)
+
+**Questões em aberto a definir antes da implementação:**
+1. Escopo de visibilidade: apenas os dois envolvidos, ou todos os membros do bolão podem ver os duelos em andamento como "mural de rivalidades"?
+2. Localização: hub dentro do bolão, hub global no dashboard, ou os dois?
+3. Riqueza do histórico: lista simples de resultados ou placar jogo a jogo com evolução de pontos?
+
+**Por quê:** Sem visibilidade, o X1 perde engajamento — o apostador não volta para acompanhar. Um hub bem feito transforma o X1 de "feature escondida" em vetor de retorno diário ao app.
+
+**Dependências:** X1 base implementado e estável.
+
+**Impacto:** Alto (retenção, retorno diário). **Esforço:** Médio.
+
+**Registrado em:** 2026-04-17 — especificação completa em `docs/backlog/x1-hub-duelos.md`.

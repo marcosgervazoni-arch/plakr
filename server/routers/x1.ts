@@ -1181,6 +1181,50 @@ export const x1Router = router({
       return { success: true, ...result };
     }),
 
+  // ─── Estatísticas públicas do bolão (hub de duelos) ───────────────────────────────────────────
+  getPoolStats: protectedProcedure
+    .input(z.object({ poolId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      await assertMembership(input.poolId, ctx.user.id);
+      const db = await getDb();
+      const { x1Challenges, users } = await getSchema();
+      const { eq, inArray } = await import("drizzle-orm");
+
+      const all = await db
+        .select()
+        .from(x1Challenges)
+        .where(eq(x1Challenges.poolId, input.poolId));
+
+      const total = all.length;
+      const pending = all.filter((c) => c.status === "pending").length;
+      const active = all.filter((c) => c.status === "active").length;
+      const concluded = all.filter((c) => c.status === "concluded").length;
+
+      // Apostador com mais vitórias no bolão
+      const winCounts: Record<number, number> = {};
+      for (const c of all) {
+        if (c.status === "concluded" && c.winnerId) {
+          winCounts[c.winnerId] = (winCounts[c.winnerId] ?? 0) + 1;
+        }
+      }
+      let topWinnerId: number | null = null;
+      let topWins = 0;
+      for (const [uid, wins] of Object.entries(winCounts)) {
+        if (wins > topWins) { topWins = wins; topWinnerId = Number(uid); }
+      }
+      let topWinner: { id: number; name: string | null; avatarUrl: string | null; wins: number } | null = null;
+      if (topWinnerId) {
+        const rows = await db
+          .select({ id: users.id, name: users.name, avatarUrl: users.avatarUrl })
+          .from(users)
+          .where(inArray(users.id, [topWinnerId]))
+          .limit(1);
+        if (rows.length) topWinner = { ...rows[0], wins: topWins };
+      }
+
+      return { total, pending, active, concluded, topWinner };
+    }),
+
   // ─── Expirar desafios pendentes vencidos (cron job) ────────────────────────────────────────────
   expireStale: protectedProcedure.mutation(async ({ ctx }) => {
     const db = await getDb();

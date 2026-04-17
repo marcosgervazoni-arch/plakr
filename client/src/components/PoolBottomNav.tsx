@@ -1,19 +1,20 @@
 /**
  * PoolBottomNav — Barra de navegação inferior estilo FAB para o PoolPage.
  *
- * Layout: Regras | Membros | [Palpites FAB dourado] | Jogos | Ranking
+ * Layout: Regras | Membros | [Palpites FAB dourado] | Duelos | Ranking
  *
  * O botão central (Palpites) abre a aba Jogos com o filtro "Falta palpitar" pré-ativado.
  * "Regras" navega diretamente para /pool/:slug/rules (sem tela intermediária).
+ * "Duelos" substitui "Jogos" — acesso à arena pública de X1s do bolão.
  */
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import {
-  Calendar,
   Trophy,
   Users,
   ScrollText,
   PenLine,
+  Swords,
 } from "lucide-react";
 
 interface PoolBottomNavProps {
@@ -28,7 +29,7 @@ const tabItems = [
   { id: "rules",   label: "Regras",   icon: ScrollText, directLink: true  },
   { id: "members", label: "Membros",  icon: Users,      directLink: false },
   // centro: FAB
-  { id: "games",   label: "Jogos",    icon: Calendar,   directLink: false },
+  { id: "duelos",  label: "Duelos",   icon: Swords,     directLink: false },
   { id: "ranking", label: "Ranking",  icon: Trophy,     directLink: false },
 ];
 
@@ -105,7 +106,7 @@ export default function PoolBottomNav({
             {/* Espaço central para o FAB */}
             <div className="w-20 shrink-0" />
 
-            {/* Lado direito: Jogos + Ranking */}
+            {/* Lado direito: Duelos + Ranking */}
             {tabItems.slice(2).map(renderItem)}
           </div>
 
