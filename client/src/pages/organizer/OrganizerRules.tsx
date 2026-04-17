@@ -25,6 +25,7 @@ import {
   CheckCircle,
   TrendingUp,
   Minus,
+  Plus,
   Crosshair,
   Flame,
   Shuffle,
@@ -438,17 +439,25 @@ export default function OrganizerRules() {
                     )
                   ) : canEdit ? (
                     <div className="flex items-center gap-1.5">
-                      <Input
-                        type="number"
-                        min={field.min ?? 0}
-                        max={field.max ?? 50}
-                        value={Number(form[field.key] ?? field.defaultValue)}
-                        onChange={(e) => setNumber(field.key, Number(e.target.value))}
-                        className="w-20 text-right font-mono bg-background border-border/50"
-                      />
-                      {field.unit && (
-                        <span className="text-xs text-muted-foreground">{field.unit}</span>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setNumber(field.key, Math.max(field.min ?? 0, Number(form[field.key] ?? field.defaultValue) - 1))}
+                        className="w-7 h-7 rounded-lg bg-muted/50 hover:bg-muted flex items-center justify-center transition-colors shrink-0"
+                        aria-label={`Diminuir ${field.label}`}
+                      >
+                        <Minus className="w-3 h-3" />
+                      </button>
+                      <span className="font-mono font-bold text-sm text-primary w-14 text-center">
+                        {Number(form[field.key] ?? field.defaultValue)}{field.unit ? ` ${field.unit}` : " pts"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setNumber(field.key, Math.min(field.max ?? 50, Number(form[field.key] ?? field.defaultValue) + 1))}
+                        className="w-7 h-7 rounded-lg bg-muted/50 hover:bg-muted flex items-center justify-center transition-colors shrink-0"
+                        aria-label={`Aumentar ${field.label}`}
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
                     </div>
                   ) : (
                     <span
@@ -565,37 +574,33 @@ export default function OrganizerRules() {
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Seu palpite</Label>
                 <div className="flex items-center gap-2">
-                  <Input
-                    type="number" min={0} max={20}
-                    value={simPredA}
-                    onChange={(e) => setSimPredA(Number(e.target.value))}
-                    className="w-16 text-center font-mono text-lg bg-background"
-                  />
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => setSimPredA(v => Math.max(0, v - 1))} className="w-6 h-6 rounded bg-muted/50 hover:bg-muted flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                    <span className="font-mono font-bold text-lg text-primary w-8 text-center">{simPredA}</span>
+                    <button type="button" onClick={() => setSimPredA(v => Math.min(20, v + 1))} className="w-6 h-6 rounded bg-muted/50 hover:bg-muted flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                  </div>
                   <span className="text-muted-foreground font-bold">×</span>
-                  <Input
-                    type="number" min={0} max={20}
-                    value={simPredB}
-                    onChange={(e) => setSimPredB(Number(e.target.value))}
-                    className="w-16 text-center font-mono text-lg bg-background"
-                  />
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => setSimPredB(v => Math.max(0, v - 1))} className="w-6 h-6 rounded bg-muted/50 hover:bg-muted flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                    <span className="font-mono font-bold text-lg text-primary w-8 text-center">{simPredB}</span>
+                    <button type="button" onClick={() => setSimPredB(v => Math.min(20, v + 1))} className="w-6 h-6 rounded bg-muted/50 hover:bg-muted flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground uppercase tracking-wider">Resultado real</Label>
                 <div className="flex items-center gap-2">
-                  <Input
-                    type="number" min={0} max={20}
-                    value={simRealA}
-                    onChange={(e) => setSimRealA(Number(e.target.value))}
-                    className="w-16 text-center font-mono text-lg bg-background"
-                  />
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => setSimRealA(v => Math.max(0, v - 1))} className="w-6 h-6 rounded bg-muted/50 hover:bg-muted flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                    <span className="font-mono font-bold text-lg text-primary w-8 text-center">{simRealA}</span>
+                    <button type="button" onClick={() => setSimRealA(v => Math.min(20, v + 1))} className="w-6 h-6 rounded bg-muted/50 hover:bg-muted flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                  </div>
                   <span className="text-muted-foreground font-bold">×</span>
-                  <Input
-                    type="number" min={0} max={20}
-                    value={simRealB}
-                    onChange={(e) => setSimRealB(Number(e.target.value))}
-                    className="w-16 text-center font-mono text-lg bg-background"
-                  />
+                  <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => setSimRealB(v => Math.max(0, v - 1))} className="w-6 h-6 rounded bg-muted/50 hover:bg-muted flex items-center justify-center"><Minus className="w-3 h-3" /></button>
+                    <span className="font-mono font-bold text-lg text-primary w-8 text-center">{simRealB}</span>
+                    <button type="button" onClick={() => setSimRealB(v => Math.min(20, v + 1))} className="w-6 h-6 rounded bg-muted/50 hover:bg-muted flex items-center justify-center"><Plus className="w-3 h-3" /></button>
+                  </div>
                 </div>
               </div>
             </div>
