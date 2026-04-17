@@ -299,3 +299,9 @@
 - [x] CreatePool.tsx agora busca e sincroniza os defaults reais da plataforma ao abrir a tela
 - [x] Botão "Restaurar padrões" no CreatePool.tsx agora usa os defaults reais da plataforma
 - [x] Auditoria: PoolRules.tsx usa getScoringRulesPublic corretamente (sem hardcoded problemático)
+
+## Sprint R — Congelamento de Regras na Criação do Bolão
+
+- [x] Na criação de bolão free: salvar os defaults vigentes da plataforma em pool_scoring_rules (congelar no momento da criação)
+- [x] Na criação de bolão pelo admin: idem
+- [x] Atualizar testes para refletir novo comportamento

@@ -95,27 +95,36 @@ export const poolsCoreRouter = router({
       }
       const poolId = await createPool(poolData);
       await addPoolMember(poolId, ctx.user.id, "organizer");
-      // Regras de pontuação: apenas Pro pode personalizar
-      const scoringRulesData: Record<string, number> = {};
+      // Regras de pontuação: congela os valores vigentes no momento da criação.
+      // Pro pode personalizar; Free usa os defaults da plataforma.
+      // Em ambos os casos, os valores são salvos na tabela para que
+      // alterações futuras nos defaults do admin NÃO afetem bolões já criados.
+      const frozenRules: Record<string, number> = {
+        exactScorePoints:       settings?.defaultScoringExact          ?? 10,
+        correctResultPoints:    settings?.defaultScoringCorrect         ?? 5,
+        totalGoalsPoints:       settings?.defaultScoringBonusGoals      ?? 3,
+        goalDiffPoints:         settings?.defaultScoringBonusDiff       ?? 3,
+        oneTeamGoalsPoints:     (settings as any)?.defaultScoringBonusOneTeam    ?? 2,
+        landslidePoints:        (settings as any)?.defaultScoringBonusLandslide  ?? 5,
+        landslideMinDiff:       (settings as any)?.defaultLandslideMinDiff        ?? 4,
+        zebraPoints:            settings?.defaultScoringBonusUpset      ?? 1,
+        zebraThreshold:         (settings as any)?.defaultZebraThreshold          ?? 75,
+        bettingDeadlineMinutes: 60,
+      };
+      // Pro pode sobrescrever qualquer campo com valores customizados
       if (isProUser) {
-        if (exactScorePoints !== undefined) scoringRulesData.exactScorePoints = exactScorePoints;
-        if (correctResultPoints !== undefined) scoringRulesData.correctResultPoints = correctResultPoints;
-        if (totalGoalsPoints !== undefined) scoringRulesData.totalGoalsPoints = totalGoalsPoints;
-        if (goalDiffPoints !== undefined) scoringRulesData.goalDiffPoints = goalDiffPoints;
-        if (oneTeamGoalsPoints !== undefined) scoringRulesData.oneTeamGoalsPoints = oneTeamGoalsPoints;
-        if (landslidePoints !== undefined) scoringRulesData.landslidePoints = landslidePoints;
-        if (zebraPoints !== undefined) scoringRulesData.zebraPoints = zebraPoints;
-        if (zebraThreshold !== undefined) scoringRulesData.zebraThreshold = zebraThreshold;
-        if (landslideMinDiff !== undefined) scoringRulesData.landslideMinDiff = landslideMinDiff;
-        if (bettingDeadlineMinutes !== undefined) scoringRulesData.bettingDeadlineMinutes = bettingDeadlineMinutes;
+        if (exactScorePoints !== undefined) frozenRules.exactScorePoints = exactScorePoints;
+        if (correctResultPoints !== undefined) frozenRules.correctResultPoints = correctResultPoints;
+        if (totalGoalsPoints !== undefined) frozenRules.totalGoalsPoints = totalGoalsPoints;
+        if (goalDiffPoints !== undefined) frozenRules.goalDiffPoints = goalDiffPoints;
+        if (oneTeamGoalsPoints !== undefined) frozenRules.oneTeamGoalsPoints = oneTeamGoalsPoints;
+        if (landslidePoints !== undefined) frozenRules.landslidePoints = landslidePoints;
+        if (zebraPoints !== undefined) frozenRules.zebraPoints = zebraPoints;
+        if (zebraThreshold !== undefined) frozenRules.zebraThreshold = zebraThreshold;
+        if (landslideMinDiff !== undefined) frozenRules.landslideMinDiff = landslideMinDiff;
+        if (bettingDeadlineMinutes !== undefined) frozenRules.bettingDeadlineMinutes = bettingDeadlineMinutes;
       }
-      // Só persiste regras customizadas se houver pelo menos um valor definido pelo usuário.
-      // Se não houver, o bolão usa os defaults da plataforma (via getPlatformSettings).
-      // Isso garante que alterações futuras nos defaults da plataforma se reflitam
-      // em bolões que não customizaram as regras.
-      if (Object.keys(scoringRulesData).length > 0) {
-        await upsertPoolScoringRules(poolId, scoringRulesData, ctx.user.id);
-      }
+      await upsertPoolScoringRules(poolId, frozenRules, ctx.user.id);
       // [LOG E2] Bolão criado por usuário (não admin)
       if (ctx.user.role !== "admin") {
         await createAdminLog(ctx.user.id, "pool_created", "pool", poolId, {

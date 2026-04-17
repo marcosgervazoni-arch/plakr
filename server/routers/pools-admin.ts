@@ -7,6 +7,8 @@ import {
   addPoolMember,
   createAdminLog,
   createPool,
+  getPlatformSettings,
+  upsertPoolScoringRules,
 } from "../db";
 import { adminProcedure, router } from "../_core/trpc";
 import { Err } from "../errors";
@@ -89,7 +91,21 @@ export const poolsAdminRouter = router({
         ownerId: ctx.user.id,
       });
       await addPoolMember(poolId, ctx.user.id, "organizer");
-      // Não inserir linha vazia em pool_scoring_rules — bolão herda defaults da plataforma dinamicamente
+      // Congela os defaults vigentes da plataforma no momento da criação
+      // Admin tem acesso Pro completo, mas não customiza regras nesta tela
+      const settings = await getPlatformSettings();
+      await upsertPoolScoringRules(poolId, {
+        exactScorePoints:       settings?.defaultScoringExact          ?? 10,
+        correctResultPoints:    settings?.defaultScoringCorrect         ?? 5,
+        totalGoalsPoints:       settings?.defaultScoringBonusGoals      ?? 3,
+        goalDiffPoints:         settings?.defaultScoringBonusDiff       ?? 3,
+        oneTeamGoalsPoints:     (settings as any)?.defaultScoringBonusOneTeam    ?? 2,
+        landslidePoints:        (settings as any)?.defaultScoringBonusLandslide  ?? 5,
+        landslideMinDiff:       (settings as any)?.defaultLandslideMinDiff        ?? 4,
+        zebraPoints:            settings?.defaultScoringBonusUpset      ?? 1,
+        zebraThreshold:         (settings as any)?.defaultZebraThreshold          ?? 75,
+        bettingDeadlineMinutes: 60,
+      }, ctx.user.id);
       await createAdminLog(ctx.user.id, "admin_create_pool", "pool", poolId, { name: input.name });
       return { poolId, slug, inviteToken };
     }),
