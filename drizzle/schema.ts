@@ -1186,3 +1186,17 @@ export const userSponsorBadges = mysqlTable("user_sponsor_badges", {
 });
 export type UserSponsorBadge = typeof userSponsorBadges.$inferSelect;
 export type InsertUserSponsorBadge = typeof userSponsorBadges.$inferInsert;
+
+// ─── REDIRECIONAMENTO DE SLUGS ───────────────────────────────────────────────
+// Preserva slugs antigos após renomeação, garantindo que links existentes
+// continuem funcionando e redirecionem automaticamente para o slug atual.
+export const poolSlugRedirects = mysqlTable("pool_slug_redirects", {
+  id: int("id").primaryKey().autoincrement(),
+  poolId: int("poolId").notNull().references(() => pools.id, { onDelete: "cascade" }),
+  oldSlug: varchar("oldSlug", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  uniqueOldSlug: unique("uq_pool_slug_redirects_oldSlug").on(t.oldSlug),
+}));
+export type PoolSlugRedirect = typeof poolSlugRedirects.$inferSelect;
+export type InsertPoolSlugRedirect = typeof poolSlugRedirects.$inferInsert;

@@ -383,6 +383,59 @@ export async function getPoolBySlug(slug: string): Promise<Pool | undefined> {
   return result[0];
 }
 
+/**
+ * Busca um pool pelo slug atual OU por um slug antigo registrado em pool_slug_redirects.
+ * Retorna o pool e um flag indicando se houve redirecionamento (slug antigo foi usado).
+ */
+export async function getPoolBySlugOrRedirect(
+  slug: string
+): Promise<{ pool: Pool; redirectedTo: string | null } | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  // 1. Tentar slug atual
+  const direct = await db.select().from(pools)
+    .where(and(eq(pools.slug, slug), sql`${pools.status} != 'deleted'`))
+    .limit(1);
+  if (direct[0]) return { pool: direct[0], redirectedTo: null };
+  // 2. Tentar slug antigo via tabela de redirecionamentos
+  const { poolSlugRedirects } = await import("../drizzle/schema");
+  const redirect = await db.select({ poolId: poolSlugRedirects.poolId })
+    .from(poolSlugRedirects)
+    .where(eq(poolSlugRedirects.oldSlug, slug))
+    .limit(1);
+  if (!redirect[0]) return undefined;
+  const byId = await db.select().from(pools)
+    .where(and(eq(pools.id, redirect[0].poolId), sql`${pools.status} != 'deleted'`))
+    .limit(1);
+  if (!byId[0]) return undefined;
+  return { pool: byId[0], redirectedTo: byId[0].slug };
+}
+
+/** Registra um slug antigo na tabela de redirecionamentos (idempotente). */
+export async function registerSlugRedirect(poolId: number, oldSlug: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const { poolSlugRedirects } = await import("../drizzle/schema");
+  await db.insert(poolSlugRedirects)
+    .values({ poolId, oldSlug })
+    .onDuplicateKeyUpdate({ set: { poolId } });
+}
+
+/** Renomeia o slug de um bolão e registra o slug antigo automaticamente. */
+export async function updatePoolSlug(poolId: number, newSlug: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Buscar slug atual antes de alterar
+  const current = await db.select({ slug: pools.slug }).from(pools).where(eq(pools.id, poolId)).limit(1);
+  const oldSlug = current[0]?.slug;
+  // Atualizar slug
+  await db.update(pools).set({ slug: newSlug }).where(eq(pools.id, poolId));
+  // Registrar slug antigo para redirecionamento
+  if (oldSlug && oldSlug !== newSlug) {
+    await registerSlugRedirect(poolId, oldSlug);
+  }
+}
+
 export async function getPoolByInviteToken(token: string): Promise<Pool | undefined> {
   const db = await getDb();
   if (!db) return undefined;

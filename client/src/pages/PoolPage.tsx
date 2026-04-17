@@ -118,6 +118,18 @@ export default function PoolPage() {
     { enabled: !!slug, refetchInterval: 60_000 }
   );
 
+  // Redirecionamento transparente: se o slug usado era antigo, atualiza a URL
+  // para o slug atual sem recarregar a página — o usuário não percebe a diferença
+  useEffect(() => {
+    if (data?.redirectedTo && slug && data.redirectedTo !== slug) {
+      const currentPath = window.location.pathname;
+      const newPath = currentPath.replace(slug, data.redirectedTo);
+      if (newPath !== currentPath) {
+        window.history.replaceState(null, "", newPath);
+      }
+    }
+  }, [data?.redirectedTo, slug]);
+
   const { data: myBets } = trpc.bets.myBets.useQuery(
     { poolId: data?.pool.id ?? 0 },
     { enabled: !!data?.pool.id }

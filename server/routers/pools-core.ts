@@ -16,6 +16,7 @@ import {
   getPoolById,
   getPoolByInviteToken,
   getPoolBySlug,
+  getPoolBySlugOrRedirect,
   getPoolMember,
   getPoolMembers,
   getPoolRanking,
@@ -127,8 +128,9 @@ export const poolsCoreRouter = router({
   getBySlug: protectedProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input, ctx }) => {
-      const pool = await getPoolBySlug(input.slug);
-      if (!pool) throw Err.notFound("Recurso");
+      const resolved = await getPoolBySlugOrRedirect(input.slug);
+      if (!resolved) throw Err.notFound("Recurso");
+      const { pool, redirectedTo } = resolved;
       const member = await getPoolMember(pool.id, ctx.user.id);
       if (!member && ctx.user.role !== "admin") {
         throw Err.forbidden("Você não é membro deste bolão.");
@@ -156,7 +158,7 @@ export const poolsCoreRouter = router({
       const predictionReliable = tournament?.apiFootballLeagueId
         ? await getPredictionReliability(tournament.apiFootballLeagueId)
         : false;
-      return { pool, tournament, games: gameList, rules, memberCount, myRole: member?.role, phases, predictionReliable };
+      return { pool, tournament, games: gameList, rules, memberCount, myRole: member?.role, phases, predictionReliable, redirectedTo };
     }),
 
   // ── Listar bolões públicos ─────────────────────────────────────────────────

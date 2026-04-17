@@ -393,6 +393,13 @@
       "when": 1776173451786,
       "tag": "0055_thick_the_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "5",
+      "when": 1776430980607,
+      "tag": "0056_smooth_misty_knight",
+      "breakpoints": true
     }
   ]
 }

@@ -270,3 +270,10 @@
 
 ## Sprint M — Segurança: Bloqueio de Acesso para Membros Pendentes
 - [x] Garantir que membros pending_approval/rejected não acessam o bolão nem fazem apostas (backend + frontend)
+
+## Sprint N — Redirecionamento de Slugs Antigos
+- [x] Criar tabela pool_slug_redirects para preservar slugs antigos após renomeação
+- [x] Backend: getBySlug resolve slug via tabela de redirecionamentos e retorna slugAtual
+- [x] Backend: procedure updateSlug para renomear slug e registrar o antigo automaticamente
+- [x] Frontend: detectar redirecionamento e navegar para o slug correto de forma transparente
+- [x] Registrar slug antigo do WILD BIER (bol-o-wild-bier-copa-do-mundo-26-v_52kn → wildbeer)
