@@ -253,3 +253,6 @@
 ## Sprint H — Melhorias na Criação do Bolão
 - [x] CreatePool: Seção 4 — regras de pontuação editáveis na criação para usuários Pro
 - [x] CreatePool: Seção 5 — configuração de inscrição (valor/Pix/QR code) na criação para usuários Pro
+
+## Sprint I — Consistência de Regras do Bolão
+- [x] PoolRules: exibir regras de pontuação customizadas do bolão (poolScoringRules) em vez dos valores padrão

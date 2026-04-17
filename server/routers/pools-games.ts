@@ -191,7 +191,25 @@ export const poolsGamesRouter = router({
       if (!member && ctx.user.role !== "admin" && pool.accessType !== "public") {
         throw Err.forbidden();
       }
-      return getPoolScoringRules(input.poolId);
+      const rules = await getPoolScoringRules(input.poolId);
+      const settings = await getPlatformSettings();
+      // Sempre retorna valores efetivos: regras customizadas do bolão ou defaults da plataforma.
+      // Garante que bolões sem regras customizadas exibem os valores padrão em vez de "não configurado".
+      const effective = buildEffectiveRules(rules, settings);
+      return {
+        ...effective,
+        zebraEnabled:           rules?.zebraEnabled           ?? true,
+        zebraCountDraw:         rules?.zebraCountDraw         ?? false,
+        bettingDeadlineMinutes: rules?.bettingDeadlineMinutes ?? 60,
+        tiebreakOrder:          rules?.tiebreakOrder          ?? ["points", "exact", "correct", "wrong", "registration_date"],
+        publicProfilesEnabled:  rules?.publicProfilesEnabled  ?? true,
+        groupLinksEnabled:      rules?.groupLinksEnabled      ?? false,
+        whatsappGroupLink:      rules?.whatsappGroupLink      ?? null,
+        telegramGroupLink:      rules?.telegramGroupLink      ?? null,
+        groupLinksText:         rules?.groupLinksText         ?? null,
+        poolSubtitle:           rules?.poolSubtitle           ?? null,
+        isCustomized:           !!rules,
+      };
     }),
 
   getBetAnalysis: protectedProcedure
