@@ -249,3 +249,7 @@
 - [x] Segurança: adicionar .max() em description e logoUrl no pools-core.ts
 - [x] Segurança: validar MIME type por magic bytes no servidor (upload de imagens/vídeos)
 - [x] UX: banner pós-checkout na UpgradePage (sucesso e cancelamento) com CTA para o painel
+
+## Sprint H — Melhorias na Criação do Bolão
+- [x] CreatePool: Seção 4 — regras de pontuação editáveis na criação para usuários Pro
+- [x] CreatePool: Seção 5 — configuração de inscrição (valor/Pix/QR code) na criação para usuários Pro

@@ -23,6 +23,7 @@ import {
   getTournamentById,
   getTournamentPhases,
   getUserPlan,
+  getUserPlanTier,
   getPlatformSettings,
   recalculateMemberStats,
   updatePool,
@@ -42,6 +43,20 @@ export const poolsCoreRouter = router({
       accessType: z.enum(["public", "private_link"]).default("private_link"),
       invitePermission: z.enum(["organizer_only", "all_members"]).default("organizer_only"),
       description: z.string().max(1000).optional(), // [SEC] limite de payload
+      // Regras de pontuação (Pro only — validadas no servidor)
+      exactScorePoints: z.number().int().min(1).max(50).optional(),
+      correctResultPoints: z.number().int().min(1).max(50).optional(),
+      totalGoalsPoints: z.number().int().min(0).max(20).optional(),
+      goalDiffPoints: z.number().int().min(0).max(20).optional(),
+      oneTeamGoalsPoints: z.number().int().min(0).max(20).optional(),
+      landslidePoints: z.number().int().min(0).max(50).optional(),
+      zebraPoints: z.number().int().min(0).max(20).optional(),
+      zebraThreshold: z.number().int().min(51).max(99).optional(),
+      landslideMinDiff: z.number().int().min(2).max(10).optional(),
+      bettingDeadlineMinutes: z.number().int().min(0).max(1440).optional(),
+      // Inscrição paga (Pro only)
+      entryFee: z.number().min(0).max(10000).nullable().optional(),
+      pixKey: z.string().max(100).nullable().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const settings = await getPlatformSettings();
@@ -52,18 +67,47 @@ export const poolsCoreRouter = router({
       if (!canCreate.allowed) {
         throw Err.forbidden(canCreate.reason ?? `Limite de ${freeMax} bolões ativos no plano gratuito. Faça upgrade para criar mais bolões.`);
       }
+      // Verificar se o usuário é Pro para features avançadas
+      const userTier = await getUserPlanTier(ctx.user.id);
+      const isProUser = userTier !== "free" || ctx.user.role === "admin";
+      const {
+        exactScorePoints, correctResultPoints, totalGoalsPoints, goalDiffPoints,
+        oneTeamGoalsPoints, landslidePoints, zebraPoints, zebraThreshold,
+        landslideMinDiff, bettingDeadlineMinutes, entryFee, pixKey,
+        ...poolInput
+      } = input;
       const slug = `${input.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${nanoid(6)}`;
       const inviteToken = nanoid(32);
       const inviteCode = nanoid(8).toUpperCase();
-      const poolId = await createPool({
-        ...input,
+      const poolData: any = {
+        ...poolInput,
         slug,
         inviteToken,
         inviteCode,
         ownerId: ctx.user.id,
-      });
+      };
+      // Inscrição paga: apenas Pro
+      if (isProUser && entryFee !== undefined && entryFee !== null && entryFee > 0) {
+        poolData.entryFee = String(entryFee);
+        if (pixKey) poolData.pixKey = pixKey;
+      }
+      const poolId = await createPool(poolData);
       await addPoolMember(poolId, ctx.user.id, "organizer");
-      await upsertPoolScoringRules(poolId, {}, ctx.user.id);
+      // Regras de pontuação: apenas Pro pode personalizar
+      const scoringRulesData: Record<string, number> = {};
+      if (isProUser) {
+        if (exactScorePoints !== undefined) scoringRulesData.exactScorePoints = exactScorePoints;
+        if (correctResultPoints !== undefined) scoringRulesData.correctResultPoints = correctResultPoints;
+        if (totalGoalsPoints !== undefined) scoringRulesData.totalGoalsPoints = totalGoalsPoints;
+        if (goalDiffPoints !== undefined) scoringRulesData.goalDiffPoints = goalDiffPoints;
+        if (oneTeamGoalsPoints !== undefined) scoringRulesData.oneTeamGoalsPoints = oneTeamGoalsPoints;
+        if (landslidePoints !== undefined) scoringRulesData.landslidePoints = landslidePoints;
+        if (zebraPoints !== undefined) scoringRulesData.zebraPoints = zebraPoints;
+        if (zebraThreshold !== undefined) scoringRulesData.zebraThreshold = zebraThreshold;
+        if (landslideMinDiff !== undefined) scoringRulesData.landslideMinDiff = landslideMinDiff;
+        if (bettingDeadlineMinutes !== undefined) scoringRulesData.bettingDeadlineMinutes = bettingDeadlineMinutes;
+      }
+      await upsertPoolScoringRules(poolId, scoringRulesData, ctx.user.id);
       // [LOG E2] Bolão criado por usuário (não admin)
       if (ctx.user.role !== "admin") {
         await createAdminLog(ctx.user.id, "pool_created", "pool", poolId, {
