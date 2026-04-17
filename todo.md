@@ -285,3 +285,7 @@
 ## Sprint P — Open Graph Dinâmico por Bolão
 - [x] Backend: endpoint SSR de metatags OG para /pool/:slug e /join/:token
 - [x] Servidor: middleware OG integrado antes do handler do Vite/SPA
+## Sprint Q — Bug: Regras de Pontuação na Criação do Bolão
+- [x] BUG: criação de bolão não-Pro inseria linha vazia em pool_scoring_rules com defaults do banco (em vez de não inserir nada e herdar defaults da plataforma dinamicamente)
+- [x] Correção: upsertPoolScoringRules só é chamado se houver pelo menos um valor customizado definido pelo usuário
+- [x] Adicionadas rotas /api/og/pool/:slug e /api/og/join/:token no Express (para uso futuro quando o proxy rotear /api/* corretamente)

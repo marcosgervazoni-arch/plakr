@@ -72,6 +72,111 @@ function buildOgHtml({
 }
 
 /**
+ * Registra rotas /api/og/pool/:slug e /api/og/join/:token
+ * Essas rotas funcionam em produção pois o proxy da Manus roteia /api/* para o Express.
+ * O index.html usa <meta http-equiv="refresh"> para redirecionar bots para essas rotas.
+ */
+export function registerApiOgRoutes(app: Express): void {
+  // ── /api/og/pool/:slug — metatags dinâmicas do bolão via /api/ ─────────────
+  app.get("/api/og/pool/:slug", async (req, res) => {
+    const { slug } = req.params;
+    const origin = `${req.protocol}://${req.headers.host}`;
+    const pageUrl = `${origin}/pool/${slug}`;
+    const fallbackImage = `${origin}/og-default.png`;
+
+    try {
+      const result = await getPoolBySlugOrRedirect(slug);
+      if (!result) {
+        const html = buildOgHtml({
+          title: "Bolão — Plakr!",
+          description: "Participe deste bolão de apostas esportivas!",
+          imageUrl: fallbackImage,
+          pageUrl,
+        });
+        return res.status(200).set("Content-Type", "text/html").end(html);
+      }
+
+      const pool = result.pool;
+      const canonicalUrl = result.redirectedTo
+        ? `${origin}/pool/${result.redirectedTo}`
+        : pageUrl;
+
+      let tournamentName = "";
+      try {
+        const tournament = await getTournamentById(pool.tournamentId);
+        tournamentName = tournament?.name ?? "";
+      } catch { /* não crítico */ }
+
+      const title = `${pool.name} — Plakr!`;
+      const description = pool.description
+        ? pool.description
+        : tournamentName
+        ? `Bolão de ${tournamentName}. Entre agora e faça seus palpites!`
+        : "Participe deste bolão de apostas esportivas. Entre agora e faça seus palpites!";
+      const imageUrl = pool.logoUrl ?? fallbackImage;
+
+      const html = buildOgHtml({ title, description, imageUrl, pageUrl: canonicalUrl });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    } catch {
+      const html = buildOgHtml({
+        title: "Bolão — Plakr!",
+        description: "Participe deste bolão de apostas esportivas!",
+        imageUrl: fallbackImage,
+        pageUrl,
+      });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    }
+  });
+
+  // ── /api/og/join/:token — metatags dinâmicas do convite via /api/ ──────────
+  app.get("/api/og/join/:token", async (req, res) => {
+    const { token } = req.params;
+    const origin = `${req.protocol}://${req.headers.host}`;
+    const pageUrl = `${origin}/join/${token}`;
+    const fallbackImage = `${origin}/og-default.png`;
+
+    try {
+      const pool = await getPoolByInviteToken(token);
+
+      if (!pool || pool.status !== "active") {
+        const html = buildOgHtml({
+          title: "Convite para Bolão — Plakr!",
+          description: "Você foi convidado para participar de um bolão de apostas esportivas!",
+          imageUrl: fallbackImage,
+          pageUrl,
+        });
+        return res.status(200).set("Content-Type", "text/html").end(html);
+      }
+
+      let tournamentName = "";
+      try {
+        const tournament = await getTournamentById(pool.tournamentId);
+        tournamentName = tournament?.name ?? "";
+      } catch { /* não crítico */ }
+
+      const title = `${pool.name} — Plakr!`;
+      const description = pool.description
+        ? pool.description
+        : tournamentName
+        ? `Bolão de ${tournamentName}. Entre agora e faça seus palpites!`
+        : "Você foi convidado para um bolão de apostas esportivas. Entre agora e faça seus palpites!";
+      const imageUrl = pool.logoUrl ?? fallbackImage;
+
+      const html = buildOgHtml({ title, description, imageUrl, pageUrl });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    } catch {
+      const html = buildOgHtml({
+        title: "Convite para Bolão — Plakr!",
+        description: "Você foi convidado para participar de um bolão de apostas esportivas!",
+        imageUrl: fallbackImage,
+        pageUrl,
+      });
+      return res.status(200).set("Content-Type", "text/html").end(html);
+    }
+  });
+}
+
+/**
  * Landing page OG SSR — rota raiz (/)
  * Quando um bot de rede social acessa a raiz, retorna HTML com a ogImageUrl
  * configurada pelo Super Admin. Usuários reais passam para o SPA normalmente.

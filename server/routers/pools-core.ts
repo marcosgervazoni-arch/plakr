@@ -109,7 +109,13 @@ export const poolsCoreRouter = router({
         if (landslideMinDiff !== undefined) scoringRulesData.landslideMinDiff = landslideMinDiff;
         if (bettingDeadlineMinutes !== undefined) scoringRulesData.bettingDeadlineMinutes = bettingDeadlineMinutes;
       }
-      await upsertPoolScoringRules(poolId, scoringRulesData, ctx.user.id);
+      // Só persiste regras customizadas se houver pelo menos um valor definido pelo usuário.
+      // Se não houver, o bolão usa os defaults da plataforma (via getPlatformSettings).
+      // Isso garante que alterações futuras nos defaults da plataforma se reflitam
+      // em bolões que não customizaram as regras.
+      if (Object.keys(scoringRulesData).length > 0) {
+        await upsertPoolScoringRules(poolId, scoringRulesData, ctx.user.id);
+      }
       // [LOG E2] Bolão criado por usuário (não admin)
       if (ctx.user.role !== "admin") {
         await createAdminLog(ctx.user.id, "pool_created", "pool", poolId, {

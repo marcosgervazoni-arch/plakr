@@ -9,7 +9,7 @@ import { registerX1PredictionResolverCron } from "../jobs/x1-prediction-resolver
 import { registerApiFootballCronJobs } from "../api-football/cron";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
-import { registerOgRoutes, registerLandingOgRoute } from "../og";
+import { registerOgRoutes, registerLandingOgRoute, registerApiOgRoutes } from "../og";
 import { registerApiDocs } from "../api-docs";
 import v1Router from "../api/v1";
 import express from "express";
@@ -117,6 +117,9 @@ async function startServer() {
 
   // Open Graph SSR — must be before Vite/static so bots get OG HTML
   registerOgRoutes(app);
+
+  // Open Graph SSR via /api/ prefix — works in production where /pool/* and /join/* are served statically
+  registerApiOgRoutes(app);
 
   // Landing page OG SSR — inject dynamic ogImageUrl for social bots on root
   registerLandingOgRoute(app);

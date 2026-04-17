@@ -118,8 +118,9 @@ describe("[CREATE-PRO] Regras de pontuação na criação do bolão", () => {
     );
   });
 
-  it("usuário free cria bolão com regras padrão → upsertPoolScoringRules com objeto vazio (sem customizações)", async () => {
+  it("usuário free cria bolão com regras padrão → upsertPoolScoringRules NÃO deve ser chamado (bolão herda defaults da plataforma)", async () => {
     vi.mocked(getUserPlanTier).mockResolvedValue("free");
+    const callsBefore = vi.mocked(upsertPoolScoringRules).mock.calls.length;
     const caller = appRouter.createCaller(makeCtx({ id: 6 }));
     const result = await caller.pools.create({
       name: "Bolão Free Padrão",
@@ -129,11 +130,10 @@ describe("[CREATE-PRO] Regras de pontuação na criação do bolão", () => {
       exactScorePoints: 20,
     });
     expect(result).toHaveProperty("poolId");
-    // Para usuário free, upsertPoolScoringRules deve ser chamado com objeto vazio
-    const calls = vi.mocked(upsertPoolScoringRules).mock.calls;
-    const lastCall = calls[calls.length - 1];
-    // O segundo argumento (data) não deve ter exactScorePoints customizado
-    expect(lastCall[1]).not.toHaveProperty("exactScorePoints");
+    // Para usuário free, upsertPoolScoringRules NÃO deve ser chamado
+    // (bolão sem customizações herda os defaults da plataforma dinamicamente)
+    const callsAfter = vi.mocked(upsertPoolScoringRules).mock.calls.length;
+    expect(callsAfter).toBe(callsBefore); // nenhuma chamada nova
   });
 
   it("admin pode criar bolão com regras customizadas → bypass de plano (role=admin)", async () => {
