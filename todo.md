@@ -264,3 +264,6 @@
 
 ## Sprint K — Alerta de Aprovações no Dashboard
 - [x] PoolDashboard: card de alerta âmbar "X membros aguardando aprovação" com link direto para tela de Membros
+
+## Sprint L — Bug: Membros Pendentes na Lista Ativa
+- [x] BUG: membros com status 'pending' aparecem na lista de ativos e no contador de participantes antes de serem aprovados

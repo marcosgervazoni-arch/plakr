@@ -462,7 +462,11 @@ export async function getPoolMembers(poolId: number) {
     .select({ member: poolMembers, user: users })
     .from(poolMembers)
     .innerJoin(users, eq(poolMembers.userId, users.id))
-    .where(eq(poolMembers.poolId, poolId))
+    .where(and(
+      eq(poolMembers.poolId, poolId),
+      // Apenas membros ativos: exclui pending_approval e rejected
+      sql`(${poolMembers.memberStatus} IS NULL OR ${poolMembers.memberStatus} = 'active')`
+    ))
     .orderBy(asc(poolMembers.joinedAt));
 }
 
@@ -472,7 +476,11 @@ export async function countPoolMembers(poolId: number): Promise<number> {
   const result = await db
     .select({ count: sql<number>`count(*)` })
     .from(poolMembers)
-    .where(eq(poolMembers.poolId, poolId));
+    .where(and(
+      eq(poolMembers.poolId, poolId),
+      // Apenas membros ativos: exclui pending_approval e rejected
+      sql`(${poolMembers.memberStatus} IS NULL OR ${poolMembers.memberStatus} = 'active')`
+    ));
   return result[0]?.count ?? 0;
 }
 

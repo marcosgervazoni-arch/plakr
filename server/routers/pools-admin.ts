@@ -34,7 +34,7 @@ export const poolsAdminRouter = router({
           ownerId: poolsTable.ownerId,
           tournamentId: poolsTable.tournamentId,
           description: poolsTable.description,
-          memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.\`poolId\` = pools.id AND pm.\`isBlocked\` = 0)`,
+          memberCount: sql<number>`(SELECT COUNT(*) FROM pool_members pm WHERE pm.\`poolId\` = pools.id AND pm.\`isBlocked\` = 0 AND (pm.\`memberStatus\` IS NULL OR pm.\`memberStatus\` = 'active'))`,
           ownerPlan: userPlans.plan,
         })
         .from(poolsTable)
