@@ -125,7 +125,6 @@ export default function OrganizerLayout({
       label: "Participantes",
       items: [
         { id: "members", label: "Membros", icon: Users, badge: pendingCount > 0 ? pendingCount : undefined },
-        { id: "access", label: "Acesso e Convite", icon: Link2 },
         { id: "entry-fee", label: "Taxa de Inscrição", icon: Crown, proOnly: true },
       ],
     },

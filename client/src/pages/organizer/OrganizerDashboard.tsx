@@ -21,9 +21,15 @@ import {
   AlertCircle,
   ChevronRight,
   Loader2,
+  Link2,
+  Copy,
+  Check,
+  Globe,
+  RefreshCw,
+  Share2,
 } from "lucide-react";
 import { Link, useParams, useLocation } from "wouter";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -146,6 +152,29 @@ export default function OrganizerDashboard() {
 
   const { isPro, isProExpired } = useUserPlan();
 
+  // Convite & Acesso
+  const utils = trpc.useUtils();
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [regenConfirm, setRegenConfirm] = useState(false);
+  const regenMutation = trpc.pools.regenerateAccessCode.useMutation({
+    onSuccess: () => {
+      utils.pools.getBySlug.invalidate({ slug });
+      toast.success("Link regenerado! O link anterior não funciona mais.");
+      setRegenConfirm(false);
+    },
+    onError: (err) => toast.error(err.message || "Erro ao regenerar link."),
+  });
+  const inviteLink = pool?.inviteToken
+    ? `${window.location.origin}/join/${pool.inviteToken}`
+    : "";
+  const handleCopyLink = useCallback(() => {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+    toast.success("Link copiado!");
+  }, [inviteLink]);
+
   // Next game with deadline
   const nextGame = useMemo(() => {
     const now = Date.now();
@@ -228,6 +257,80 @@ export default function OrganizerDashboard() {
         {/* Onboarding checklist — exibido apenas quando há etapas pendentes e não foi dispensado */}
         {pool.id && (
           <OnboardingChecklist poolId={pool.id} slug={slug ?? ""} isPro={isPro} />
+        )}
+
+        {/* Convite & Acesso — card de link de convite */}
+        {pool.accessType !== "public" && (
+          <div className="bg-card border border-border/30 rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-border/20 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-primary" />
+                <h3 className="font-semibold text-sm">Link de Convite</h3>
+              </div>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Link2 className="w-3 h-3" /> Privado por link
+              </span>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0 bg-background border border-border/40 rounded-lg px-3 py-2">
+                  <p className="text-xs font-mono text-muted-foreground truncate">{inviteLink || "Gerando..."}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyLink}
+                  disabled={!inviteLink}
+                  className="shrink-0 gap-1.5"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedLink ? "Copiado!" : "Copiar"}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">Compartilhe este link com quem você quer convidar</p>
+                <button
+                  type="button"
+                  onClick={() => setRegenConfirm(true)}
+                  className="text-xs text-muted-foreground hover:text-yellow-400 transition-colors flex items-center gap-1 shrink-0"
+                >
+                  <RefreshCw className="w-3 h-3" /> Regenerar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {pool.accessType === "public" && (
+          <div className="bg-card border border-border/30 rounded-xl p-4 flex items-center gap-3">
+            <Globe className="w-5 h-5 text-blue-400 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-400">Bolão público</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Qualquer usuário autenticado pode entrar pela página de Bolões Públicos.</p>
+            </div>
+          </div>
+        )}
+        {/* Confirm regen dialog */}
+        {regenConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-card border border-border/30 rounded-2xl p-6 max-w-sm w-full space-y-4">
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-5 h-5 text-yellow-400" />
+                <p className="font-semibold">Regenerar link de convite?</p>
+              </div>
+              <p className="text-sm text-muted-foreground">O link atual deixará de funcionar imediatamente. Quem ainda não entrou precisará do novo link.</p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setRegenConfirm(false)} className="flex-1">Cancelar</Button>
+                <Button
+                  size="sm"
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
+                  onClick={() => pool?.id && regenMutation.mutate({ poolId: pool.id })}
+                  disabled={regenMutation.isPending}
+                >
+                  {regenMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Regenerar"}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* 4 metric cards */}

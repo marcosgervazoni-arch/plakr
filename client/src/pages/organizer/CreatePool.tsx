@@ -34,7 +34,7 @@ import {
   Lock,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -142,6 +142,30 @@ export default function CreatePool() {
   const [invitePermission, setInvitePermission] = useState<"organizer_only" | "all_members">("organizer_only");
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Campeonato personalizado — modal
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [customName, setCustomName] = useState("");
+  const [customSeason, setCustomSeason] = useState("");
+  const [customTournamentId, setCustomTournamentId] = useState<number | null>(null);
+  const [customTournamentLabel, setCustomTournamentLabel] = useState<string | null>(null);
+  const createTournamentMutation = trpc.tournaments.create.useMutation({
+    onSuccess: (data: any) => {
+      setCustomTournamentId(data.id);
+      setSelectedTournamentId(data.id);
+      setCustomTournamentLabel(customName.trim());
+      setShowCustomModal(false);
+      setCustomName("");
+      setCustomSeason("");
+      toast.success("Campeonato personalizado criado!");
+    },
+    onError: (err) => toast.error(err.message || "Erro ao criar campeonato."),
+  });
+  const handleCreateCustomTournament = useCallback(() => {
+    if (!customName.trim()) return;
+    const slug = customName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + Date.now();
+    createTournamentMutation.mutate({ name: customName.trim(), slug, season: customSeason.trim() || undefined, isGlobal: false, format: "custom" });
+  }, [customName, customSeason, createTournamentMutation]);
 
   // Seção 4 — Regras de pontuação
   const [rules, setRules] = useState<ScoringRules>({ ...DEFAULT_RULES });
@@ -420,20 +444,103 @@ export default function CreatePool() {
                 </button>
               ))}
               {/* Custom tournament — Pro only */}
-              <div className="flex items-center gap-4 p-4 rounded-xl border border-border/30 bg-card/50 opacity-60 cursor-not-allowed">
-                <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">
-                  <Trophy className="w-5 h-5 text-muted-foreground/50" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm text-muted-foreground">Campeonato personalizado</p>
-                    <Badge className="text-xs py-0 px-1.5 bg-primary/10 text-primary border-primary/20">
-                      <Crown className="w-2.5 h-2.5 mr-1" /> Plano Pro
-                    </Badge>
+              {isPro ? (
+                customTournamentId && selectedTournamentId === customTournamentId ? (
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedTournamentId(null); setCustomTournamentId(null); setCustomTournamentLabel(null); }}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-primary bg-primary/5 text-left transition-all w-full"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Trophy className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-primary truncate">{customTournamentLabel}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Campeonato personalizado</p>
+                    </div>
+                    <Check className="w-4 h-4 text-primary shrink-0" />
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomModal(true)}
+                      className="flex items-center gap-4 p-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 hover:border-primary/70 hover:bg-primary/10 text-left transition-all w-full"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Trophy className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm text-primary">Campeonato personalizado</p>
+                          <Badge className="text-xs py-0 px-1.5 bg-green-500/10 text-green-400 border-green-500/20">Pro</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">Toque para criar seu próprio campeonato</p>
+                      </div>
+                      <Plus className="w-4 h-4 text-primary shrink-0" />
+                    </button>
+                    {/* Modal inline */}
+                    {showCustomModal && (
+                      <div className="bg-card border border-primary/30 rounded-xl p-4 space-y-3 mt-1">
+                        <p className="text-sm font-semibold">Novo campeonato personalizado</p>
+                        <div className="space-y-2">
+                          <Input
+                            value={customName}
+                            onChange={(e) => setCustomName(e.target.value.slice(0, 80))}
+                            placeholder="Nome do campeonato *"
+                            className="bg-background border-border/50"
+                            autoFocus
+                          />
+                          <Input
+                            value={customSeason}
+                            onChange={(e) => setCustomSeason(e.target.value.slice(0, 20))}
+                            placeholder="Temporada (ex: 2026)"
+                            className="bg-background border-border/50"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleCreateCustomTournament}
+                            disabled={!customName.trim() || createTournamentMutation.isPending}
+                            className="flex-1"
+                          >
+                            {createTournamentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar campeonato"}
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => { setShowCustomModal(false); setCustomName(""); setCustomSeason(""); }}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => toast.info("Campeonatos personalizados estão disponíveis no Plano Pro.")}
+                  className="flex items-center gap-4 p-4 rounded-xl border border-border/30 bg-card/50 opacity-60 w-full text-left"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">
+                    <Lock className="w-5 h-5 text-muted-foreground/50" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">Crie seu próprio campeonato com times e jogos</p>
-                </div>
-              </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-sm text-muted-foreground">Campeonato personalizado</p>
+                      <Badge className="text-xs py-0 px-1.5 bg-primary/10 text-primary border-primary/20">
+                        <Crown className="w-2.5 h-2.5 mr-1" /> Pro
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">Crie seu próprio campeonato com times e jogos</p>
+                  </div>
+                </button>
+              )}
             </div>
           )}
         </section>

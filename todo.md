@@ -256,3 +256,8 @@
 
 ## Sprint I — Consistência de Regras do Bolão
 - [x] PoolRules: exibir regras de pontuação customizadas do bolão (poolScoringRules) em vez dos valores padrão
+
+## Sprint J — Bug Fix + Dashboard UX
+- [x] CreatePool: corrigir bug campeonato personalizado bloqueado para usuários Pro
+- [x] PoolDashboard: adicionar link de convite com botão de copiar diretamente no dashboard
+- [x] PoolDashboard: fundir seção de Acessos & Convites no dashboard (eliminar tela separada)

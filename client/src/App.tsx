@@ -99,7 +99,7 @@ function Router() {
       <Route path="/create-pool" component={CreatePool} />
       <Route path="/pool/:slug/manage" component={OrganizerDashboard} />
       <Route path="/pool/:slug/manage/members" component={OrganizerMembers} />
-      <Route path="/pool/:slug/manage/access" component={OrganizerAccess} />
+      <Route path="/pool/:slug/manage/access" component={OrganizerDashboard} />
       <Route path="/pool/:slug/manage/identity" component={OrganizerIdentity} />
       <Route path="/pool/:slug/manage/rules" component={OrganizerRules} />
       <Route path="/pool/:slug/manage/plan" component={SubscriptionPage} />
