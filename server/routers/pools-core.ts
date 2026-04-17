@@ -28,6 +28,7 @@ import {
   getPlatformSettings,
   recalculateMemberStats,
   updatePool,
+  updatePoolSlug,
   upsertPoolScoringRules,
   saveFinalPositions,
   getPredictionReliability,
@@ -496,13 +497,12 @@ export const poolsCoreRouter = router({
       return { dismissed, steps, allDone };
     }),
 
-  dismissOnboarding: protectedProcedure
+   dismissOnboarding: protectedProcedure
     .input(z.object({ poolId: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const pool = await getPoolById(input.poolId);
       if (!pool) throw Err.notFound("Bolão");
       if (pool.ownerId !== ctx.user.id && ctx.user.role !== "admin") throw Err.forbidden();
-
       const { getDb } = await import("../db");
       const { pools: poolsTable } = await import("../../drizzle/schema");
       const { eq } = await import("drizzle-orm");
@@ -510,5 +510,43 @@ export const poolsCoreRouter = router({
       if (!db) throw Err.internal();
       await db.update(poolsTable).set({ onboardingDismissedAt: new Date() }).where(eq(poolsTable.id, input.poolId));
       return { ok: true };
+    }),
+
+  // ── Verificar disponibilidade de slug ──────────────────────────────────────
+  checkSlugAvailability: protectedProcedure
+    .input(z.object({
+      slug: z.string().min(3).max(80).regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/, "Slug inválido: use apenas letras minúsculas, números e hífens"),
+      poolId: z.number(), // para excluir o próprio bolão da verificação
+    }))
+    .query(async ({ input }) => {
+      const existing = await getPoolBySlug(input.slug);
+      // Disponível se não existe OU se pertence ao próprio bolão
+      const available = !existing || existing.id === input.poolId;
+      return { available };
+    }),
+
+  // ── Renomear slug do bolão ─────────────────────────────────────────────────
+  updateSlug: protectedProcedure
+    .input(z.object({
+      poolId: z.number(),
+      newSlug: z.string().min(3).max(80).regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/, "Slug inválido: use apenas letras minúsculas, números e hífens"),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const pool = await getPoolById(input.poolId);
+      if (!pool) throw Err.notFound("Bolão");
+      if (pool.ownerId !== ctx.user.id && ctx.user.role !== "admin") throw Err.forbidden();
+      // Verificar disponibilidade
+      const existing = await getPoolBySlug(input.newSlug);
+      if (existing && existing.id !== input.poolId) {
+        throw Err.badRequest("Este endereço já está em uso por outro bolão. Escolha um diferente.");
+      }
+      // Renomear (registra o slug antigo automaticamente)
+      await updatePoolSlug(input.poolId, input.newSlug);
+      // Log de auditoria
+      await createAdminLog(ctx.user.id, "update_slug", "pool", input.poolId, {
+        oldSlug: pool.slug,
+        newSlug: input.newSlug,
+      }, input.poolId, { level: "info" });
+      return { ok: true, newSlug: input.newSlug };
     }),
 });

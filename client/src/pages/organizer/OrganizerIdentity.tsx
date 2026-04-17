@@ -4,6 +4,7 @@ import { useUserPlan } from "@/hooks/useUserPlan";
  * Especificação: formulário de nome, subtítulo e logo com preview em tempo real.
  * Layout duas colunas no desktop: formulário à esquerda, preview à direita.
  * Upload real via S3 usando ImageUploader + useImageUpload hook.
+ * Seção adicional: Endereço do bolão (slug) com validação em tempo real.
  */
 import OrganizerLayout from "@/components/OrganizerLayout";
 import ImageUploader from "@/components/ImageUploader";
@@ -12,13 +13,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Trophy, Users, Loader2 } from "lucide-react";
-import { useParams } from "wouter";
-import { useState, useEffect } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trophy, Users, Loader2, CheckCircle2, XCircle, Link2, AlertTriangle } from "lucide-react";
+import { useParams, useLocation } from "wouter";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 
 export default function OrganizerIdentity() {
   const { slug } = useParams<{ slug: string }>();
+  const [, navigate] = useLocation();
 
   const { data: poolData, refetch } = trpc.pools.getBySlug.useQuery(
     { slug: slug ?? "" },
@@ -30,13 +42,50 @@ export default function OrganizerIdentity() {
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
+  // Slug editing state
+  const [newSlug, setNewSlug] = useState("");
+  const [slugDirty, setSlugDirty] = useState(false);
+  const [slugCheckValue, setSlugCheckValue] = useState(""); // valor que está sendo verificado
+  const [showSlugConfirm, setShowSlugConfirm] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (pool) {
       setName(pool.name ?? "");
       setDescription(pool.description ?? "");
       setLogoUrl(pool.logoUrl ?? null);
+      setNewSlug(pool.slug ?? "");
+      setSlugDirty(false);
     }
   }, [pool]);
+
+  // Validação local do slug
+  const slugRegex = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
+  const slugValid = newSlug.length >= 3 && newSlug.length <= 80 && slugRegex.test(newSlug);
+  const slugChanged = pool?.slug && newSlug !== pool.slug;
+
+  // Verificação de disponibilidade com debounce
+  const { data: availabilityData, isFetching: checkingSlug } = trpc.pools.checkSlugAvailability.useQuery(
+    { slug: slugCheckValue, poolId: pool?.id ?? 0 },
+    {
+      enabled: !!slugCheckValue && slugCheckValue.length >= 3 && slugRegex.test(slugCheckValue) && !!pool?.id,
+      staleTime: 5000,
+    }
+  );
+
+  const handleSlugChange = useCallback((value: string) => {
+    // Normalizar: apenas lowercase, números e hífens
+    const normalized = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    setNewSlug(normalized);
+    setSlugDirty(true);
+    // Debounce para verificar disponibilidade
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      if (normalized.length >= 3 && slugRegex.test(normalized)) {
+        setSlugCheckValue(normalized);
+      }
+    }, 600);
+  }, []);
 
   const updateMutation = trpc.pools.update.useMutation({
     onSuccess: () => {
@@ -44,6 +93,18 @@ export default function OrganizerIdentity() {
       refetch();
     },
     onError: (err) => toast.error(err.message || "Erro ao salvar."),
+  });
+
+  const updateSlugMutation = trpc.pools.updateSlug.useMutation({
+    onSuccess: (data) => {
+      toast.success("Endereço atualizado!", {
+        description: `O bolão agora está em /pool/${data.newSlug}`,
+      });
+      setSlugDirty(false);
+      // Navegar para o novo slug sem recarregar
+      navigate(`/pool/${data.newSlug}/manage/identity`);
+    },
+    onError: (err) => toast.error(err.message || "Erro ao atualizar endereço."),
   });
 
   const handleSave = () => {
@@ -55,6 +116,28 @@ export default function OrganizerIdentity() {
       logoUrl: logoUrl ?? undefined,
     });
   };
+
+  const handleSlugSave = () => {
+    if (!pool?.id || !slugValid || !slugChanged) return;
+    setShowSlugConfirm(true);
+  };
+
+  const confirmSlugUpdate = () => {
+    if (!pool?.id) return;
+    updateSlugMutation.mutate({ poolId: pool.id, newSlug });
+    setShowSlugConfirm(false);
+  };
+
+  // Status visual da verificação de slug
+  const slugStatus = (() => {
+    if (!slugDirty || !newSlug) return "idle";
+    if (!slugValid) return "invalid";
+    if (!slugChanged) return "unchanged";
+    if (checkingSlug) return "checking";
+    if (availabilityData?.available === false) return "taken";
+    if (availabilityData?.available === true) return "available";
+    return "idle";
+  })();
 
   const { isPro, isProExpired } = useUserPlan();
   const memberCount = poolData?.memberCount ?? 0;
@@ -68,7 +151,8 @@ export default function OrganizerIdentity() {
       isProExpired={isProExpired}
       activeSection="identity"
     >
-      <div className="p-6 space-y-6 max-w-5xl">
+      <div className="p-6 space-y-8 max-w-5xl">
+        {/* ── Aparência ── */}
         <div>
           <h1 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
             Aparência
@@ -130,7 +214,7 @@ export default function OrganizerIdentity() {
               {updateMutation.isPending ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...</>
               ) : (
-                "Salvar alterações"
+                "Salvar aparência"
               )}
             </Button>
           </div>
@@ -181,7 +265,130 @@ export default function OrganizerIdentity() {
             </p>
           </div>
         </div>
+
+        {/* ── Endereço do bolão (slug) ── */}
+        <div className="border-t border-border/30 pt-8 space-y-5">
+          <div>
+            <h2 className="font-bold text-base flex items-center gap-2" style={{ fontFamily: "'Syne', sans-serif" }}>
+              <Link2 className="w-4 h-4 text-primary" />
+              Endereço do bolão
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              O endereço é a parte da URL que identifica seu bolão. Você pode personalizá-lo para algo mais fácil de lembrar e compartilhar.
+            </p>
+          </div>
+
+          <div className="bg-card border border-border/30 rounded-xl p-5 space-y-4">
+            {/* URL preview */}
+            <div className="bg-muted/40 rounded-lg px-4 py-2.5 flex items-center gap-2 text-sm font-mono overflow-x-auto">
+              <span className="text-muted-foreground shrink-0">plakr.io/pool/</span>
+              <span className={`font-semibold ${
+                slugStatus === "available" ? "text-green-400" :
+                slugStatus === "taken" ? "text-red-400" :
+                slugStatus === "invalid" ? "text-amber-400" :
+                "text-foreground"
+              }`}>
+                {newSlug || pool?.slug || "..."}
+              </span>
+            </div>
+
+            {/* Input */}
+            <div className="space-y-2">
+              <Label htmlFor="slug">Novo endereço</Label>
+              <div className="relative">
+                <Input
+                  id="slug"
+                  value={newSlug}
+                  onChange={(e) => handleSlugChange(e.target.value)}
+                  placeholder="ex: bolao-da-galera"
+                  className="bg-background border-border/50 pr-10 font-mono"
+                  maxLength={80}
+                />
+                {/* Status icon */}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {slugStatus === "checking" && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                  {slugStatus === "available" && <CheckCircle2 className="w-4 h-4 text-green-400" />}
+                  {slugStatus === "taken" && <XCircle className="w-4 h-4 text-red-400" />}
+                  {slugStatus === "invalid" && <XCircle className="w-4 h-4 text-amber-400" />}
+                </div>
+              </div>
+
+              {/* Status message */}
+              <div className="text-xs min-h-[1.25rem]">
+                {slugStatus === "available" && (
+                  <span className="text-green-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Endereço disponível
+                  </span>
+                )}
+                {slugStatus === "taken" && (
+                  <span className="text-red-400 flex items-center gap-1">
+                    <XCircle className="w-3 h-3" /> Este endereço já está em uso
+                  </span>
+                )}
+                {slugStatus === "invalid" && (
+                  <span className="text-amber-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> Use apenas letras minúsculas, números e hífens (mín. 3 caracteres)
+                  </span>
+                )}
+                {slugStatus === "unchanged" && (
+                  <span className="text-muted-foreground">Este já é o endereço atual do bolão</span>
+                )}
+              </div>
+            </div>
+
+            {/* Info box */}
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex gap-2.5 text-xs text-amber-300">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                Links antigos continuam funcionando automaticamente — qualquer pessoa com o endereço anterior será redirecionada para o novo.
+              </span>
+            </div>
+
+            <Button
+              onClick={handleSlugSave}
+              disabled={
+                !slugChanged ||
+                !slugValid ||
+                slugStatus === "taken" ||
+                slugStatus === "checking" ||
+                slugStatus === "invalid" ||
+                updateSlugMutation.isPending
+              }
+              variant="outline"
+              className="w-full border-primary/40 text-primary hover:bg-primary/10"
+            >
+              {updateSlugMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Atualizando endereço...</>
+              ) : (
+                "Salvar novo endereço"
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
+
+      {/* Confirmação antes de salvar o slug */}
+      <AlertDialog open={showSlugConfirm} onOpenChange={setShowSlugConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar alteração de endereço</AlertDialogTitle>
+            <AlertDialogDescription>
+              O endereço do bolão será alterado de{" "}
+              <span className="font-mono font-semibold text-foreground">{pool?.slug}</span>{" "}
+              para{" "}
+              <span className="font-mono font-semibold text-primary">{newSlug}</span>.
+              <br /><br />
+              Links antigos continuarão funcionando automaticamente. Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSlugUpdate}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </OrganizerLayout>
   );
 }

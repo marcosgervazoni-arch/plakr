@@ -277,3 +277,7 @@
 - [x] Backend: procedure updateSlug para renomear slug e registrar o antigo automaticamente
 - [x] Frontend: detectar redirecionamento e navegar para o slug correto de forma transparente
 - [x] Registrar slug antigo do WILD BIER (bol-o-wild-bier-copa-do-mundo-26-v_52kn → wildbeer)
+
+## Sprint O — Interface para Renomear Slug do Bolão
+- [x] Backend: procedure checkSlugAvailability e updateSlug no pools-core.ts
+- [x] Frontend: seção de edição de slug nas configurações do bolão com validação em tempo real
