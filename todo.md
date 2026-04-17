@@ -267,3 +267,6 @@
 
 ## Sprint L — Bug: Membros Pendentes na Lista Ativa
 - [x] BUG: membros com status 'pending' aparecem na lista de ativos e no contador de participantes antes de serem aprovados
+
+## Sprint M — Segurança: Bloqueio de Acesso para Membros Pendentes
+- [x] Garantir que membros pending_approval/rejected não acessam o bolão nem fazem apostas (backend + frontend)

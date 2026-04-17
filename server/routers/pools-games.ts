@@ -191,6 +191,10 @@ export const poolsGamesRouter = router({
       if (!member && ctx.user.role !== "admin" && pool.accessType !== "public") {
         throw Err.forbidden();
       }
+      // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
+      if (member && member.memberStatus && member.memberStatus !== "active" && ctx.user.role !== "admin") {
+        throw Err.forbidden();
+      }
       const rules = await getPoolScoringRules(input.poolId);
       const settings = await getPlatformSettings();
       // Sempre retorna valores efetivos: regras customizadas do bolão ou defaults da plataforma.
@@ -215,6 +219,10 @@ export const poolsGamesRouter = router({
   getBetAnalysis: protectedProcedure
     .input(z.object({ gameId: z.number(), poolId: z.number() }))
     .query(async ({ input, ctx }) => {
+      // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      if (!member && ctx.user.role !== "admin") throw Err.forbidden();
+      if (member && member.memberStatus && member.memberStatus !== "active" && ctx.user.role !== "admin") throw Err.forbidden();
       const { getDb } = await import("../db");
       const { gameBetAnalyses } = await import("../../drizzle/schema");
       const { and, eq } = await import("drizzle-orm");
