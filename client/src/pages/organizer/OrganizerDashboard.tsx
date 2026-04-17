@@ -27,6 +27,7 @@ import {
   Globe,
   RefreshCw,
   Share2,
+  UserCheck,
 } from "lucide-react";
 import { Link, useParams, useLocation } from "wouter";
 import { useMemo, useState, useCallback } from "react";
@@ -174,6 +175,13 @@ export default function OrganizerDashboard() {
     setTimeout(() => setCopiedLink(false), 2000);
     toast.success("Link copiado!");
   }, [inviteLink]);
+
+  // Membros pendentes de aprovação (apenas para bolões Pro com accessType=invite_only)
+  const { data: pendingMembers } = trpc.pools.listPendingMembers.useQuery(
+    { poolId: pool?.id ?? 0 },
+    { enabled: !!pool?.id && isPro, refetchInterval: 30_000 }
+  );
+  const pendingCount = pendingMembers?.length ?? 0;
 
   // Next game with deadline
   const nextGame = useMemo(() => {
@@ -331,6 +339,26 @@ export default function OrganizerDashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Alerta de aprovações pendentes — aparece apenas quando há membros aguardando */}
+        {isPro && pendingCount > 0 && (
+          <Link href={`/pool/${slug}/manage/members`}>
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-yellow-500/15 transition-colors">
+              <div className="w-9 h-9 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+                <UserCheck className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-yellow-400">
+                  {pendingCount === 1
+                    ? "1 membro aguardando aprovação"
+                    : `${pendingCount} membros aguardando aprovação`}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Clique para revisar e aprovar ou recusar</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-yellow-400/70 shrink-0" />
+            </div>
+          </Link>
         )}
 
         {/* 4 metric cards */}

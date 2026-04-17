@@ -261,3 +261,6 @@
 - [x] CreatePool: corrigir bug campeonato personalizado bloqueado para usuários Pro
 - [x] PoolDashboard: adicionar link de convite com botão de copiar diretamente no dashboard
 - [x] PoolDashboard: fundir seção de Acessos & Convites no dashboard (eliminar tela separada)
+
+## Sprint K — Alerta de Aprovações no Dashboard
+- [x] PoolDashboard: card de alerta âmbar "X membros aguardando aprovação" com link direto para tela de Membros
