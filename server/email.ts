@@ -237,6 +237,37 @@ export function templateManualMemberAdd(opts: {
   };
 }
 
+// ─── Template: Convite para não-membro do Plakr! ──────────────────────────────
+export function templatePoolInviteExternal(opts: {
+  organizerName: string;
+  poolName: string;
+  tournamentName: string;
+  memberCount: number;
+  inviteUrl: string;
+  hasEntryFee: boolean;
+  entryFee?: number;
+}): { subject: string; html: string } {
+  return {
+    subject: `🏆 ${opts.organizerName} te convidou para o bolão "${opts.poolName}" no Plakr!`,
+    html: baseTemplate("Convite para bolão", `
+      <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">Você foi convidado! 🏆</h2>
+      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;"><strong style="color:${TEXT};">${esc(opts.organizerName)}</strong> te convidou para participar do bolão abaixo no <strong style="color:${TEXT};">Plakr!</strong> — a plataforma de bolões esportivos.</p>
+      <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;">
+        <p style="margin:0 0 4px;font-size:20px;font-weight:800;color:${TEXT};">${esc(opts.poolName)}</p>
+        <p style="margin:0 0 12px;font-size:13px;color:${MUTED};">${esc(opts.tournamentName)}</p>
+        <p style="margin:0 0 8px;font-size:13px;color:${MUTED};">&#128101; ${opts.memberCount} participante${opts.memberCount !== 1 ? "s" : ""} já entraram</p>
+        ${opts.hasEntryFee
+          ? `<p style="margin:0;font-size:13px;color:#fbbf24;">&#9888;&#65039; Taxa de inscrição: R$ ${opts.entryFee?.toFixed(2).replace('.', ',')}. O organizador confirmará após o pagamento.</p>`
+          : `<p style="margin:0;font-size:13px;color:${MUTED};">&#10003; Entrada gratuita — faça seus palpites imediatamente após entrar!</p>`
+        }
+      </div>
+      <p style="margin:0 0 16px;font-size:14px;color:${MUTED};line-height:1.6;">Clique no botão abaixo para criar sua conta gratuita e entrar no bolão automaticamente. Leva menos de 1 minuto!</p>
+      ${ctaButton("Criar conta e entrar no bolão", opts.inviteUrl)}
+      <p style="margin:16px 0 0;font-size:12px;color:${MUTED};">Este convite expira em 7 dias. Se você já tem conta no Plakr!, o mesmo link funcionará para fazer login e entrar no bolão.</p>
+    `),
+  };
+}
+
 // ─── Sender via Manus Notification API ───────────────────────────────────────
 export async function sendEmail(opts: {
   to: string;

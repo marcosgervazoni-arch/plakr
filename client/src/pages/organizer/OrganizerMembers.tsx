@@ -132,11 +132,13 @@ export default function OrganizerMembers() {
     onError: (err) => toast.error(err.message || "Erro ao recusar solicitação."),
   });
 
-  const addMemberMutation = trpc.pools.addMemberManually.useMutation({
-    onSuccess: (data) => {
-      const msg = data.hasEntryFee
-        ? `${data.user.name ?? addMemberEmail} adicionado! Aguarda aprovação de pagamento.`
-        : `${data.user.name ?? addMemberEmail} adicionado com sucesso!`;
+  const addMemberMutation = trpc.pools.sendPoolInvite.useMutation({
+    onSuccess: (data: any) => {
+      const msg = data.type === "invite_sent"
+        ? `Convite enviado para ${addMemberEmail}${data.isResend ? " (reenviado)" : ""}!`
+        : data.memberStatus === "pending_approval"
+        ? `${addMemberEmail} adicionado! Aguarda aprovação de pagamento.`
+        : `${addMemberEmail} adicionado com sucesso!`;
       toast.success(msg);
       setAddMemberOpen(false);
       setAddMemberEmail("");
@@ -144,7 +146,7 @@ export default function OrganizerMembers() {
       utils.pools.listPendingMembers.invalidate({ poolId: pool?.id });
       utils.pools.getBySlug.invalidate({ slug: slug! });
     },
-    onError: (err) => toast.error(err.message || "Erro ao adicionar membro."),
+    onError: (err: any) => toast.error(err.message || "Erro ao adicionar membro."),
   });
 
   const filtered = useMemo(() => {
@@ -209,7 +211,7 @@ export default function OrganizerMembers() {
                 Adicionar membro manualmente
               </DialogTitle>
               <DialogDescription>
-                Informe o e-mail de um usuário cadastrado no Plakr! para adicioná-lo diretamente ao bolão.
+                Informe o e-mail do participante. Se ele ainda não tiver conta no Plakr!, receberá um convite por e-mail.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 pt-2">
@@ -252,7 +254,7 @@ export default function OrganizerMembers() {
                   onClick={() => addMemberMutation.mutate({ poolId: pool!.id, email: addMemberEmail.trim(), origin: window.location.origin })}
                 >
                   {addMemberMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                  {addMemberMutation.isPending ? "Adicionando..." : "Adicionar"}
+                  {addMemberMutation.isPending ? "Enviando..." : "Adicionar / Convidar"}
                 </Button>
               </div>
             </div>

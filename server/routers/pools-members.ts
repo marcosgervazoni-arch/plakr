@@ -595,4 +595,154 @@ export const poolsMembersRouter = router({
       await updatePool(input.poolId, { inviteToken: newToken });
       return { inviteToken: newToken };
     }),
+
+  // ── Enviar convite para não-membro do Plakr! ─────────────────────────────────────────────────────────────────────
+  sendPoolInvite: protectedProcedure
+    .input(z.object({
+      poolId: z.number(),
+      email: z.string().email(),
+      origin: z.string().url(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // [SEC] Apenas organizador ou admin pode convidar
+      const requester = await getPoolMember(input.poolId, ctx.user.id);
+      if (!requester || (requester.role !== "organizer" && ctx.user.role !== "admin")) {
+        throw Err.forbidden();
+      }
+      const pool = await getPoolById(input.poolId);
+      if (!pool) throw Err.notFound("Bolão");
+      if (pool.status === "finished" || pool.status === "archived") {
+        throw Err.badRequest("Não é possível convidar membros para um bolão encerrado.");
+      }
+      const normalizedEmail = input.email.trim().toLowerCase();
+      const { getUserByEmail, canAddMember } = await import("../db");
+      // Se o e-mail já está cadastrado no Plakr!, adicionar diretamente
+      const existingUser = await getUserByEmail(normalizedEmail);
+      if (existingUser) {
+        if (existingUser.isBlocked) throw Err.forbidden("Este usuário está suspenso.");
+        const alreadyMember = await getPoolMember(input.poolId, existingUser.id);
+        if (alreadyMember) throw Err.badRequest("Este usuário já é membro deste bolão.");
+        const canAdd = await canAddMember(input.poolId, pool.ownerId);
+        if (!canAdd.allowed) throw Err.forbidden(canAdd.reason ?? "Limite de membros atingido.");
+        const hasEntryFee = pool.entryFee !== null && Number(pool.entryFee) > 0;
+        const memberStatus: "active" | "pending_approval" = hasEntryFee ? "pending_approval" : "active";
+        const { getDb } = await import("../db");
+        const db = await getDb();
+        if (!db) throw Err.internal();
+        const { poolMembers: poolMembersT } = await import("../../drizzle/schema");
+        await db.insert(poolMembersT).values({ poolId: input.poolId, userId: existingUser.id, role: "participant", joinSource: "organizer", memberStatus });
+        const organizer = await getUserById(ctx.user.id);
+        await createNotification({ userId: existingUser.id, type: "system", title: `Você foi adicionado ao bolão "${pool.name}"`, message: `${organizer?.name ?? "O organizador"} adicionou você diretamente ao bolão.`, poolId: input.poolId });
+        const { sendEmail, templateManualMemberAdd } = await import("../email");
+        const tpl = templateManualMemberAdd({ memberName: existingUser.name ?? "Participante", organizerName: organizer?.name ?? "O organizador", poolName: pool.name, poolUrl: `${input.origin}/pool/${pool.slug}`, hasEntryFee, entryFee: hasEntryFee ? Number(pool.entryFee) : undefined });
+        await sendEmail({ to: existingUser.email ?? normalizedEmail, subject: tpl.subject, html: tpl.html, type: "manual_member_add" });
+        await createAdminLog(ctx.user.id, "pool_member_added_manually", "pool", input.poolId, { addedUserEmail: normalizedEmail, memberStatus });
+        return { type: "added_directly" as const, memberStatus };
+      }
+      // E-mail não cadastrado: criar convite externo
+      const canAdd = await canAddMember(input.poolId, pool.ownerId);
+      if (!canAdd.allowed) throw Err.forbidden(canAdd.reason ?? "Limite de membros atingido.");
+      const { getDb } = await import("../db");
+      const db = await getDb();
+      if (!db) throw Err.internal();
+      const { poolInvites } = await import("../../drizzle/schema");
+      const { eq, and, isNull, gt } = await import("drizzle-orm");
+      const existingInvite = await db.select().from(poolInvites).where(
+        and(eq(poolInvites.poolId, input.poolId), eq(poolInvites.invitedEmail, normalizedEmail), isNull(poolInvites.acceptedAt), gt(poolInvites.expiresAt, new Date()))
+      ).limit(1);
+      // Revogar convite anterior se existir (reenvio)
+      if (existingInvite.length > 0) {
+        await db.update(poolInvites).set({ expiresAt: new Date() }).where(eq(poolInvites.id, existingInvite[0].id));
+      }
+      const crypto = await import("crypto");
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await db.insert(poolInvites).values({ token, poolId: input.poolId, invitedEmail: normalizedEmail, invitedBy: ctx.user.id, expiresAt });
+      const organizer = await getUserById(ctx.user.id);
+      const membersResult = await getPoolMembers(input.poolId);
+      const memberCount = membersResult.length;
+      const hasEntryFee = pool.entryFee !== null && Number(pool.entryFee) > 0;
+      const inviteUrl = `${input.origin}/pool-invite/${token}`;
+      const { getTournamentById } = await import("../db");
+      const tournament = pool.tournamentId ? await getTournamentById(pool.tournamentId) : null;
+      const { sendEmail, templatePoolInviteExternal } = await import("../email");
+      const tpl = templatePoolInviteExternal({ organizerName: organizer?.name ?? "O organizador", poolName: pool.name, tournamentName: tournament?.name ?? "Campeonato", memberCount, inviteUrl, hasEntryFee, entryFee: hasEntryFee ? Number(pool.entryFee) : undefined });
+      await sendEmail({ to: normalizedEmail, subject: tpl.subject, html: tpl.html, type: "pool_invite_external" });
+      await createAdminLog(ctx.user.id, "pool_invite_external_sent", "pool", input.poolId, { invitedEmail: normalizedEmail, isResend: existingInvite.length > 0 });
+      return { type: "invite_sent" as const, isResend: existingInvite.length > 0 };
+    }),
+
+  // ── Aceitar convite externo (pós-login) ─────────────────────────────────────────────────────────────────────
+  acceptPoolInvite: protectedProcedure
+    .input(z.object({ token: z.string().min(64).max(64) }))
+    .mutation(async ({ input, ctx }) => {
+      const { getDb } = await import("../db");
+      const db = await getDb();
+      if (!db) throw Err.internal();
+      const { poolInvites } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const [invite] = await db.select().from(poolInvites).where(eq(poolInvites.token, input.token)).limit(1);
+      if (!invite) throw Err.notFound("Convite");
+      if (invite.acceptedAt) throw Err.badRequest("Este convite já foi utilizado.");
+      if (invite.expiresAt < new Date()) throw Err.badRequest("Este convite expirou. Peça ao organizador que envie um novo convite.");
+      // [SEC] Validar que o e-mail do usuário logado corresponde ao e-mail convidado
+      const userEmail = ctx.user.email?.trim().toLowerCase();
+      if (userEmail !== invite.invitedEmail) {
+        throw Err.forbidden("Este convite foi enviado para outro e-mail. Faça login com o e-mail correto.");
+      }
+      const pool = await getPoolById(invite.poolId);
+      if (!pool) throw Err.notFound("Bolão");
+      if (pool.status === "finished" || pool.status === "archived") {
+        throw Err.badRequest("Este bolão já foi encerrado.");
+      }
+      const alreadyMember = await getPoolMember(invite.poolId, ctx.user.id);
+      if (alreadyMember) {
+        await db.update(poolInvites).set({ acceptedAt: new Date(), acceptedByUserId: ctx.user.id }).where(eq(poolInvites.id, invite.id));
+        return { alreadyMember: true, poolSlug: pool.slug, hasEntryFee: false };
+      }
+      const { canAddMember } = await import("../db");
+      const canAdd = await canAddMember(invite.poolId, pool.ownerId);
+      if (!canAdd.allowed) throw Err.forbidden(canAdd.reason ?? "Limite de membros atingido.");
+      const hasEntryFee = pool.entryFee !== null && Number(pool.entryFee) > 0;
+      const memberStatus: "active" | "pending_approval" = hasEntryFee ? "pending_approval" : "active";
+      const { poolMembers: poolMembersT } = await import("../../drizzle/schema");
+      await db.transaction(async (tx) => {
+        await tx.insert(poolMembersT).values({ poolId: invite.poolId, userId: ctx.user.id, role: "participant", joinSource: "organizer", memberStatus });
+        await tx.update(poolInvites).set({ acceptedAt: new Date(), acceptedByUserId: ctx.user.id }).where(eq(poolInvites.id, invite.id));
+      });
+      const organizer = await getUserById(invite.invitedBy);
+      if (organizer) {
+        await createNotification({ userId: organizer.id, type: "system", title: `${ctx.user.name ?? "Um convidado"} entrou no bolão "${pool.name}"`, message: hasEntryFee ? `O pagamento da taxa de R$ ${Number(pool.entryFee).toFixed(2).replace('.', ',')} ainda precisa ser confirmado.` : `O convidado aceitou o convite e já está ativo.`, poolId: invite.poolId });
+      }
+      await createAdminLog(ctx.user.id, "pool_invite_external_accepted", "pool", invite.poolId, { invitedEmail: invite.invitedEmail, memberStatus });
+      return { alreadyMember: false, poolSlug: pool.slug, hasEntryFee, entryFee: hasEntryFee ? Number(pool.entryFee) : undefined, pixKey: pool.pixKey ?? null, entryQrCodeUrl: pool.entryQrCodeUrl ?? null };
+    }),
+
+  // ── Buscar informações pública do convite (sem autenticação) ─────────────────────────────────────────────────────────────────────
+  getPoolInviteInfo: protectedProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      const { getDb } = await import("../db");
+      const db = await getDb();
+      if (!db) throw Err.internal();
+      const { poolInvites } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const [invite] = await db.select().from(poolInvites).where(eq(poolInvites.token, input.token)).limit(1);
+      if (!invite) throw Err.notFound("Convite");
+      if (invite.acceptedAt) return { status: "used" as const };
+      if (invite.expiresAt < new Date()) return { status: "expired" as const };
+      const pool = await getPoolById(invite.poolId);
+      if (!pool) throw Err.notFound("Bolão");
+      const organizer = await getUserById(invite.invitedBy);
+      const hasEntryFee = pool.entryFee !== null && Number(pool.entryFee) > 0;
+      return {
+        status: "valid" as const,
+        pool: { id: pool.id, name: pool.name, slug: pool.slug, logoUrl: pool.logoUrl ?? null, tournamentId: pool.tournamentId },
+        organizer: { name: organizer?.name ?? "Organizador", avatarUrl: organizer?.avatarUrl ?? null },
+        hasEntryFee,
+        entryFee: hasEntryFee ? Number(pool.entryFee) : null,
+        invitedEmail: invite.invitedEmail,
+        expiresAt: invite.expiresAt,
+      };
+    }),
 });

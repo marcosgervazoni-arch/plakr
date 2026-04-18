@@ -1338,3 +1338,25 @@ export const magicLinks = mysqlTable("magic_links", {
 }));
 export type MagicLink = typeof magicLinks.$inferSelect;
 export type InsertMagicLink = typeof magicLinks.$inferInsert;
+
+// ─── POOL INVITES (convites para não-membros do Plakr!) ───────────────────────
+// Quando o organizador adiciona um e-mail que não está cadastrado no Plakr!,
+// um convite é gerado. O link leva o usuário ao cadastro e já o adiciona ao bolão.
+// Token: 64 chars hex, expira em 7 dias, uso único.
+export const poolInvites = mysqlTable("pool_invites", {
+  id: int("id").primaryKey().autoincrement(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  poolId: int("poolId").notNull().references(() => pools.id),
+  invitedEmail: varchar("invitedEmail", { length: 255 }).notNull(),
+  invitedBy: int("invitedBy").notNull().references(() => users.id),
+  expiresAt: timestamp("expiresAt").notNull(),
+  acceptedAt: timestamp("acceptedAt"),
+  acceptedByUserId: int("acceptedByUserId").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  idxToken: index("idx_pool_invites_token").on(t.token),
+  idxEmail: index("idx_pool_invites_email").on(t.invitedEmail),
+  idxPool: index("idx_pool_invites_pool").on(t.poolId),
+}));
+export type PoolInvite = typeof poolInvites.$inferSelect;
+export type InsertPoolInvite = typeof poolInvites.$inferInsert;

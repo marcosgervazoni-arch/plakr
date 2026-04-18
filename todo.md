@@ -458,3 +458,17 @@
 - [x] Frontend: botão "Adicionar membro" no header da tela `OrganizerMembers.tsx` (visível no mobile com texto "Adicionar" e no desktop com texto completo)
 - [x] Frontend: dialog com campo de e-mail, aviso sobre taxa, loading state e confirmação por Enter ou botão
 - [x] Bug Fix: layout responsivo — botão visível no mobile (shrink-0, texto adaptativo sm:inline)
+
+## Sprint Convite para Não-Membros do Plakr!
+
+- [x] Tabela `pool_invites` criada no banco (token 64hex, poolId, invitedEmail, invitedBy, expiresAt 7d, acceptedAt, acceptedByUserId)
+- [x] Procedure `sendPoolInvite`: detecta se e-mail é membro → adiciona direto; se não-membro → cria token seguro (CSPRNG 32 bytes), revoga convite anterior, envia e-mail de convite externo
+- [x] Procedure `acceptPoolInvite`: valida token, verifica expiração, valida e-mail do usuário logado vs e-mail convidado (SEC), inserção atômica (membro + token marcado como usado), notifica organizador
+- [x] Procedure `getPoolInviteInfo`: retorna info pública do convite (nome do bolão, organizador, taxa, status)
+- [x] Template de e-mail `templatePoolInviteExternal` com link de convite, nome do bolão, organizador e informações de taxa
+- [x] Frontend: dialog "Adicionar / Convidar" adaptado para `sendPoolInvite` — funciona para membros e não-membros com feedback diferenciado
+- [x] Página `/pool-invite/:token` — boas-vindas com info do bolão, botões de login (magic link + OAuth)
+- [x] Pós-aceite sem taxa: redireciona direto para o bolão
+- [x] Pós-aceite com taxa: exibe tela de pagamento pendente com chave PIX + QR Code
+- [x] Rota registrada no App.tsx: `/pool-invite/:token` (pública, compatível com Safari)
+- [x] 540 testes passando (24 arquivos)
