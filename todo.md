@@ -342,3 +342,7 @@
 - [x] Backend + Frontend: feature flag wallEnabled (organizador ativa/desativa mural do bolão)
 - [x] Organizador: toggle Mural em Gerenciar → Comunicação (OrganizerCommunication)
 - [x] Testes vitest adicionais: reações, rate limiting, wallEnabled, menções (509 testes passando)
+
+## Fix UX — Ranking sem duplicação de membros
+
+- [x] Remover seção MEMBROS da aba Ranking (lista de membros já existe em Gerenciar → Membros)

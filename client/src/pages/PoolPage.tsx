@@ -1225,41 +1225,6 @@ export default function PoolPage() {
                   );
                 })()}
 
-                {/* Lista de membros — seção colapsável ao final do Ranking */}
-                {members && (Array.isArray(members) ? members : (members?.items ?? [])).length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border/20">
-                    <p className="text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-2 px-1">
-                      Membros ({(Array.isArray(members) ? members : (members?.items ?? [])).length})
-                    </p>
-                    <div className="space-y-1">
-                      {(Array.isArray(members) ? members : (members?.items ?? [])).map(({ member, user: memberUser }) => (
-                        <div
-                          key={member.id}
-                          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-border/20 bg-card/40 hover:border-border/40 transition-all"
-                        >
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                            member.role === "organizer" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                          }`}>
-                            {memberUser.name?.charAt(0)?.toUpperCase() ?? "?"}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <a href={`/profile/${memberUser.id}`} className="text-xs font-medium hover:text-primary transition-colors truncate block">
-                              {memberUser.name}
-                            </a>
-                            <p className="text-[10px] text-muted-foreground">
-                              Entrou {format(new Date(member.joinedAt), "dd/MM/yyyy", { locale: ptBR })}
-                            </p>
-                          </div>
-                          {member.role === "organizer" && (
-                            <Badge className="shrink-0 bg-primary/10 text-primary border-primary/20 text-[10px] gap-1 py-0 px-1.5 h-5">
-                              <Crown className="w-2 h-2" /> Org.
-                            </Badge>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </TabsContent>
