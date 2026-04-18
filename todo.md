@@ -435,3 +435,15 @@
 - [x] Frontend: página `/magic-link/sent` — confirmação de envio com reenvio
 - [x] Frontend: página `/magic-link/verify` — processa token e exibe erros
 - [x] Testes: envio, segurança (e-mail não revelado), sanitização, validação de token
+
+## Sprint Inserção Manual de Membros — Área do Organizador
+
+- [x] Procedure `addMemberManually`: busca por e-mail, validação de autorização (organizador/admin), verificação de status do bolão, limite de plano, membro duplicado
+- [x] Status automático: `active` (sem taxa) ou `pending_approval` (com taxa de inscrição)
+- [x] Notificação in-app para o membro adicionado
+- [x] E-mail de notificação `templateManualMemberAdd` para o membro adicionado
+- [x] Log de auditoria `pool_member_added_manually` via `createAdminLog`
+- [x] Frontend: botão "Adicionar membro" no header da tela `OrganizerMembers.tsx`
+- [x] Frontend: dialog `Adicionar membro manualmente` com campo de e-mail, info sobre taxa, validação e loading state
+- [x] Frontend: aviso contextual quando o bolão tem taxa de inscrição (membro vai para aprovações pendentes)
+- [x] Testes: 15 casos cobrindo autorização, validações de bolão, validações de usuário, limites de plano, status com/sem taxa, normalização de e-mail
