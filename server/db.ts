@@ -997,13 +997,21 @@ export async function recalculateMemberStats(poolId: number, userId: number): Pr
   let totalPoints = 0;
   let exactScoreCount = 0;
   let correctResultCount = 0;
-  let wrongCount = 0;
+  let goalDiffCount = 0;
+  let oneTeamGoalsCount = 0;
+  let totalGoalsCount = 0;
+  let landslideCount = 0;
+  let zebraCount = 0;
 
   for (const bet of memberBets) {
     totalPoints += bet.pointsEarned ?? 0;
     if (bet.resultType === "exact") exactScoreCount++;
     else if (bet.resultType === "correct_result") correctResultCount++;
-    else if (bet.resultType === "wrong") wrongCount++;
+    if ((bet.pointsGoalDiff     ?? 0) > 0) goalDiffCount++;
+    if ((bet.pointsOneTeamGoals ?? 0) > 0) oneTeamGoalsCount++;
+    if ((bet.pointsTotalGoals   ?? 0) > 0) totalGoalsCount++;
+    if ((bet.pointsLandslide    ?? 0) > 0) landslideCount++;
+    if ((bet.pointsZebra        ?? 0) > 0) zebraCount++;
   }
 
   await upsertPoolMemberStats(poolId, userId, {
@@ -1011,6 +1019,11 @@ export async function recalculateMemberStats(poolId: number, userId: number): Pr
     exactScoreCount,
     correctResultCount,
     totalBets: memberBets.length,
+    goalDiffCount,
+    oneTeamGoalsCount,
+    totalGoalsCount,
+    landslideCount,
+    zebraCount,
   });
 }
 

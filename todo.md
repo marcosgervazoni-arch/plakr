@@ -364,3 +364,4 @@
 - [x] Incluir lesões/suspensões e estatísticas da temporada no prompt do LLM (buildAiPrediction)
 - [x] Cron de análises pré-jogo atualizado para buscar injuries e teamStats via API-Football
 - [x] Regenerar análises pré-jogo existentes em background com prompt enriquecido (injuries + teamStats)
+- [x] Corrigir recalculateMemberStats: incluir todos os contadores de pontuação (goalDiff, oneTeamGoals, totalGoals, landslide, zebra) que estavam ausentes — ranking agora reflete todos os critérios corretamente
