@@ -614,13 +614,16 @@ function GameCard({
                       <div key={name} className="flex items-center justify-between gap-2">
                         <span className="text-xs text-foreground/80 truncate max-w-[100px]">{name}</span>
                         <div className="flex gap-0.5">
-                          {(form ?? []).slice(0, 5).map((r, i) => (
-                            <span key={i} className={`w-6 h-4 rounded-sm flex items-center justify-center text-[9px] font-bold ${
-                              r === 'W' ? 'bg-green-500/25 text-green-400' :
-                              r === 'L' ? 'bg-red-500/25 text-red-400' :
-                              'bg-muted/40 text-muted-foreground'
-                            }`}>{r}</span>
-                          ))}
+                          {(form ?? []).slice(0, 5).map((r, i) => {
+                            const label = r === 'W' ? 'V' : r === 'L' ? 'D' : 'E';
+                            return (
+                              <span key={i} className={`w-6 h-4 rounded-sm flex items-center justify-center text-[9px] font-bold ${
+                                r === 'W' ? 'bg-green-500/25 text-green-400' :
+                                r === 'L' ? 'bg-red-500/25 text-red-400' :
+                                'bg-muted/40 text-muted-foreground'
+                              }`}>{label}</span>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}

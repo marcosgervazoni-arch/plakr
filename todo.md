@@ -357,3 +357,5 @@
 - [ ] Remover estado "AO VIVO" do card (API atualiza a cada 2h — aguardando decisão do Gerva)
 - [x] Investigar e corrigir ausência dos quadradinhos de forma (homeForm/awayForm vazios) — backfillTeamForm criado + botão no Admin → Integrações
 - [x] Transformar backfill de forma em job automático: roda 15s após o boot em segundo plano (lotes de 30, pausa 10s entre lotes) + forma buscada automaticamente ao criar novos jogos via syncFixtures + botão isolado removido do Admin
+- [x] Corrigir backfill de forma: buscava por teamAId (sempre NULL) em vez de teamAName — corrigido para buscar por nome do time como fallback
+- [x] Traduzir W/L/D → V/D/E nos quadradinhos de forma (GameCard.tsx)

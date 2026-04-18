@@ -1361,7 +1361,8 @@ export async function getAiSummaryPendingCount(): Promise<number> {
 
 /**
  * Backfill de forma recente dos times (homeForm/awayForm) para jogos não finalizados
- * que têm o campo vazio. Usa apiFootballTeamId da tabela teams para buscar os últimos 5 jogos.
+ * que têm o campo vazio. Busca apiFootballTeamId pelo nome do time na tabela teams,
+ * pois a maioria dos jogos não tem teamAId/teamBId preenchidos (apenas teamAName/teamBName).
  */
 export async function backfillTeamForm(options: {
   batchSize?: number;
@@ -1369,9 +1370,10 @@ export async function backfillTeamForm(options: {
   const db = await getDb();
   if (!db) return { processed: 0, succeeded: 0, failed: 0, requestsUsed: 0, error: "DB unavailable" };
 
-  const batchSize = options.batchSize ?? 50;
+  const batchSize = options.batchSize ?? 30;
 
-  // Buscar jogos não finalizados com homeForm vazio e teamAId/teamBId disponíveis
+  // Buscar jogos não finalizados com homeForm vazio
+  // NÃO filtramos por teamAId IS NOT NULL pois a maioria dos jogos usa apenas teamAName
   const pendingGames = await db
     .select({
       id: games.id,
@@ -1385,8 +1387,6 @@ export async function backfillTeamForm(options: {
     .where(
       and(
         sql`${games.status} != 'finished'`,
-        sql`${games.teamAId} IS NOT NULL`,
-        sql`${games.teamBId} IS NOT NULL`,
         sql`(${games.aiPrediction} IS NULL OR JSON_LENGTH(JSON_EXTRACT(${games.aiPrediction}, '$.homeForm')) = 0)`
       )
     )
@@ -1400,26 +1400,51 @@ export async function backfillTeamForm(options: {
 
   logger.info(`[ApiFootball][BackfillForm] Starting form backfill for ${total} games`);
 
+  const { teams: teamsTable } = await import("../../drizzle/schema");
+
   for (const game of pendingGames) {
     try {
-      // Buscar apiFootballTeamId das duas equipes
-      const { teams: teamsTable } = await import("../../drizzle/schema");
-      const [teamARow] = await db
-        .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
-        .from(teamsTable)
-        .where(eq(teamsTable.id, game.teamAId!))
-        .limit(1);
-      const [teamBRow] = await db
-        .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
-        .from(teamsTable)
-        .where(eq(teamsTable.id, game.teamBId!))
-        .limit(1);
+      let homeApiId: number | null = null;
+      let awayApiId: number | null = null;
 
-      const homeApiId = teamARow?.apiFootballTeamId;
-      const awayApiId = teamBRow?.apiFootballTeamId;
+      // Estratégia 1: buscar por teamAId/teamBId (quando disponível)
+      if (game.teamAId && game.teamBId) {
+        const [teamARow] = await db
+          .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+          .from(teamsTable)
+          .where(eq(teamsTable.id, game.teamAId))
+          .limit(1);
+        const [teamBRow] = await db
+          .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+          .from(teamsTable)
+          .where(eq(teamsTable.id, game.teamBId))
+          .limit(1);
+        homeApiId = teamARow?.apiFootballTeamId ?? null;
+        awayApiId = teamBRow?.apiFootballTeamId ?? null;
+      }
+
+      // Estratégia 2: buscar por nome do time (fallback para jogos sem teamAId)
+      if ((!homeApiId || !awayApiId) && game.teamAName && game.teamBName) {
+        if (!homeApiId) {
+          const [teamAByName] = await db
+            .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+            .from(teamsTable)
+            .where(eq(teamsTable.name, game.teamAName))
+            .limit(1);
+          homeApiId = teamAByName?.apiFootballTeamId ?? null;
+        }
+        if (!awayApiId) {
+          const [teamBByName] = await db
+            .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+            .from(teamsTable)
+            .where(eq(teamsTable.name, game.teamBName))
+            .limit(1);
+          awayApiId = teamBByName?.apiFootballTeamId ?? null;
+        }
+      }
 
       if (!homeApiId || !awayApiId) {
-        logger.warn(`[ApiFootball][BackfillForm] Game ${game.id}: missing apiFootballTeamId (home=${homeApiId}, away=${awayApiId})`);
+        logger.warn(`[ApiFootball][BackfillForm] Game ${game.id} (${game.teamAName} × ${game.teamBName}): sem apiFootballTeamId (home=${homeApiId}, away=${awayApiId})`);
         processed++; failed++; continue;
       }
 
@@ -1459,7 +1484,6 @@ export async function getTeamFormPendingCount(): Promise<number> {
     .where(
       and(
         sql`${games.status} != 'finished'`,
-        sql`${games.teamAId} IS NOT NULL`,
         sql`(${games.aiPrediction} IS NULL OR JSON_LENGTH(JSON_EXTRACT(${games.aiPrediction}, '$.homeForm')) = 0)`
       )
     );
