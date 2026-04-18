@@ -85,6 +85,13 @@ export const betsRouter = router({
       if (!pool || game.tournamentId !== pool.tournamentId) {
         throw PoolErr.gameNotInPool();
       }
+      // [SEC] Bloquear palpites em bolões encerrados ou aguardando conclusão
+      if (pool.status !== "active") {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Este bolão já foi encerrado. Não é possível fazer novos palpites.",
+        });
+      }
       if (game.status === "finished" || game.status === "live") {
         throw PoolErr.gameStarted();
       }

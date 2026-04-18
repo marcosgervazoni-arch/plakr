@@ -412,7 +412,8 @@ export const poolsCoreRouter = router({
       }
       const pool = await getPoolById(input.poolId);
       if (!pool) throw Err.notFound("Recurso");
-      if (pool.status === "finished") throw Err.precondition("O bolão já está encerrado.");
+      const closedStatuses = ["finished", "awaiting_conclusion", "concluded", "archived"];
+      if (closedStatuses.includes(pool.status)) throw Err.precondition("O bolão já está encerrado.");
       const ranking = await getPoolRanking(input.poolId);
       const top3 = ranking.slice(0, 3);
       await updatePool(input.poolId, { status: "finished", finishedAt: new Date() });

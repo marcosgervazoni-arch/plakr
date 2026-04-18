@@ -419,6 +419,8 @@ export default function PoolPage() {
   const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
 
   const isGameOpen = (matchDate: Date) => {
+    // Bolão encerrado ou aguardando conclusão: nenhum jogo está aberto para palpites
+    if (pool.status !== "active") return false;
     const deadline = new Date(new Date(matchDate).getTime() - deadlineMinutes * 60 * 1000);
     return new Date() < deadline;
   };
