@@ -620,7 +620,7 @@ function GameCard({
                               <span key={i} className={`w-6 h-4 rounded-sm flex items-center justify-center text-[9px] font-bold ${
                                 r === 'W' ? 'bg-green-500/25 text-green-400' :
                                 r === 'L' ? 'bg-red-500/25 text-red-400' :
-                                'bg-muted/40 text-muted-foreground'
+                                'bg-yellow-500/25 text-yellow-400'
                               }`}>{label}</span>
                             );
                           })}
