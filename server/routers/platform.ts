@@ -45,6 +45,8 @@ export const platformRouter = router({
       proAnnualPrice: (settings as any)?.stripeProAnnualPrice ?? 39900,
       unlimitedMonthlyPrice: (settings as any)?.stripeUnlimitedMonthlyPrice ?? 8990,
       unlimitedAnnualPrice: (settings as any)?.stripeUnlimitedAnnualPrice ?? 89900,
+      // Passe VIP do Participante (R$4,90/mês por padrão)
+      vipMonthlyPrice: (settings as any)?.stripeVipMonthlyPrice ?? 490,
     };
   }),
 
@@ -119,10 +121,12 @@ export const platformRouter = router({
       stripePriceIdProAnnual: z.string().optional(),
       stripePriceIdUnlimited: z.string().optional(),
       stripePriceIdUnlimitedAnnual: z.string().optional(),
+      stripePriceIdVip: z.string().optional(),
       stripeMonthlyPrice: z.number().optional(),
       stripeProAnnualPrice: z.number().optional(),
       stripeUnlimitedMonthlyPrice: z.number().optional(),
       stripeUnlimitedAnnualPrice: z.number().optional(),
+      stripeVipMonthlyPrice: z.number().optional(),
       // VAPID / Push
       vapidPublicKey: z.string().optional(),
       vapidPrivateKey: z.string().optional(),

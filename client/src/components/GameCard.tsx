@@ -203,24 +203,17 @@ function GameCard({
 
   const { isParticipantVip } = useUserPlan();
 
-  // Contador de análises de IA usadas hoje (armazenado em localStorage)
-  const AI_STORAGE_KEY = "plakr_ai_daily_usage";
-  const getAiUsageToday = (): number => {
-    try {
-      const stored = localStorage.getItem(AI_STORAGE_KEY);
-      if (!stored) return 0;
-      const { date, count } = JSON.parse(stored);
-      const today = new Date().toDateString();
-      if (date !== today) return 0;
-      return count as number;
-    } catch { return 0; }
-  };
+  // Contador de análises de IA — server-side via trpc.aiUsage
+  const { data: aiLimitData, refetch: refetchAiLimit } = trpc.aiUsage.checkAiLimit.useQuery(
+    undefined,
+    { staleTime: 30_000, enabled: !isParticipantVip }
+  );
+  const incrementAiUsageMutation = trpc.aiUsage.incrementAiUsage.useMutation({
+    onSuccess: () => refetchAiLimit(),
+  });
+  const getAiUsageToday = (): number => aiLimitData?.used ?? 0;
   const incrementAiUsage = () => {
-    try {
-      const today = new Date().toDateString();
-      const current = getAiUsageToday();
-      localStorage.setItem(AI_STORAGE_KEY, JSON.stringify({ date: today, count: current + 1 }));
-    } catch { /* ignore */ }
+    if (!isParticipantVip) incrementAiUsageMutation.mutate();
   };
 
   // Busca análise do palpite apenas quando o painel é aberto e o jogo está finalizado

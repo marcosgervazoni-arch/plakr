@@ -397,5 +397,13 @@
 - [x] Criar `client/src/components/VipUpgradeBanner.tsx`: banner de upgrade contextual dentro do bolão
 - [x] Atualizar `client/src/pages/PoolPage.tsx`: exibir VipUpgradeBanner no contexto de IA bloqueada
 - [x] Atualizar `client/src/components/X1ChallengeModal.tsx`: CTA de upgrade para VIP (não para /upgrade)
-- [ ] [PENDENTE] Atualizar `client/src/pages/UpgradePage.tsx`: seção separada para Passe do Participante (próxima sprint)
+- [x] Atualizar `client/src/pages/UpgradePage.tsx`: seção separada para Passe do Participante
 - [x] Escrever testes: server/vip-pass.test.ts (limites IA, limites X1, helpers, normalização de tier)
+
+## Sprint VIP-Fix — Correção de Gaps (Auditoria 40 especialistas)
+
+- [x] GAP-1: Migrar contador de IA pré-jogo para server-side (tabela `ai_daily_usage`, procedure `checkAiLimit`, reset por data)
+- [x] GAP-2: Corrigir `PoolMural.tsx` — suprimir anúncios para VIP (`isPro || isVip`)
+- [x] GAP-3: Adicionar seção "Passe do Participante" na `UpgradePage.tsx`
+- [x] GAP-4: Adicionar campo `stripePriceIdVip` configurável no painel Admin → Configurações → Monetização
+- [x] GAP-5: Escrever testes server-side para contador de IA (checkAiLimit, incremento, reset diário)

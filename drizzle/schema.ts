@@ -1302,3 +1302,20 @@ export const muralReactions = mysqlTable("mural_reactions", {
 }));
 export type MuralReaction = typeof muralReactions.$inferSelect;
 export type InsertMuralReaction = typeof muralReactions.$inferInsert;
+
+// ─── AI DAILY USAGE ───────────────────────────────────────────────────────────
+// Controla o uso diário de análises de IA pré-jogo por usuário (server-side).
+// Free: máx 3/dia. VIP/Pro/Unlimited: ilimitado.
+// A coluna `date` usa formato YYYY-MM-DD para facilitar reset automático por data.
+export const aiDailyUsage = mysqlTable("ai_daily_usage", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  count: int("count").notNull().default(0),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  uqUserDate: unique("uq_ai_daily_usage").on(t.userId, t.date),
+  idxUser: index("idx_ai_daily_usage_user").on(t.userId),
+}));
+export type AiDailyUsage = typeof aiDailyUsage.$inferSelect;
+export type InsertAiDailyUsage = typeof aiDailyUsage.$inferInsert;

@@ -21,6 +21,7 @@ import { landingPageRouter } from "./routers/landingPage";
 import { x1Router } from "./routers/x1";
 import { integrationsRouter } from "./routers/integrations";
 import { muralRouter } from "./routers/mural";
+import { aiUsageRouter } from "./routers/ai-usage";
 import { router } from "./_core/trpc";
 
 export const appRouter = router({
@@ -42,6 +43,7 @@ export const appRouter = router({
   x1: x1Router,
   integrations: integrationsRouter,
   mural: muralRouter,
+  aiUsage: aiUsageRouter,
 });
 
 export type AppRouter = typeof appRouter;

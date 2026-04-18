@@ -30,11 +30,13 @@ interface PricingForm {
   stripePriceIdProAnnual: string;
   stripePriceIdUnlimited: string;
   stripePriceIdUnlimitedAnnual: string;
+  stripePriceIdVip: string;
   // Preços exibidos na UI (em centavos)
   stripeMonthlyPrice: number;
   stripeProAnnualPrice: number;
   stripeUnlimitedMonthlyPrice: number;
   stripeUnlimitedAnnualPrice: number;
+  stripeVipMonthlyPrice: number;
 }
 
 // ─── Componente de campo de preço ─────────────────────────────────────────────
@@ -234,10 +236,12 @@ export default function AdminPricing() {
     stripePriceIdProAnnual: "",
     stripePriceIdUnlimited: "",
     stripePriceIdUnlimitedAnnual: "",
+    stripePriceIdVip: "",
     stripeMonthlyPrice: 3990,
     stripeProAnnualPrice: 39900,
     stripeUnlimitedMonthlyPrice: 8990,
     stripeUnlimitedAnnualPrice: 89900,
+    stripeVipMonthlyPrice: 490,
   });
 
   // Acordeões iniciam fechados — comportamento exclusivo (abrir um fecha o outro)
@@ -251,12 +255,14 @@ export default function AdminPricing() {
         stripePriceIdUnlimited: (settings as any).stripePriceIdUnlimited ?? "",
         stripePriceIdUnlimitedAnnual:
           (settings as any).stripePriceIdUnlimitedAnnual ?? "",
+        stripePriceIdVip: (settings as any).stripePriceIdVip ?? "",
         stripeMonthlyPrice: settings.stripeMonthlyPrice ?? 3990,
         stripeProAnnualPrice: (settings as any).stripeProAnnualPrice ?? 39900,
         stripeUnlimitedMonthlyPrice:
           (settings as any).stripeUnlimitedMonthlyPrice ?? 8990,
         stripeUnlimitedAnnualPrice:
           (settings as any).stripeUnlimitedAnnualPrice ?? 89900,
+        stripeVipMonthlyPrice: (settings as any).stripeVipMonthlyPrice ?? 490,
       });
     }
   }, [settings]);
@@ -281,16 +287,19 @@ export default function AdminPricing() {
       stripePriceIdUnlimited: form.stripePriceIdUnlimited || undefined,
       stripePriceIdUnlimitedAnnual:
         form.stripePriceIdUnlimitedAnnual || undefined,
+      stripePriceIdVip: form.stripePriceIdVip || undefined,
       stripeMonthlyPrice: form.stripeMonthlyPrice,
       stripeProAnnualPrice: form.stripeProAnnualPrice,
       stripeUnlimitedMonthlyPrice: form.stripeUnlimitedMonthlyPrice,
       stripeUnlimitedAnnualPrice: form.stripeUnlimitedAnnualPrice,
+      stripeVipMonthlyPrice: form.stripeVipMonthlyPrice,
     });
   };
 
   const proConfigured =
     form.stripePriceIdPro.startsWith("price_") &&
     form.stripePriceIdUnlimited.startsWith("price_");
+  const vipConfigured = form.stripePriceIdVip.startsWith("price_");
 
   if (isLoading) {
     return (
@@ -487,8 +496,55 @@ export default function AdminPricing() {
             </div>
           </div>
         </PlanAccordion>
+        {/* ── Passe VIP do Participante ─────────────────────────── */}
+        <PlanAccordion
+          id="vip"
+          icon={Star}
+          title="Passe VIP do Participante"
+          subtitle="Sem anúncios · IA ilimitada · Duelos X1 ilimitados · R$ 4,90/mês"
+          accentColor="bg-yellow-500"
+          badgeLabel="Participante"
+          isOpen={openPlans.includes("vip")}
+          onToggle={() => togglePlan("vip")}
+          isConfigured={vipConfigured}
+        >
+          {/* Price ID */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Price ID — Stripe
+            </p>
+            <PriceIdField
+              label="Passe VIP Mensal"
+              value={form.stripePriceIdVip}
+              onChange={(v) => setField("stripePriceIdVip", v)}
+              required
+              hint="Assinatura recorrente mensal para o Passe VIP do participante"
+            />
+          </div>
 
-        {/* ── Como obter os Price IDs ────────────────────────────────────── */}
+          <Separator />
+
+          {/* Preço de exibição */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Preço exibido na tela de upgrade
+            </p>
+            <PriceField
+              label="Passe VIP Mensal"
+              value={form.stripeVipMonthlyPrice}
+              onChange={(v) => setField("stripeVipMonthlyPrice", v)}
+              placeholder="490"
+              hint="Valor em centavos. Ex: 490 = R$ 4,90"
+            />
+          </div>
+
+          <div className="rounded-lg bg-yellow-500/5 border border-yellow-500/20 p-3 text-xs text-muted-foreground">
+            <p className="font-medium text-yellow-400 mb-1">⚠️ Plano independente</p>
+            <p>O Passe VIP é exclusivo para participantes. Não dá poderes de organizador. O participante paga uma vez e tem os benefícios em todos os bolões que participar enquanto a assinatura estiver ativa.</p>
+          </div>
+        </PlanAccordion>
+
+        {/* ── Como obter os Price IDs ───────────────────────────────── */}
         <div className="rounded-lg border border-border/50 bg-surface/50 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-brand" />

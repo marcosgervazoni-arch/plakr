@@ -77,6 +77,13 @@ const UNLIMITED_FEATURES = [
   { icon: Sparkles, label: "API de resultados automática (em breve)" },
 ];
 
+// Features do Passe VIP do Participante
+const VIP_FEATURES = [
+  { icon: Zap, label: "Zero anúncios em todos os bolões" },
+  { icon: Sparkles, label: "Análise de IA pré-jogo ilimitada" },
+  { icon: Trophy, label: "Duelos X1 ilimitados" },
+];
+
 const FAQ = [
   {
     q: "O Plano Pro é por bolão ou por conta?",
@@ -224,6 +231,22 @@ export default function UpgradePage() {
   const maxSaving = Math.max(proSaving, unlimitedSaving);
   const annualSavingLabel = maxSaving > 0 ? `-${maxSaving}%` : undefined;
 
+  // Checkout do Passe VIP
+  const vipCheckoutMutation = trpc.stripe.createVipCheckout.useMutation({
+    onSuccess: ({ checkoutUrl }) => {
+      if (checkoutUrl) {
+        window.open(checkoutUrl, "_blank");
+        toast.success("Redirecionando para o checkout do Passe VIP...");
+      }
+    },
+    onError: (err) => toast.error(err.message || "Erro ao iniciar checkout VIP."),
+  });
+
+  const handleVipCheckout = () => {
+    analytics.trackUpgradeClicked({ source: "upgrade_page", pool_slug: "vip" });
+    vipCheckoutMutation.mutate({ origin: window.location.origin });
+  };
+
   const handleCheckout = (tier: "pro" | "unlimited") => {
     analytics.trackUpgradeClicked({ source: "upgrade_page", pool_slug: tier });
     checkoutMutation.mutate({ tier, billing, origin: window.location.origin });
@@ -312,6 +335,96 @@ export default function UpgradePage() {
               Cobrado uma vez por ano · Cancele quando quiser
             </p>
           )}
+        </div>
+
+        {/* ── Seção Passe do Participante ── */}
+        <div className="space-y-4">
+          <div className="text-center space-y-1">
+            <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20 text-xs px-3 py-1">
+              <Star className="w-3 h-3 mr-1.5" /> Para participantes
+            </Badge>
+            <h2 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
+              Passe VIP do Participante
+            </h2>
+            <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+              Você participa de bolões mas não organiza? O Passe VIP melhora sua experiência em qualquer bolão — sem anúncios, IA ilimitada e duelos sem restrição.
+            </p>
+          </div>
+
+          <div className="max-w-sm mx-auto bg-card border-2 border-yellow-500/30 rounded-2xl p-6 space-y-5 relative overflow-hidden">
+            <div className="absolute top-4 right-4">
+              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                <Star className="w-3 h-3 mr-1" /> Participante
+              </Badge>
+            </div>
+            <div>
+              <p className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>Passe VIP</p>
+              <div className="flex items-end gap-1 mt-1">
+                <span className="font-bold text-3xl text-yellow-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  R$ 4,90
+                </span>
+                <span className="text-muted-foreground text-sm mb-1">/mês</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Por conta. Vale em todos os bolões que você participar.
+              </p>
+            </div>
+            <div className="space-y-2.5">
+              {VIP_FEATURES.map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-yellow-400 shrink-0" />
+                  <span className="text-sm">{label}</span>
+                </div>
+              ))}
+            </div>
+
+            {!isAuthenticated ? (
+              <a href={getLoginUrl("/upgrade")}>
+                <Button className="w-full gap-2 bg-yellow-500 hover:bg-yellow-400 text-black">
+                  <Star className="w-4 h-4" /> Ativar Passe VIP
+                </Button>
+              </a>
+            ) : currentTier === "vip" ? (
+              <div className="space-y-2">
+                <Button className="w-full bg-yellow-500 hover:bg-yellow-400 text-black" disabled>
+                  <Star className="w-4 h-4 mr-2" /> Passe ativo
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full text-xs"
+                  onClick={() => portalMutation.mutate({ origin: window.location.origin })}
+                  disabled={portalMutation.isPending}
+                >
+                  {portalMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                  Gerenciar assinatura
+                </Button>
+              </div>
+            ) : (currentTier === "pro" || currentTier === "unlimited") ? (
+              <Button variant="outline" className="w-full" disabled>
+                Já incluído no seu plano
+              </Button>
+            ) : (
+              <Button
+                className="w-full gap-2 bg-yellow-500 hover:bg-yellow-400 text-black"
+                onClick={handleVipCheckout}
+                disabled={vipCheckoutMutation.isPending}
+              >
+                {vipCheckoutMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Star className="w-4 h-4" />
+                )}
+                Ativar Passe VIP
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* ── Divisor ── */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1 border-t border-border/30" />
+          <span className="text-xs text-muted-foreground px-2">Planos para organizadores</span>
+          <div className="flex-1 border-t border-border/30" />
         </div>
 
         {/* ── Pricing cards ── */}

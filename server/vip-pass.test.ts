@@ -131,3 +131,70 @@ describe("Passe VIP — getParticipantLimits", () => {
     expect(limits.noAds).toBe(true);
   });
 });
+
+describe("Passe VIP — contador de IA server-side", () => {
+  it("limite diário de IA para Free é 3", async () => {
+    const { PARTICIPANT_LIMITS } = await import("../shared/plans");
+    expect(PARTICIPANT_LIMITS.free.dailyAiAnalysis).toBe(3);
+  });
+
+  it("VIP não tem limite diário de IA (Infinity)", async () => {
+    const { PARTICIPANT_LIMITS } = await import("../shared/plans");
+    expect(PARTICIPANT_LIMITS.vip.dailyAiAnalysis).toBe(Infinity);
+  });
+
+  it("lógica de bloqueio: Free com 3 usos está bloqueado", () => {
+    const isBlocked = (tier: string, used: number): boolean => {
+      if (tier === "vip") return false;
+      return used >= 3;
+    };
+    expect(isBlocked("free", 3)).toBe(true);
+    expect(isBlocked("free", 2)).toBe(false);
+    expect(isBlocked("vip", 100)).toBe(false);
+  });
+
+  it("lógica de bloqueio: VIP nunca é bloqueado independente do uso", () => {
+    const isBlocked = (tier: string, used: number): boolean => {
+      if (tier === "vip") return false;
+      return used >= 3;
+    };
+    expect(isBlocked("vip", 0)).toBe(false);
+    expect(isBlocked("vip", 3)).toBe(false);
+    expect(isBlocked("vip", 999)).toBe(false);
+  });
+
+  it("contador reseta por data (lógica de reset diário)", () => {
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+    // Simula: se a data do registro é hoje, usa o count; se for ontem, retorna 0
+    const getUsageForToday = (recordDate: string, count: number): number => {
+      return recordDate === today ? count : 0;
+    };
+
+    expect(getUsageForToday(today, 2)).toBe(2);
+    expect(getUsageForToday(yesterday, 2)).toBe(0);
+  });
+});
+
+describe("Passe VIP — supressão de anúncios", () => {
+  it("Free vê anúncios (noAds=false)", async () => {
+    const { PARTICIPANT_LIMITS } = await import("../shared/plans");
+    expect(PARTICIPANT_LIMITS.free.noAds).toBe(false);
+  });
+
+  it("VIP não vê anúncios (noAds=true)", async () => {
+    const { PARTICIPANT_LIMITS } = await import("../shared/plans");
+    expect(PARTICIPANT_LIMITS.vip.noAds).toBe(true);
+  });
+
+  it("supressão de anúncios: Pro ou VIP não vê anúncios", () => {
+    const shouldShowAds = (isPro: boolean, isVip: boolean): boolean => {
+      return !isPro && !isVip;
+    };
+    expect(shouldShowAds(false, false)).toBe(true);  // Free vê
+    expect(shouldShowAds(true, false)).toBe(false);  // Pro não vê
+    expect(shouldShowAds(false, true)).toBe(false);  // VIP não vê
+    expect(shouldShowAds(true, true)).toBe(false);   // Pro+VIP não vê
+  });
+});

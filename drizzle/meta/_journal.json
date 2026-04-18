@@ -421,6 +421,13 @@
       "when": 1776534610056,
       "tag": "0059_nostalgic_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "5",
+      "when": 1776539878490,
+      "tag": "0060_living_cerise",
+      "breakpoints": true
     }
   ]
 }

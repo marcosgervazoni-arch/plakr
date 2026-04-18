@@ -336,7 +336,9 @@ function PostCard({
 
 export default function PoolMural({ poolSlug, poolId, isOrganizer }: PoolMuralProps) {
   const { user } = useAuth();
-  const { isPro } = useUserPlan();
+  const { isPro, isVip } = useUserPlan();
+  // VIP também não vê anúncios (promessa do Passe VIP: zero anúncios em todos os bolões)
+  const hideAds = isPro || isVip;
   const utils = trpc.useUtils();
 
   const [postText, setPostText] = useState("");
@@ -553,8 +555,8 @@ export default function PoolMural({ poolSlug, poolId, isOrganizer }: PoolMuralPr
                 onReaction={(postId, emoji) => toggleReaction.mutate({ postId, emoji })}
               />
 
-              {/* Ads Adsterra a cada AD_INTERVAL posts — apenas usuários Free */}
-              {!isPro && (idx + 1) % AD_INTERVAL === 0 && idx < allPosts.length - 1 && (
+              {/* Ads Adsterra a cada AD_INTERVAL posts — apenas usuários Free (VIP e Pro não vêem) */}
+              {!hideAds && (idx + 1) % AD_INTERVAL === 0 && idx < allPosts.length - 1 && (
                 <AdBanner
                   key={`ad-mural-${idx}`}
                   position="between_sections"
