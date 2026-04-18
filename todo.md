@@ -407,3 +407,7 @@
 - [x] GAP-3: Adicionar seção "Passe do Participante" na `UpgradePage.tsx`
 - [x] GAP-4: Adicionar campo `stripePriceIdVip` configurável no painel Admin → Configurações → Monetização
 - [x] GAP-5: Escrever testes server-side para contador de IA (checkAiLimit, incremento, reset diário)
+
+## Sprint VIP-Badge — Badge Visual no Perfil
+
+- [x] Badge VIP dourado no perfil do usuário (PublicProfile.tsx / my-profile) — visível apenas quando participante tem Passe VIP ativo

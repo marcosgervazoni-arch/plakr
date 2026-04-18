@@ -15,7 +15,7 @@ import DashboardBadgeCarousel from "@/components/DashboardBadgeCarousel";
 import {
   Trophy, Crown, Medal, Loader2, AlertCircle, Calendar,
   MessageCircle, Send, Share2, Award, Sparkles, ChevronRight, Info,
-  Camera, Copy, Check, Gift, Bell, Shield, Zap, Target, Users,
+  Camera, Copy, Check, Gift, Bell, Shield, Zap, Target, Users, Star,
 } from "lucide-react";
 import {
   Tooltip,
@@ -44,7 +44,7 @@ import { Radar } from "lucide-react";
 // Tipo explícito para o retorno de getPublicProfile (evita falsos positivos do LSP do Vite)
 type PublicProfileData = {
   user: { id: number; name: string | null; avatarUrl: string | null; createdAt: Date; whatsappLink: string | null; telegramLink: string | null };
-  plan: { id: number; userId: number; plan: "free" | "pro" | "unlimited"; isActive: boolean; expiresAt: Date | null; stripeSubscriptionId: string | null; updatedAt: Date } | null;
+  plan: { id: number; userId: number; plan: "free" | "pro" | "unlimited" | "vip"; isActive: boolean; expiresAt: Date | null; stripeSubscriptionId: string | null; updatedAt: Date } | null;
   stats: { totalPoints: number; exactScores: number; poolsCount: number; totalBets: number; accuracy: number };
   bestPosition: number | null;
   recentPools: { id: number; name: string; slug: string; status: string; tournamentName: string | null }[];
@@ -232,17 +232,20 @@ export default function PublicProfile() {
   const { user, plan, recentPools, badges, finalPositions, stats, bestPosition } = data;
   const isPro = plan?.plan === "pro" && plan?.isActive;
   const isUnlimited = plan?.plan === "unlimited" && plan?.isActive;
+  const isVip = plan?.plan === "vip" && plan?.isActive;
   const isOwnProfile = isAuthenticated && currentUser?.id === resolvedId;
   const initials = user.name?.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?";
   const earnedBadgesCount = badges?.filter((b) => b.earned ?? !!b.earnedAt).length ?? 0;
 
   // Dados para modo de edição
-  const planLabel = isUnlimited ? "Unlimited" : isPro ? "Pro" : "Free";
-  const planColor = isUnlimited ? "text-purple-400" : isPro ? "text-yellow-400" : "text-slate-400";
+  const planLabel = isUnlimited ? "Unlimited" : isPro ? "Pro" : isVip ? "VIP" : "Free";
+  const planColor = isUnlimited ? "text-purple-400" : isPro ? "text-yellow-400" : isVip ? "text-amber-400" : "text-slate-400";
   const planBg = isUnlimited
     ? "bg-purple-400/10 border-purple-400/30"
     : isPro
     ? "bg-yellow-400/10 border-yellow-400/30"
+    : isVip
+    ? "bg-amber-400/10 border-amber-400/30"
     : "bg-slate-700/50 border-slate-600/30";
   const referralGoal = (referralStats as any)?.goal ?? 5;
   const referralCount = (referralStats as any)?.totalAccepted ?? 0;
@@ -279,6 +282,11 @@ export default function PublicProfile() {
                 {isPro && (
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-card">
                     <Crown className="w-3 h-3 text-primary-foreground" />
+                  </div>
+                )}
+                {isVip && !isPro && (
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center border-2 border-card">
+                    <Star className="w-3 h-3 text-white fill-white" />
                   </div>
                 )}
               </div>
@@ -319,6 +327,10 @@ export default function PublicProfile() {
                 {isPro ? (
                   <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
                     <Crown className="w-3 h-3 mr-1" /> Pro
+                  </Badge>
+                ) : isVip ? (
+                  <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-xs font-semibold">
+                    <Star className="w-3 h-3 mr-1 fill-amber-400" /> VIP
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="text-xs text-muted-foreground">Gratuito</Badge>
