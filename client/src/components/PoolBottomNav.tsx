@@ -1,17 +1,18 @@
 /**
  * PoolBottomNav — Barra de navegação inferior estilo FAB para o PoolPage.
  *
- * Layout: Regras | Membros | [Palpites FAB dourado] | Duelos | Ranking
+ * Layout: Regras | Mural | [Palpites FAB dourado] | Duelos | Ranking
  *
  * O botão central (Palpites) abre a aba Jogos com o filtro "Falta palpitar" pré-ativado.
  * "Regras" navega diretamente para /pool/:slug/rules (sem tela intermediária).
- * "Duelos" substitui "Jogos" — acesso à arena pública de X1s do bolão.
+ * "Mural" abre o feed social do bolão (substituiu Membros).
+ * "Duelos" acessa a arena pública de X1s do bolão.
  */
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import {
   Trophy,
-  Users,
+  Newspaper,
   ScrollText,
   PenLine,
   Swords,
@@ -27,7 +28,7 @@ interface PoolBottomNavProps {
 
 const tabItems = [
   { id: "rules",   label: "Regras",   icon: ScrollText, directLink: true  },
-  { id: "members", label: "Membros",  icon: Users,      directLink: false },
+  { id: "mural",   label: "Mural",    icon: Newspaper,  directLink: false },
   // centro: FAB
   { id: "duelos",  label: "Duelos",   icon: Swords,     directLink: false },
   { id: "ranking", label: "Ranking",  icon: Trophy,     directLink: false },

@@ -313,3 +313,14 @@
 - [x] Frontend: seletor de adversário inline (sem redirecionar para o Ranking)
 - [x] Frontend: botão "Duelos" substitui "Jogos" na barra de navegação inferior
 - [x] Frontend: onChallenge abre o X1ChallengeModal diretamente da aba Duelos
+
+## Sprint U — Mural do Bolão
+
+- [x] Schema: tabelas mural_posts, mural_comments, mural_mentions
+- [x] Migration SQL aplicada no banco
+- [x] server/mural-templates.ts com renderTemplate e 13 eventos CazeTV
+- [x] Router mural.ts: procedures getByPool, createPost, createComment, deletePost, deleteComment
+- [x] Substituir Membros por Mural na PoolBottomNav
+- [x] Componente PoolMural.tsx: feed público, posts, comentários, menções, ads Adsterra
+- [x] Migrar lista de membros para dentro do Ranking
+- [x] Testes vitest para o router mural (29 testes, todos passando)

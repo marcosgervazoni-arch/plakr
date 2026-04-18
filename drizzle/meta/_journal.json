@@ -400,6 +400,13 @@
       "when": 1776430980607,
       "tag": "0056_smooth_misty_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "5",
+      "when": 1776507795659,
+      "tag": "0057_strong_winter_soldier",
+      "breakpoints": true
     }
   ]
 }

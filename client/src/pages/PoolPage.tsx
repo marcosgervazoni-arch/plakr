@@ -66,6 +66,7 @@ import { toast } from "sonner";
 import NotificationBell from "@/components/NotificationBell";
 import X1ChallengeModal from "@/components/X1ChallengeModal";
 import X1DuelsTab from "@/components/X1DuelsTab";
+import PoolMural from "@/components/PoolMural";
 import PoolBottomNav from "@/components/PoolBottomNav";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
 import { AdBanner } from "@/components/AdBanner";
@@ -91,7 +92,7 @@ export default function PoolPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get("tab");
-      if (tab === "ranking" || tab === "games" || tab === "members" || tab === "duelos" || tab === "rules") return tab;
+      if (tab === "ranking" || tab === "games" || tab === "mural" || tab === "duelos" || tab === "rules") return tab;
     }
     return "games";
   });
@@ -100,7 +101,7 @@ export default function PoolPage() {
   useEffect(() => {
     const handler = (e: Event) => {
       const tab = (e as CustomEvent<{ tab: string }>).detail?.tab;
-      if (tab === "ranking" || tab === "games" || tab === "members" || tab === "duelos" || tab === "rules") {
+      if (tab === "ranking" || tab === "games" || tab === "mural" || tab === "duelos" || tab === "rules") {
         setActiveTab(tab);
       }
     };
@@ -148,7 +149,7 @@ export default function PoolPage() {
 
   const { data: members } = trpc.pools.getMembers.useQuery(
     { poolId: data?.pool.id ?? 0 },
-    { enabled: !!data?.pool.id && activeTab === "members" }
+    { enabled: !!data?.pool.id && activeTab === "ranking" }
   );
 
   const { data: publicSettings } = trpc.platform.getPublicSettings.useQuery(
@@ -727,8 +728,8 @@ export default function PoolPage() {
             <TabsTrigger value="duelos" className="flex-1 text-sm py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Duelos
             </TabsTrigger>
-            <TabsTrigger value="members" className="flex-1 text-sm py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              Membros
+            <TabsTrigger value="mural" className="flex-1 text-sm py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              Mural
             </TabsTrigger>
             <TabsTrigger value="rules" className="flex-1 text-sm py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
               Regras
@@ -739,7 +740,7 @@ export default function PoolPage() {
             <TabsTrigger value="games">Jogos</TabsTrigger>
             <TabsTrigger value="ranking">Ranking</TabsTrigger>
             <TabsTrigger value="duelos">Duelos</TabsTrigger>
-            <TabsTrigger value="members">Membros</TabsTrigger>
+            <TabsTrigger value="mural">Mural</TabsTrigger>
             <TabsTrigger value="rules">Regulamento</TabsTrigger>
           </TabsList>
 
@@ -1223,6 +1224,42 @@ export default function PoolPage() {
                     <p className="text-center text-[10px] text-muted-foreground/50 pt-1">Pontos atualizados após o encerramento dos jogos</p>
                   );
                 })()}
+
+                {/* Lista de membros — seção colapsável ao final do Ranking */}
+                {members && (Array.isArray(members) ? members : (members?.items ?? [])).length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border/20">
+                    <p className="text-[10px] text-muted-foreground/60 font-semibold uppercase tracking-wider mb-2 px-1">
+                      Membros ({(Array.isArray(members) ? members : (members?.items ?? [])).length})
+                    </p>
+                    <div className="space-y-1">
+                      {(Array.isArray(members) ? members : (members?.items ?? [])).map(({ member, user: memberUser }) => (
+                        <div
+                          key={member.id}
+                          className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-border/20 bg-card/40 hover:border-border/40 transition-all"
+                        >
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
+                            member.role === "organizer" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                          }`}>
+                            {memberUser.name?.charAt(0)?.toUpperCase() ?? "?"}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <a href={`/profile/${memberUser.id}`} className="text-xs font-medium hover:text-primary transition-colors truncate block">
+                              {memberUser.name}
+                            </a>
+                            <p className="text-[10px] text-muted-foreground">
+                              Entrou {format(new Date(member.joinedAt), "dd/MM/yyyy", { locale: ptBR })}
+                            </p>
+                          </div>
+                          {member.role === "organizer" && (
+                            <Badge className="shrink-0 bg-primary/10 text-primary border-primary/20 text-[10px] gap-1 py-0 px-1.5 h-5">
+                              <Crown className="w-2 h-2" /> Org.
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </TabsContent>
@@ -1239,50 +1276,14 @@ export default function PoolPage() {
               />
             )}
           </TabsContent>
-          {/* ══ ABA MEMBROS ══ */}
-          <TabsContent value="members" className="mt-0">
-            {!members ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                {(Array.isArray(members) ? members : (members?.items ?? [])).map(({ member, user: memberUser }) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/30 bg-card/60 hover:border-border/50 transition-all"
-                  >
-                    {/* Avatar */}
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
-                      member.role === "organizer"
-                        ? "bg-primary/15 text-primary"
-                        : "bg-muted text-muted-foreground"
-                    }`}>
-                      {memberUser.name?.charAt(0)?.toUpperCase() ?? "?"}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <a
-                        href={`/profile/${memberUser.id}`}
-                        className="text-sm font-medium hover:text-primary transition-colors truncate block"
-                      >
-                        {memberUser.name}
-                      </a>
-                      <p className="text-xs text-muted-foreground">
-                        Entrou {format(new Date(member.joinedAt), "dd/MM/yyyy", { locale: ptBR })}
-                      </p>
-                    </div>
-
-                    {/* Role */}
-                    {member.role === "organizer" && (
-                      <Badge className="shrink-0 bg-primary/10 text-primary border-primary/20 text-xs gap-1 py-0">
-                        <Crown className="w-2.5 h-2.5" /> Organizador
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
+          {/* ══ ABA MURAL ══ */}
+          <TabsContent value="mural" className="mt-0">
+            {data?.pool.id && (
+              <PoolMural
+                poolSlug={slug ?? ""}
+                poolId={data.pool.id}
+                isOrganizer={isOrganizer}
+              />
             )}
           </TabsContent>
 

@@ -1200,3 +1200,66 @@ export const poolSlugRedirects = mysqlTable("pool_slug_redirects", {
 }));
 export type PoolSlugRedirect = typeof poolSlugRedirects.$inferSelect;
 export type InsertPoolSlugRedirect = typeof poolSlugRedirects.$inferInsert;
+
+// ─── MURAL DO BOLÃO ──────────────────────────────────────────────────────────
+// Feed social por bolão: posts manuais + eventos automáticos + comentários + menções
+
+export const MURAL_POST_TYPES = [
+  "manual",            // Post de texto livre pelo participante
+  "rank_change_first", // Assumiu o 1º lugar
+  "rank_change_top3",  // Subiu para 2º ou 3º
+  "rank_change_up",    // Subiu várias posições (3+)
+  "x1_result_win",     // Venceu duelo X1
+  "x1_result_draw",    // Empate no duelo X1
+  "exact_score_single",// Acertou placar exato (1 pessoa)
+  "exact_score_multi", // Vários acertaram o mesmo placar
+  "match_result",      // Jogo encerrado (só com ≥1 acerto)
+  "new_member",        // Novo membro entrou
+  "pool_ended",        // Bolão encerrado / campeão
+  "badge_unlocked",    // Badge/conquista desbloqueada
+  "zebra_result",      // Zebra confirmada
+  "thrashing_result",  // Goleada confirmada
+] as const;
+export type MuralPostType = typeof MURAL_POST_TYPES[number];
+
+export const muralPosts = mysqlTable("mural_posts", {
+  id: int("id").primaryKey().autoincrement(),
+  poolId: int("poolId").notNull().references(() => pools.id, { onDelete: "cascade" }),
+  authorId: int("authorId").references(() => users.id, { onDelete: "set null" }),
+  type: mysqlEnum("type", MURAL_POST_TYPES).notNull().default("manual"),
+  content: text("content").notNull(),
+  eventMeta: json("eventMeta").$type<Record<string, string>>(),
+  isDeleted: boolean("isDeleted").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  idxPoolCreated: index("idx_mural_posts_pool_created").on(t.poolId, t.createdAt),
+  idxAuthor: index("idx_mural_posts_author").on(t.authorId),
+}));
+export type MuralPost = typeof muralPosts.$inferSelect;
+export type InsertMuralPost = typeof muralPosts.$inferInsert;
+
+export const muralComments = mysqlTable("mural_comments", {
+  id: int("id").primaryKey().autoincrement(),
+  postId: int("postId").notNull().references(() => muralPosts.id, { onDelete: "cascade" }),
+  authorId: int("authorId").references(() => users.id, { onDelete: "set null" }),
+  content: text("content").notNull(),
+  isDeleted: boolean("isDeleted").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  idxPost: index("idx_mural_comments_post").on(t.postId),
+  idxAuthor: index("idx_mural_comments_author").on(t.authorId),
+}));
+export type MuralComment = typeof muralComments.$inferSelect;
+export type InsertMuralComment = typeof muralComments.$inferInsert;
+
+export const muralMentions = mysqlTable("mural_mentions", {
+  id: int("id").primaryKey().autoincrement(),
+  postId: int("postId").references(() => muralPosts.id, { onDelete: "cascade" }),
+  commentId: int("commentId").references(() => muralComments.id, { onDelete: "cascade" }),
+  mentionedUserId: int("mentionedUserId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  idxMentioned: index("idx_mural_mentions_user").on(t.mentionedUserId),
+}));
+export type MuralMention = typeof muralMentions.$inferSelect;
+export type InsertMuralMention = typeof muralMentions.$inferInsert;
