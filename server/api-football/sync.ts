@@ -1140,6 +1140,11 @@ export async function syncResults(options: {
     backfillAiSummaries({ batchSize: 20 }).catch((e) =>
       logger.error({ err: e }, "[AI][AutoBackfill] Error running automatic aiSummary backfill")
     );
+
+    // [H4] Auto-encerrar bolões cujos torneios tiveram todos os jogos finalizados
+    autoCloseFinishedPools().catch((e) =>
+      logger.error({ err: e }, "[AutoClose] Error running auto-close for finished pools")
+    );
   }
 
   return { resultsApplied, requestsUsed, error: errorMessage };
@@ -1524,4 +1529,107 @@ export async function getTeamFormPendingCount(includeFinished = false): Promise<
       )
     );
   return Number(row?.total ?? 0);
+}
+
+// ─── AUTO-CLOSE: Encerrar bolões quando todos os jogos do torneio terminam ────
+/**
+ * [H4] Verifica bolões `active` cujos torneios tiveram todos os jogos finalizados
+ * e os move automaticamente para `finished`.
+ *
+ * Regras:
+ * - Só age em bolões com status `active`
+ * - Verifica se TODOS os jogos do torneio vinculado estão com status `finished`
+ * - Registra em admin_log com source = "auto"
+ * - Notifica o organizador
+ */
+export async function autoCloseFinishedPools(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const { pools } = await import("../../drizzle/schema");
+  const { createAdminLog, createNotification } = await import("../db");
+  const { ne, count } = await import("drizzle-orm");
+
+  // Buscar bolões ativos com torneio vinculado
+  const activePools = await db
+    .select({
+      id: pools.id,
+      name: pools.name,
+      ownerId: pools.ownerId,
+      tournamentId: pools.tournamentId,
+    })
+    .from(pools)
+    .where(eq(pools.status, "active"));
+
+  if (activePools.length === 0) return;
+
+  const now = new Date();
+  let closedCount = 0;
+
+  for (const pool of activePools) {
+    if (!pool.tournamentId) continue;
+
+    try {
+      // Contar jogos do torneio que NÃO estão finalizados
+      const [pendingRow] = await db
+        .select({ total: count() })
+        .from(games)
+        .where(
+          and(
+            eq(games.tournamentId, pool.tournamentId),
+            ne(games.status, "finished")
+          )
+        );
+
+      const pendingGames = Number(pendingRow?.total ?? 0);
+      if (pendingGames > 0) continue; // ainda há jogos em aberto
+
+      // Verificar se há ao menos 1 jogo no torneio (evitar fechar bolão sem jogos)
+      const [totalRow] = await db
+        .select({ total: count() })
+        .from(games)
+        .where(eq(games.tournamentId, pool.tournamentId));
+
+      const totalGames = Number(totalRow?.total ?? 0);
+      if (totalGames === 0) continue;
+
+      // Todos os jogos finalizados → mover para `finished`
+      await db
+        .update(pools)
+        .set({ status: "finished", finishedAt: now })
+        .where(and(eq(pools.id, pool.id), eq(pools.status, "active")));
+
+      // Log de auditoria
+      await createAdminLog(
+        0,
+        "pool_auto_finished",
+        "pool",
+        pool.id,
+        { poolName: pool.name, tournamentId: pool.tournamentId, triggeredBy: "syncResults_auto_close" },
+        pool.id
+      ).catch(() => {});
+
+      // Notificar organizador
+      if (pool.ownerId) {
+        await createNotification({
+          userId: pool.ownerId,
+          poolId: pool.id,
+          type: "system",
+          title: `Bolão "${pool.name}" encerrado automaticamente`,
+          message: `Todos os jogos do torneio foram concluídos. O bolão foi encerrado automaticamente e aguarda sua confirmação para gerar o ranking final.`,
+          actionUrl: `/pool/${pool.id}`,
+          actionLabel: "Confirmar encerramento",
+        }).catch(() => {});
+      }
+
+      closedCount++;
+      logger.info({ poolId: pool.id, poolName: pool.name }, "[AutoClose] Pool automatically moved to finished");
+    } catch (err) {
+      logger.error({ poolId: pool.id, err }, "[AutoClose] Failed to auto-close pool");
+    }
+  }
+
+  if (closedCount > 0) {
+    logger.info({ closedCount }, "[AutoClose] Auto-closed pools moved to finished");
+  }
 }

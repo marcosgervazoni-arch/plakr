@@ -13,7 +13,7 @@
 import { getDb } from "./db";
 import { pools, poolMembers, retrospectiveConfig } from "../drizzle/schema";
 import { eq, and, lt } from "drizzle-orm";
-import { createNotification, getPoolMembers, getPlatformSettings } from "./db";
+import { createAdminLog, createNotification, getPoolMembers, getPlatformSettings } from "./db";
 import { logger } from "./logger";
 
 // ─── HEALTH TRACKING ─────────────────────────────────────────────────────────
@@ -74,6 +74,16 @@ export async function runArchivalJob() {
           actionLabel: "Confirmar encerramento",
         });
       }
+
+      // [AUDIT] Registrar transição automática no admin_log (adminId=0 = sistema)
+      await createAdminLog(
+        0,
+        "pool_auto_awaiting_conclusion",
+        "pool",
+        pool.id,
+        { poolName: pool.name, triggeredBy: "archival_cron" },
+        pool.id
+      ).catch(() => {});
 
       logger.info({ poolId: pool.id }, "[Archival] Pool moved to awaiting_conclusion");
     } catch (err) {
@@ -142,6 +152,16 @@ export async function runArchivalJob() {
       }
 
       await db.update(pools).set({ status: "archived" }).where(eq(pools.id, pool.id));
+
+      // [AUDIT] Registrar arquivamento automático no admin_log
+      await createAdminLog(
+        0,
+        "pool_auto_archived",
+        "pool",
+        pool.id,
+        { poolName: pool.name, archiveDays, triggeredBy: "archival_cron" },
+        pool.id
+      ).catch(() => {});
 
       // ── Badge Cobaia: se este é o bolão de lançamento configurado
       if (settings?.cobaiaPoolId && settings.cobaiaPoolId === pool.id) {
@@ -215,6 +235,16 @@ export async function concludePool(
 
   if (!pool) return;
 
+  // [AUDIT] Registrar conclusão no admin_log
+  await createAdminLog(
+    concludedBy ?? 0,
+    source === "auto" ? "pool_auto_concluded" : "pool_concluded",
+    "pool",
+    poolId,
+    { poolName: pool.name, source },
+    poolId
+  ).catch(() => {});
+
   // Gerar retrospectiva para todos os participantes em background
   // Ao concluir, também envia notificação in-app para cada participante
   generateRetrospectivesForPool(poolId, pool.name, source).catch((err) =>
@@ -272,7 +302,22 @@ async function generateRetrospectivesForPool(
     }
   } catch { /* usa fallback sem link */ }
 
+  // [H5] Buscar contagem de palpites por usuário para filtrar quem nunca apostou
+  const { bets } = await import("../drizzle/schema");
+  const { count } = await import("drizzle-orm");
+
   for (const { userId } of participants) {
+    // [H5] Pular usuários que nunca fizeram um palpite neste bolão
+    const [betCountRow] = await db
+      .select({ total: count() })
+      .from(bets)
+      .where(and(eq(bets.poolId, poolId), eq(bets.userId, userId)));
+    const totalBets = Number(betCountRow?.total ?? 0);
+    if (totalBets === 0) {
+      logger.info({ poolId, userId }, "[Archival] Skipping retrospective for user with 0 bets");
+      continue;
+    }
+
     try {
       await generateAndUploadRetrospective(poolId, userId);
       logger.info({ poolId, userId }, "[Archival] Retrospective generated");

@@ -368,3 +368,12 @@
 - [x] Geração automática de análise de palpite (betAnalysisText) após jogo finalizado — já implementado no syncResults
 - [x] Job de startup: backfill de análises de palpite para palpites sem comentário da IA (60s após boot)
 - [x] Procedure de admin para backfill manual de análises de palpite (integrações.backfillBetAnalyses)
+
+## Sprint H — Melhorias do Fluxo de Encerramento de Bolões (Auditoria 40 especialistas)
+
+- [x] H1: [CRÍTICO] Bloquear edição de palpites em upsertBet para status ≠ active
+- [x] H2: [CRÍTICO] Adicionar logs de auditoria ao runArchivalJob() para todas as transições automáticas
+- [x] H3: [CRÍTICO] Exibir banner de awaiting_conclusion para todos os participantes (não só organizador)
+- [x] H4: [CRÍTICO] Automação da transição active → finished via syncResults quando todos os jogos terminam
+- [x] H5: [ALTO] Condicionar geração de retrospectiva a totalBets > 0 (pula usuários sem palpites)
+- [x] H6: [ALTO] scheduledDeleteAt mantido no schema — campo é usado em getPoolsDueForDeletion(); problema era apenas que nunca era preenchido (sem urgência)

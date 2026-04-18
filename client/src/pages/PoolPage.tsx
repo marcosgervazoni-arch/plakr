@@ -39,6 +39,7 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  Clock,
   Copy,
   Crown,
   Download,
@@ -683,6 +684,9 @@ export default function PoolPage() {
           {/* ── Banner: Aguardando confirmação de encerramento ── */}
           {pool.status === "awaiting_conclusion" && isOrganizer && (
             <ConclusionBanner poolId={pool.id} poolName={pool.name} />
+          )}
+          {pool.status === "awaiting_conclusion" && !isOrganizer && (
+            <AwaitingConclusionParticipantBanner />
           )}
 
           {/* ── Banner: Retrospectiva disponível (bolão concluído) ── */}
@@ -1604,9 +1608,32 @@ function RetrospectiveBanner({ poolId, poolSlug }: { poolId: number; poolSlug: s
     </div>
   );
 }
+/* ─────────────────────────────────────────────────────────────────────────────────────
+ * AwaitingConclusionParticipantBanner — exibido para participantes (não organizador)
+ * quando o bolão está em awaiting_conclusion
+ * ───────────────────────────────────────────────────────────────────────────────────── */
+function AwaitingConclusionParticipantBanner() {
+  return (
+    <div className="mx-4 mt-3 rounded-xl overflow-hidden border border-amber-500/30 shadow-md shadow-amber-500/10">
+      <div className="relative px-4 py-3.5 bg-gradient-to-r from-amber-950/60 via-amber-900/40 to-amber-950/60">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0">
+            <Clock className="w-4 h-4 text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-300">Bolão sendo encerrado</p>
+            <p className="text-xs text-amber-400/70 mt-0.5 leading-relaxed">
+              Todos os jogos foram apurados. Em breve a retrospectiva e o ranking final estarão disponíveis.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-/* ───────────────────────────────────────────────────────────────────────────────────
- * ShareCardPoolBanner — card de posição em destaque na PoolPage após encerramento
+/* ─────────────────────────────────────────────────────────────────────────────────────
+ * ShareCardPoolBanner— card de posição em destaque na PoolPage após encerramento
  * Busca o shareCard do participante via getRetrospective e exibe com botões de
  * compartilhamento e download direto, sem precisar navegar pelos slides.
  * ────────────────────────────────────────────────────────────────────────────────── */
