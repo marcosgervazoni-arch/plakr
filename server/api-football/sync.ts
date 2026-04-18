@@ -17,7 +17,7 @@
  */
 
 import logger from "../logger";
-import { fetchFixtures, fetchTeams, fetchFixtureEvents, fetchFixtureStatistics, fetchFixturePredictions, fetchTeamRecentForm, fetchInjuries, fetchTeamStatistics, ApiFootballFixture, TeamSeasonStats } from "./client";
+import { fetchFixtures, fetchTeams, fetchFixtureEvents, fetchFixtureStatistics, fetchFixturePredictions, fetchTeamRecentForm, fetchInjuries, fetchTeamStatistics, getTodayQuota, ApiFootballFixture, TeamSeasonStats } from "./client";
 import { getDb } from "../db";
 import {
   platformSettings,
@@ -1373,13 +1373,15 @@ export async function getAiSummaryPendingCount(): Promise<number> {
  */
 export async function backfillTeamForm(options: {
   batchSize?: number;
-}): Promise<{ processed: number; succeeded: number; failed: number; requestsUsed: number; error?: string }> {
+  includeFinished?: boolean;
+}): Promise<{ processed: number; succeeded: number; failed: number; requestsUsed: number; quotaExhausted?: boolean; error?: string }> {
   const db = await getDb();
   if (!db) return { processed: 0, succeeded: 0, failed: 0, requestsUsed: 0, error: "DB unavailable" };
 
   const batchSize = options.batchSize ?? 30;
+  const includeFinished = options.includeFinished ?? false;
 
-  // Buscar jogos não finalizados com homeForm vazio
+  // Buscar jogos sem homeForm — por padrão apenas pendentes, mas pode incluir finalizados
   // NÃO filtramos por teamAId IS NOT NULL pois a maioria dos jogos usa apenas teamAName
   const pendingGames = await db
     .select({
@@ -1393,7 +1395,7 @@ export async function backfillTeamForm(options: {
     .from(games)
     .where(
       and(
-        sql`${games.status} != 'finished'`,
+        includeFinished ? undefined : sql`${games.status} != 'finished'`,
         sql`(${games.aiPrediction} IS NULL OR JSON_LENGTH(JSON_EXTRACT(${games.aiPrediction}, '$.homeForm')) = 0)`
       )
     )
@@ -1455,11 +1457,37 @@ export async function backfillTeamForm(options: {
         processed++; failed++; continue;
       }
 
-      const [homeForm, awayForm] = await Promise.all([
-        fetchTeamRecentForm(homeApiId, 5).catch(() => []),
-        fetchTeamRecentForm(awayApiId, 5).catch(() => []),
-      ]);
-      requestsUsed += 2;
+      // Detectar cota esgotada antes de chamar a API
+      const quotaCheck = await getTodayQuota();
+      if (quotaCheck.used >= quotaCheck.limit) {
+        logger.warn(`[ApiFootball][BackfillForm] Cota diária esgotada (${quotaCheck.used}/${quotaCheck.limit}). Interrompendo backfill — retomará após reset à meia-noite UTC.`);
+        return { processed, succeeded, failed, requestsUsed, quotaExhausted: true };
+      }
+
+      let homeForm: string[] = [];
+      let awayForm: string[] = [];
+      let quotaError = false;
+
+      try {
+        [homeForm, awayForm] = await Promise.all([
+          fetchTeamRecentForm(homeApiId, 5),
+          fetchTeamRecentForm(awayApiId, 5),
+        ]);
+        requestsUsed += 2;
+      } catch (formErr) {
+        const msg = formErr instanceof Error ? formErr.message : String(formErr);
+        if (msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('request limit') || msg.toLowerCase().includes('daily')) {
+          logger.warn(`[ApiFootball][BackfillForm] Cota esgotada durante processamento do jogo ${game.id}. Interrompendo.`);
+          quotaError = true;
+        } else {
+          logger.warn(`[ApiFootball][BackfillForm] Game ${game.id}: erro ao buscar form — ${msg}`);
+          failed++; processed++; continue;
+        }
+      }
+
+      if (quotaError) {
+        return { processed, succeeded, failed, requestsUsed, quotaExhausted: true };
+      }
 
       // Atualizar aiPrediction mantendo os outros campos existentes
       const existing = (game.aiPrediction ?? {}) as Record<string, unknown>;
@@ -1480,9 +1508,10 @@ export async function backfillTeamForm(options: {
 }
 
 /**
- * Retorna quantos jogos não finalizados estão sem forma recente (precisam de backfill).
+ * Retorna quantos jogos estão sem forma recente (precisam de backfill).
+ * Por padrão conta apenas pendentes; com includeFinished=true conta todos.
  */
-export async function getTeamFormPendingCount(): Promise<number> {
+export async function getTeamFormPendingCount(includeFinished = false): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
   const [row] = await db
@@ -1490,7 +1519,7 @@ export async function getTeamFormPendingCount(): Promise<number> {
     .from(games)
     .where(
       and(
-        sql`${games.status} != 'finished'`,
+        includeFinished ? undefined : sql`${games.status} != 'finished'`,
         sql`(${games.aiPrediction} IS NULL OR JSON_LENGTH(JSON_EXTRACT(${games.aiPrediction}, '$.homeForm')) = 0)`
       )
     );

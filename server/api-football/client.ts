@@ -68,7 +68,7 @@ async function getSettings() {
   return settings;
 }
 
-async function getTodayQuota(): Promise<{ used: number; limit: number }> {
+export async function getTodayQuota(): Promise<{ used: number; limit: number }> {
   const db = await getDb();
   if (!db) return { used: 0, limit: 7500 };
 

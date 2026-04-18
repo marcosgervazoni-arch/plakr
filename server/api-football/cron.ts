@@ -28,7 +28,7 @@
  */
 
 import logger from "../logger";
-import { syncFixtures, syncResults, syncTeamsForTournament } from "./sync";
+import { syncFixtures, syncResults, syncTeamsForTournament, backfillTeamForm } from "./sync";
 import { getDb } from "../db";
 import { tournaments, games as gamesTable, teams as teamsTable } from "../../drizzle/schema";
 import { eq, isNull, and, sql } from "drizzle-orm";
@@ -438,6 +438,55 @@ export function registerApiFootballCronJobs() {
       const msg = err instanceof Error ? err.message : String(err);
       recordJobRun("gerarAnalisesPrejogo", false, msg);
       throw err;
+    }
+  });
+
+  // Job 6: Backfill de forma recente (incluindo finalizados) — todo dia às 00:30 UTC
+  // Roda logo após o reset da cota diária da API-Football (meia-noite UTC)
+  // para preencher o histórico de todos os jogos sem homeForm/awayForm.
+  scheduleDaily([0], "backfillTeamFormCompleto", async () => {
+    // Aguardar 30 minutos após a meia-noite para garantir que a cota resetou
+    await new Promise(r => setTimeout(r, 30 * 60 * 1000));
+    try {
+      const db = await getDb();
+      if (!db) return;
+
+      let totalSucceeded = 0;
+      let totalFailed = 0;
+      let batches = 0;
+      const MAX_BATCHES = 30; // até 900 jogos por rodada (30 lotes × 30 jogos)
+
+      logger.info("[Cron][BackfillForm] Iniciando backfill completo de forma recente (incluindo finalizados)...");
+
+      while (batches < MAX_BATCHES) {
+        const result = await backfillTeamForm({ batchSize: 30, includeFinished: true });
+        totalSucceeded += result.succeeded;
+        totalFailed += result.failed;
+        batches++;
+
+        if (result.quotaExhausted) {
+          logger.warn(`[Cron][BackfillForm] Cota esgotada após ${batches} lotes. Retomará amanhã.`);
+          break;
+        }
+        if (result.processed === 0) {
+          logger.info(`[Cron][BackfillForm] Backfill concluído em ${batches} lotes.`);
+          break;
+        }
+
+        // Pausa entre lotes para não sobrecarregar a API
+        await new Promise(r => setTimeout(r, 2_000));
+      }
+
+      logger.info(`[Cron][BackfillForm] Total: ${totalSucceeded} atualizados, ${totalFailed} falhas em ${batches} lotes`);
+
+      if (totalSucceeded > 0) {
+        await notifyOwner({
+          title: "Backfill de forma recente concluído",
+          content: `${totalSucceeded} jogos tiveram o histórico de forma recente atualizado (${totalFailed} falhas).`,
+        }).catch(() => {});
+      }
+    } catch (err) {
+      logger.error({ err }, "[Cron][BackfillForm] Erro no backfill completo de forma");
     }
   });
 
