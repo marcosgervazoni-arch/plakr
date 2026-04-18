@@ -177,27 +177,27 @@ export async function generateBetAnalysis(ctx: BetAnalysisContext): Promise<stri
     : "resultado errado";
 
   const poolLine = ctx.poolContext
-    ? `Dos ${ctx.poolContext.totalParticipants} participantes do bolão, ${ctx.poolContext.exactCount} acertaram o placar exato e ${ctx.poolContext.correctCount} acertaram o resultado. Você ficou em ${ctx.poolContext.userRank}º lugar nesta rodada.`
+    ? `Contexto do bolão: ${ctx.poolContext.totalParticipants} participantes. ${ctx.poolContext.exactCount} acertaram o placar exato. ${ctx.poolContext.correctCount} acertaram o resultado. O usuário ficou em ${ctx.poolContext.userRank}º lugar.`
     : "";
 
   const zebraLine = ctx.isZebra ? "O resultado foi uma zebra — a maioria apostou no outro lado." : "";
 
-  const prompt = `Escreva uma análise curta do palpite de um apostador em um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — animado, divertido, com personalidade, sem forçar. Varie conforme o resultado: placar exato merece entusiasmo genuíno, resultado correto merece reconhecimento, resultado errado merece um comentário honesto e bem-humorado. Foque no que aconteceu no jogo e no palpite — NUNCA mencione odds, apostas ou sugira qual resultado escolher. Sem emojis. Sem repetir informações óbvias.
-
-Dados:
-- Jogo: ${ctx.homeTeam} ${ctx.scoreA} × ${ctx.scoreB} ${ctx.awayTeam}
-- Palpite: ${ctx.predictedA} × ${ctx.predictedB}
-- Resultado: ${resultLabel}
-- Pontos conquistados: ${ctx.totalPoints}
-${zebraLine}
+  const prompt = `Analise o palpite do usuário para o jogo:
+- Time da casa: ${ctx.homeTeam}
+- Time visitante: ${ctx.awayTeam}
+- Placar final: ${ctx.scoreA} x ${ctx.scoreB}
+- Palpite: ${ctx.predictedA} x ${ctx.predictedB}
+- Tipo de resultado: ${resultLabel}
+- Pontos ganhos: ${ctx.totalPoints}
+${zebraLine ? `- ${zebraLine}` : ""}
 ${poolLine}
 
-Escreva apenas a análise, sem título.`;
+Escreva apenas a análise, sem título, sem emojis.`;
 
   try {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "Você é um narrador de futebol brasileiro com energia de transmissão ao vivo — estilo CazéTV. Analisa palpites de bolões como se estivesse comentando ao vivo: entusiasmo genuíno quando o apostador acerta, bom humor quando erra. NUNCA sugere apostas, NUNCA menciona odds, NUNCA diz qual resultado era o certo. O foco é o que aconteceu no jogo e como o palpite se saiu. Escreve em português brasileiro, sem emojis." },
+        { role: "system", content: "Você é um comentarista esportivo com o tom da CazéTV: casual, animado e direto, como um amigo que entende de bola. Analise o palpite do usuário focando na dificuldade do acerto e no desempenho no bolão. Evite bajulação — reconheça acertos de forma natural e divertida, sem exagero. Para placar exato: destaque a raridade. Para resultado correto: reconheça sem exaltar. Para resultado errado: bom humor sem drama. Máximo 2-3 frases curtas. NUNCA mencione odds, apostas ou sugira resultado. Escreva em português brasileiro, sem emojis." },
         { role: "user", content: prompt },
       ],
     });
