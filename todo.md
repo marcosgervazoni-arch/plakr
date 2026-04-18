@@ -356,3 +356,4 @@
 - [x] Exibir quadradinhos de forma dos últimos 5 jogos de cada time no painel de análise pré-jogo (retangulares, sem bordas)
 - [ ] Remover estado "AO VIVO" do card (API atualiza a cada 2h — aguardando decisão do Gerva)
 - [x] Investigar e corrigir ausência dos quadradinhos de forma (homeForm/awayForm vazios) — backfillTeamForm criado + botão no Admin → Integrações
+- [x] Transformar backfill de forma em job automático: roda 15s após o boot em segundo plano (lotes de 30, pausa 10s entre lotes) + forma buscada automaticamente ao criar novos jogos via syncFixtures + botão isolado removido do Admin

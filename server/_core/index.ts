@@ -7,6 +7,7 @@ import { startEmailCrons } from "../emailCron";
 import { registerX1CronJobs } from "../jobs/x1-jobs";
 import { registerX1PredictionResolverCron } from "../jobs/x1-prediction-resolver";
 import { registerApiFootballCronJobs } from "../api-football/cron";
+import { backfillTeamForm, getTeamFormPendingCount } from "../api-football/sync";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
 import { registerOgRoutes, registerLandingOgRoute, registerApiOgRoutes } from "../og";
@@ -155,6 +156,28 @@ async function startServer() {
   registerX1CronJobs();
   registerX1PredictionResolverCron();
   registerApiFootballCronJobs();
+
+  // Job de startup: popular forma recente dos times em segundo plano (dados históricos)
+  // Roda silenciosamente após o servidor subir, sem bloquear o boot
+  setTimeout(async () => {
+    try {
+      const pendingCount = await getTeamFormPendingCount();
+      if (pendingCount === 0) return;
+      console.log(`[Startup] Backfill de forma: ${pendingCount} jogos sem forma. Iniciando em segundo plano...`);
+      let processed = 0;
+      while (true) {
+        const result = await backfillTeamForm({ batchSize: 30 });
+        processed += result.succeeded;
+        // Para quando não há mais jogos para processar
+        if (result.processed === 0) break;
+        // Pausa de 10s entre lotes para não sobrecarregar a API
+        await new Promise(r => setTimeout(r, 10_000));
+      }
+      console.log(`[Startup] Backfill de forma concluído: ${processed} jogos atualizados.`);
+    } catch (err) {
+      console.error("[Startup] Backfill de forma falhou silenciosamente:", err);
+    }
+  }, 15_000); // aguarda 15s após o boot para não competir com outros workers
 }
 
 startServer().catch(console.error);

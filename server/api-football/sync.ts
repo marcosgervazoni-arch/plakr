@@ -680,6 +680,25 @@ export async function syncFixtures(options: {
             .where(eq(games.id, existing.id));
           gamesUpdated++;
         } else {
+          // Buscar forma recente dos times ao inserir novo jogo (fire-and-forget)
+          let newHomeForm: string[] = [];
+          let newAwayForm: string[] = [];
+          try {
+            const homeApiId = fixture.teams.home.id;
+            const awayApiId = fixture.teams.away.id;
+            if (homeApiId && awayApiId) {
+              [newHomeForm, newAwayForm] = await Promise.all([
+                fetchTeamRecentForm(homeApiId, 5).catch(() => []),
+                fetchTeamRecentForm(awayApiId, 5).catch(() => []),
+              ]);
+              requestsUsed += 2;
+            }
+          } catch {
+            // forma não crítica — backfill cobre depois
+          }
+          const baseAiPrediction = (newHomeForm.length > 0 || newAwayForm.length > 0)
+            ? { homeWin: 0, draw: 0, awayWin: 0, homeForm: newHomeForm, awayForm: newAwayForm, aiRecommendation: "" }
+            : null;
           await db.insert(games).values({
             tournamentId,
             externalId,
@@ -692,6 +711,7 @@ export async function syncFixtures(options: {
             phase,
             roundNumber,
             status: "scheduled",
+            ...(baseAiPrediction ? { aiPrediction: baseAiPrediction } : {}),
           });
           gamesCreated++;
         }
