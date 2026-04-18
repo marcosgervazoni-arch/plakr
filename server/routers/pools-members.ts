@@ -337,9 +337,11 @@ export const poolsMembersRouter = router({
       await createNotification({
         userId: pool.ownerId,
         poolId: pool.id,
-        type: "system",
+        type: "payment_pending",
         title: "\uD83D\uDCB0 Novo pagamento pendente",
-        message: `${ctx.user.name ?? "Um participante"} pagou R$ ${Number(pool.entryFee).toFixed(2)} e aguarda aprova\u00e7\u00e3o no bol\u00e3o \"${pool.name}\".`,
+        message: `${ctx.user.name ?? "Um participante"} pagou R$ ${Number(pool.entryFee).toFixed(2)} e aguarda aprova\u00e7\u00e3o no bol\u00e3o "${pool.name}".`,
+        actionUrl: `/pool/${pool.slug}/manage/members`,
+        actionLabel: "Aprovar pagamento",
       });
       await createAdminLog(ctx.user.id, "pool_entry_requested", "pool", pool.id, {
         poolName: pool.name, entryFee: pool.entryFee,

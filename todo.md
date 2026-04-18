@@ -419,3 +419,7 @@
 - [ ] Frontend: exibir badge VIP na listagem de assinaturas do AdminSubscriptions.tsx
 
 - [x] AdminUsers.tsx: adicionar seção "Passe VIP" na aba Ações com botões "Conceder VIP" e "Revogar VIP" (mesmo padrão de Tornar Admin / Bloquear)
+
+## Sprint Notificações — Link de Aprovação
+
+- [x] Notificações de "Novo pagamento pendente" devem ser clicáveis e direcionar para a tela de aprovação de pagamentos do bolão correspondente

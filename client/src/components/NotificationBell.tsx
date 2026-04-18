@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Gift,
   Clock,
+  Banknote,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { formatDistanceToNow } from "date-fns";
@@ -37,6 +38,8 @@ function NotificationIcon({ type }: { type: string }) {
       return <Gift className="w-4 h-4 text-emerald-400" />;
     case "pool_closing":
       return <Clock className="w-4 h-4 text-primary" />;
+    case "payment_pending":
+      return <Banknote className="w-4 h-4 text-emerald-400" />;
     default:
       return <Bell className="w-4 h-4 text-muted-foreground" />;
   }
@@ -104,11 +107,14 @@ export default function NotificationBell() {
           ) : (
             notifications.map((n) => {
               const isConcluded = n.type === "pool_concluded";
+              const isPaymentPending = n.type === "payment_pending";
               return (
                 <div
                   key={n.id}
                   className={`px-4 py-3 border-b border-border/30 last:border-0 cursor-pointer transition-colors ${
-                    isConcluded && !n.isRead
+                    isPaymentPending && !n.isRead
+                      ? "bg-emerald-500/8 hover:bg-emerald-500/12 border-l-2 border-l-emerald-500"
+                      : isConcluded && !n.isRead
                       ? "bg-primary/8 hover:bg-primary/12 border-l-2 border-l-primary"
                       : !n.isRead
                       ? "bg-muted/20 hover:bg-muted/40"

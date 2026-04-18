@@ -551,6 +551,7 @@ export const notifications = mysqlTable("notifications", {
     "x1_challenge_received",
     "x1_challenge_accepted",
     "x1_challenge_concluded",
+    "payment_pending",
   ]).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),

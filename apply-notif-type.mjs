@@ -1,0 +1,6 @@
+import { createConnection } from "mysql2/promise";
+
+const conn = await createConnection(process.env.DATABASE_URL);
+await conn.execute(`ALTER TABLE \`notifications\` MODIFY COLUMN \`type\` enum('game_reminder','ranking_update','result_available','system','ad','pool_closing','pool_invite','plan_expired','plan_expiring','pool_concluded','badge_unlocked','x1_challenge_received','x1_challenge_accepted','x1_challenge_concluded','payment_pending') NOT NULL`);
+console.log("✅ Migration aplicada com sucesso");
+await conn.end();
