@@ -10,7 +10,7 @@ import logger from "../logger";
 import { getDb } from "../db";
 import { platformSettings, apiSyncLog, apiQuotaTracker, tournaments, games as gamesTable } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
-import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament, backfillGameData, getBackfillPendingCount, backfillAiSummaries, getAiSummaryPendingCount } from "../api-football/sync";
+import { syncFixtures, syncResults, syncTeamsForTournament, syncFixturesForTournament, backfillGameData, getBackfillPendingCount, backfillAiSummaries, getAiSummaryPendingCount, backfillTeamForm, getTeamFormPendingCount } from "../api-football/sync";
 import { buildAiPrediction } from "../api-football/ai-analysis";
 import { fetchFixturePredictions } from "../api-football/client";
 import { and, isNull, lt, sql } from "drizzle-orm";
@@ -864,6 +864,23 @@ export const integrationsRouter = router({
         triggeredByUserId: ctx.user.id,
       });
       return result;
+    }),
+
+  /**
+   * Backfill de forma recente dos times (últimos 5 jogos) para jogos não finalizados
+   * que têm homeForm/awayForm vazio no aiPrediction.
+   */
+  backfillTeamForm: adminProcedure
+    .input(z.object({ batchSize: z.number().min(1).max(200).default(50) }))
+    .mutation(async ({ input, ctx }) => {
+      logger.info(`[BackfillForm] Admin ${ctx.user.id} triggered team form backfill (batchSize=${input.batchSize})`);
+      const result = await backfillTeamForm({ batchSize: input.batchSize });
+      return result;
+    }),
+
+  getTeamFormPendingCount: adminProcedure
+    .query(async () => {
+      return { count: await getTeamFormPendingCount() };
     }),
 
   /**

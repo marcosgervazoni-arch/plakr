@@ -1338,3 +1338,110 @@ export async function getAiSummaryPendingCount(): Promise<number> {
     );
   return row?.total ?? 0;
 }
+
+/**
+ * Backfill de forma recente dos times (homeForm/awayForm) para jogos não finalizados
+ * que têm o campo vazio. Usa apiFootballTeamId da tabela teams para buscar os últimos 5 jogos.
+ */
+export async function backfillTeamForm(options: {
+  batchSize?: number;
+}): Promise<{ processed: number; succeeded: number; failed: number; requestsUsed: number; error?: string }> {
+  const db = await getDb();
+  if (!db) return { processed: 0, succeeded: 0, failed: 0, requestsUsed: 0, error: "DB unavailable" };
+
+  const batchSize = options.batchSize ?? 50;
+
+  // Buscar jogos não finalizados com homeForm vazio e teamAId/teamBId disponíveis
+  const pendingGames = await db
+    .select({
+      id: games.id,
+      teamAId: games.teamAId,
+      teamBId: games.teamBId,
+      teamAName: games.teamAName,
+      teamBName: games.teamBName,
+      aiPrediction: games.aiPrediction,
+    })
+    .from(games)
+    .where(
+      and(
+        sql`${games.status} != 'finished'`,
+        sql`${games.teamAId} IS NOT NULL`,
+        sql`${games.teamBId} IS NOT NULL`,
+        sql`(${games.aiPrediction} IS NULL OR JSON_LENGTH(JSON_EXTRACT(${games.aiPrediction}, '$.homeForm')) = 0)`
+      )
+    )
+    .limit(batchSize);
+
+  const total = pendingGames.length;
+  let processed = 0;
+  let succeeded = 0;
+  let failed = 0;
+  let requestsUsed = 0;
+
+  logger.info(`[ApiFootball][BackfillForm] Starting form backfill for ${total} games`);
+
+  for (const game of pendingGames) {
+    try {
+      // Buscar apiFootballTeamId das duas equipes
+      const { teams: teamsTable } = await import("../../drizzle/schema");
+      const [teamARow] = await db
+        .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+        .from(teamsTable)
+        .where(eq(teamsTable.id, game.teamAId!))
+        .limit(1);
+      const [teamBRow] = await db
+        .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+        .from(teamsTable)
+        .where(eq(teamsTable.id, game.teamBId!))
+        .limit(1);
+
+      const homeApiId = teamARow?.apiFootballTeamId;
+      const awayApiId = teamBRow?.apiFootballTeamId;
+
+      if (!homeApiId || !awayApiId) {
+        logger.warn(`[ApiFootball][BackfillForm] Game ${game.id}: missing apiFootballTeamId (home=${homeApiId}, away=${awayApiId})`);
+        processed++; failed++; continue;
+      }
+
+      const [homeForm, awayForm] = await Promise.all([
+        fetchTeamRecentForm(homeApiId, 5).catch(() => []),
+        fetchTeamRecentForm(awayApiId, 5).catch(() => []),
+      ]);
+      requestsUsed += 2;
+
+      // Atualizar aiPrediction mantendo os outros campos existentes
+      const existing = (game.aiPrediction ?? {}) as Record<string, unknown>;
+      const updated = { ...existing, homeForm, awayForm };
+      await db.update(games).set({ aiPrediction: updated as typeof game.aiPrediction }).where(eq(games.id, game.id));
+
+      succeeded++;
+      logger.info(`[ApiFootball][BackfillForm] Game ${game.id} (${game.teamAName} × ${game.teamBName}): home=${homeForm.join("")} away=${awayForm.join("")}`);
+    } catch (err) {
+      failed++;
+      logger.error({ err, gameId: game.id }, "[ApiFootball][BackfillForm] Failed");
+    }
+    processed++;
+  }
+
+  logger.info(`[ApiFootball][BackfillForm] Done: processed=${processed} succeeded=${succeeded} failed=${failed} req=${requestsUsed}`);
+  return { processed, succeeded, failed, requestsUsed };
+}
+
+/**
+ * Retorna quantos jogos não finalizados estão sem forma recente (precisam de backfill).
+ */
+export async function getTeamFormPendingCount(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [row] = await db
+    .select({ total: sql<number>`COUNT(*)` })
+    .from(games)
+    .where(
+      and(
+        sql`${games.status} != 'finished'`,
+        sql`${games.teamAId} IS NOT NULL`,
+        sql`(${games.aiPrediction} IS NULL OR JSON_LENGTH(JSON_EXTRACT(${games.aiPrediction}, '$.homeForm')) = 0)`
+      )
+    );
+  return Number(row?.total ?? 0);
+}

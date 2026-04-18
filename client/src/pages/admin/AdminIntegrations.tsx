@@ -214,6 +214,9 @@ export default function AdminIntegrations() {
       refetchAiPending();
     }
   }, [aiBackfillProgress?.status, refetchAiPending]);
+  const backfillTeamFormMutation = trpc.integrations.backfillTeamForm.useMutation();
+  const { data: teamFormPendingData, refetch: refetchTeamFormPending } = trpc.integrations.getTeamFormPendingCount.useQuery();
+
   const backfillAiMutation = trpc.integrations.backfillAiPredictions.useMutation({
     onSuccess: (data) => {
       if (data.started) {
@@ -1036,6 +1039,49 @@ export default function AdminIntegrations() {
                         <><Sparkles className="h-3 w-3" /> Gerar todas as análises pré-jogo</>
                       )}
                     </Button>
+                  </div>
+
+                  {/* Backfill de Forma Recente dos Times */}
+                  <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Forma Recente dos Times</p>
+                      {teamFormPendingData && teamFormPendingData.count > 0 ? (
+                        <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full px-2 py-0.5 font-medium">
+                          {teamFormPendingData.count} sem forma
+                        </span>
+                      ) : (
+                        <span className="text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full px-2 py-0.5 font-medium">
+                          Em dia
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Busca os últimos 5 jogos de cada equipe na API-Football e preenche os quadradinhos de forma (V/E/D) exibidos no card de jogo. Processa até 50 jogos por execução.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 text-xs"
+                      disabled={backfillTeamFormMutation.isPending || (teamFormPendingData?.count ?? 0) === 0}
+                      onClick={async () => {
+                        const result = await backfillTeamFormMutation.mutateAsync({ batchSize: 50 });
+                        toast.success(`Forma atualizada: ${result.succeeded} jogos processados, ${result.requestsUsed} requisições usadas`);
+                        refetchTeamFormPending();
+                      }}
+                    >
+                      {backfillTeamFormMutation.isPending ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Buscando forma dos times...</>
+                      ) : (
+                        <><BarChart2 className="h-3 w-3" /> Atualizar forma recente (50 jogos)</>
+                      )}
+                    </Button>
+                    {backfillTeamFormMutation.data && (
+                      <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2 space-y-0.5">
+                        <p>✅ {backfillTeamFormMutation.data.succeeded} jogos atualizados</p>
+                        {backfillTeamFormMutation.data.failed > 0 && <p>⚠️ {backfillTeamFormMutation.data.failed} falhas</p>}
+                        <p className="text-muted-foreground">{backfillTeamFormMutation.data.requestsUsed} requisições da API usadas</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Recalculo de Formatos */}

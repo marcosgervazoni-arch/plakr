@@ -153,6 +153,8 @@
 
 ## PENDENTE — Bugs Ativos
 
+- [ ] **BUG:** Bolão finalizado ainda permite participação (ex: plakr.io/pool/bol-o-teste-excluir-efljTA) — revisar após conclusão do card dos jogos
+
 - [x] **BUG:** Estatísticas e análises não aparecem nos cards — causa raiz: 328 jogos sem aiSummary no banco; backfill loop automático implementado no painel admin (processa até zerar pendentes em lotes de 50)
 - [ ] **BUG:** Compartilhamento GameCard — estado de loading ainda pode ser compartilhado entre botões em edge cases
 - [ ] **BUG:** E-mail de broadcast não está sendo entregue (aguardando integração com provedor externo: Resend/SendGrid)
@@ -353,3 +355,4 @@
 - [x] Exibir contador de palpites realizados no card ("47 palpites feitos")
 - [x] Exibir quadradinhos de forma dos últimos 5 jogos de cada time no painel de análise pré-jogo (retangulares, sem bordas)
 - [ ] Remover estado "AO VIVO" do card (API atualiza a cada 2h — aguardando decisão do Gerva)
+- [x] Investigar e corrigir ausência dos quadradinhos de forma (homeForm/awayForm vazios) — backfillTeamForm criado + botão no Admin → Integrações
