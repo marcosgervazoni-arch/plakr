@@ -720,25 +720,18 @@ function GameCard({
                   </div>
                 </div>
 
-                {/* Badges de breakdown */}
-                {pts > 0 && (
-                  <div className="px-3 pb-3">
-                    <BetBreakdownBadges bet={myBet!} />
-                  </div>
-                )}
-
-                {/* Texto da IA */}
-                {(betAnalysisLoading || betAnalysisText) && (
-                  <div className="mx-3 mb-3 rounded-lg bg-muted/10 border border-white/5 px-3 py-2.5">
-                    {betAnalysisLoading ? (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Loader2 className="w-3 h-3 animate-spin" /> Gerando análise...
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground leading-relaxed">{betAnalysisText}</p>
-                    )}
-                  </div>
-                )}
+                {/* Comentário da IA sobre o palpite */}
+                <div className="mx-3 mb-3 rounded-lg bg-muted/10 border border-white/5 px-3 py-2.5">
+                  {betAnalysisLoading ? (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Analisando seu palpite...
+                    </div>
+                  ) : betAnalysisText ? (
+                    <p className="text-xs text-muted-foreground leading-relaxed">{betAnalysisText}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground/50 italic">Análise do palpite será gerada em breve.</p>
+                  )}
+                </div>
               </div>
               );
             })()}
