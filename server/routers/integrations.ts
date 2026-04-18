@@ -1043,6 +1043,79 @@ export const integrationsRouter = router({
       return { count: rows.length };
     }),
 
+  // ─── Regenerar TODAS as análises de palpite (sobrescreve registros existentes) ─
+  regenerateAllBetAnalyses: adminProcedure
+    .input(z.object({}))
+    .mutation(async () => {
+      const db = await getDb();
+      if (!db) return { started: false, message: "DB indisponível" };
+
+      const { gameBetAnalyses } = await import("../../drizzle/schema");
+      const { generateBetAnalysis } = await import("../api-football/ai-analysis");
+
+      // Busca TODOS os palpites de jogos finalizados (com ou sem análise existente)
+      const allBets = await db.execute(sql`
+        SELECT b.id, b.gameId, b.userId, b.poolId,
+               b.predictedScoreA, b.predictedScoreB,
+               b.pointsEarned, b.resultType,
+               g.teamAName, g.teamBName, g.scoreA, g.scoreB
+        FROM bets b
+        JOIN games g ON b.gameId = g.id
+        WHERE g.status = 'finished'
+        AND g.scoreA IS NOT NULL
+        LIMIT 500
+      `) as any;
+
+      const rows = (allBets[0] ?? []) as Array<{
+        id: number; gameId: number; userId: number; poolId: number;
+        predictedScoreA: number; predictedScoreB: number;
+        pointsEarned: number; resultType: string;
+        teamAName: string; teamBName: string; scoreA: number; scoreB: number;
+      }>;
+
+      if (rows.length === 0) return { started: false, message: "Nenhum palpite encontrado" };
+
+      logger.info(`[RegenerateAllBetAnalyses] Iniciando regeneração de ${rows.length} análises...`);
+
+      (async () => {
+        let done = 0;
+        for (const row of rows) {
+          try {
+            const analysisText = await generateBetAnalysis({
+              homeTeam: row.teamAName ?? "Casa",
+              awayTeam: row.teamBName ?? "Visitante",
+              scoreA: row.scoreA,
+              scoreB: row.scoreB,
+              predictedA: row.predictedScoreA ?? 0,
+              predictedB: row.predictedScoreB ?? 0,
+              resultType: (row.resultType as "exact" | "correct_result" | "wrong") ?? "wrong",
+              totalPoints: row.pointsEarned ?? 0,
+              isZebra: false,
+              poolContext: null,
+            });
+            const dbInner = await getDb();
+            if (dbInner) {
+              await dbInner.insert(gameBetAnalyses).values({
+                gameId: row.gameId,
+                userId: row.userId,
+                poolId: row.poolId,
+                analysisText,
+              }).onDuplicateKeyUpdate({ set: { analysisText } });
+            }
+            done++;
+            if (done % 10 === 0) {
+              logger.info(`[RegenerateAllBetAnalyses] Progresso: ${done}/${rows.length}`);
+            }
+          } catch (err) {
+            logger.error({ err }, `[RegenerateAllBetAnalyses] Erro no bet ${row.id}`);
+          }
+        }
+        logger.info(`[RegenerateAllBetAnalyses] Concluído: ${done}/${rows.length} análises regeneradas`);
+      })().catch(err => logger.error({ err }, "[RegenerateAllBetAnalyses] Erro fatal"));
+
+      return { started: true, message: `Iniciado: ${rows.length} análises serão regeneradas em background` };
+    }),
+
   // ─── Backfill de análise de palpite (game_bet_analyses) ────────────────────
   backfillBetAnalyses: adminProcedure
     .input(z.object({}))

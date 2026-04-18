@@ -229,8 +229,19 @@ export default function AdminIntegrations() {
     },
     onError: (e: { message: string }) => toast.error(e.message),
   });
+  // ─── Regenerar comentários de palpite (sobrescreve todos os existentes) ──────
+  const regenerateAllBetAnalysesMutation = trpc.integrations.regenerateAllBetAnalyses.useMutation({
+    onSuccess: (data) => {
+      if (data.started) {
+        toast.success(data.message);
+      } else {
+        toast.info(data.message);
+      }
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
 
-  // ─── Curadoria de Campeonatos ───────────────────────────────────────────────
+  // ─── Curadoria de Campeonatos ────────────────────────────────────────────────────
   const { data: managedTournaments, refetch: refetchTournaments } = trpc.integrations.listTournaments.useQuery();
   const [apiLeagues, setApiLeagues] = useState<Array<{leagueId: number; name: string; country: string; logoUrl: string; season: number}>>([]);
   const [leagueSearch, setLeagueSearch] = useState("");
@@ -1041,6 +1052,32 @@ export default function AdminIntegrations() {
                     </Button>
                   </div>
 
+
+                  {/* Regenerar Comentários de Palpite */}
+                  <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Comentários de Palpite (IA)</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Regenera os comentários da IA para todos os palpites de jogos finalizados, sobrescrevendo os textos existentes com o prompt atual. Use após atualizar o tom ou estilo dos comentários.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 text-xs"
+                      disabled={regenerateAllBetAnalysesMutation.isPending}
+                      onClick={() => regenerateAllBetAnalysesMutation.mutate({})}
+                    >
+                      {regenerateAllBetAnalysesMutation.isPending ? (
+                        <><Loader2 className="h-3 w-3 animate-spin" /> Regenerando em segundo plano...</>
+                      ) : (
+                        <><RefreshCw className="h-3 w-3" /> Regenerar todos os comentários de palpite</>
+                      )}
+                    </Button>
+                    {regenerateAllBetAnalysesMutation.data?.started && (
+                      <p className="text-xs text-emerald-400">✅ {regenerateAllBetAnalysesMutation.data.message}</p>
+                    )}
+                  </div>
 
                   {/* Recalculo de Formatos */}
                   <div className="space-y-2 pt-1 border-t border-border/40 mt-2">
