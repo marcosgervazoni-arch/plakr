@@ -76,7 +76,7 @@ type Pool = {
   createdAt: Date | string;
   ownerId: number;
   ownerName?: string | null;
-  ownerPlan?: "free" | "pro" | "unlimited";
+  ownerPlan?: "free" | "pro" | "unlimited" | "vip";
   tournamentId: number | null;
   description: string | null;
   memberCount: number;

@@ -169,11 +169,31 @@ export async function upsertUserPlan(data: InsertUserPlan) {
  * Retorna o tier ativo do plano do usuário.
  * Considera expirado se planExpiresAt < agora.
  */
-export async function getUserPlanTier(userId: number): Promise<"free" | "pro" | "unlimited"> {
+export async function getUserPlanTier(userId: number): Promise<"free" | "pro" | "unlimited" | "vip"> {
   const plan = await getUserPlan(userId);
   if (!plan || !plan.isActive) return "free";
   if (plan.planExpiresAt && plan.planExpiresAt < new Date()) return "free";
-  return (plan.plan as "free" | "pro" | "unlimited") ?? "free";
+  return (plan.plan as "free" | "pro" | "unlimited" | "vip") ?? "free";
+}
+
+/**
+ * Retorna true se o usuário tem Passe VIP ativo.
+ * VIP é o tier exclusivo do participante (R$4,90/mês).
+ */
+export async function isUserVip(userId: number): Promise<boolean> {
+  const tier = await getUserPlanTier(userId);
+  return tier === "vip";
+}
+
+/**
+ * Retorna o tier de participante (free | vip) do usuário.
+ * Organizers com plano pro/unlimited também recebem privilégios VIP de participante.
+ */
+export async function getParticipantTier(userId: number): Promise<"free" | "vip"> {
+  const tier = await getUserPlanTier(userId);
+  // Pro e Unlimited também têm privilégios VIP de participante
+  if (tier === "vip" || tier === "pro" || tier === "unlimited") return "vip";
+  return "free";
 }
 
 /**
@@ -186,13 +206,15 @@ export async function canCreatePool(userId: number): Promise<{ allowed: boolean;
   if (user?.role === "admin") return { allowed: true };
   const { PLAN_LIMITS } = await import("../shared/plans");
   const tier = await getUserPlanTier(userId);
-  const limits = PLAN_LIMITS[tier];
+  // VIP é um tier de participante, não de organizador — tratar como free para limites de criação de bolões
+  const organizerTier = (tier === "vip" ? "free" : tier) as "free" | "pro" | "unlimited";
+  const limits = PLAN_LIMITS[organizerTier];
   if (limits.maxPools === Infinity) return { allowed: true };
   const activeCount = await countActivePoolsByOwner(userId);
   if (activeCount >= limits.maxPools) {
     return {
       allowed: false,
-      reason: `Você atingiu o limite de ${limits.maxPools} bolões ativos do plano ${tier === "free" ? "Gratuito" : "Pro"}. Faça upgrade para criar mais bolões.`,
+      reason: `Você atingiu o limite de ${limits.maxPools} bolões ativos do plano ${organizerTier === "free" ? "Gratuito" : "Pro"}. Faça upgrade para criar mais bolões.`,
       limit: limits.maxPools,
     };
   }
@@ -209,13 +231,15 @@ export async function canAddMember(poolId: number, ownerId: number): Promise<{ a
   if (owner?.role === "admin") return { allowed: true };
   const { PLAN_LIMITS } = await import("../shared/plans");
   const tier = await getUserPlanTier(ownerId);
-  const limits = PLAN_LIMITS[tier];
+  // VIP é um tier de participante, não de organizador
+  const organizerTier = (tier === "vip" ? "free" : tier) as "free" | "pro" | "unlimited";
+  const limits = PLAN_LIMITS[organizerTier];
   if (limits.maxMembersPerPool === Infinity) return { allowed: true };
   const memberCount = await countPoolMembers(poolId);
   if (memberCount >= limits.maxMembersPerPool) {
     return {
       allowed: false,
-      reason: `Este bolão atingiu o limite de ${limits.maxMembersPerPool} participantes do plano ${tier === "free" ? "Gratuito" : "Pro"}. Faça upgrade para adicionar mais participantes.`,
+      reason: `Este bolão atingiu o limite de ${limits.maxMembersPerPool} participantes do plano ${organizerTier === "free" ? "Gratuito" : "Pro"}. Faça upgrade para adicionar mais participantes.`,
       limit: limits.maxMembersPerPool,
     };
   }

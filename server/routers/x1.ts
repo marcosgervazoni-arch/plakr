@@ -21,14 +21,18 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import logger from "../logger";
 
-// ─── LIMITES POR PLANO ────────────────────────────────────────────────────────
-const PLAN_LIMITS = {
-  free: { maxActive: 1, maxHistoryPerPool: 3 },
-  pro: { maxActive: 5, maxHistoryPerPool: Infinity },
+// --- LIMITES POR PLANO ---
+// Limites de duelos X1 por tier.
+// Para participantes: free=5 ativos, vip=ilimitado.
+// Para organizadores: pro=5 ativos, unlimited=ilimitado.
+const PLAN_LIMITS: Record<string, { maxActive: number; maxHistoryPerPool: number }> = {
+  free: { maxActive: 5, maxHistoryPerPool: 10 },
+  vip: { maxActive: Infinity, maxHistoryPerPool: Infinity },
+  pro: { maxActive: Infinity, maxHistoryPerPool: Infinity },
   unlimited: { maxActive: Infinity, maxHistoryPerPool: Infinity },
 };
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+// --- HELPERS ---
 
 async function getDb() {
   const { getDb: _getDb } = await import("../../server/db");
@@ -129,10 +133,10 @@ async function sendNotification(params: {
   }
 }
 
-// ─── ROUTER ──────────────────────────────────────────────────────────────────
+//
 
 export const x1Router = router({
-  // ─── Opções de desafio disponíveis para um par usuário/bolão ─────────────
+//
   getOptions: protectedProcedure
     .input(z.object({ poolId: z.number(), opponentId: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -254,7 +258,7 @@ export const x1Router = router({
         (p) => p && p !== "group_stage" && !p.startsWith("group_")
       );
 
-      // ── Fases previstas para campeonatos Copa (groups_knockout ou com group_stage) ──
+//
       // Quando o campeonato tem fase de grupos mas ainda não tem jogos eliminatórios na API
       // (ex: Copa do Mundo antes das oitavas), exibimos as fases previstas para
       // permitir duelos de classificação antecipados.
@@ -311,9 +315,9 @@ export const x1Router = router({
           { type: "next_n_games" as const, label: "Próximos 20 jogos", value: 20 },
         ],
         predictionOptions: [
-          // ── Campão (sempre disponível) ────────────────────────────────────
+//
           { type: "champion" as const, label: "Quem vai ser o campão?", teamsRequired: 1 },
-          // ── Classificação em grupo (detectado pelos dados reais) ────────────────────
+//
           ...(hasGroups
             ? groups.map((g) => ({
                 type: "group_qualified" as const,
@@ -323,7 +327,7 @@ export const x1Router = router({
                 teamsRequired: 2,
               }))
             : []),
-          // ── Classificação por fase de mata-mata (reais + previstas) ────────────
+//
           ...(hasKnockoutPhases
             ? knockoutPhases.map((p) => {
                 const isPredicted = predictedKnockoutPhases.includes(p) && !knockoutPhasesFromGames.includes(p);
@@ -359,7 +363,7 @@ export const x1Router = router({
       };
     }),
 
-  // ─── Criar desafio ────────────────────────────────────────────────────────
+//
   create: protectedProcedure
     .input(
       z.object({
@@ -534,7 +538,7 @@ export const x1Router = router({
       return { challengeId };
     }),
 
-  // ─── Aceitar desafio ──────────────────────────────────────────────────────
+//
   accept: protectedProcedure
     .input(
       z.object({
@@ -664,7 +668,7 @@ export const x1Router = router({
       return { success: true };
     }),
 
-  // ─── Recusar desafio ──────────────────────────────────────────────────────
+//
   decline: protectedProcedure
     .input(z.object({ challengeId: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -691,7 +695,7 @@ export const x1Router = router({
       return { success: true };
     }),
 
-  // ─── Cancelar desafio (pelo desafiante) ──────────────────────────────────
+//
   cancel: protectedProcedure
     .input(z.object({ challengeId: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -718,7 +722,7 @@ export const x1Router = router({
       return { success: true };
     }),
 
-  // ─── Concluir score_duel (calcula pontos e determina vencedor) ────────────
+//
   conclude: protectedProcedure
     .input(z.object({ challengeId: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -841,7 +845,7 @@ export const x1Router = router({
       return { winnerId, challengerPoints, challengedPoints };
     }),
 
-  // ─── Listar desafios de um bolão ──────────────────────────────────────────
+//
   getByPool: protectedProcedure
     .input(
       z.object({
@@ -906,7 +910,7 @@ export const x1Router = router({
       }));
     }),
 
-  // ─── Detalhe de um desafio ────────────────────────────────────────────────
+//
   getById: protectedProcedure
     .input(z.object({ challengeId: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -958,7 +962,7 @@ export const x1Router = router({
       };
     }),
 
-  // ─── Estatísticas do usuário em um bolão ─────────────────────────────────
+//
   getMyStats: protectedProcedure
     .input(z.object({ poolId: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -987,7 +991,7 @@ export const x1Router = router({
       return { wins, losses, draws, active, pending, total: concluded.length };
     }),
 
-  // ─── Placar de rivalidade entre dois usuários em um bolão ────────────────
+//
   getRivalry: protectedProcedure
     .input(z.object({ poolId: z.number(), opponentId: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -1027,7 +1031,7 @@ export const x1Router = router({
       };
     }),
 
-  // ─── Admin: listar todos os desafios da plataforma ────────────────────────
+//
   adminList: protectedProcedure
     .input(
       z.object({
@@ -1098,7 +1102,7 @@ export const x1Router = router({
       };
     }),
 
-  // ─── Admin: cancelar/forçar conclusão de um desafio ─────────────────────
+//
   adminForceCancel: protectedProcedure
     .input(z.object({ challengeId: z.number(), reason: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
@@ -1123,7 +1127,7 @@ export const x1Router = router({
       return { success: true };
     }),
 
-  // ─── Admin: estatísticas globais do X1 ───────────────────────────────────
+//
   adminStats: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
     const db = await getDb();
@@ -1147,7 +1151,7 @@ export const x1Router = router({
     };
   }),
 
-  // ─── Admin: disparar resolver de previsões de fase manualmente ────────────────────────
+//
   adminResolvePhase: protectedProcedure
     .input(
       z.object({
@@ -1181,7 +1185,7 @@ export const x1Router = router({
       return { success: true, ...result };
     }),
 
-  // ─── Estatísticas públicas do bolão (hub de duelos) ───────────────────────────────────────────
+//
   getPoolStats: protectedProcedure
     .input(z.object({ poolId: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -1225,7 +1229,7 @@ export const x1Router = router({
       return { total, pending, active, concluded, topWinner };
     }),
 
-  // ─── Expirar desafios pendentes vencidos (cron job) ────────────────────────────────────────────
+//
   expireStale: protectedProcedure.mutation(async ({ ctx }) => {
     const db = await getDb();
     const { x1Challenges } = await getSchema();

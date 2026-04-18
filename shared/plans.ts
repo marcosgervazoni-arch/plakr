@@ -6,6 +6,49 @@
 
 export type PlanTier = "free" | "pro" | "unlimited";
 
+/**
+ * Tier exclusivo para participantes de bolão (não organizadores).
+ * Adquirido dentro do bolão via Passe VIP — R$4,90/mês.
+ * Válido globalmente: todos os bolões enquanto a assinatura estiver ativa.
+ */
+export type ParticipantTier = "free" | "vip";
+
+// ─── Limites do Passe VIP (participante) ─────────────────────────────────────
+
+export const PARTICIPANT_LIMITS: Record<ParticipantTier, {
+  dailyAiAnalysis: number;    // análises pré-jogo por dia (Infinity = ilimitado)
+  maxActiveX1: number;        // duelos X1 ativos simultâneos (Infinity = ilimitado)
+  noAds: boolean;             // sem anúncios
+}> = {
+  free: {
+    dailyAiAnalysis: 3,
+    maxActiveX1: 5,
+    noAds: false,
+  },
+  vip: {
+    dailyAiAnalysis: Infinity,
+    maxActiveX1: Infinity,
+    noAds: true,
+  },
+};
+
+/** Preço do Passe VIP */
+export const VIP_PRICE = {
+  monthly: 4.90,
+  currency: "BRL",
+  label: "Passe VIP",
+};
+
+/** Verifica se o participante tem acesso VIP */
+export function isParticipantVip(tier: ParticipantTier): boolean {
+  return tier === "vip";
+}
+
+/** Retorna os limites do participante pelo tier */
+export function getParticipantLimits(tier: ParticipantTier) {
+  return PARTICIPANT_LIMITS[tier];
+}
+
 // ─── Limites por tier ────────────────────────────────────────────────────────
 
 export const PLAN_LIMITS: Record<PlanTier, {

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Plakr — Simulação Tela de Jogos (Participante Free)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #0B0F1A;
+      --bg-surface: #121826;
+      --bg-surface2: #1A2235;
+      --primary: #FFB800;
+      --primary-end: #FF8A00;
+      --success: #00FF88;
+      --error: #FF3B3B;
+      --info: #00C2FF;
+      --text-primary: #F0F4FF;
+      --text-secondary: #8B95A8;
+      --text-muted: #4B5563;
+      --border: rgba(255,255,255,0.07);
+    }
+
+    body {
+      background: #060910;
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 0;
+    }
+
+    /* ── PHONE FRAME ── */
+    .phone-frame {
+      width: 390px;
+      min-height: 844px;
+      background: var(--bg-primary);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── TOP BAR ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 10px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .top-bar-left { display: flex; flex-direction: column; gap: 2px; }
+    .pool-name { font-size: 15px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.2px; }
+    .pool-meta { font-size: 11px; color: var(--text-secondary); }
+    .top-bar-right { display: flex; align-items: center; gap: 10px; }
+    .rank-badge {
+      background: rgba(255,184,0,0.12);
+      border: 1px solid rgba(255,184,0,0.3);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 12px; font-weight: 600; color: var(--primary);
+    }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, #2A3A5C, #1A2A4A);
+      border: 2px solid var(--text-muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: var(--text-secondary);
+    }
+
+    /* ── AD BANNER TOP ── */
+    .ad-banner-top {
+      background: #0D1420;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .ad-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .ad-content-top {
+      flex: 1; margin: 0 12px;
+      background: linear-gradient(90deg, rgba(0,194,255,0.08), rgba(0,194,255,0.04));
+      border: 1px solid rgba(0,194,255,0.15);
+      border-radius: 6px; padding: 7px 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ad-text { font-size: 11px; color: var(--text-secondary); }
+    .ad-text strong { color: var(--info); font-weight: 600; }
+    .ad-close {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); border: none;
+      color: var(--text-muted); font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex; padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-surface);
+    }
+    .tab {
+      padding: 12px 16px; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); border-bottom: 2px solid transparent;
+      cursor: pointer; white-space: nowrap;
+    }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+    /* ── SCROLL AREA ── */
+    .scroll-area { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+    .scroll-area::-webkit-scrollbar { display: none; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      padding: 16px 16px 8px;
+      font-size: 11px; font-weight: 600;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── ROUND HEADER ── */
+    .round-header {
+      padding: 14px 16px 8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .round-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; }
+    .round-date { font-size: 11px; color: var(--text-muted); }
+
+    /* ── GAME CARD ── */
+    .game-card {
+      margin: 0 12px 10px;
+      background: var(--bg-surface);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .game-card.finished { border-color: rgba(0,255,136,0.12); }
+    .game-card.live { border-color: rgba(0,255,136,0.25); }
+
+    .game-card-header {
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .team-section { flex: 1; display: flex; align-items: center; gap: 8px; }
+    .team-section.away { flex-direction: row-reverse; }
+    .team-flag {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--bg-surface2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .team-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .team-section.away .team-name { text-align: right; }
+
+    .score-center {
+      display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 80px;
+    }
+    .score-display { display: flex; align-items: center; gap: 6px; }
+    .score-num { font-size: 20px; font-weight: 800; color: var(--text-primary); }
+    .score-sep { font-size: 14px; color: var(--text-muted); font-weight: 300; }
+    .game-time { font-size: 10px; color: var(--text-muted); text-align: center; }
+    .game-status-finished { font-size: 10px; color: var(--text-muted); font-weight: 500; }
+    .game-status-live {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 10px; color: var(--success); font-weight: 600;
+    }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--success); animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ── BET INPUT ── */
+    .bet-section {
+      padding: 10px 14px 12px;
+      border-top: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .bet-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .bet-input-row { display: flex; align-items: center; gap: 8px; }
+    .bet-input-group { display: flex; align-items: center; gap: 6px; flex: 1; }
+    .bet-team-label { font-size: 11px; color: var(--text-secondary); min-width: 30px; text-align: right; }
+    .bet-team-label.away { text-align: left; }
+    .score-input {
+      width: 44px; height: 36px;
+      background: var(--bg-surface2);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px; color: var(--text-primary);
+      font-size: 18px; font-weight: 700; text-align: center; outline: none;
+    }
+    .score-input:focus { border-color: var(--primary); }
+    .bet-sep { font-size: 16px; color: var(--text-muted); padding: 0 4px; }
+
+    /* ── BET PLACED ── */
+    .bet-placed {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px 10px;
+      border-top: 1px solid var(--border);
+      background: rgba(0,255,136,0.03);
+    }
+    .bet-placed-icon {
+      width: 20px; height: 20px; background: rgba(0,255,136,0.12);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0;
+    }
+    .bet-placed-text { font-size: 12px; color: var(--text-secondary); }
+    .bet-placed-score { font-weight: 700; color: var(--success); }
+
+    /* ── AI SECTION (PRE-JOGO) ── */
+    .ai-section {
+      padding: 10px 14px 12px;
+      border-top: 1px solid var(--border);
+    }
+    .ai-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .ai-icon {
+      width: 18px; height: 18px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-end));
+      border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px;
+    }
+    .ai-title { font-size: 11px; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .ai-usage-badge {
+      margin-left: auto; font-size: 10px; color: var(--text-muted);
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: 10px; padding: 2px 8px;
+    }
+    .ai-usage-badge.warning { color: var(--primary); background: rgba(255,184,0,0.08); border-color: rgba(255,184,0,0.2); }
+    .ai-usage-badge.danger { color: var(--error); background: rgba(255,59,59,0.08); border-color: rgba(255,59,59,0.2); }
+    .ai-text { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+
+    /* ── AI LOCKED (PRÉ-JOGO ONLY) ── */
+    .ai-locked { position: relative; overflow: hidden; }
+    .ai-locked-blur {
+      font-size: 13px; color: var(--text-secondary); line-height: 1.55;
+      filter: blur(4px); user-select: none; pointer-events: none; opacity: 0.5;
+    }
+    .ai-locked-overlay {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+      background: linear-gradient(to bottom, rgba(11,15,26,0) 0%, rgba(11,15,26,0.85) 40%, rgba(11,15,26,0.97) 100%);
+      padding: 12px;
+    }
+    .ai-locked-msg { font-size: 12px; color: var(--text-secondary); text-align: center; }
+    .ai-locked-msg strong { color: var(--text-primary); }
+    .btn-upgrade-inline {
+      background: linear-gradient(90deg, var(--primary), var(--primary-end));
+      border: none; border-radius: 20px; padding: 7px 18px;
+      font-size: 12px; font-weight: 700; color: #0B0F1A; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    /* ── POST-GAME SECTION (ALWAYS FREE) ── */
+    .postgame-section {
+      border-top: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    /* Resultado / pontuação */
+    .postgame-result {
+      padding: 10px 14px;
+      background: rgba(0,255,136,0.03);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .postgame-result-left { display: flex; flex-direction: column; gap: 3px; }
+    .postgame-result-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .postgame-result-value { font-size: 22px; font-weight: 800; color: var(--success); line-height: 1; }
+    .postgame-result-desc { font-size: 11px; color: var(--text-secondary); }
+
+    .postgame-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+    .badge-pill {
+      display: flex; align-items: center; gap: 4px;
+      padding: 4px 8px; border-radius: 20px;
+      font-size: 10px; font-weight: 600;
+    }
+    .badge-pill.hit { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.25); color: var(--success); }
+    .badge-pill.miss { background: rgba(255,59,59,0.08); border: 1px solid rgba(255,59,59,0.2); color: var(--error); }
+    .badge-pill.partial { background: rgba(255,184,0,0.08); border: 1px solid rgba(255,184,0,0.2); color: var(--primary); }
+
+    /* Gols */
+    .postgame-goals {
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .goals-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .goal-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+    .goal-time { font-size: 10px; color: var(--text-muted); min-width: 28px; }
+    .goal-scorer { color: var(--text-primary); font-weight: 500; }
+    .goal-flag { font-size: 13px; }
+
+    /* Contexto do bolão */
+    .postgame-context {
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      display: flex; gap: 12px;
+    }
+    .context-stat { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .context-stat-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+    .context-stat-label { font-size: 10px; color: var(--text-muted); }
+    .context-stat-value.up { color: var(--success); }
+    .context-stat-value.gold { color: var(--primary); }
+
+    /* Comentário CazéTV */
+    .postgame-cazé {
+      padding: 10px 14px 12px;
+      border-top: 1px solid var(--border);
+      background: rgba(255,184,0,0.02);
+    }
+    .cazé-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .cazé-icon {
+      width: 18px; height: 18px;
+      background: linear-gradient(135deg, #FF6B35, #FF3B3B);
+      border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px;
+    }
+    .cazé-title { font-size: 11px; font-weight: 600; color: #FF8A50; text-transform: uppercase; letter-spacing: 0.5px; }
+    .cazé-free-badge {
+      margin-left: auto; font-size: 9px; font-weight: 600;
+      color: var(--success); background: rgba(0,255,136,0.08);
+      border: 1px solid rgba(0,255,136,0.2); border-radius: 10px; padding: 2px 7px;
+    }
+    .cazé-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+    .cazé-text em { color: var(--primary); font-style: normal; font-weight: 600; }
+
+    /* ── AD BETWEEN CARDS ── */
+    .ad-between {
+      margin: 4px 12px 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ad-between-label {
+      font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px;
+      writing-mode: vertical-rl; transform: rotate(180deg); flex-shrink: 0;
+    }
+    .ad-between-content {
+      flex: 1;
+      background: linear-gradient(90deg, rgba(255,59,59,0.06), rgba(255,59,59,0.02));
+      border: 1px solid rgba(255,59,59,0.12);
+      border-radius: 8px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ad-between-img {
+      width: 40px; height: 40px; border-radius: 8px;
+      background: linear-gradient(135deg, #2A1A1A, #3A1A1A);
+      display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+    }
+    .ad-between-text { flex: 1; }
+    .ad-between-title { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+    .ad-between-sub { font-size: 10px; color: var(--text-secondary); }
+    .ad-between-cta {
+      background: var(--error); border: none; border-radius: 6px;
+      padding: 6px 10px; font-size: 10px; font-weight: 700; color: white; cursor: pointer; white-space: nowrap;
+    }
+
+    /* ── PASSE UPSELL CARD ── */
+    .passe-upsell {
+      margin: 4px 12px 12px;
+      background: linear-gradient(135deg, rgba(255,184,0,0.06), rgba(255,138,0,0.04));
+      border: 1px solid rgba(255,184,0,0.25);
+      border-radius: 12px; padding: 14px; position: relative; overflow: hidden;
+    }
+    .passe-upsell::before {
+      content: ''; position: absolute; top: -30px; right: -30px;
+      width: 100px; height: 100px;
+      background: radial-gradient(circle, rgba(255,184,0,0.1), transparent 70%);
+      pointer-events: none;
+    }
+    .passe-upsell-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .passe-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-end));
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .passe-upsell-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+    .passe-upsell-sub { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+    .passe-benefits { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .passe-benefit-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-secondary); }
+    .benefit-check {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: rgba(0,255,136,0.12); border: 1px solid rgba(0,255,136,0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; color: var(--success); flex-shrink: 0;
+    }
+    .passe-footer { display: flex; align-items: center; justify-content: space-between; }
+    .passe-price { display: flex; flex-direction: column; }
+    .passe-price-value { font-size: 20px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .passe-price-period { font-size: 10px; color: var(--text-muted); }
+    .btn-passe {
+      background: linear-gradient(90deg, var(--primary), var(--primary-end));
+      border: none; border-radius: 22px; padding: 10px 22px;
+      font-size: 13px; font-weight: 700; color: #0B0F1A; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-passe-dismiss {
+      font-size: 10px; color: var(--text-muted); background: none; border: none;
+      cursor: pointer; text-align: center; margin-top: 8px; display: block; width: 100%;
+    }
+
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position: sticky; bottom: 0;
+      background: var(--bg-surface); border-top: 1px solid var(--border);
+      display: flex; padding: 8px 0 14px; z-index: 50;
+    }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 0; }
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 10px; color: var(--text-muted); }
+    .nav-item.active .nav-label { color: var(--primary); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 200; backdrop-filter: blur(4px);
+    }
+    .modal-sheet {
+      width: 390px; background: var(--bg-surface);
+      border-radius: 20px 20px 0 0; padding: 20px 20px 36px;
+      border-top: 1px solid rgba(255,184,0,0.2);
+    }
+    .modal-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 0 auto 18px; }
+    .modal-title { font-size: 18px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; }
+    .modal-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.5; }
+    .modal-benefits { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .modal-benefit {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    .modal-benefit-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .modal-benefit-icon.gold { background: rgba(255,184,0,0.1); }
+    .modal-benefit-icon.green { background: rgba(0,255,136,0.1); }
+    .modal-benefit-icon.blue { background: rgba(0,194,255,0.1); }
+    .modal-benefit-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 1px; }
+    .modal-benefit-desc { font-size: 11px; color: var(--text-secondary); }
+    .modal-price-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .modal-price-label { font-size: 13px; color: var(--text-secondary); }
+    .modal-price-value { font-size: 22px; font-weight: 800; color: var(--primary); }
+    .modal-price-period { font-size: 12px; color: var(--text-muted); }
+    .btn-modal-cta {
+      width: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-end));
+      border: none; border-radius: 14px; padding: 14px;
+      font-size: 15px; font-weight: 800; color: #0B0F1A; cursor: pointer; margin-bottom: 10px;
+    }
+    .btn-modal-dismiss { width: 100%; background: none; border: none; font-size: 13px; color: var(--text-muted); cursor: pointer; padding: 6px; }
+
+    /* ── FREE BADGE inline ── */
+    .free-tag {
+      font-size: 9px; font-weight: 700; color: var(--success);
+      background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2);
+      border-radius: 4px; padding: 1px 5px; letter-spacing: 0.3px;
+    }
+
+    * { scrollbar-width: none; }
+  </style>
+</head>
+<body>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" style="display:none;">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚡ Passe do Participante</div>
+    <div class="modal-sub">Jogue sem interrupções. IA ilimitada. Por menos de um café por semana.</div>
+    <div class="modal-benefits">
+      <div class="modal-benefit">
+        <div class="modal-benefit-icon gold">🚫</div>
+        <div>
+          <div class="modal-benefit-title">Zero anúncios</div>
+          <div class="modal-benefit-desc">Nenhum banner, nenhuma interrupção. Em qualquer bolão.</div>
+        </div>
+      </div>
+      <div class="modal-benefit">
+        <div class="modal-benefit-icon green">🤖</div>
+        <div>
+          <div class="modal-benefit-title">IA ilimitada pré-jogo</div>
+          <div class="modal-benefit-desc">Análise completa de todos os jogos, sem limite diário.</div>
+        </div>
+      </div>
+      <div class="modal-benefit">
+        <div class="modal-benefit-icon blue">⚔️</div>
+        <div>
+          <div class="modal-benefit-title">Duelos X1 ilimitados</div>
+          <div class="modal-benefit-desc">Desafie quem quiser, quantas vezes quiser.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-price-row">
+      <div class="modal-price-label">Assinatura mensal</div>
+      <div>
+        <span class="modal-price-value">R$4,90</span>
+        <span class="modal-price-period">/mês</span>
+      </div>
+    </div>
+    <button class="btn-modal-cta" onclick="closeModal()">Ativar Passe do Participante</button>
+    <button class="btn-modal-dismiss" onclick="closeModal()">Agora não</button>
+  </div>
+</div>
+
+<!-- PHONE -->
+<div class="phone-frame">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="pool-name">🍺 Wild Beer Copa 2026</div>
+      <div class="pool-meta">Copa do Mundo · 72 jogos · 8 participantes</div>
+    </div>
+    <div class="top-bar-right">
+      <div class="rank-badge">🏆 #4</div>
+      <div class="avatar">G</div>
+    </div>
+  </div>
+
+  <!-- AD BANNER TOP -->
+  <div class="ad-banner-top">
+    <span class="ad-label">Anúncio</span>
+    <div class="ad-content-top">
+      <span style="font-size:16px">📱</span>
+      <span class="ad-text"><strong>Betano</strong> — Aposte com bônus de R$200 no primeiro depósito</span>
+    </div>
+    <button class="ad-close">✕</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab">Ranking</div>
+    <div class="tab active">Jogos</div>
+    <div class="tab">Mural</div>
+    <div class="tab">Duelos</div>
+  </div>
+
+  <!-- SCROLL AREA -->
+  <div class="scroll-area">
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SEÇÃO: JOGOS FINALIZADOS (PÓS-JOGO)    -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="section-label">Finalizados · Ontem</div>
+
+    <!-- CARD FINALIZADO 1 — ACERTO PLACAR EXATO -->
+    <div class="game-card finished">
+      <div class="game-card-header">
+        <div class="team-section">
+          <div class="team-flag">🇧🇷</div>
+          <div class="team-name">Brasil</div>
+        </div>
+        <div class="score-center">
+          <div class="score-display">
+            <span class="score-num" style="color:var(--success)">2</span>
+            <span class="score-sep">×</span>
+            <span class="score-num">0</span>
+          </div>
+          <div class="game-status-finished">Encerrado</div>
+        </div>
+        <div class="team-section away">
+          <div class="team-flag">🇲🇽</div>
+          <div class="team-name">México</div>
+        </div>
+      </div>
+
+      <!-- Pós-jogo: resultado e pontuação — FREE -->
+      <div class="postgame-section">
+
+        <!-- Pontuação e badges -->
+        <div class="postgame-result">
+          <div class="postgame-result-left">
+            <div class="postgame-result-label">Seus pontos</div>
+            <div class="postgame-result-value">+15 pts</div>
+            <div class="postgame-result-desc">Você foi de #4 para <strong style="color:var(--primary)">#2</strong> no ranking</div>
+          </div>
+          <div class="postgame-badges">
+            <div class="badge-pill hit">🎯 Placar exato</div>
+            <div class="badge-pill hit">⚽ Gols certos</div>
+            <div class="badge-pill hit">🏆 Vencedor</div>
+          </div>
+        </div>
+
+        <!-- Gols do jogo — FREE -->
+        <div class="postgame-goals">
+          <div class="goals-label">Gols</div>
+          <div class="goal-item">
+            <span class="goal-flag">🇧🇷</span>
+            <span class="goal-time">23'</span>
+            <span class="goal-scorer">Vinicius Jr.</span>
+          </div>
+          <div class="goal-item">
+            <span class="goal-flag">🇧🇷</span>
+            <span class="goal-time">67'</span>
+            <span class="goal-scorer">Rodrygo</span>
+          </div>
+        </div>
+
+        <!-- Contexto do bolão — FREE -->
+        <div class="postgame-context">
+          <div class="context-stat">
+            <div class="context-stat-value gold">2 de 8</div>
+            <div class="context-stat-label">acertaram o placar exato</div>
+          </div>
+          <div class="context-stat">
+            <div class="context-stat-value up">▲ +2</div>
+            <div class="context-stat-label">posições no ranking</div>
+          </div>
+          <div class="context-stat">
+            <div class="context-stat-value">142 pts</div>
+            <div class="context-stat-label">total acumulado</div>
+          </div>
+        </div>
+
+        <!-- Comentário CazéTV — FREE, SEM RESTRIÇÃO -->
+        <div class="postgame-cazé">
+          <div class="cazé-header">
+            <div class="cazé-icon">🎙️</div>
+            <span class="cazé-title">Análise do Palpite</span>
+            <span class="cazé-free-badge">✓ Grátis</span>
+          </div>
+          <div class="cazé-text">
+            QUE CRAQUE! Você acertou o placar exato — <em>Brasil 2×0</em> — e foi um dos apenas 2 em 8 que mandaram bem. Vinicius e Rodrygo fizeram o trabalho sujo e você já sabia. Subiu duas posições e está colado no líder. Próximo jogo é decisivo! 🔥
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- AD BETWEEN -->
+    <div class="ad-between">
+      <span class="ad-between-label">Anúncio</span>
+      <div class="ad-between-content">
+        <div class="ad-between-img">🎰</div>
+        <div class="ad-between-text">
+          <div class="ad-between-title">Pixbet — Saque em 5 min</div>
+          <div class="ad-between-sub">Bônus de boas-vindas de R$500</div>
+        </div>
+        <button class="ad-between-cta">Ver oferta</button>
+      </div>
+    </div>
+
+    <!-- CARD FINALIZADO 2 — ERRO NO PALPITE -->
+    <div class="game-card finished" style="border-color:rgba(255,59,59,0.1)">
+      <div class="game-card-header">
+        <div class="team-section">
+          <div class="team-flag">🇦🇷</div>
+          <div class="team-name">Argentina</div>
+        </div>
+        <div class="score-center">
+          <div class="score-display">
+            <span class="score-num">1</span>
+            <span class="score-sep">×</span>
+            <span class="score-num" style="color:var(--success)">1</span>
+          </div>
+          <div class="game-status-finished">Encerrado</div>
+        </div>
+        <div class="team-section away">
+          <div class="team-flag">🇨🇦</div>
+          <div class="team-name">Canadá</div>
+        </div>
+      </div>
+
+      <div class="postgame-section">
+        <div class="postgame-result" style="background:rgba(255,59,59,0.03)">
+          <div class="postgame-result-left">
+            <div class="postgame-result-label">Seus pontos</div>
+            <div class="postgame-result-value" style="color:var(--text-muted)">+0 pts</div>
+            <div class="postgame-result-desc">Você apostou <strong style="color:var(--error)">Argentina 2×0</strong></div>
+          </div>
+          <div class="postgame-badges">
+            <div class="badge-pill miss">✗ Placar errado</div>
+            <div class="badge-pill miss">✗ Resultado errado</div>
+          </div>
+        </div>
+
+        <div class="postgame-goals">
+          <div class="goals-label">Gols</div>
+          <div class="goal-item">
+            <span class="goal-flag">🇦🇷</span>
+            <span class="goal-time">34'</span>
+            <span class="goal-scorer">Messi</span>
+          </div>
+          <div class="goal-item">
+            <span class="goal-flag">🇨🇦</span>
+            <span class="goal-time">78'</span>
+            <span class="goal-scorer">Davies</span>
+          </div>
+        </div>
+
+        <div class="postgame-context">
+          <div class="context-stat">
+            <div class="context-stat-value" style="color:var(--error)">6 de 8</div>
+            <div class="context-stat-label">erraram o resultado</div>
+          </div>
+          <div class="context-stat">
+            <div class="context-stat-value" style="color:var(--error)">▼ 0</div>
+            <div class="context-stat-label">sem mudança no ranking</div>
+          </div>
+          <div class="context-stat">
+            <div class="context-stat-value">127 pts</div>
+            <div class="context-stat-label">total acumulado</div>
+          </div>
+        </div>
+
+        <!-- Comentário CazéTV — FREE, SEM RESTRIÇÃO -->
+        <div class="postgame-cazé">
+          <div class="cazé-header">
+            <div class="cazé-icon">🎙️</div>
+            <span class="cazé-title">Análise do Palpite</span>
+            <span class="cazé-free-badge">✓ Grátis</span>
+          </div>
+          <div class="cazé-text">
+            Que zebra, hein! O Canadá empatou com a Argentina e pegou todo mundo de surpresa — <em>6 de 8</em> participantes erraram junto com você. Davies apareceu do nada no segundo tempo e bagunçou tudo. Não tem drama, o Brasil ainda pode te salvar! 😅
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- SEÇÃO: PRÓXIMOS JOGOS (PRÉ-JOGO)       -->
+    <!-- ═══════════════════════════════════════ -->
+    <div class="round-header" style="margin-top:8px">
+      <span class="round-title">Próximos · Hoje</span>
+      <span class="round-date">18 Jun</span>
+    </div>
+
+    <!-- CARD PRÉ-JOGO 1 — IA disponível (1/3) -->
+    <div class="game-card">
+      <div class="game-card-header">
+        <div class="team-section">
+          <div class="team-flag">🇫🇷</div>
+          <div class="team-name">França</div>
+        </div>
+        <div class="score-center">
+          <div class="score-display">
+            <span class="score-num">—</span>
+            <span class="score-sep">×</span>
+            <span class="score-num">—</span>
+          </div>
+          <div class="game-time">16h00 · Hoje</div>
+        </div>
+        <div class="team-section away">
+          <div class="team-flag">🇩🇪</div>
+          <div class="team-name">Alemanha</div>
+        </div>
+      </div>
+      <div class="bet-section">
+        <div class="bet-label">Seu palpite</div>
+        <div class="bet-input-row">
+          <div class="bet-input-group">
+            <span class="bet-team-label">FRA</span>
+            <input class="score-input" type="number" min="0" max="20" value="1" />
+          </div>
+          <span class="bet-sep">×</span>
+          <div class="bet-input-group">
+            <input class="score-input" type="number" min="0" max="20" value="0" />
+            <span class="bet-team-label away">ALE</span>
+          </div>
+        </div>
+      </div>
+      <div class="ai-section">
+        <div class="ai-header">
+          <div class="ai-icon">✨</div>
+          <span class="ai-title">Análise IA</span>
+          <span class="ai-usage-badge warning">1 de 3 hoje</span>
+        </div>
+        <div class="ai-text">
+          França e Alemanha num clássico europeu. Mbappé em grande fase, com 3 gols nos últimos 2 jogos. A Alemanha tem dificuldades fora de casa. Histórico favorece os franceses em 58% dos confrontos diretos.
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD PRÉ-JOGO 2 — IA BLOQUEADA (limite atingido) -->
+    <div class="game-card">
+      <div class="game-card-header">
+        <div class="team-section">
+          <div class="team-flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</div>
+          <div class="team-name">Inglaterra</div>
+        </div>
+        <div class="score-center">
+          <div class="score-display">
+            <span class="score-num">—</span>
+            <span class="score-sep">×</span>
+            <span class="score-num">—</span>
+          </div>
+          <div class="game-time">19h00 · Hoje</div>
+        </div>
+        <div class="team-section away">
+          <div class="team-flag">🇳🇱</div>
+          <div class="team-name">Holanda</div>
+        </div>
+      </div>
+      <div class="bet-section">
+        <div class="bet-label">Seu palpite</div>
+        <div class="bet-input-row">
+          <div class="bet-input-group">
+            <span class="bet-team-label">ING</span>
+            <input class="score-input" type="number" min="0" max="20" placeholder="—" />
+          </div>
+          <span class="bet-sep">×</span>
+          <div class="bet-input-group">
+            <input class="score-input" type="number" min="0" max="20" placeholder="—" />
+            <span class="bet-team-label away">HOL</span>
+          </div>
+        </div>
+      </div>
+      <!-- IA BLOQUEADA -->
+      <div class="ai-section">
+        <div class="ai-header">
+          <div class="ai-icon">✨</div>
+          <span class="ai-title">Análise IA</span>
+          <span class="ai-usage-badge danger">Limite atingido</span>
+        </div>
+        <div class="ai-locked">
+          <div class="ai-locked-blur">
+            Inglaterra chega embalada com Kane artilheiro do torneio. A Holanda de Van Dijk tem a melhor defesa do grupo. Análise aponta para jogo equilibrado com leve vantagem inglesa no segundo tempo, aproveitando a velocidade nas laterais...
+          </div>
+          <div class="ai-locked-overlay">
+            <div class="ai-locked-msg"><strong>Você usou suas 3 análises de hoje.</strong><br>Renova amanhã às 00h — ou ative o Passe.</div>
+            <button class="btn-upgrade-inline" onclick="openModal()">⚡ Ativar Passe · R$4,90/mês</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSE UPSELL CARD -->
+    <div class="passe-upsell">
+      <div class="passe-upsell-header">
+        <div class="passe-icon">⚡</div>
+        <div>
+          <div class="passe-upsell-title">Passe do Participante</div>
+          <div class="passe-upsell-sub">IA ilimitada antes de cada jogo. Sem anúncios. Duelos X1 sem limite.</div>
+        </div>
+      </div>
+      <div class="passe-benefits">
+        <div class="passe-benefit-item">
+          <div class="benefit-check">✓</div>
+          <span>IA ilimitada — análise completa de todos os jogos</span>
+        </div>
+        <div class="passe-benefit-item">
+          <div class="benefit-check">✓</div>
+          <span>Zero anúncios em qualquer bolão que você participar</span>
+        </div>
+        <div class="passe-benefit-item">
+          <div class="benefit-check">✓</div>
+          <span>Duelos X1 ilimitados contra qualquer participante</span>
+        </div>
+      </div>
+      <div class="passe-footer">
+        <div class="passe-price">
+          <span class="passe-price-value">R$4,90</span>
+          <span class="passe-price-period">por mês</span>
+        </div>
+        <button class="btn-passe" onclick="openModal()">Ativar agora →</button>
+      </div>
+      <button class="btn-passe-dismiss">Não, prefiro continuar com limite</button>
+    </div>
+
+  </div><!-- /scroll-area -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Início</div>
+    </div>
+    <div class="nav-item active">
+      <div class="nav-icon">⚽</div>
+      <div class="nav-label">Jogos</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🏆</div>
+      <div class="nav-label">Ranking</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">⚔️</div>
+      <div class="nav-label">Duelos</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">👤</div>
+      <div class="nav-label">Perfil</div>
+    </div>
+  </div>
+
+</div><!-- /phone-frame -->
+
+<script>
+  function openModal() { document.getElementById('modal').style.display = 'flex'; }
+  function closeModal() { document.getElementById('modal').style.display = 'none'; }
+  document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+</script>
+</body>
+</html>

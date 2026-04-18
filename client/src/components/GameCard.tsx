@@ -28,6 +28,8 @@ import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import BetBreakdownBadges from "@/components/BetBreakdownBadges";
+import { VipUpgradeBanner } from "@/components/VipUpgradeBanner";
+import { useUserPlan } from "@/hooks/useUserPlan";
 
 export interface GoalEvent {
   min: string;
@@ -113,12 +115,14 @@ export interface GameCardProps {
   shareCardConfig?: import("../../../drizzle/schema").ShareCardStateConfig | null;
   predictionReliable?: boolean;
   betCount?: number;
+  poolSlug?: string;
 }
 function GameCard({
   game, myBet, open, finished, live, betA, betB, hasBet, poolId,
-  betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition, showPhaseLabel, shareCardConfig, predictionReliable,
+  betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition, showPhaseLabel, shareCardConfig, predictionReliable, poolSlug,
 }: GameCardProps) {
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [vipBannerDismissed, setVipBannerDismissed] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareVisible, setShareVisible] = useState(false); // controla animação slide-up
   const [cardPreviewUrl, setCardPreviewUrl] = useState<string | null>(null);
@@ -195,6 +199,28 @@ function GameCard({
       setCardPreviewUrl(null);
       setCardPreviewBlob(null);
     }, 300);
+  };
+
+  const { isParticipantVip } = useUserPlan();
+
+  // Contador de análises de IA usadas hoje (armazenado em localStorage)
+  const AI_STORAGE_KEY = "plakr_ai_daily_usage";
+  const getAiUsageToday = (): number => {
+    try {
+      const stored = localStorage.getItem(AI_STORAGE_KEY);
+      if (!stored) return 0;
+      const { date, count } = JSON.parse(stored);
+      const today = new Date().toDateString();
+      if (date !== today) return 0;
+      return count as number;
+    } catch { return 0; }
+  };
+  const incrementAiUsage = () => {
+    try {
+      const today = new Date().toDateString();
+      const current = getAiUsageToday();
+      localStorage.setItem(AI_STORAGE_KEY, JSON.stringify({ date: today, count: current + 1 }));
+    } catch { /* ignore */ }
   };
 
   // Busca análise do palpite apenas quando o painel é aberto e o jogo está finalizado
@@ -460,7 +486,14 @@ function GameCard({
             </button>
             {(finished || !finished) && (
               <button
-                onClick={() => setAnalysisOpen((v) => !v)}
+                onClick={() => {
+                  const opening = !analysisOpen;
+                  setAnalysisOpen(opening);
+                  // Incrementar contador de IA apenas ao abrir (não ao fechar) e apenas para Free
+                  if (opening && !finished && !isParticipantVip) {
+                    incrementAiUsage();
+                  }
+                }}
                 className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors px-2 py-1.5 rounded-lg hover:bg-primary/10"
               >
                 <Sparkles className="w-3.5 h-3.5" />
@@ -619,16 +652,69 @@ function GameCard({
                     ))}
                   </div>
                 )}
-                {/* Análise da IA */}
-                {game.aiPrediction.aiRecommendation && (
-                  <div className="bg-muted/20 rounded-xl p-3 space-y-1.5 border border-border/20">
-                    <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" /> Análise da IA
-                    </p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{game.aiPrediction.aiRecommendation}</p>
-                    <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA.</p>
-                  </div>
-                )}
+                {/* Análise da IA com lock suave para Free */}
+                {game.aiPrediction.aiRecommendation && (() => {
+                  const aiUsed = getAiUsageToday();
+                  const AI_LIMIT = 3;
+                  const isBlocked = !isParticipantVip && aiUsed >= AI_LIMIT && !vipBannerDismissed;
+                  const isLastOne = !isParticipantVip && aiUsed === AI_LIMIT - 1;
+
+                  // Incrementar contador ao abrir a análise (apenas Free, apenas uma vez por abertura)
+                  if (!isParticipantVip && analysisOpen && aiUsed < AI_LIMIT) {
+                    // Incrementar é feito via efeito no botão de abertura
+                  }
+
+                  return (
+                    <div className="space-y-2">
+                      {/* Contador visual para Free */}
+                      {!isParticipantVip && !isBlocked && (
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] text-muted-foreground/50">
+                            {isLastOne
+                              ? <span className="text-yellow-400/80 font-medium">\u26a0\ufe0f Última análise de hoje</span>
+                              : `${AI_LIMIT - aiUsed} análise${AI_LIMIT - aiUsed !== 1 ? 's' : ''} restante${AI_LIMIT - aiUsed !== 1 ? 's' : ''} hoje`
+                            }
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Conteúdo da análise: bloqueado ou visível */}
+                      {isBlocked ? (
+                        <div className="relative">
+                          {/* Texto borrado */}
+                          <div className="bg-muted/20 rounded-xl p-3 space-y-1.5 border border-border/20 select-none pointer-events-none">
+                            <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5" /> Análise da IA
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed blur-sm">{game.aiPrediction.aiRecommendation}</p>
+                          </div>
+                          {/* Overlay de lock */}
+                          <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-xl backdrop-blur-[1px]">
+                            <Lock className="w-4 h-4 text-yellow-400/70" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-muted/20 rounded-xl p-3 space-y-1.5 border border-border/20">
+                          <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5" /> Análise da IA
+                          </p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{game.aiPrediction.aiRecommendation}</p>
+                          <p className="text-[10px] text-muted-foreground/50 italic">Análise gerada por IA.</p>
+                        </div>
+                      )}
+
+                      {/* Banner de upgrade quando bloqueado */}
+                      {isBlocked && (
+                        <VipUpgradeBanner
+                          variant="ai"
+                          poolSlug={poolSlug}
+                          inline
+                          onDismiss={() => setVipBannerDismissed(true)}
+                        />
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
             {/* Fallback: análise indisponível quando aiPrediction é null (API não retornou dados) */}

@@ -917,6 +917,7 @@ export default function PoolPage() {
                                   betB={betB}
                                   hasBet={hasBet}
                                   poolId={pool.id}
+                                  poolSlug={slug ?? ""}
                                   betInputs={betInputs}
                                   setBetInputs={setBetInputs}
                                   handleBetSubmit={handleBetSubmit}
@@ -969,6 +970,7 @@ export default function PoolPage() {
                         betB={betB}
                         hasBet={hasBet}
                         poolId={pool.id}
+                        poolSlug={slug ?? ""}
                         betInputs={betInputs}
                         setBetInputs={setBetInputs}
                         handleBetSubmit={handleBetSubmit}

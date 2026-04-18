@@ -303,18 +303,33 @@ export default function X1ChallengeModal({
                 <Lock className="w-6 h-6" style={{ color: "#FF3B3B" }} />
               </div>
               <div>
-                <p className="text-sm font-semibold">Limite atingido</p>
+                <p className="text-sm font-semibold">Limite de duelos atingido</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Você já tem {options.activeCount} de {options.planLimit} X1s ativos no seu plano.
+                  Você já tem {options.activeCount} de {options.planLimit} X1s ativos.
+                  Ative o Passe VIP para duelos ilimitados.
                 </p>
               </div>
+              <div className="rounded-xl border border-[#FFB800]/30 bg-[#FFB800]/5 p-3 text-left space-y-2">
+                <p className="text-xs font-semibold text-[#FFB800]">Passe VIP — R$ 4,90/mês</p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>✓ Duelos X1 ilimitados</li>
+                  <li>✓ Análise de IA ilimitada</li>
+                  <li>✓ Zero anúncios</li>
+                </ul>
+              </div>
               <Button
-                variant="outline"
                 size="sm"
-                className="w-full"
-                onClick={() => (window.location.href = "/upgrade")}
+                className="w-full bg-[#FFB800] hover:bg-[#FFB800]/90 text-black font-semibold"
+                onClick={() => {
+                  onClose();
+                  // Scroll para o card VIP na PoolPage (se existir) ou redirecionar
+                  const vipCard = document.getElementById("vip-upgrade-card");
+                  if (vipCard) {
+                    vipCard.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }
+                }}
               >
-                Fazer upgrade
+                Ativar Passe VIP
               </Button>
             </div>
           )}

@@ -12,6 +12,8 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useUserPlan } from "@/hooks/useUserPlan";
+import { VipUpgradeBanner } from "@/components/VipUpgradeBanner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -83,8 +85,10 @@ const SCOPE_TYPE_LABELS: Record<string, string> = {
 
 export default function X1DuelsTab({ poolId, poolSlug, onChallenge }: X1DuelsTabProps) {
   const { user } = useAuth();
+  const { isParticipantVip } = useUserPlan();
   const [filter, setFilter] = useState<FilterType>("mine");
   const [showOpponentPicker, setShowOpponentPicker] = useState(false);
+  const [x1VipDismissed, setX1VipDismissed] = useState(false);
 
   const { data, isLoading, refetch } = trpc.x1.getByPool.useQuery(
     { poolId, filter },
@@ -126,6 +130,14 @@ export default function X1DuelsTab({ poolId, poolSlug, onChallenge }: X1DuelsTab
   const pendingReceived = challenges.filter(
     (c) => c.status === "pending" && c.challengedId === user?.id
   );
+
+  // Contar duelos ativos do usuário (pending + active)
+  const myActiveDuels = challenges.filter(
+    (c) => (c.status === "pending" || c.status === "active") &&
+      (c.challengerId === user?.id || c.challengedId === user?.id)
+  ).length;
+  const FREE_X1_LIMIT = 5;
+  const isX1Blocked = !isParticipantVip && myActiveDuels >= FREE_X1_LIMIT;
 
   // Lista de membros disponíveis para desafiar (excluindo o próprio usuário)
   const availableOpponents = membersData
@@ -307,12 +319,31 @@ export default function X1DuelsTab({ poolId, poolSlug, onChallenge }: X1DuelsTab
         <Button
           size="sm"
           className="h-8 gap-1.5 shrink-0 bg-primary/90 hover:bg-primary"
-          onClick={() => setShowOpponentPicker((v) => !v)}
+          onClick={() => {
+            if (isX1Blocked) {
+              setX1VipDismissed(false); // Mostrar banner
+              return;
+            }
+            setShowOpponentPicker((v) => !v);
+          }}
         >
           <Plus className="w-3.5 h-3.5" />
           Desafiar
+          {!isParticipantVip && (
+            <span className="text-[9px] text-muted-foreground/60 ml-0.5">{myActiveDuels}/{FREE_X1_LIMIT}</span>
+          )}
         </Button>
       </div>
+
+      {/* Banner VIP para limite de X1 atingido */}
+      {isX1Blocked && !x1VipDismissed && (
+        <VipUpgradeBanner
+          variant="x1"
+          poolSlug={poolSlug}
+          inline
+          onDismiss={() => setX1VipDismissed(true)}
+        />
+      )}
 
       {/* ── Lista de desafios ── */}
       {isLoading ? (

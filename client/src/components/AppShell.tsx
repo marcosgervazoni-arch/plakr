@@ -104,8 +104,12 @@ export default function AppShell({ children }: AppShellProps) {
     userData?.user?.role === "admin" || user?.role === "admin";
   // Usuários Pro não veem anúncios.
   // Admins SEMPRE veem anúncios (independente do plano) para validar que estão funcionando.
+  // Suprimir anúncios para: Pro, Unlimited e VIP (Passe do Participante)
   const isPro =
-    !isAdmin && userData?.plan?.plan === "pro" && userData?.plan?.isActive === true;
+    !isAdmin && (
+      (userData?.plan?.plan === "pro" || userData?.plan?.plan === "unlimited") && userData?.plan?.isActive === true ||
+      userData?.plan?.plan === "vip" && userData?.plan?.isActive === true
+    );
   const isBlocked = userData?.user?.isBlocked === true;
 
   // Redirecionar usuários bloqueados

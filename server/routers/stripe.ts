@@ -84,6 +84,71 @@ export const stripeRouter = router({
     }),
 
   /**
+   * Criar sessão de checkout para o Passe VIP do Participante (R$4,90/mês).
+   * Independente do plano de organizador — válido em todos os bolões.
+   */
+  createVipCheckout: protectedProcedure
+    .input(z.object({
+      origin: z.string().url(),
+      poolSlug: z.string().optional(), // slug do bolão de origem (para redirect de volta)
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Verificar se já tem VIP ativo
+      const currentTier = await getUserPlanTier(ctx.user.id);
+      if (currentTier === "vip") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Você já possui o Passe VIP ativo.",
+        });
+      }
+
+      const Stripe = (await import("stripe")).default;
+      const platformConfig = await getPlatformSettings();
+      const stripeSecretKey = (platformConfig as any)?.stripeSecretKey || process.env.STRIPE_SECRET_KEY || "";
+      const stripe = new Stripe(stripeSecretKey, {
+        apiVersion: "2026-02-25.clover" as "2026-02-25.clover",
+      });
+
+      // Price ID do VIP: banco > env
+      const priceId = (platformConfig as any)?.stripePriceIdVip || process.env.STRIPE_VIP_PRICE_ID;
+
+      if (!priceId) {
+        throw Err.internal(
+          "Price ID do Passe VIP não configurado. Acesse Admin → Configurações e insira o Price ID do Stripe para o VIP."
+        );
+      }
+
+      // URL de retorno: volta para o bolão de origem ou para o dashboard
+      const returnPath = input.poolSlug ? `/pool/${input.poolSlug}` : "/dashboard";
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        line_items: [{ price: priceId, quantity: 1 }],
+        customer_email: ctx.user.email ?? undefined,
+        client_reference_id: ctx.user.id.toString(),
+        metadata: {
+          user_id: ctx.user.id.toString(),
+          tier: "vip",
+          billing: "monthly",
+          customer_email: ctx.user.email ?? "",
+          customer_name: ctx.user.name ?? "",
+        },
+        subscription_data: {
+          metadata: {
+            user_id: ctx.user.id.toString(),
+            tier: "vip",
+            billing: "monthly",
+          },
+        },
+        allow_promotion_codes: true,
+        success_url: `${input.origin}${returnPath}?vip=activated`,
+        cancel_url: `${input.origin}${returnPath}?vip=cancelled`,
+      });
+
+      return { checkoutUrl: session.url };
+    }),
+
+  /**
    * Abrir portal de gestão de assinatura Stripe.
    * Permite ao usuário cancelar, trocar plano ou atualizar pagamento.
    */

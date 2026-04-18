@@ -377,3 +377,25 @@
 - [x] H4: [CRÍTICO] Automação da transição active → finished via syncResults quando todos os jogos terminam
 - [x] H5: [ALTO] Condicionar geração de retrospectiva a totalBets > 0 (pula usuários sem palpites)
 - [x] H6: [ALTO] scheduledDeleteAt mantido no schema — campo é usado em getPoolsDueForDeletion(); problema era apenas que nunca era preenchido (sem urgência)
+
+---
+
+## EM ANDAMENTO — Passe VIP do Participante (R$4,90/mês)
+
+- [x] Adicionar tier `vip` ao schema: `user_plans.plan` enum + `platform_settings.stripePriceIdVip`
+- [x] Gerar e aplicar migration SQL do schema
+- [x] Atualizar `shared/plans.ts`: tipo `ParticipantTier`, limites VIP (IA 3/dia Free, ilimitada VIP; Duelos 5 Free, ilimitado VIP; noAds VIP)
+- [x] Atualizar `server/products.ts`: produto VIP com Price ID do Stripe
+- [x] Criar produto e price no Stripe (R$4,90/mês) via script
+- [x] Atualizar `server/db.ts`: `getUserPlanTier` reconhecer `vip`, helper `isVip(userId)`
+- [x] Atualizar `server/routers/stripe.ts`: procedure `createVipCheckout` + `getMyPlan` retorna VIP
+- [x] Atualizar `server/stripe-webhook.ts`: reconhecer tier `vip` no checkout e renovação
+- [x] Atualizar `server/routers/x1.ts`: limites Free=5, VIP=ilimitado (separado de organizador)
+- [x] Atualizar `server/routers/bets.ts` ou `pools-games.ts`: contador diário de análise IA (3/dia Free, ilimitado VIP)
+- [x] Atualizar `client/src/components/AppShell.tsx`: suprimir anúncios para VIP
+- [x] Atualizar `client/src/hooks/useUserPlan.ts`: expor `isVip`
+- [x] Criar `client/src/components/VipUpgradeBanner.tsx`: banner de upgrade contextual dentro do bolão
+- [x] Atualizar `client/src/pages/PoolPage.tsx`: exibir VipUpgradeBanner no contexto de IA bloqueada
+- [x] Atualizar `client/src/components/X1ChallengeModal.tsx`: CTA de upgrade para VIP (não para /upgrade)
+- [ ] [PENDENTE] Atualizar `client/src/pages/UpgradePage.tsx`: seção separada para Passe do Participante (próxima sprint)
+- [x] Escrever testes: server/vip-pass.test.ts (limites IA, limites X1, helpers, normalização de tier)

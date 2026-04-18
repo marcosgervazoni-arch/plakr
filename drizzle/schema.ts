@@ -121,6 +121,8 @@ export const platformSettings = mysqlTable("platform_settings", {
   stripePriceIdProAnnual: varchar("stripePriceIdProAnnual", { length: 128 }),
   stripePriceIdUnlimited: varchar("stripePriceIdUnlimited", { length: 128 }),
   stripePriceIdUnlimitedAnnual: varchar("stripePriceIdUnlimitedAnnual", { length: 128 }),
+  stripePriceIdVip: varchar("stripePriceIdVip", { length: 128 }),      // Passe VIP do Participante (R$ 4,90/mês)
+  stripeVipMonthlyPrice: int("stripeVipMonthlyPrice").default(490),     // R$ 4,90 em centavos
   stripeMonthlyPrice: int("stripeMonthlyPrice").default(3990),
   stripeProAnnualPrice: int("stripeProAnnualPrice").default(39900),
   stripeUnlimitedMonthlyPrice: int("stripeUnlimitedMonthlyPrice").default(8990),
@@ -160,7 +162,7 @@ export const userPlans = mysqlTable("user_plans", {
   userId: int("userId")
     .notNull()
     .references(() => users.id),
-  plan: mysqlEnum("plan", ["free", "pro", "unlimited"]).default("free").notNull(),
+  plan: mysqlEnum("plan", ["free", "pro", "unlimited", "vip"]).default("free").notNull(),
   stripeCustomerId: varchar("stripeCustomerId", { length: 128 }),
   stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 128 }),
   planStartAt: timestamp("planStartAt"),

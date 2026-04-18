@@ -46,7 +46,7 @@ export function registerStripeWebhook(app: Express) {
           case "checkout.session.completed": {
             const session = event.data.object as Stripe.Checkout.Session;
             const userId = session.metadata?.user_id ? parseInt(session.metadata.user_id) : null;
-            const tier = (session.metadata?.tier ?? "pro") as "pro" | "unlimited";
+            const tier = (session.metadata?.tier ?? "pro") as "pro" | "unlimited" | "vip";
 
             if (userId) {
               // Calcular expiração: mensal = 1 mês, anual = 1 ano
@@ -68,12 +68,15 @@ export function registerStripeWebhook(app: Express) {
                 isActive: true,
               });
 
-              const tierLabel = tier === "unlimited" ? "Ilimitado" : "Pro";
+              const tierLabel = tier === "unlimited" ? "Ilimitado" : tier === "vip" ? "Passe VIP" : "Pro";
+              const tierMsg = tier === "vip"
+                ? "Seu Passe VIP está ativo! Aproveite IA ilimitada, zero anúncios e Duelos X1 ilimitados em todos os bolões."
+                : `Sua conta foi atualizada para o Plano ${tierLabel}. Aproveite todos os recursos avançados!`;
               await createNotification({
                 userId,
                 type: "system",
-                title: `Plano ${tierLabel} ativado!`,
-                message: `Sua conta foi atualizada para o Plano ${tierLabel}. Aproveite todos os recursos avançados!`,
+                title: `${tierLabel} ativado! ⭐`,
+                message: tierMsg,
               });
 
               await createAdminLog(userId, "stripe_checkout_completed", "user", userId, {
@@ -199,7 +202,7 @@ export function registerStripeWebhook(app: Express) {
               const userId = sub?.metadata?.user_id
                 ? parseInt(sub.metadata.user_id)
                 : null;
-              const tier = (sub?.metadata?.tier ?? "pro") as "pro" | "unlimited";
+              const tier = (sub?.metadata?.tier ?? "pro") as "pro" | "unlimited" | "vip";
 
               if (userId && sub) {
                 const subData = sub as unknown as { current_period_end?: number };
@@ -214,13 +217,13 @@ export function registerStripeWebhook(app: Express) {
                   isActive: true,
                 });
 
-                const tierLabel = tier === "unlimited" ? "Ilimitado" : "Pro";
+                const tierLabel = tier === "unlimited" ? "Ilimitado" : tier === "vip" ? "Passe VIP" : "Pro";
                 const expiryFormatted = newExpiry.toLocaleDateString("pt-BR");
                 await createNotification({
                   userId,
                   type: "system",
-                  title: `Plano ${tierLabel} renovado com sucesso!`,
-                  message: `Seu Plano ${tierLabel} foi renovado automaticamente e está ativo até ${expiryFormatted}. Obrigado pela confiança!`,
+                  title: `${tierLabel} renovado com sucesso! ⭐`,
+                  message: `Seu ${tierLabel} foi renovado automaticamente e está ativo até ${expiryFormatted}. Obrigado pela confiança!`,
                   priority: "normal",
                 });
 

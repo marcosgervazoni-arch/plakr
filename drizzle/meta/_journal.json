@@ -414,6 +414,13 @@
       "when": 1776510381958,
       "tag": "0058_gigantic_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "5",
+      "when": 1776534610056,
+      "tag": "0059_nostalgic_spectrum",
+      "breakpoints": true
     }
   ]
 }
