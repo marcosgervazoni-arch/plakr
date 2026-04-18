@@ -80,6 +80,9 @@ export interface GameCardProps {
     } | null;
     goalsTimeline?: GoalEvent[] | null;
     matchStatistics?: MatchStats | null;
+    venue?: string | null;
+    groupName?: string | null;
+    betCount?: number;
   };
   myBet: {
     predictedScoreA: number;
@@ -109,6 +112,7 @@ export interface GameCardProps {
   showPhaseLabel?: boolean;
   shareCardConfig?: import("../../../drizzle/schema").ShareCardStateConfig | null;
   predictionReliable?: boolean;
+  betCount?: number;
 }
 function GameCard({
   game, myBet, open, finished, live, betA, betB, hasBet, poolId,
@@ -302,9 +306,16 @@ function GameCard({
             </span>
           )}
         </div>
-        <span className="text-xs text-muted-foreground">
-          {format(new Date(game.matchDate), "dd/MM 'às' HH:mm", { locale: ptBR })}
-        </span>
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-xs text-muted-foreground">
+            {format(new Date(game.matchDate), "dd/MM 'às' HH:mm", { locale: ptBR })}
+          </span>
+          {(game.venue || game.groupName) && (
+            <span className="text-[10px] text-muted-foreground/60 truncate max-w-[130px]">
+              {[game.groupName ? `Grupo ${game.groupName}` : null, game.venue].filter(Boolean).join(" · ")}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Corpo: Time A | Centro | Time B */}
@@ -417,6 +428,16 @@ function GameCard({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Contador de palpites — exibido quando há dados */}
+        {(game.betCount ?? 0) > 0 && !finished && (
+          <div className="mt-2 flex justify-center">
+            <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+              {game.betCount} {game.betCount === 1 ? "palpite feito" : "palpites feitos"}
+            </span>
           </div>
         )}
 
@@ -592,12 +613,12 @@ function GameCard({
                     {[{ name: game.teamAName, form: game.aiPrediction.homeForm }, { name: game.teamBName, form: game.aiPrediction.awayForm }].map(({ name, form }) => (
                       <div key={name} className="flex items-center justify-between gap-2">
                         <span className="text-xs text-foreground/80 truncate max-w-[100px]">{name}</span>
-                        <div className="flex gap-1">
+                        <div className="flex gap-0.5">
                           {(form ?? []).slice(0, 5).map((r, i) => (
-                            <span key={i} className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                              r === 'W' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                              r === 'L' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                              'bg-muted/40 text-muted-foreground border border-border/30'
+                            <span key={i} className={`w-6 h-4 rounded-sm flex items-center justify-center text-[9px] font-bold ${
+                              r === 'W' ? 'bg-green-500/25 text-green-400' :
+                              r === 'L' ? 'bg-red-500/25 text-red-400' :
+                              'bg-muted/40 text-muted-foreground'
                             }`}>{r}</span>
                           ))}
                         </div>

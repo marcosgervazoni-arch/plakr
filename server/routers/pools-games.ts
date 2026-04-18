@@ -43,7 +43,10 @@ import {
   updateBetScore,
   updateGameResult,
   upsertPoolScoringRules,
+  getDb,
 } from "../db";
+import { bets } from "../../drizzle/schema";
+import { eq, sql } from "drizzle-orm";
 import { protectedProcedure, router } from "../\_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { Err, PoolErr } from "../errors";
@@ -55,7 +58,18 @@ export const poolsGamesRouter = router({
       if (!member && ctx.user.role !== "admin") throw Err.forbidden();
       // [SEC] Bloquear acesso de membros com pagamento pendente ou rejeitado
       if (member && member.memberStatus && member.memberStatus !== "active" && ctx.user.role !== "admin") throw Err.forbidden();
-      return getGamesByPool(input.poolId);
+      const games = await getGamesByPool(input.poolId);
+      // Contar palpites por jogo neste bolão (1 query com GROUP BY)
+      const db = await getDb();
+      const betCounts = db
+        ? await db
+            .select({ gameId: bets.gameId, count: sql<number>`COUNT(*)` })
+            .from(bets)
+            .where(eq(bets.poolId, input.poolId))
+            .groupBy(bets.gameId)
+        : [];
+      const betCountMap = new Map(betCounts.map((r) => [r.gameId, Number(r.count)]));
+      return games.map((g) => ({ ...g, betCount: betCountMap.get(g.id) ?? 0 }));
     }),
 
   setGameResult: protectedProcedure

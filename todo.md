@@ -346,3 +346,10 @@
 ## Fix UX — Ranking sem duplicação de membros
 
 - [x] Remover seção MEMBROS da aba Ranking (lista de membros já existe em Gerenciar → Membros)
+
+## Sprint V — Melhorias aprovadas no Card de Jogo
+
+- [x] Exibir local do jogo (estádio + grupo) no cabeçalho do card
+- [x] Exibir contador de palpites realizados no card ("47 palpites feitos")
+- [x] Exibir quadradinhos de forma dos últimos 5 jogos de cada time no painel de análise pré-jogo (retangulares, sem bordas)
+- [ ] Remover estado "AO VIVO" do card (API atualiza a cada 2h — aguardando decisão do Gerva)
