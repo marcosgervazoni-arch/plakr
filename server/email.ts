@@ -211,6 +211,32 @@ export function templatePoolInvite(opts: {
   };
 }
 
+// ─── Template: Membro adicionado manualmente ────────────────────────────────
+export function templateManualMemberAdd(opts: {
+  memberName: string;
+  organizerName: string;
+  poolName: string;
+  poolUrl: string;
+  hasEntryFee: boolean;
+  entryFee?: number;
+}): { subject: string; html: string } {
+  return {
+    subject: `🎉 Você foi adicionado ao bolão "${opts.poolName}"`,
+    html: baseTemplate("Você entrou no bolão!", `
+      <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">Você foi adicionado! 🎉</h2>
+      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.memberName)}! <strong style="color:${TEXT};">${esc(opts.organizerName)}</strong> adicionou você diretamente ao bolão abaixo.</p>
+      <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;">
+        <p style="margin:0 0 8px;font-size:20px;font-weight:800;color:${TEXT};">${esc(opts.poolName)}</p>
+        ${opts.hasEntryFee
+          ? `<p style="margin:0;font-size:13px;color:#fbbf24;">⚠️ Taxa de inscrição: R$ ${opts.entryFee?.toFixed(2).replace('.', ',')}. Aguarde a confirmação do organizador.</p>`
+          : `<p style="margin:0;font-size:13px;color:${MUTED};">✅ Você já está ativo e pode fazer seus palpites!</p>`
+        }
+      </div>
+      ${ctaButton("Acessar o bolão", opts.poolUrl)}
+    `),
+  };
+}
+
 // ─── Sender via Manus Notification API ───────────────────────────────────────
 export async function sendEmail(opts: {
   to: string;

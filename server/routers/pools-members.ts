@@ -482,8 +482,108 @@ export const poolsMembersRouter = router({
         .where(eq(poolsT.id, input.poolId));
       return { success: true };
     }),
-
-  // ── Regenerar código de acesso do bolão ───────────────────────────────────
+  // ── Adicionar membro manualmente (pelo organizador) ─────────────────────────────────
+  addMemberManually: protectedProcedure
+    .input(z.object({
+      poolId: z.number(),
+      email: z.string().email(),
+      origin: z.string().url(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // [SEC] Apenas organizador ou admin
+      const requester = await getPoolMember(input.poolId, ctx.user.id);
+      if (!requester || (requester.role !== "organizer" && ctx.user.role !== "admin")) {
+        throw Err.forbidden();
+      }
+      // Buscar o bolão
+      const pool = await getPoolById(input.poolId);
+      if (!pool) throw Err.notFound("Bolão");
+      // Verificar status do bolão
+      if (pool.status === "finished" || pool.status === "archived") {
+        throw Err.badRequest("Não é possível adicionar membros a um bolão encerrado.");
+      }
+      // Buscar usuário pelo e-mail (normalizado)
+      const normalizedEmail = input.email.trim().toLowerCase();
+      const { getUserByEmail, canAddMember, addPoolMember } = await import("../db");
+      const targetUser = await getUserByEmail(normalizedEmail);
+      if (!targetUser) {
+        throw Err.badRequest("Usuário não encontrado. Verifique se o e-mail está cadastrado no Plakr!.");
+      }
+      // Verificar se usuário está bloqueado
+      if (targetUser.isBlocked) {
+        throw Err.forbidden("Este usuário está suspenso e não pode ser adicionado.");
+      }
+      // Verificar se já é membro
+      const existing = await getPoolMember(input.poolId, targetUser.id);
+      if (existing) {
+        throw Err.badRequest("Este usuário já é membro deste bolão.");
+      }
+      // Verificar limite de membros do plano
+      const canAdd = await canAddMember(input.poolId, pool.ownerId);
+      if (!canAdd.allowed) {
+        throw Err.forbidden(canAdd.reason ?? "Limite de membros atingido.");
+      }
+      // Determinar status inicial
+      const hasEntryFee = pool.entryFee !== null && Number(pool.entryFee) > 0;
+      const memberStatus: "active" | "pending_approval" = hasEntryFee ? "pending_approval" : "active";
+      // Inserir membro
+      const { getDb } = await import("../db");
+      const db = await getDb();
+      if (!db) throw Err.internal();
+      const { poolMembers: poolMembersT } = await import("../../drizzle/schema");
+      await db.insert(poolMembersT).values({
+        poolId: input.poolId,
+        userId: targetUser.id,
+        role: "participant",
+        joinSource: "organizer",
+        memberStatus,
+      });
+      // Notificação in-app
+      const organizer = await getUserById(ctx.user.id);
+      await createNotification({
+        userId: targetUser.id,
+        type: "system",
+        title: `Você foi adicionado ao bolão "${pool.name}"`,
+        message: `${organizer?.name ?? "O organizador"} adicionou você diretamente ao bolão. Acesse agora e faça seus palpites!`,
+        poolId: input.poolId,
+      });
+      // E-mail de notificação
+      const { sendEmail, templateManualMemberAdd } = await import("../email");
+      const poolUrl = `${input.origin}/pool/${pool.slug}`;
+      const emailTemplate = templateManualMemberAdd({
+        memberName: targetUser.name ?? "Participante",
+        organizerName: organizer?.name ?? "O organizador",
+        poolName: pool.name,
+        poolUrl,
+        hasEntryFee,
+        entryFee: hasEntryFee ? Number(pool.entryFee) : undefined,
+      });
+      await sendEmail({
+        to: targetUser.email ?? normalizedEmail,
+        subject: emailTemplate.subject,
+        html: emailTemplate.html,
+        type: "manual_member_add",
+      });
+      // Log de auditoria
+      await createAdminLog(ctx.user.id, "pool_member_added_manually", "pool", input.poolId, {
+        addedUserId: targetUser.id,
+        addedUserEmail: normalizedEmail,
+        memberStatus,
+        hasEntryFee,
+      });
+      return {
+        success: true,
+        user: {
+          id: targetUser.id,
+          name: targetUser.name,
+          email: targetUser.email,
+          avatarUrl: targetUser.avatarUrl,
+        },
+        memberStatus,
+        hasEntryFee,
+      };
+    }),
+  // ── Regenerar código de acesso do bolão ──────────────────────────────────────────────
   regenerateAccessCode: protectedProcedure
     .input(z.object({ poolId: z.number() }))
     .mutation(async ({ input, ctx }) => {

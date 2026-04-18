@@ -51,6 +51,7 @@ import {
   CheckCircle2,
   XCircle,
   Info,
+  UserPlus,
 } from "lucide-react";
 import { useParams } from "wouter";
 import { useState, useMemo } from "react";
@@ -70,6 +71,8 @@ export default function OrganizerMembers() {
   const [removeTarget, setRemoveTarget] = useState<{ id: number; name: string } | null>(null);
   const [transferTarget, setTransferTarget] = useState<{ id: number; name: string } | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [addMemberEmail, setAddMemberEmail] = useState("");
 
   const { data: poolData } = trpc.pools.getBySlug.useQuery(
     { slug: slug ?? "" },
@@ -129,6 +132,21 @@ export default function OrganizerMembers() {
     onError: (err) => toast.error(err.message || "Erro ao recusar solicitação."),
   });
 
+  const addMemberMutation = trpc.pools.addMemberManually.useMutation({
+    onSuccess: (data) => {
+      const msg = data.hasEntryFee
+        ? `${data.user.name ?? addMemberEmail} adicionado! Aguarda aprovação de pagamento.`
+        : `${data.user.name ?? addMemberEmail} adicionado com sucesso!`;
+      toast.success(msg);
+      setAddMemberOpen(false);
+      setAddMemberEmail("");
+      utils.pools.getMembers.invalidate({ poolId: pool?.id });
+      utils.pools.listPendingMembers.invalidate({ poolId: pool?.id });
+      utils.pools.getBySlug.invalidate({ slug: slug! });
+    },
+    onError: (err) => toast.error(err.message || "Erro ao adicionar membro."),
+  });
+
   const filtered = useMemo(() => {
     let list = (members as any[]).filter((m: any) => {
       const name = (m.user?.name ?? "").toLowerCase();
@@ -162,7 +180,7 @@ export default function OrganizerMembers() {
     >
       <div className="p-6 space-y-5 max-w-5xl">
         {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
               Gestão de Membros
@@ -171,7 +189,75 @@ export default function OrganizerMembers() {
               <span className="font-mono font-semibold text-foreground">{members.length}</span> participantes no bolão
             </p>
           </div>
+          <Button
+            size="sm"
+            className="shrink-0 gap-1.5"
+            onClick={() => setAddMemberOpen(true)}
+          >
+            <UserPlus className="w-4 h-4" />
+            <span className="hidden sm:inline">Adicionar membro</span>
+            <span className="sm:hidden">Adicionar</span>
+          </Button>
         </div>
+
+        {/* Dialog: Adicionar membro manualmente */}
+        <Dialog open={addMemberOpen} onOpenChange={(open) => { setAddMemberOpen(open); if (!open) setAddMemberEmail(""); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-primary" />
+                Adicionar membro manualmente
+              </DialogTitle>
+              <DialogDescription>
+                Informe o e-mail de um usuário cadastrado no Plakr! para adicioná-lo diretamente ao bolão.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              {hasFee && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex items-start gap-2">
+                  <Info className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+                  <p className="text-sm text-yellow-300">
+                    Este bolão tem taxa de inscrição de <strong>R$ {Number(pool?.entryFee).toFixed(2).replace('.', ',')}</strong>. O membro será adicionado com status <em>Aguardando aprovação</em>.
+                  </p>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">E-mail do participante</label>
+                <Input
+                  type="email"
+                  placeholder="exemplo@email.com"
+                  value={addMemberEmail}
+                  onChange={(e) => setAddMemberEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && addMemberEmail.trim()) {
+                      addMemberMutation.mutate({ poolId: pool!.id, email: addMemberEmail.trim(), origin: window.location.origin });
+                    }
+                  }}
+                  disabled={addMemberMutation.isPending}
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => { setAddMemberOpen(false); setAddMemberEmail(""); }}
+                  disabled={addMemberMutation.isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="flex-1 gap-1.5"
+                  disabled={!addMemberEmail.trim() || addMemberMutation.isPending}
+                  onClick={() => addMemberMutation.mutate({ poolId: pool!.id, email: addMemberEmail.trim(), origin: window.location.origin })}
+                >
+                  {addMemberMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                  {addMemberMutation.isPending ? "Adicionando..." : "Adicionar"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Tabs — só mostra se há taxa de inscrição */}
         {hasFee && (

@@ -447,3 +447,14 @@
 - [x] Frontend: dialog `Adicionar membro manualmente` com campo de e-mail, info sobre taxa, validação e loading state
 - [x] Frontend: aviso contextual quando o bolão tem taxa de inscrição (membro vai para aprovações pendentes)
 - [x] Testes: 15 casos cobrindo autorização, validações de bolão, validações de usuário, limites de plano, status com/sem taxa, normalização de e-mail
+
+## Sprint Inserção Manual de Membros — Área do Organizador
+
+- [x] Procedure `addMemberManually`: busca por e-mail, validação de autorização (organizador/admin), verificação de status do bolão, limite de plano, membro duplicado
+- [x] Status automático: `active` (sem taxa) ou `pending_approval` (com taxa de inscrição)
+- [x] Notificação in-app para o membro adicionado
+- [x] E-mail de notificação `templateManualMemberAdd` para o membro adicionado
+- [x] Log de auditoria `pool_member_added_manually` via `createAdminLog`
+- [x] Frontend: botão "Adicionar membro" no header da tela `OrganizerMembers.tsx` (visível no mobile com texto "Adicionar" e no desktop com texto completo)
+- [x] Frontend: dialog com campo de e-mail, aviso sobre taxa, loading state e confirmação por Enter ou botão
+- [x] Bug Fix: layout responsivo — botão visível no mobile (shrink-0, texto adaptativo sm:inline)
