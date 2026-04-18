@@ -359,3 +359,7 @@
 - [x] Transformar backfill de forma em job automático: roda 15s após o boot em segundo plano (lotes de 30, pausa 10s entre lotes) + forma buscada automaticamente ao criar novos jogos via syncFixtures + botão isolado removido do Admin
 - [x] Corrigir backfill de forma: buscava por teamAId (sempre NULL) em vez de teamAName — corrigido para buscar por nome do time como fallback
 - [x] Traduzir W/L/D → V/D/E nos quadradinhos de forma (GameCard.tsx)
+- [x] Buscar lesões/suspensões (/injuries?fixture=X) e salvar em aiPrediction.injuries
+- [x] Buscar estatísticas da temporada (/teams/statistics) e salvar em aiPrediction.homeStats/awayStats
+- [x] Incluir lesões/suspensões e estatísticas da temporada no prompt do LLM (buildAiPrediction)
+- [x] Cron de análises pré-jogo atualizado para buscar injuries e teamStats via API-Football

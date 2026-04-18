@@ -17,7 +17,7 @@
  */
 
 import logger from "../logger";
-import { fetchFixtures, fetchTeams, fetchFixtureEvents, fetchFixtureStatistics, fetchFixturePredictions, fetchTeamRecentForm, ApiFootballFixture } from "./client";
+import { fetchFixtures, fetchTeams, fetchFixtureEvents, fetchFixtureStatistics, fetchFixturePredictions, fetchTeamRecentForm, fetchInjuries, fetchTeamStatistics, ApiFootballFixture, TeamSeasonStats } from "./client";
 import { getDb } from "../db";
 import {
   platformSettings,

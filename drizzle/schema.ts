@@ -283,6 +283,23 @@ export const games = mysqlTable("games", {
       h2h?: { home: string; away: string } | null;         // Histórico H2H (%)
       goals?: { home: string; away: string } | null;       // Média de gols (%)
     } | null;
+    // Lesionados/suspensos/questionáveis (/injuries?fixture=X)
+    injuries?: Array<{ name: string; team: string; type: string; reason: string }>;
+    // Estatísticas da temporada dos dois times (/teams/statistics)
+    homeStats?: {
+      teamName: string; played: number; wins: number; draws: number; loses: number;
+      goalsFor: number; goalsAgainst: number; avgGoalsFor: string; avgGoalsAgainst: string;
+      cleanSheets: number; failedToScore: number;
+      biggestWin: string | null; biggestLoss: string | null;
+      currentStreak: { wins: number; draws: number; loses: number };
+    } | null;
+    awayStats?: {
+      teamName: string; played: number; wins: number; draws: number; loses: number;
+      goalsFor: number; goalsAgainst: number; avgGoalsFor: string; avgGoalsAgainst: string;
+      cleanSheets: number; failedToScore: number;
+      biggestWin: string | null; biggestLoss: string | null;
+      currentStreak: { wins: number; draws: number; loses: number };
+    } | null;
   } | null>(),
   // Gerado pelo syncResults após o jogo: resumo narrativo da partida (LLM)
   aiSummary: text("aiSummary"),

@@ -30,10 +30,10 @@
 import logger from "../logger";
 import { syncFixtures, syncResults, syncTeamsForTournament } from "./sync";
 import { getDb } from "../db";
-import { tournaments, games as gamesTable } from "../../drizzle/schema";
+import { tournaments, games as gamesTable, teams as teamsTable } from "../../drizzle/schema";
 import { eq, isNull, and, sql } from "drizzle-orm";
 import { inferTournamentFormat, inferTournamentFormatFromPhases } from "../../shared/tournamentFormat";
-import { apiFootballRequest, fetchFixturePredictions } from "./client";
+import { apiFootballRequest, fetchFixturePredictions, fetchInjuries, fetchTeamStatistics } from "./client";
 import { buildAiPrediction, type AiPredictionContext } from "./ai-analysis";
 import { notifyOwner } from "../_core/notification";
 import { apiFootballCronHealth, recordJobRun } from "./cronHealth";
@@ -273,8 +273,11 @@ export function registerApiFootballCronJobs() {
           teamBName: gamesTable.teamBName,
           matchDate: gamesTable.matchDate,
           tournamentId: gamesTable.tournamentId,
+          apiFootballLeagueId: tournaments.apiFootballLeagueId,
+          apiFootballSeason: tournaments.apiFootballSeason,
         })
         .from(gamesTable)
+        .innerJoin(tournaments, eq(gamesTable.tournamentId, tournaments.id))
         .where(
           and(
             isNull(gamesTable.aiPrediction),
@@ -334,6 +337,70 @@ export function registerApiFootballCronJobs() {
             }
           }
 
+          // Buscar lesionados/suspensos/questionáveis
+          let injuries: AiPredictionContext["injuries"] = [];
+          if (fixtureId) {
+            const rawInjuries = await fetchInjuries(fixtureId).catch(() => []);
+            injuries = rawInjuries.map(p => ({
+              name: p.player.name,
+              team: p.team.name,
+              type: p.type,
+              reason: p.reason,
+            }));
+          }
+
+          // Buscar estatísticas da temporada dos dois times
+          let homeStats: AiPredictionContext["homeStats"] = null;
+          let awayStats: AiPredictionContext["awayStats"] = null;
+          const leagueId = game.apiFootballLeagueId;
+          const season = game.apiFootballSeason;
+          if (leagueId && season) {
+            // Buscar apiFootballTeamId dos times pelo nome
+            const homeTeamRow = await db
+              .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+              .from(teamsTable)
+              .where(and(eq(teamsTable.name, game.teamAName ?? ""), sql`${teamsTable.apiFootballTeamId} IS NOT NULL`))
+              .limit(1)
+              .then(r => r[0] ?? null);
+            const awayTeamRow = await db
+              .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+              .from(teamsTable)
+              .where(and(eq(teamsTable.name, game.teamBName ?? ""), sql`${teamsTable.apiFootballTeamId} IS NOT NULL`))
+              .limit(1)
+              .then(r => r[0] ?? null);
+
+            const mapStats = (s: import("./client").TeamSeasonStats | null, teamName: string): AiPredictionContext["homeStats"] => {
+              if (!s) return null;
+              return {
+                teamName,
+                played: s.fixtures.played.total,
+                wins: s.fixtures.wins.total,
+                draws: s.fixtures.draws.total,
+                loses: s.fixtures.loses.total,
+                goalsFor: s.goals.for.total.total,
+                goalsAgainst: s.goals.against.total.total,
+                avgGoalsFor: s.goals.for.average.total,
+                avgGoalsAgainst: s.goals.against.average.total,
+                cleanSheets: s.clean_sheet.total,
+                failedToScore: s.failed_to_score.total,
+                biggestWin: s.biggest.wins.home ?? s.biggest.wins.away ?? null,
+                biggestLoss: s.biggest.loses.home ?? s.biggest.loses.away ?? null,
+                currentStreak: s.biggest.streak,
+              };
+            };
+
+            const [rawHome, rawAway] = await Promise.all([
+              homeTeamRow?.apiFootballTeamId
+                ? fetchTeamStatistics(homeTeamRow.apiFootballTeamId, leagueId, season).catch(() => null)
+                : Promise.resolve(null),
+              awayTeamRow?.apiFootballTeamId
+                ? fetchTeamStatistics(awayTeamRow.apiFootballTeamId, leagueId, season).catch(() => null)
+                : Promise.resolve(null),
+            ]);
+            homeStats = mapStats(rawHome, game.teamAName ?? "Time A");
+            awayStats = mapStats(rawAway, game.teamBName ?? "Time B");
+          }
+
           const prediction = await buildAiPrediction({
             homeTeam: game.teamAName ?? "Time A",
             awayTeam: game.teamBName ?? "Time B",
@@ -342,6 +409,9 @@ export function registerApiFootballCronJobs() {
             apiPercent,
             apiAdvice,
             apiComparison,
+            injuries,
+            homeStats,
+            awayStats,
           });
 
           if (prediction) {

@@ -257,6 +257,32 @@ Escreva apenas o comentário, sem título.`;
 
 // ── Análise pré-jogo ──────────────────────────────────────────────────────────
 
+// Jogador ausente/questionável para o prompt do LLM
+export interface AbsentPlayer {
+  name: string;
+  team: string; // nome do time
+  type: "Missing Fixture" | "Questionable" | string;
+  reason: string;
+}
+
+// Resumo de estatísticas da temporada para o prompt do LLM
+export interface TeamStatsSummary {
+  teamName: string;
+  played: number;
+  wins: number;
+  draws: number;
+  loses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  avgGoalsFor: string;    // ex: "1.8"
+  avgGoalsAgainst: string;
+  cleanSheets: number;
+  failedToScore: number;
+  biggestWin: string | null;
+  biggestLoss: string | null;
+  currentStreak: { wins: number; draws: number; loses: number };
+}
+
 export interface AiPredictionContext {
   homeTeam: string;
   awayTeam: string;
@@ -278,6 +304,11 @@ export interface AiPredictionContext {
     h2h?: { home: string; away: string } | null;
     goals?: { home: string; away: string } | null;
   } | null;
+  // Lesionados, suspensos e questionáveis (/injuries?fixture=X)
+  injuries?: AbsentPlayer[];
+  // Estatísticas da temporada dos dois times (/teams/statistics)
+  homeStats?: TeamStatsSummary | null;
+  awayStats?: TeamStatsSummary | null;
 }
 
 export interface AiPredictionResult {
@@ -297,6 +328,11 @@ export interface AiPredictionResult {
     h2h?: { home: string; away: string } | null;
     goals?: { home: string; away: string } | null;
   } | null;
+  // Lesionados/suspensos/questionáveis salvos para exibição futura
+  injuries?: AbsentPlayer[];
+  // Estatísticas da temporada dos dois times
+  homeStats?: TeamStatsSummary | null;
+  awayStats?: TeamStatsSummary | null;
 }
 
 /**
@@ -391,13 +427,50 @@ export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPre
     cmp.h2h ? `Histórico H2H: ${ctx.homeTeam} ${cmp.h2h.home} / ${ctx.awayTeam} ${cmp.h2h.away}` : "",
   ].filter(Boolean).join("\n") : "";
 
+  // Seção de lesionados/suspensos/questionáveis
+  const injuriesSection = (() => {
+    const list = ctx.injuries ?? [];
+    if (list.length === 0) return "";
+    const missing = list.filter(p => p.type === "Missing Fixture");
+    const questionable = list.filter(p => p.type === "Questionable");
+    const lines: string[] = [];
+    if (missing.length > 0) {
+      lines.push(`Desfalques confirmados: ${missing.map(p => `${p.name} (${p.team} — ${p.reason})`).join(", ")}`);
+    }
+    if (questionable.length > 0) {
+      lines.push(`Questionáveis: ${questionable.map(p => `${p.name} (${p.team} — ${p.reason})`).join(", ")}`);
+    }
+    return lines.length > 0 ? `Situação dos elencos:\n${lines.join("\n")}` : "";
+  })();
+
+  // Seção de estatísticas da temporada
+  const formatStats = (s: typeof ctx.homeStats): string => {
+    if (!s) return "";
+    const pct = s.played > 0 ? Math.round((s.wins / s.played) * 100) : 0;
+    return [
+      `${s.teamName}: ${s.wins}V ${s.draws}E ${s.loses}D em ${s.played} jogos (${pct}% aproveitamento)`,
+      `  Média de gols: ${s.avgGoalsFor} marcados / ${s.avgGoalsAgainst} sofridos por jogo`,
+      s.cleanSheets > 0 ? `  ${s.cleanSheets} clean sheet${s.cleanSheets > 1 ? "s" : ""} na temporada` : "",
+      s.biggestWin ? `  Maior vitória: ${s.biggestWin}` : "",
+      s.currentStreak.wins >= 3 ? `  Série atual: ${s.currentStreak.wins} vitórias seguidas` : "",
+      s.currentStreak.loses >= 3 ? `  Série atual: ${s.currentStreak.loses} derrotas seguidas` : "",
+    ].filter(Boolean).join("\n");
+  };
+  const homeStatsText = formatStats(ctx.homeStats);
+  const awayStatsText = formatStats(ctx.awayStats);
+  const statsSection = (homeStatsText || awayStatsText)
+    ? `Estatísticas da temporada:\n${homeStatsText ? homeStatsText : ""}${awayStatsText ? "\n" + awayStatsText : ""}`
+    : "";
+
   // LLM redige apenas o texto narrativo — com base nos dados reais da API
   const favoriteLabel = homeWin > awayWin ? ctx.homeTeam : awayWin > homeWin ? ctx.awayTeam : "equilíbrio";
-  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use os dados abaixo para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. NÃO sugira apostas, NÃO mencione odds ou percentuais diretamente, NÃO diga qual time apostar. NUNCA use expressões temporais relativas como "hoje", "amanhã", "agora", "neste momento" — o jogo pode ser em dias ou semanas. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
+  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use os dados abaixo para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. Se houver desfalques importantes, mencione-os de forma natural na narrativa. NÃO sugira apostas, NÃO mencione odds ou percentuais diretamente, NÃO diga qual time apostar. NUNCA use expressões temporais relativas como "hoje", "amanhã", "agora", "neste momento" — o jogo pode ser em dias ou semanas. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
 Jogo: ${ctx.homeTeam} × ${ctx.awayTeam}
 Competição: ${ctx.competition}
 Data: ${dateStr}
 ${formSection}
+${statsSection ? statsSection + "\n" : ""}
+${injuriesSection ? injuriesSection + "\n" : ""}
 ${comparisonSection ? `Análise estatística:\n${comparisonSection}` : ""}
 Contexto de probabilidade (use para embasar a narrativa, NÃO mencione os números): ${ctx.homeTeam} ${homeWin}% de chance de vitória | Empate ${draw}% | ${ctx.awayTeam} ${awayWin}%
 Escreva apenas a análise, sem título.`;
@@ -437,5 +510,8 @@ Escreva apenas a análise, sem título.`;
     awayForm: ctx.awayForm ?? [],
     aiRecommendation,
     comparison: comparisonToSave,
+    injuries: ctx.injuries ?? [],
+    homeStats: ctx.homeStats ?? null,
+    awayStats: ctx.awayStats ?? null,
   };
 }

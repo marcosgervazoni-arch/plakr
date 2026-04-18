@@ -443,6 +443,100 @@ export async function fetchFixturePredictions(
   }
 }
 
+// ─── Tipos para Lesões e Suspensões ─────────────────────────────────────────
+
+export interface InjuryPlayer {
+  player: {
+    id: number;
+    name: string;
+    photo: string;
+  };
+  team: {
+    id: number;
+    name: string;
+  };
+  fixture: {
+    id: number;
+    timezone: string;
+    date: string;
+    timestamp: number;
+  };
+  league: {
+    id: number;
+    season: number;
+    name: string;
+    country: string;
+  };
+  type: string;   // "Missing Fixture" | "Questionable"
+  reason: string; // "Injured" | "Suspended" | "Illness" | etc.
+}
+
+/**
+ * Busca lesionados, suspensos e questionáveis para um fixture específico.
+ * Endpoint: GET /injuries?fixture={fixtureId}
+ * Consome 1 requisição. Dados disponíveis a partir de abril/2021.
+ */
+export async function fetchInjuries(
+  fixtureId: number
+): Promise<InjuryPlayer[]> {
+  try {
+    const data = await apiFootballRequest<InjuryPlayer>("/injuries", {
+      fixture: fixtureId,
+    });
+    return data.response ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// ─── Tipos para Estatísticas do Time na Temporada ────────────────────────────
+
+export interface TeamSeasonStats {
+  fixtures: {
+    played: { home: number; away: number; total: number };
+    wins:   { home: number; away: number; total: number };
+    draws:  { home: number; away: number; total: number };
+    loses:  { home: number; away: number; total: number };
+  };
+  goals: {
+    for:     { total: { home: number; away: number; total: number }; average: { home: string; away: string; total: string } };
+    against: { total: { home: number; away: number; total: number }; average: { home: string; away: string; total: string } };
+  };
+  biggest: {
+    wins:  { home: string | null; away: string | null };
+    loses: { home: string | null; away: string | null };
+    streak: { wins: number; draws: number; loses: number };
+  };
+  clean_sheet: { home: number; away: number; total: number };
+  failed_to_score: { home: number; away: number; total: number };
+  form: string; // ex: "WDLWWDL..."
+}
+
+/**
+ * Busca as estatísticas de um time na temporada de uma liga.
+ * Endpoint: GET /teams/statistics?league={leagueId}&team={teamId}&season={season}
+ * Consome 1 requisição.
+ */
+export async function fetchTeamStatistics(
+  teamId: number,
+  leagueId: number,
+  season: number
+): Promise<TeamSeasonStats | null> {
+  try {
+    const data = await apiFootballRequest<TeamSeasonStats>("/teams/statistics", {
+      team: teamId,
+      league: leagueId,
+      season,
+    });
+    // A API retorna um único objeto, não um array
+    const resp = data.response as unknown as TeamSeasonStats;
+    if (!resp?.fixtures) return null;
+    return resp;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Busca os últimos N jogos de um time para extrair a forma recente (W/D/L).
  * Endpoint: GET /fixtures?team={teamId}&last={n}&status=FT
