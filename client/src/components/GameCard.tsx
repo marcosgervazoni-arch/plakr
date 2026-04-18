@@ -665,72 +665,83 @@ function GameCard({
             )}
 
             {/* PÓS-JOGO: 2b. Análise do palpite (com palpite) */}
-            {finished && hasBet && (
-              <div className="bg-muted/20 rounded-xl p-3 space-y-3">
-                <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> Análise do seu palpite
-                </p>
-
-                {/* Comparação resultado real vs palpite */}
-                <div className="flex items-center justify-center gap-3 text-xs">
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Resultado real</p>
-                    <p className="font-black font-mono text-foreground text-base">{game.scoreA} × {game.scoreB}</p>
-                  </div>
-                  <span className="text-muted-foreground/40 text-sm font-medium">vs</span>
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground mb-0.5">Seu palpite</p>
-                    <p className="font-black font-mono text-primary text-base">{myBet!.predictedScoreA} × {myBet!.predictedScoreB}</p>
-                  </div>
+            {finished && hasBet && (() => {
+              const pts = myBet!.pointsEarned ?? 0;
+              const isExact = (myBet!.pointsExactScore ?? 0) > 0;
+              const isCorrect = !isExact && (myBet!.pointsCorrectResult ?? 0) > 0;
+              const isZero = pts === 0;
+              const betCorrect = isExact || isCorrect;
+              // Cor do placar do usuário: verde se acertou resultado, vermelho se errou
+              const betScoreColor = isExact ? '#00FF88' : isCorrect ? '#00FF88' : isZero ? '#FF3B3B' : '#FFB800';
+              return (
+              <div className="rounded-xl overflow-hidden border border-white/5">
+                {/* Cabeçalho com resultado */}
+                <div className="px-3 pt-3 pb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: '#FFB800' }}>
+                    <Sparkles className="w-3.5 h-3.5" /> Análise do palpite
+                  </p>
+                  {pts > 0 && (
+                    <span className="text-sm font-black font-mono" style={{ color: '#00FF88' }}>+{pts} pts</span>
+                  )}
                 </div>
 
-                {/* Banner de destaque por tipo de resultado */}
-                {(() => {
-                  const pts = myBet!.pointsEarned ?? 0;
-                  const isExact = (myBet!.pointsExactScore ?? 0) > 0;
-                  const isCorrect = !isExact && (myBet!.pointsCorrectResult ?? 0) > 0;
-                  const isZero = pts === 0;
-                  if (isExact) return (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/15 border border-green-500/30">
-                      <span className="text-green-400 text-sm">🎯</span>
-                      <span className="text-xs font-semibold text-green-400">Placar exato — melhor resultado possível!</span>
+                {/* Comparação de placares — destaque visual */}
+                <div className="mx-3 mb-3 rounded-lg bg-black/30 border border-white/5 px-3 py-2.5">
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="text-center flex-1">
+                      <p className="text-[9px] uppercase tracking-widest text-muted-foreground/60 mb-1">Resultado</p>
+                      <p className="font-black font-mono text-foreground text-xl leading-none">{game.scoreA} × {game.scoreB}</p>
                     </div>
-                  );
-                  if (isCorrect) return (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/25">
-                      <span className="text-primary text-sm">✅</span>
-                      <span className="text-xs font-semibold text-primary">Resultado correto! Bom palpite.</span>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="w-px h-6 bg-white/10" />
+                      <span className="text-[9px] text-muted-foreground/40 font-medium">VS</span>
+                      <div className="w-px h-6 bg-white/10" />
                     </div>
-                  );
-                  if (isZero) return (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/40 border border-border/30">
-                      <span className="text-muted-foreground text-sm">😬</span>
-                      <span className="text-xs font-medium text-muted-foreground">Dessa vez não foi. Próximo jogo!</span>
+                    <div className="text-center flex-1">
+                      <p className="text-[9px] uppercase tracking-widest text-muted-foreground/60 mb-1">Seu palpite</p>
+                      <p className="font-black font-mono text-xl leading-none" style={{ color: betScoreColor }}>{myBet!.predictedScoreA} × {myBet!.predictedScoreB}</p>
                     </div>
-                  );
-                  return (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/25">
-                      <span className="text-yellow-400 text-sm">⚡</span>
-                      <span className="text-xs font-semibold text-yellow-400">Parcialmente correto — {pts} pontos!</span>
-                    </div>
-                  );
-                })()}
-
-                {/* Texto da IA */}
-                {betAnalysisLoading ? (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Gerando análise...
                   </div>
-                ) : betAnalysisText ? (
-                  <p className="text-xs text-muted-foreground leading-relaxed">{betAnalysisText}</p>
-                ) : null}
+
+                  {/* Banner de resultado dentro do card de comparação */}
+                  <div className="mt-2.5 pt-2 border-t border-white/5 text-center">
+                    {isExact && (
+                      <span className="text-xs font-bold" style={{ color: '#00FF88' }}>Placar exato — pontuação máxima!</span>
+                    )}
+                    {isCorrect && (
+                      <span className="text-xs font-semibold" style={{ color: '#00FF88' }}>Resultado correto! Bom palpite.</span>
+                    )}
+                    {!isExact && !isCorrect && pts > 0 && (
+                      <span className="text-xs font-semibold" style={{ color: '#FFB800' }}>Pontuação parcial — {pts} pontos!</span>
+                    )}
+                    {isZero && (
+                      <span className="text-xs font-medium text-muted-foreground">Dessa vez não foi. Próximo jogo!</span>
+                    )}
+                  </div>
+                </div>
 
                 {/* Badges de breakdown */}
-                <div className="flex flex-wrap gap-1">
-                  <BetBreakdownBadges bet={myBet!} />
-                </div>
+                {pts > 0 && (
+                  <div className="px-3 pb-3">
+                    <BetBreakdownBadges bet={myBet!} />
+                  </div>
+                )}
+
+                {/* Texto da IA */}
+                {(betAnalysisLoading || betAnalysisText) && (
+                  <div className="mx-3 mb-3 rounded-lg bg-muted/10 border border-white/5 px-3 py-2.5">
+                    {betAnalysisLoading ? (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Gerando análise...
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground leading-relaxed">{betAnalysisText}</p>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
+              );
+            })()}
 
             {/* PÓS-JOGO: 3. Estatísticas */}
             {finished && game.matchStatistics && (() => {

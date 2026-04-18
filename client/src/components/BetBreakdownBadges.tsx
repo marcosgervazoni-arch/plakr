@@ -78,16 +78,25 @@ export default function BetBreakdownBadges({ bet, compact = false }: BetBreakdow
           return (
             <Tooltip key={c.key}>
               <TooltipTrigger asChild>
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded border cursor-default select-none font-mono font-bold bg-green-500/15 border-green-500/30 text-green-400 ${compact ? "text-[10px]" : "text-xs"}`}
-                >
-                  +{pts}
-                </span>
+                {compact ? (
+                  <span
+                    className="inline-flex items-center px-2 py-0.5 rounded border cursor-default select-none font-mono font-bold text-[10px] bg-green-500/15 border-green-500/30 text-green-400"
+                  >
+                    +{pts}
+                  </span>
+                ) : (
+                  <span
+                    className="inline-flex flex-col items-center px-2.5 py-1.5 rounded-lg border cursor-default select-none bg-green-500/10 border-green-500/25 hover:bg-green-500/15 transition-colors"
+                  >
+                    <span className="font-black font-mono text-sm leading-none" style={{ color: '#00FF88' }}>+{pts}</span>
+                    <span className="text-[9px] text-muted-foreground/70 mt-0.5 leading-none whitespace-nowrap">{c.label}</span>
+                  </span>
+                )}
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[200px] text-center">
                 <p className="font-semibold text-xs">{c.label}</p>
                 <p className="text-muted-foreground text-[11px] mt-0.5">{c.tooltip}</p>
-                <p className="text-green-400 font-bold text-xs mt-1">+{pts} ponto{pts !== 1 ? "s" : ""}</p>
+                <p className="font-bold text-xs mt-1" style={{ color: '#00FF88' }}>+{pts} ponto{pts !== 1 ? "s" : ""}</p>
               </TooltipContent>
             </Tooltip>
           );
