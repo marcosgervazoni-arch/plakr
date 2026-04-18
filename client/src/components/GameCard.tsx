@@ -767,18 +767,18 @@ function GameCard({
                         <div className="flex justify-between text-[10px]">
                           <span className="font-bold text-primary">{stat.home}{stat.unit ?? ""}</span>
                           <span className="text-muted-foreground">{stat.label}</span>
-                          <span className="font-bold text-red-400">{stat.away}{stat.unit ?? ""}</span>
+                          <span className="font-bold" style={{ color: '#4A90D9' }}>{stat.away}{stat.unit ?? ""}</span>
                         </div>
                         <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden flex">
                           <div className="h-full bg-primary/70 rounded-l-full transition-all" style={{ width: `${homePct}%` }} />
-                          <div className="h-full bg-red-400/70 rounded-r-full transition-all" style={{ width: `${100 - homePct}%` }} />
+                          <div className="h-full rounded-r-full transition-all" style={{ width: `${100 - homePct}%`, backgroundColor: 'rgba(74,144,217,0.65)' }} />
                         </div>
                       </div>
                     );
                   })}
                   <div className="flex justify-between text-[10px] text-muted-foreground pt-1">
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary/70 inline-block" />{game.teamAName}</span>
-                    <span className="flex items-center gap-1">{game.teamBName}<span className="w-2 h-2 rounded-full bg-red-400/70 inline-block" /></span>
+                    <span className="flex items-center gap-1">{game.teamBName}<span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: 'rgba(74,144,217,0.65)' }} /></span>
                   </div>
                 </div>
               );
