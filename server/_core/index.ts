@@ -234,6 +234,36 @@ async function startServer() {
       let done = 0;
       for (const row of rows) {
         try {
+          // Busca contexto comparativo do bolão para esse jogo
+          const ctxResult = await db.execute(drizzleSql`
+            SELECT
+              COUNT(*) as totalBets,
+              SUM(CASE WHEN predictedScoreA = ${row.scoreA} AND predictedScoreB = ${row.scoreB} THEN 1 ELSE 0 END) as exactCount,
+              SUM(CASE WHEN
+                (predictedScoreA > predictedScoreB AND ${row.scoreA} > ${row.scoreB}) OR
+                (predictedScoreA < predictedScoreB AND ${row.scoreA} < ${row.scoreB}) OR
+                (predictedScoreA = predictedScoreB AND ${row.scoreA} = ${row.scoreB})
+              THEN 1 ELSE 0 END) as correctCount
+            FROM bets
+            WHERE gameId = ${row.gameId} AND poolId = ${row.poolId}
+          `) as any;
+          const ctxRow = (ctxResult[0]?.[0]) as { totalBets: number; exactCount: number; correctCount: number } | undefined;
+
+          // Busca rank do usuário no bolão
+          const rankResult = await db.execute(drizzleSql`
+            SELECT \`rank\`, totalMembers FROM pool_member_stats
+            WHERE poolId = ${row.poolId} AND userId = ${row.userId}
+          `) as any;
+          const rankRow = (rankResult[0]?.[0]) as { rank: number; totalMembers: number } | undefined;
+
+          const poolContext = ctxRow ? {
+            totalParticipants: rankRow?.totalMembers ?? Number(ctxRow.totalBets),
+            exactCount: Number(ctxRow.exactCount),
+            correctCount: Number(ctxRow.correctCount),
+            totalBets: Number(ctxRow.totalBets),
+            userRank: rankRow?.rank ?? 0,
+          } : null;
+
           const analysisText = await generateBetAnalysis({
             homeTeam: row.teamAName ?? "Casa",
             awayTeam: row.teamBName ?? "Visitante",
@@ -244,7 +274,7 @@ async function startServer() {
             resultType: (row.resultType as "exact" | "correct_result" | "wrong") ?? "wrong",
             totalPoints: row.pointsEarned ?? 0,
             isZebra: false,
-            poolContext: null,
+            poolContext,
           });
           const dbInner = await getDb();
           if (dbInner) {

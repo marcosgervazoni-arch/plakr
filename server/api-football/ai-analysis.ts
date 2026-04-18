@@ -37,12 +37,13 @@ export interface BetAnalysisContext {
   resultType: "exact" | "correct_result" | "wrong";
   totalPoints: number;
   isZebra: boolean;
-  // Contexto do bolão — só incluir quando a rodada estiver completamente finalizada
+  // Contexto do bolão — sempre buscar para gerar comentário comparativo
   poolContext?: {
     totalParticipants: number;
-    exactCount: number;       // quantos acertaram o placar exato
-    correctCount: number;     // quantos acertaram o resultado
-    userRank: number;         // posição do usuário na rodada
+    exactCount: number;       // quantos acertaram o placar exato nesse jogo
+    correctCount: number;     // quantos acertaram o resultado nesse jogo
+    totalBets: number;        // total de palpites nesse jogo nesse bolão
+    userRank: number;         // posição do usuário no ranking do bolão
   } | null;
 }
 
@@ -176,11 +177,39 @@ export async function generateBetAnalysis(ctx: BetAnalysisContext): Promise<stri
     : ctx.resultType === "correct_result" ? "resultado correto"
     : "resultado errado";
 
-  const poolLine = ctx.poolContext
-    ? `Contexto do bolão: ${ctx.poolContext.totalParticipants} participantes. ${ctx.poolContext.exactCount} acertaram o placar exato. ${ctx.poolContext.correctCount} acertaram o resultado. O usuário ficou em ${ctx.poolContext.userRank}º lugar.`
-    : "";
+  // Monta o bloco de contexto comparativo do bolão de forma narrativa
+  // A IA recebe os números brutos mas é instruida a usá-los de forma implícita
+  let poolBlock = "";
+  if (ctx.poolContext) {
+    const p = ctx.poolContext;
+    const totalBets = p.totalBets || p.totalParticipants;
+    const exactRatio = totalBets > 0 ? p.exactCount / totalBets : 0;
+    const correctRatio = totalBets > 0 ? p.correctCount / totalBets : 0;
 
-  const zebraLine = ctx.isZebra ? "O resultado foi uma zebra — a maioria apostou no outro lado." : "";
+    // Classifica a raridade do acerto para guiar o tom da IA
+    let raridadeExato = "";
+    if (p.exactCount === 0) raridadeExato = "ninguem acertou o placar exato";
+    else if (p.exactCount === 1 && ctx.resultType === "exact") raridadeExato = "apenas o usuario acertou o placar exato (unico no bolao)";
+    else if (exactRatio <= 0.1) raridadeExato = "muito poucos acertaram o placar exato";
+    else if (exactRatio <= 0.3) raridadeExato = "poucos acertaram o placar exato";
+    else raridadeExato = "varios acertaram o placar exato";
+
+    let raridadeResultado = "";
+    if (p.correctCount === 0) raridadeResultado = "ninguem acertou o resultado";
+    else if (correctRatio <= 0.2) raridadeResultado = "muito poucos acertaram o resultado";
+    else if (correctRatio <= 0.5) raridadeResultado = "menos da metade acertou o resultado";
+    else raridadeResultado = "a maioria acertou o resultado";
+
+    poolBlock = `
+Contexto do bolão (use de forma natural, sem citar números diretamente):
+- Total de palpites nesse jogo: ${totalBets}
+- Placar exato: ${p.exactCount} acertaram (${raridadeExato})
+- Resultado correto: ${p.correctCount} acertaram (${raridadeResultado})
+- Posição do usuário no ranking do bolão: ${p.userRank}º de ${p.totalParticipants}
+- Dica de tom: use expressões como "você foi o único", "poucos viram essa", "quase ninguém pegou", "a galera errou" em vez de citar números brutos`;
+  }
+
+  const zebraLine = ctx.isZebra ? "- O resultado foi uma zebra \u2014 a maioria apostou no outro lado." : "";
 
   const prompt = `Analise o palpite do usuário para o jogo:
 - Time da casa: ${ctx.homeTeam}
@@ -189,15 +218,28 @@ export async function generateBetAnalysis(ctx: BetAnalysisContext): Promise<stri
 - Palpite: ${ctx.predictedA} x ${ctx.predictedB}
 - Tipo de resultado: ${resultLabel}
 - Pontos ganhos: ${ctx.totalPoints}
-${zebraLine ? `- ${zebraLine}` : ""}
-${poolLine}
+${zebraLine}
+${poolBlock}
 
 Escreva apenas a análise, sem título, sem emojis.`;
+
+  const systemPrompt = `Você é um comentarista esportivo com o tom da CazéTV: casual, animado e direto, como um amigo que entende de bola.
+
+Regras:
+- Use o contexto do bolão para tornar o comentário comparativo e relevante: mencione se o usuário foi o único, se poucos acertaram, se a galera errou, a posição no ranking
+- Não cite números brutos ("1 de 10 pessoas") — use linguagem natural ("você foi o único", "quase ninguém viu essa")
+- Evite bajulação exagerada — reconheça acertos de forma natural, sem exagero
+- Para placar exato: destaque a raridade do acerto no contexto do bolão
+- Para resultado correto: reconheça sem exaltar, mencione se foi fácil ou difícil no bolão
+- Para resultado errado: bom humor sem drama, mencione que a galera também errou (se for o caso)
+- Máximo 2-3 frases curtas
+- NUNCA mencione odds, apostas financeiras ou sugira resultado
+- Escreva em português brasileiro, sem emojis`;
 
   try {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "Você é um comentarista esportivo com o tom da CazéTV: casual, animado e direto, como um amigo que entende de bola. Analise o palpite do usuário focando na dificuldade do acerto e no desempenho no bolão. Evite bajulação — reconheça acertos de forma natural e divertida, sem exagero. Para placar exato: destaque a raridade. Para resultado correto: reconheça sem exaltar. Para resultado errado: bom humor sem drama. Máximo 2-3 frases curtas. NUNCA mencione odds, apostas ou sugira resultado. Escreva em português brasileiro, sem emojis." },
+        { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
     });

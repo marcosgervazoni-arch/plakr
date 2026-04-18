@@ -936,7 +936,7 @@ async function generateAiTextsForGame(ctx: {
           sql`SELECT userId, SUM(pointsEarned) as roundPoints FROM bets WHERE poolId = ${poolId} AND gameId IN (SELECT id FROM games WHERE tournamentId = ${gameRow.tournamentId} AND roundNumber = ${gameRow.roundNumber}) GROUP BY userId ORDER BY roundPoints DESC`
         ) as any;
         const rows = memberStats[0] as Array<{ userId: number; roundPoints: number }>;
-        poolContext = { totalParticipants: poolBets.length, exactCount, correctCount, userRank: 0 };
+        poolContext = { totalParticipants: poolBets.length, exactCount, correctCount, totalBets: poolBets.length, userRank: 0 };
 
         for (const bet of poolBets) {
           const userRankIdx = rows.findIndex((r: any) => r.userId === bet.userId);
@@ -975,6 +975,13 @@ async function generateAiTextsForGame(ctx: {
             { exactScorePoints: 10, correctResultPoints: 5, totalGoalsPoints: 3, goalDiffPoints: 3, oneTeamGoalsPoints: 2, landslidePoints: 5, zebraPoints: 1, landslideMinDiff: 4, zebraThreshold: 75, zebraCountDraw: false, zebraEnabled: true },
             { isZebraGame: false, betterTeam: "A", favoriteWon: true, losingRatio: 0 }
           );
+          // Mesmo na rodada incompleta, busca contexto parcial do jogo
+          const exactCountPartial = poolBets.filter(b => b.predictedScoreA === ctx.scoreA && b.predictedScoreB === ctx.scoreB).length;
+          const correctCountPartial = poolBets.filter(b => {
+            const pA = b.predictedScoreA ?? 0;
+            const pB = b.predictedScoreB ?? 0;
+            return (pA > pB && ctx.scoreA > ctx.scoreB) || (pA < pB && ctx.scoreA < ctx.scoreB) || (pA === pB && ctx.scoreA === ctx.scoreB);
+          }).length;
           const analysisText = await generateBetAnalysis({
             homeTeam: ctx.homeTeam,
             awayTeam: ctx.awayTeam,
@@ -985,7 +992,7 @@ async function generateAiTextsForGame(ctx: {
             resultType: breakdown.resultType,
             totalPoints: breakdown.total,
             isZebra: false,
-            poolContext: null, // rodada incompleta
+            poolContext: { totalParticipants: poolBets.length, exactCount: exactCountPartial, correctCount: correctCountPartial, totalBets: poolBets.length, userRank: 0 },
           });
           await db.insert(gameBetAnalyses).values({
             gameId: ctx.gameId,
