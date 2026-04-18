@@ -141,14 +141,20 @@ function AdsterraSlot({ htmlCode, width, height }: { htmlCode: string; width: nu
 interface AdBannerProps {
   position: "top" | "sidebar" | "between_sections" | "bottom" | "popup";
   className?: string;
+  /** Passar adConfig já carregado pelo componente pai para evitar queries duplicadas */
+  adConfig?: { adsEnabled?: boolean; adsLocalEnabled?: boolean; adNetworkScripts?: unknown } | null;
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
-export function AdBanner({ position, className }: AdBannerProps) {
+export function AdBanner({ position, className, adConfig: adConfigProp }: AdBannerProps) {
   // getActive já filtra por adsEnabled no servidor (banners próprios)
   const { data: allAds } = trpc.ads.getActive.useQuery({ position });
-  // getAdConfig é público — retorna adsEnabled + adNetworkScripts para todos os usuários
-  const { data: adConfig } = trpc.platform.getAdConfig.useQuery();
+  // getAdConfig: usa prop se fornecida (evita queries duplicadas em listas), senão busca
+  const { data: adConfigFetched } = trpc.platform.getAdConfig.useQuery(
+    undefined,
+    { enabled: adConfigProp === undefined, staleTime: 10 * 60 * 1000 }
+  );
+  const adConfig = adConfigProp !== undefined ? adConfigProp : adConfigFetched;
   const recordClickMutation = trpc.ads.recordClick.useMutation();
   const isMobile = useIsMobile();
   const [currentIndex, setCurrentIndex] = useState(0);

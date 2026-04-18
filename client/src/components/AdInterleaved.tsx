@@ -8,12 +8,14 @@
  * - Só renderiza banners se `showAds` for true (usuário não-Pro)
  * - Suporta `gridClassName` para grades CSS (ex: "grid grid-cols-2 gap-3")
  *   Quando usado em grade, o banner ocupa toda a largura via `adClassName` (ex: "col-span-2")
+ * - Aceita `adConfig` para evitar queries duplicadas quando já carregado pelo pai
  *
  * Uso básico (lista):
  * <AdInterleaved
  *   items={ranking}
  *   showAds={!isPro}
  *   interval={5}
+ *   adConfig={adConfig}
  *   renderItem={(item, idx) => <RankCard key={item.id} item={item} idx={idx} />}
  * />
  *
@@ -22,6 +24,7 @@
  *   items={pools}
  *   showAds={!isPro}
  *   interval={4}
+ *   adConfig={adConfig}
  *   gridClassName="grid grid-cols-1 sm:grid-cols-2 gap-3"
  *   adClassName="col-span-1 sm:col-span-2 w-full my-1"
  *   renderItem={(pool) => <PoolCard key={pool.id} pool={pool} />}
@@ -43,6 +46,8 @@ interface AdInterleavedProps<T> {
   adClassName?: string;
   /** Classe CSS do container wrapper (ex: "grid grid-cols-2 gap-3"). Se fornecida, envolve os itens num div com essa classe */
   gridClassName?: string;
+  /** adConfig já carregado pelo pai — evita queries duplicadas por instância de AdBanner */
+  adConfig?: { adsEnabled?: boolean; adsLocalEnabled?: boolean; adNetworkScripts?: unknown } | null;
 }
 
 export function AdInterleaved<T>({
@@ -52,6 +57,7 @@ export function AdInterleaved<T>({
   renderItem,
   adClassName = "w-full my-2",
   gridClassName,
+  adConfig,
 }: AdInterleavedProps<T>) {
   if (!items.length) return null;
 
@@ -79,6 +85,7 @@ export function AdInterleaved<T>({
           key={`ad-interleaved-${adCount}`}
           position="between_sections"
           className={adClassName}
+          adConfig={adConfig}
         />
       );
     }

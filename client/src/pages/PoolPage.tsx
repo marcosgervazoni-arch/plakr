@@ -896,6 +896,7 @@ export default function PoolPage() {
                             items={filteredPhaseGames}
                             showAds={!isPro}
                             interval={4}
+                            adConfig={adConfig}
                             renderItem={(game) => {
                               const myBet = betsByGame.get(game.id);
                               const open = isGameOpen(game.matchDate);
@@ -947,6 +948,7 @@ export default function PoolPage() {
                   items={simpleVisibleGames}
                   showAds={!isPro}
                   interval={4}
+                  adConfig={adConfig}
                   renderItem={(game) => {
                     const myBet = betsByGame.get(game.id);
                     const open = isGameOpen(game.matchDate);
@@ -1022,6 +1024,7 @@ export default function PoolPage() {
                         showAds={!isPro}
                         interval={5}
                         adClassName="w-full my-2"
+                        adConfig={adConfig}
                         renderItem={(rankItem, idx) => {
                         const { stats, user: rankUser } = rankItem;
                         const hasStats = (rankItem as typeof rankItem & { hasStats?: boolean }).hasStats !== false;
