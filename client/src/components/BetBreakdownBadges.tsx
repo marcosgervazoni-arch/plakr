@@ -14,67 +14,51 @@ interface BetBreakdown {
 
 interface BetBreakdownBadgesProps {
   bet: BetBreakdown;
-  /** Se true, exibe apenas ícones sem labels (modo compacto) */
+  /** Se true, exibe versão compacta (mesmo visual, tamanho reduzido) */
   compact?: boolean;
 }
 
 interface CriterionDef {
   key: keyof BetBreakdown;
-  icon: string;
   label: string;
-  color: string;
-  bgColor: string;
+  tooltip: string;
 }
 
 const CRITERIA: CriterionDef[] = [
   {
     key: "pointsExactScore",
-    icon: "🎯",
-    label: "Placar Exato",
-    color: "text-yellow-400",
-    bgColor: "bg-yellow-500/15 border-yellow-500/30",
+    label: "Placar exato",
+    tooltip: "Você acertou o placar exato da partida — a melhor pontuação possível.",
   },
   {
     key: "pointsCorrectResult",
-    icon: "✅",
-    label: "Resultado Correto",
-    color: "text-green-400",
-    bgColor: "bg-green-500/15 border-green-500/30",
+    label: "Resultado correto",
+    tooltip: "Você acertou o resultado (vitória, empate ou derrota), mesmo sem acertar o placar exato.",
   },
   {
     key: "pointsTotalGoals",
-    icon: "⚽",
-    label: "Total de Gols",
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/15 border-blue-500/30",
+    label: "Total de gols",
+    tooltip: "A soma dos gols do seu palpite é igual à soma dos gols reais da partida.",
   },
   {
     key: "pointsGoalDiff",
-    icon: "📐",
-    label: "Diferença de Gols",
-    color: "text-cyan-400",
-    bgColor: "bg-cyan-500/15 border-cyan-500/30",
+    label: "Diferença de gols",
+    tooltip: "A diferença de gols entre os times no seu palpite é igual à diferença real da partida.",
   },
   {
     key: "pointsOneTeamGoals",
-    icon: "🥅",
-    label: "Gols de Um Time",
-    color: "text-purple-400",
-    bgColor: "bg-purple-500/15 border-purple-500/30",
+    label: "Gols de um time",
+    tooltip: "Você acertou o número de gols de pelo menos um dos times da partida.",
   },
   {
     key: "pointsLandslide",
-    icon: "💥",
     label: "Goleada",
-    color: "text-primary",
-    bgColor: "bg-primary/15 border-primary/30",
+    tooltip: "Você previu uma goleada e o resultado real também foi uma goleada (diferença mínima configurada pelo organizador).",
   },
   {
     key: "pointsZebra",
-    icon: "🦓",
     label: "Zebra",
-    color: "text-pink-400",
-    bgColor: "bg-pink-500/15 border-pink-500/30",
+    tooltip: "A maioria dos apostadores errou o resultado e você acertou — bônus de zebra!",
   },
 ];
 
@@ -95,20 +79,15 @@ export default function BetBreakdownBadges({ bet, compact = false }: BetBreakdow
             <Tooltip key={c.key}>
               <TooltipTrigger asChild>
                 <span
-                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs font-medium cursor-default select-none ${c.bgColor} ${c.color}`}
+                  className={`inline-flex items-center px-2 py-0.5 rounded border cursor-default select-none font-mono font-bold bg-green-500/15 border-green-500/30 text-green-400 ${compact ? "text-[10px]" : "text-xs"}`}
                 >
-                  <span>{c.icon}</span>
-                  {!compact && (
-                    <span className="font-mono font-bold">+{pts}</span>
-                  )}
-                  {compact && (
-                    <span className="font-mono font-bold text-[10px]">+{pts}</span>
-                  )}
+                  +{pts}
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
-                <p className="font-semibold">{c.label}</p>
-                <p className="text-muted-foreground">+{pts} ponto{pts !== 1 ? "s" : ""}</p>
+              <TooltipContent side="top" className="max-w-[200px] text-center">
+                <p className="font-semibold text-xs">{c.label}</p>
+                <p className="text-muted-foreground text-[11px] mt-0.5">{c.tooltip}</p>
+                <p className="text-green-400 font-bold text-xs mt-1">+{pts} ponto{pts !== 1 ? "s" : ""}</p>
               </TooltipContent>
             </Tooltip>
           );

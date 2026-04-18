@@ -441,20 +441,10 @@ function GameCard({
           </div>
         )}
 
-        {/* Badges compactos de pontuação + posição no ranking */}
+        {/* Badges compactos de pontuação */}
         {finished && hasBet && (
           <div className="mt-3 flex flex-wrap justify-center gap-1">
-            {myRankPosition != null && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs font-bold bg-yellow-500/15 border-yellow-500/30 text-yellow-400 font-mono">
-                #{myRankPosition}
-              </span>
-            )}
             <BetBreakdownBadges bet={myBet!} compact />
-            {(myBet!.pointsEarned ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs font-bold bg-primary/15 border-primary/30 text-primary font-mono">
-                ⭐ +{myBet!.pointsEarned}
-              </span>
-            )}
           </div>
         )}
 
@@ -738,11 +728,6 @@ function GameCard({
                 {/* Badges de breakdown */}
                 <div className="flex flex-wrap gap-1">
                   <BetBreakdownBadges bet={myBet!} />
-                  {(myBet!.pointsEarned ?? 0) > 0 && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-xs font-bold bg-primary/15 border-primary/30 text-primary font-mono">
-                      Total: +{myBet!.pointsEarned} pts
-                    </span>
-                  )}
                 </div>
               </div>
             )}
