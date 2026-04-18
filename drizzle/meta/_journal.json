@@ -407,6 +407,13 @@
       "when": 1776507795659,
       "tag": "0057_strong_winter_soldier",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "5",
+      "when": 1776510381958,
+      "tag": "0058_gigantic_doctor_spectrum",
+      "breakpoints": true
     }
   ]
 }

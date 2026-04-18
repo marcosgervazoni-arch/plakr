@@ -34,7 +34,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-// ─── TIPOS ───────────────────────────────────────────────────────────────────
+// ─── TIPOS ──────────────────────────────────────────────────────────────────
 
 interface MuralComment {
   id: number;
@@ -56,6 +56,14 @@ interface MuralPost {
   authorName: string | null;
   authorAvatar: string | null;
   comments: MuralComment[];
+  reactions: Record<string, number>;
+  myReactions: string[];
+}
+
+interface MentionMember {
+  id: number;
+  name: string | null;
+  avatarUrl: string | null;
 }
 
 interface PoolMuralProps {
@@ -106,18 +114,23 @@ function Avatar({ name, size = "sm" }: { name: string | null; size?: "sm" | "md"
 
 // ─── POST CARD ───────────────────────────────────────────────────────────────
 
+const REACTION_EMOJIS = ["\uD83D\uDC51", "\uD83D\uDD25", "\uD83D\uDE02", "\uD83D\uDE31", "\uD83C\uDFAF"] as const;
+type ReactionEmoji = typeof REACTION_EMOJIS[number];
+
 function PostCard({
   post,
   currentUserId,
   isOrganizer,
   poolSlug,
   onDelete,
+  onReaction,
 }: {
   post: MuralPost;
   currentUserId: number | undefined;
   isOrganizer: boolean;
   poolSlug: string;
   onDelete: (postId: number) => void;
+  onReaction: (postId: number, emoji: ReactionEmoji) => void;
 }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -203,8 +216,36 @@ function PostCard({
         </p>
       </div>
 
-      {/* Rodapé: botão de comentários */}
-      <div className="px-4 pb-3 flex items-center gap-3">
+      {/* Rodapé: reações + botão de comentários */}
+      <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
+        {/* Barra de emojis */}
+        <div className="flex items-center gap-1 mr-1">
+          {REACTION_EMOJIS.map((emoji) => {
+            const count = post.reactions?.[emoji] ?? 0;
+            const isActive = post.myReactions?.includes(emoji);
+            return (
+              <button
+                key={emoji}
+                onClick={() => onReaction(post.id, emoji)}
+                className={cn(
+                  "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs border transition-all",
+                  isActive
+                    ? "bg-primary/15 border-primary/30 text-primary font-medium"
+                    : "bg-transparent border-border/20 text-muted-foreground hover:bg-muted/40 hover:border-border/40"
+                )}
+                title={isActive ? `Remover ${emoji}` : `Reagir com ${emoji}`}
+              >
+                <span className="text-sm leading-none">{emoji}</span>
+                {count > 0 && <span className="text-[10px] font-medium">{count}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Separador */}
+        <div className="w-px h-4 bg-border/30" />
+
+        {/* Botão de comentários */}
         <button
           onClick={() => setShowComments((v) => !v)}
           className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -334,6 +375,53 @@ export default function PoolMural({ poolSlug, poolId, isOrganizer }: PoolMuralPr
     onError: (err) => toast.error("Erro ao deletar post", { description: err.message }),
   });
 
+  const toggleReaction = trpc.mural.toggleReaction.useMutation({
+    onSuccess: () => utils.mural.getByPool.invalidate({ poolSlug }),
+    onError: (err) => toast.error("Erro ao reagir", { description: err.message }),
+  });
+
+  // Autocomplete de @menções
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionCursorPos, setMentionCursorPos] = useState(0);
+  const postTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const { data: mentionMembers } = trpc.mural.getMembersForMention.useQuery(
+    { poolSlug },
+    { enabled: showMentions && !!poolSlug }
+  );
+
+  const filteredMentions = (mentionMembers ?? []).filter(
+    (m) => m.name?.toLowerCase().includes(mentionQuery.toLowerCase()) && m.name
+  ).slice(0, 6);
+
+  const handlePostTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setPostText(val);
+    const pos = e.target.selectionStart ?? 0;
+    // Detecta @mention: última palavra antes do cursor começando com @
+    const textBeforeCursor = val.slice(0, pos);
+    const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+    if (mentionMatch) {
+      setMentionQuery(mentionMatch[1]);
+      setShowMentions(true);
+      setMentionCursorPos(pos);
+    } else {
+      setShowMentions(false);
+      setMentionQuery("");
+    }
+  };
+
+  const insertMention = (name: string) => {
+    const textBeforeCursor = postText.slice(0, mentionCursorPos);
+    const textAfterCursor = postText.slice(mentionCursorPos);
+    const newText = textBeforeCursor.replace(/@\w*$/, `@${name} `) + textAfterCursor;
+    setPostText(newText);
+    setShowMentions(false);
+    setMentionQuery("");
+    postTextareaRef.current?.focus();
+  };
+
   const handlePublish = () => {
     const trimmed = postText.trim();
     if (!trimmed) return;
@@ -346,6 +434,7 @@ export default function PoolMural({ poolSlug, poolId, isOrganizer }: PoolMuralPr
 
   // Flatten das páginas
   const allPosts: MuralPost[] = data?.pages.flatMap((p) => p.posts as MuralPost[]) ?? [];
+  const wallEnabled = data?.pages[0]?.wallEnabled ?? true;
 
   // ── LOADING STATE ──────────────────────────────────────────────────────────
   if (isLoading) {
@@ -361,7 +450,7 @@ export default function PoolMural({ poolSlug, poolId, isOrganizer }: PoolMuralPr
     );
   }
 
-  // ── ERROR STATE ────────────────────────────────────────────────────────────
+  // ── ERROR STATE ──────────────────────────────────────────────────────────────────
   if (error) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -372,20 +461,55 @@ export default function PoolMural({ poolSlug, poolId, isOrganizer }: PoolMuralPr
     );
   }
 
+  // ── MURAL DESATIVADO ──────────────────────────────────────────────────────────
+  if (!wallEnabled) {
+    return (
+      <div className="text-center py-14 text-muted-foreground">
+        <Newspaper className="w-12 h-12 mx-auto mb-3 opacity-15" />
+        <p className="text-sm font-medium">Mural desativado.</p>
+        <p className="text-xs mt-1 max-w-xs mx-auto">
+          O organizador desativou o Mural deste bolão.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* ── CAIXA DE NOVO POST ── */}
       <div className="rounded-xl border border-border/40 bg-card/60 p-4 space-y-3">
-        <Textarea
-          value={postText}
-          onChange={(e) => setPostText(e.target.value)}
-          placeholder="Compartilhe algo com o bolão... 🔥"
-          className="min-h-[80px] resize-none text-sm"
-          maxLength={MAX_POST_LENGTH}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handlePublish();
-          }}
-        />
+        <div className="relative">
+          <Textarea
+            ref={postTextareaRef}
+            value={postText}
+            onChange={handlePostTextChange}
+            placeholder="Compartilhe algo com o bolão... 🔥 (use @nome para mencionar)"
+            className="min-h-[80px] resize-none text-sm"
+            maxLength={MAX_POST_LENGTH}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handlePublish();
+              if (e.key === "Escape") setShowMentions(false);
+            }}
+          />
+          {/* Dropdown de @menções */}
+          {showMentions && filteredMentions.length > 0 && (
+            <div className="absolute z-50 bottom-full mb-1 left-0 w-full max-w-xs bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+              {filteredMentions.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/60 transition-colors text-left"
+                  onMouseDown={(e) => { e.preventDefault(); insertMention(m.name!); }}
+                >
+                  <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center text-xs font-semibold text-primary shrink-0">
+                    {m.name?.charAt(0)?.toUpperCase()}
+                  </div>
+                  <span className="truncate">{m.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="flex items-center justify-between">
           <span className="text-[10px] text-muted-foreground/60">
             {postText.length}/{MAX_POST_LENGTH} · Ctrl+Enter para publicar
@@ -426,6 +550,7 @@ export default function PoolMural({ poolSlug, poolId, isOrganizer }: PoolMuralPr
                 isOrganizer={isOrganizer}
                 poolSlug={poolSlug}
                 onDelete={(postId) => deletePost.mutate({ postId })}
+                onReaction={(postId, emoji) => toggleReaction.mutate({ postId, emoji })}
               />
 
               {/* Ads Adsterra a cada AD_INTERVAL posts — apenas usuários Free */}

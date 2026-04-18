@@ -144,6 +144,80 @@ export const poolsGamesRouter = router({
           message: `O resultado do jogo foi registrado: ${input.scoreA} × ${input.scoreB}. Confira sua pontuação!`,
         });
       }
+
+      // [Mural] Eventos automáticos: resultado do jogo, placar exato, zebra, goleada, ranking
+      import("../mural-triggers")
+        .then(async ({ muralTrigger }) => {
+          const { getUserById, getPoolRanking } = await import("../db");
+          const teamA = game.teamAName ?? `Time A`;
+          const teamB = game.teamBName ?? `Time B`;
+          const round = game.roundNumber ? `Rodada ${game.roundNumber}` : game.phase ?? "Fase";
+
+          // 1. Resultado do jogo
+          await muralTrigger.matchResult({
+            poolId: input.poolId, teamA, teamB,
+            scoreA: input.scoreA, scoreB: input.scoreB, round,
+          });
+
+          // 2. Placar exato
+          const exactBets = poolBets.filter((b) => b.predictedScoreA === input.scoreA && b.predictedScoreB === input.scoreB);
+          if (exactBets.length > 0) {
+            const userNames = await Promise.all(exactBets.map(async (b) => {
+              const u = await getUserById(b.userId);
+              return u?.name ?? "Participante";
+            }));
+            await muralTrigger.exactScoreMulti({ poolId: input.poolId, userNames, teamA, teamB, scoreA: input.scoreA, scoreB: input.scoreB });
+          }
+
+          // 3. Zebra
+          if (game.isZebraResult) {
+            const zebraBets = poolBets.filter((b) => (b as any).pointsZebra > 0);
+            for (const bet of zebraBets.slice(0, 1)) {
+              const u = await getUserById(bet.userId);
+              await muralTrigger.zebraResult({
+                poolId: input.poolId, userName: u?.name ?? "Participante",
+                underdogTeam: teamB, favoriteTeam: teamA,
+                scoreA: input.scoreA, scoreB: input.scoreB, round,
+              });
+            }
+          }
+
+          // 4. Goleada (diff >= 4)
+          const diff = Math.abs(input.scoreA - input.scoreB);
+          if (diff >= 4) {
+            const winnerTeam = input.scoreA > input.scoreB ? teamA : teamB;
+            const loserTeam = input.scoreA > input.scoreB ? teamB : teamA;
+            const thrashBets = poolBets.filter((b) => {
+              const bDiff = Math.abs((b.predictedScoreA ?? 0) - (b.predictedScoreB ?? 0));
+              return bDiff >= 4;
+            });
+            for (const bet of thrashBets.slice(0, 1)) {
+              const u = await getUserById(bet.userId);
+              await muralTrigger.thrashingResult({
+                poolId: input.poolId, userName: u?.name ?? "Participante",
+                winnerTeam, loserTeam, scoreA: input.scoreA, scoreB: input.scoreB, round,
+              });
+            }
+          }
+
+          // 5. Ranking: verificar mudanças de posição
+          try {
+            const rankings = await getPoolRanking(input.poolId);
+            if (rankings && rankings.length > 0) {
+              const leaderEntry = rankings[0];
+              if (leaderEntry && affectedUsers.includes(leaderEntry.user.id)) {
+                await muralTrigger.rankChangeFirst({
+                  poolId: input.poolId,
+                  userName: leaderEntry.user.name ?? "Participante",
+                  points: leaderEntry.stats.totalPoints ?? 0,
+                  previousLeaderName: "",
+                });
+              }
+            }
+          } catch { /* ranking não-crítico */ }
+        })
+        .catch(() => {});
+
       return { success: true, affectedBets: poolBets.length };
     }),
 

@@ -1,4 +1,3 @@
-import { useUserPlan } from "@/hooks/useUserPlan";
 /**
  * OrganizerCommunication — Comunicação com membros do bolão (Pro)
  * Permite ao organizador enviar mensagens in-app para todos os participantes.
@@ -6,12 +5,13 @@ import { useUserPlan } from "@/hooks/useUserPlan";
 import { useState } from "react";
 import { useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import OrganizerLayout from "@/components/OrganizerLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Crown, Send, Users, MessageSquare } from "lucide-react";
+import { Crown, Send, Users, MessageSquare, Newspaper, ToggleLeft, ToggleRight } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 
@@ -38,6 +38,17 @@ export default function OrganizerCommunication() {
     },
     onError: (err) => toast.error(err.message || "Erro ao enviar mensagem."),
   });
+
+  const setWallEnabled = trpc.mural.setWallEnabled.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.wallEnabled ? "Mural ativado com sucesso!" : "Mural desativado.");
+      utils.pools.getBySlug.invalidate({ slug: slug ?? "" });
+    },
+    onError: (err) => toast.error(err.message || "Erro ao alterar configuração do Mural."),
+  });
+
+  const utils = trpc.useUtils();
+  const wallEnabled = pool?.wallEnabled ?? true;
 
   const handleSend = () => {
     if (!pool?.id) return;
@@ -154,6 +165,35 @@ export default function OrganizerCommunication() {
         <p className="text-xs text-muted-foreground text-center">
           As mensagens aparecem no sino de notificações de cada participante. Use com moderação.
         </p>
+
+        {/* ── CONFIGURAÇÕES DO MURAL ── */}
+        <div className="bg-card border border-border/30 rounded-xl p-5 space-y-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Newspaper className="h-4 w-4 text-brand" />
+            <span className="text-sm font-semibold">Mural do Bolão</span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            O Mural é o feed social do seu bolão. Quando ativo, os membros podem postar mensagens, comentar e reagir com emojis. Eventos automáticos (gols, ranking, X1) também aparecem aqui.
+          </p>
+          <div className="flex items-center justify-between py-2 border-t border-border/20">
+            <div>
+              <p className="text-sm font-medium">Ativar Mural</p>
+              <p className="text-xs text-muted-foreground">
+                {wallEnabled ? "Mural ativo — membros podem postar" : "Mural desativado — feed oculto para todos"}
+              </p>
+            </div>
+            <button
+              onClick={() => slug && setWallEnabled.mutate({ poolSlug: slug, enabled: !wallEnabled })}
+              disabled={setWallEnabled.isPending}
+              className="shrink-0 transition-colors"
+              title={wallEnabled ? "Desativar Mural" : "Ativar Mural"}
+            >
+              {wallEnabled
+                ? <ToggleRight className="w-10 h-10 text-brand" />
+                : <ToggleLeft className="w-10 h-10 text-muted-foreground" />}
+            </button>
+          </div>
+        </div>
       </div>
     </OrganizerLayout>
   );

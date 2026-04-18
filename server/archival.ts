@@ -220,6 +220,24 @@ export async function concludePool(
   generateRetrospectivesForPool(poolId, pool.name, source).catch((err) =>
     logger.error({ poolId, err }, "[Archival] Erro ao gerar retrospectivas")
   );
+
+  // [Mural] Evento automático: bolão encerrado / campeão definido
+  import("./mural-triggers")
+    .then(async ({ muralTrigger }) => {
+      const { getPoolRanking, countPoolMembers } = await import("./db");
+      const rankings = await getPoolRanking(poolId);
+      const winner = rankings[0];
+      if (!winner) return;
+      const totalParticipants = await countPoolMembers(poolId);
+      await muralTrigger.poolEnded({
+        poolId,
+        winnerName: winner.user.name ?? "Campeão",
+        poolName: pool.name,
+        winnerPoints: winner.stats.totalPoints ?? 0,
+        totalParticipants,
+      });
+    })
+    .catch(() => {});
 }
 
 // ─── GERAÇÃO DE RETROSPECTIVAS ────────────────────────────────────────────────

@@ -365,6 +365,8 @@ export const pools = mysqlTable("pools", {
   pixKey: text("pixKey"),                                            // Chave PIX (CPF, CNPJ, e-mail, telefone ou aleatória)
   // Onboarding
   onboardingDismissedAt: timestamp("onboardingDismissedAt"),        // null = checklist ainda visível
+  // Mural do Bolão
+  wallEnabled: boolean("wallEnabled").default(true).notNull(),      // false = Mural desativado pelo organizador
 });
 export type Pool = typeof pools.$inferSelect;
 // ─── MEMBROS DO BOLÃO ─────────────────────────────────────────────────────────
@@ -1263,3 +1265,21 @@ export const muralMentions = mysqlTable("mural_mentions", {
 }));
 export type MuralMention = typeof muralMentions.$inferSelect;
 export type InsertMuralMention = typeof muralMentions.$inferInsert;
+
+// ─── MURAL REACTIONS ──────────────────────────────────────────────────────────
+export const MURAL_REACTION_EMOJIS = ["👑", "🔥", "😂", "😱", "🎯"] as const;
+export type MuralReactionEmoji = typeof MURAL_REACTION_EMOJIS[number];
+
+export const muralReactions = mysqlTable("mural_reactions", {
+  id: int("id").primaryKey().autoincrement(),
+  postId: int("postId").notNull().references(() => muralPosts.id, { onDelete: "cascade" }),
+  userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  emoji: varchar("emoji", { length: 10 }).notNull().default("👑"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  uqReaction: unique("uq_mural_reaction").on(t.postId, t.userId, t.emoji),
+  idxPost: index("idx_mural_reactions_post").on(t.postId),
+  idxUser: index("idx_mural_reactions_user").on(t.userId),
+}));
+export type MuralReaction = typeof muralReactions.$inferSelect;
+export type InsertMuralReaction = typeof muralReactions.$inferInsert;

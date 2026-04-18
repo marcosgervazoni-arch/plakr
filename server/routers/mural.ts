@@ -16,12 +16,15 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import logger from "../logger";
 import { renderTemplate } from "../mural-templates";
-import type { MuralPostType } from "../../drizzle/schema";
+import type { MuralPostType, MuralReactionEmoji } from "../../drizzle/schema";
+import { MURAL_REACTION_EMOJIS } from "../../drizzle/schema";
 
 // ─── LIMITES ──────────────────────────────────────────────────────────────────
 const MAX_POST_LENGTH = 500;
 const MAX_COMMENT_LENGTH = 280;
 const PAGE_SIZE = 20;
+const MAX_POSTS_PER_HOUR = 10; // rate limit: 10 posts/hora por usuário por bolão
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hora em ms
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -64,7 +67,7 @@ async function getPoolBySlug(slug: string) {
   const { pools } = await getSchema();
   const { eq } = await import("drizzle-orm");
   const pool = await db
-    .select({ id: pools.id, ownerId: pools.ownerId, name: pools.name })
+    .select({ id: pools.id, ownerId: pools.ownerId, name: pools.name, wallEnabled: pools.wallEnabled })
     .from(pools)
     .where(eq(pools.slug, slug))
     .limit(1);
@@ -147,6 +150,11 @@ export const muralRouter = router({
       // Verifica se o usuário é membro ativo
       await assertMembership(pool.id, ctx.user.id);
 
+      // Verifica se o Mural está ativado
+      if (!pool.wallEnabled) {
+        return { posts: [], nextCursor: undefined, hasMore: false, wallEnabled: false };
+      }
+
       // Busca posts paginados (keyset por id desc)
       const where = input.cursor
         ? and(eq(muralPosts.poolId, pool.id), eq(muralPosts.isDeleted, false), lt(muralPosts.id, input.cursor))
@@ -205,13 +213,40 @@ export const muralRouter = router({
         commentsByPost[c.postId].push(c);
       }
 
+      // Busca reações dos posts retornados
+      const { muralReactions } = await getSchema();
+      const reactions =
+        postIds.length > 0
+          ? await db
+              .select({
+                postId: muralReactions.postId,
+                emoji: muralReactions.emoji,
+                userId: muralReactions.userId,
+              })
+              .from(muralReactions)
+              .where(inArray(muralReactions.postId, postIds))
+          : [];
+
+      // Agrupa reações por postId: { emoji -> count, myReactions: Set<emoji> }
+      const reactionsByPost: Record<number, { counts: Record<string, number>; myReactions: string[] }> = {};
+      for (const r of reactions) {
+        if (!reactionsByPost[r.postId]) reactionsByPost[r.postId] = { counts: {}, myReactions: [] };
+        reactionsByPost[r.postId].counts[r.emoji] = (reactionsByPost[r.postId].counts[r.emoji] ?? 0) + 1;
+        if (r.userId === ctx.user.id) {
+          reactionsByPost[r.postId].myReactions.push(r.emoji);
+        }
+      }
+
       return {
         posts: items.map((p) => ({
           ...p,
           comments: commentsByPost[p.id] ?? [],
+          reactions: reactionsByPost[p.id]?.counts ?? {},
+          myReactions: reactionsByPost[p.id]?.myReactions ?? [],
         })),
         nextCursor,
         hasMore,
+        wallEnabled: true,
       };
     }),
 
@@ -232,6 +267,29 @@ export const muralRouter = router({
 
       const pool = await getPoolBySlug(input.poolSlug);
       await assertMembership(pool.id, ctx.user.id);
+
+      // ─── Rate limiting: máx. 10 posts/hora por usuário por bolão ─────────────
+      const { sql: sqlFn, and: _and, eq: _eq, gte } = await import("drizzle-orm");
+      const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+      const [countRow] = await db
+        .select({ count: sqlFn<number>`COUNT(*)`})
+        .from(muralPosts)
+        .where(
+          _and(
+            _eq(muralPosts.poolId, pool.id),
+            _eq(muralPosts.authorId, ctx.user.id),
+            _eq(muralPosts.type, "manual"),
+            _eq(muralPosts.isDeleted, false),
+            gte(muralPosts.createdAt, windowStart)
+          )
+        );
+      const postCount = Number(countRow?.count ?? 0);
+      if (postCount >= MAX_POSTS_PER_HOUR) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: `Você atingiu o limite de ${MAX_POSTS_PER_HOUR} posts por hora neste bolão. Tente novamente mais tarde.`,
+        });
+      }
 
       const [result] = await db.insert(muralPosts).values({
         poolId: pool.id,
@@ -450,6 +508,110 @@ export const muralRouter = router({
       logger.info({ postId, poolId: input.poolId, type: input.type }, "mural:auto_event_created");
 
       return { id: postId, skipped: false };
+    }),
+
+  /**
+   * Ativa ou desativa o Mural de um bolão.
+   * Apenas o organizador ou admin podem alterar.
+   */
+  setWallEnabled: protectedProcedure
+    .input(
+      z.object({
+        poolSlug: z.string(),
+        enabled: z.boolean(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      const { pools } = await getSchema();
+      const { eq } = await import("drizzle-orm");
+
+      const pool = await getPoolBySlug(input.poolSlug);
+
+      const isOrganizer = pool.ownerId === ctx.user.id;
+      const isAdmin = ctx.user.role === "admin";
+
+      if (!isOrganizer && !isAdmin) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas o organizador pode alterar as configurações do Mural." });
+      }
+
+      await db
+        .update(pools)
+        .set({ wallEnabled: input.enabled })
+        .where(eq(pools.id, pool.id));
+
+      logger.info({ poolId: pool.id, enabled: input.enabled, by: ctx.user.id }, "mural:wall_enabled_changed");
+
+      return { success: true, wallEnabled: input.enabled };
+    }),
+
+  /**
+   * Toggle de reação em um post do Mural.
+   * Se o usuário já reagiu com o mesmo emoji, remove a reação (toggle off).
+   * Caso contrário, adiciona a reação (toggle on).
+   */
+  toggleReaction: protectedProcedure
+    .input(
+      z.object({
+        postId: z.number().int().positive(),
+        emoji: z.enum(MURAL_REACTION_EMOJIS),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      const { muralReactions, muralPosts } = await getSchema();
+      const { eq, and } = await import("drizzle-orm");
+
+      // Verifica se o post existe e não foi deletado
+      const post = await db
+        .select({ id: muralPosts.id, poolId: muralPosts.poolId })
+        .from(muralPosts)
+        .where(and(eq(muralPosts.id, input.postId), eq(muralPosts.isDeleted, false)))
+        .limit(1);
+
+      if (!post.length) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Post não encontrado." });
+      }
+
+      // Verifica se é membro ativo do bolão
+      await assertMembership(post[0].poolId, ctx.user.id);
+
+      // Verifica se já existe a reação
+      const existing = await db
+        .select({ id: muralReactions.id })
+        .from(muralReactions)
+        .where(
+          and(
+            eq(muralReactions.postId, input.postId),
+            eq(muralReactions.userId, ctx.user.id),
+            eq(muralReactions.emoji, input.emoji)
+          )
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        // Toggle off: remove a reação
+        await db
+          .delete(muralReactions)
+          .where(
+            and(
+              eq(muralReactions.postId, input.postId),
+              eq(muralReactions.userId, ctx.user.id),
+              eq(muralReactions.emoji, input.emoji)
+            )
+          );
+        logger.debug({ postId: input.postId, userId: ctx.user.id, emoji: input.emoji }, "mural:reaction_removed");
+        return { action: "removed" as const };
+      } else {
+        // Toggle on: adiciona a reação
+        await db.insert(muralReactions).values({
+          postId: input.postId,
+          userId: ctx.user.id,
+          emoji: input.emoji,
+        });
+        logger.debug({ postId: input.postId, userId: ctx.user.id, emoji: input.emoji }, "mural:reaction_added");
+        return { action: "added" as const };
+      }
     }),
 
   /**

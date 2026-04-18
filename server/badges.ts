@@ -645,6 +645,36 @@ export async function calculateAndAssignBadges(
 
     newlyEarned.push({ badgeId: badge.id, name: badge.name, emoji: badge.emoji });
     logger.info({ userId, badgeId: badge.id, name: badge.name }, "[Badges] Badge atribuído");
+
+    // [Mural] Evento automático: badge desbloqueado (em todos os bolões ativos do usuário)
+    import("./mural-triggers")
+      .then(async ({ muralTrigger }) => {
+        const { getUserById, getDb } = await import("./db");
+        const user = await getUserById(userId);
+        if (!user) return;
+        const db = await getDb();
+        if (!db) return;
+        const { poolMembers, pools } = await import("../drizzle/schema");
+        const { eq, and, inArray } = await import("drizzle-orm");
+        const activePools = await db
+          .select({ poolId: poolMembers.poolId })
+          .from(poolMembers)
+          .innerJoin(pools, eq(pools.id, poolMembers.poolId))
+          .where(and(
+            eq(poolMembers.userId, userId),
+            eq(poolMembers.memberStatus, "active"),
+            inArray(pools.status, ["active"])
+          ));
+        for (const { poolId } of activePools) {
+          muralTrigger.badgeUnlocked({
+            poolId,
+            userName: user.name ?? "Participante",
+            badgeName: badge.name,
+            badgeDescription: badge.description ?? "",
+          }).catch(() => {});
+        }
+      })
+      .catch(() => {});
   }
 
   return newlyEarned;

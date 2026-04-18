@@ -344,6 +344,23 @@ export async function resolvePhase(
           .then(({ calculateAndAssignBadges }) => calculateAndAssignBadges(uid).catch(() => {}))
           .catch(() => {});
       }
+      // [Mural] Evento automático: resultado do X1
+      import("../../server/mural-triggers")
+        .then(async ({ muralTrigger }) => {
+          const { getUserById } = await import("../../server/db");
+          const challenger = await getUserById(challenge.challengerId);
+          const challenged = await getUserById(challenge.challengedId);
+          await muralTrigger.x1Result({
+            poolId: challenge.poolId,
+            challengerName: challenger?.name ?? "Participante",
+            challengedName: challenged?.name ?? "Participante",
+            challengerPoints: challengerHits,
+            challengedPoints: challengedHits,
+            winnerId,
+            scope: phase,
+          });
+        })
+        .catch(() => {});
     } catch (err) {
       logger.error({ challengeId: challenge.id, err }, "[X1][Resolver] Failed to resolve challenge");
       skipped++;

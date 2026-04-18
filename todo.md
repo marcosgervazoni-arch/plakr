@@ -324,3 +324,21 @@
 - [x] Componente PoolMural.tsx: feed público, posts, comentários, menções, ads Adsterra
 - [x] Migrar lista de membros para dentro do Ranking
 - [x] Testes vitest para o router mural (29 testes, todos passando)
+
+## Sprint U2 — Mural do Bolão (Completar Feature)
+
+- [x] Gatilho new_member: joinByToken, joinPublic, approveMember → mural auto event
+- [x] Gatilho x1_result: resolvePhase (win + draw) → mural auto event
+- [x] Gatilho match_result + exact_score + zebra + thrashing: setGameResult → mural auto events
+- [x] Gatilho badge_unlocked: badges.ts calculateAndAssignBadges → mural auto event
+- [x] Gatilho pool_ended: archival.ts concludePool → mural auto event
+- [x] Gatilho rank_change: recalculateMemberStats → mural auto event (1º lugar e top3)
+- [x] Backend: procedure toggleReaction (tabela mural_reactions)
+- [x] Backend: rate limiting 10 posts/hora por usuário por bolão
+- [x] Backend: sanitização HTML (strip tags) no createPost e createComment
+- [x] Backend: getMentionSuggestions (autocomplete @nome)
+- [x] Frontend: reações com emojis nos posts do PoolMural
+- [x] Frontend: autocomplete @menção no WallComposer
+- [x] Backend + Frontend: feature flag wallEnabled (organizador ativa/desativa mural do bolão)
+- [x] Organizador: toggle Mural em Gerenciar → Comunicação (OrganizerCommunication)
+- [x] Testes vitest adicionais: reações, rate limiting, wallEnabled, menções (509 testes passando)

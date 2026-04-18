@@ -283,9 +283,17 @@ export const poolsCoreRouter = router({
       await createAdminLog(ctx.user.id, "pool_joined", "pool", pool.id, {
         poolName: pool.name, channel: "invite_link",
       }, pool.id, { level: "info" });
-      // [Badges] Verificar badges após entrar em bolão (ex: Veterano, Barra Brava)
+      // [Badges] Verificar badges após entrar em bolão via token/link
       import("../badges")
         .then(({ calculateAndAssignBadges }) => calculateAndAssignBadges(ctx.user.id).catch(() => {}))
+        .catch(() => {});
+      // [Mural] Evento automático: novo membro
+      import("../mural-triggers")
+        .then(async ({ muralTrigger }) => {
+          const { countPoolMembers } = await import("../db");
+          const total = await countPoolMembers(pool.id);
+          muralTrigger.newMember({ poolId: pool.id, userName: ctx.user.name ?? "Novo membro", totalMembers: total }).catch(() => {});
+        })
         .catch(() => {});
       return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
     }),
@@ -323,6 +331,14 @@ export const poolsCoreRouter = router({
       // [Badges] Verificar badges após entrar em bolão público (ex: Veterano, Barra Brava)
       import("../badges")
         .then(({ calculateAndAssignBadges }) => calculateAndAssignBadges(ctx.user.id).catch(() => {}))
+        .catch(() => {});
+      // [Mural] Evento automático: novo membro
+      import("../mural-triggers")
+        .then(async ({ muralTrigger }) => {
+          const { countPoolMembers } = await import("../db");
+          const total = await countPoolMembers(pool.id);
+          muralTrigger.newMember({ poolId: pool.id, userName: ctx.user.name ?? "Novo membro", totalMembers: total }).catch(() => {});
+        })
         .catch(() => {});
       return { poolId: pool.id, slug: pool.slug, alreadyMember: false };
     }),

@@ -387,6 +387,19 @@ export const poolsMembersRouter = router({
       await createAdminLog(ctx.user.id, "pool_entry_approved", "pool", input.poolId, {
         approvedUserId: input.userId,
       }, input.poolId, { level: "info" });
+      // [Mural] Evento automático: novo membro aprovado
+      import("../mural-triggers")
+        .then(async ({ muralTrigger }) => {
+          const { getUserById, countPoolMembers } = await import("../db");
+          const approvedUser = await getUserById(input.userId);
+          const total = await countPoolMembers(input.poolId);
+          muralTrigger.newMember({
+            poolId: input.poolId,
+            userName: approvedUser?.name ?? "Novo membro",
+            totalMembers: total,
+          }).catch(() => {});
+        })
+        .catch(() => {});
       return { success: true };
     }),
 

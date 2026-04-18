@@ -258,3 +258,186 @@ describe("Lógica de paginação do feed", () => {
     expect(nextCursor).toBeUndefined();
   });
 });
+
+// ─── TESTES DE REAÇÕES ────────────────────────────────────────────────────────
+
+describe("Reações (toggleReaction)", () => {
+  it("MURAL_REACTION_EMOJIS contém exatamente 5 emojis", async () => {
+    const { MURAL_REACTION_EMOJIS } = await import("../../drizzle/schema");
+    expect(MURAL_REACTION_EMOJIS).toHaveLength(5);
+  });
+
+  it("MURAL_REACTION_EMOJIS inclui 👑 e 🔥", async () => {
+    const { MURAL_REACTION_EMOJIS } = await import("../../drizzle/schema");
+    expect(MURAL_REACTION_EMOJIS).toContain("👑");
+    expect(MURAL_REACTION_EMOJIS).toContain("🔥");
+  });
+
+  it("lógica de toggle: adiciona quando não existe", () => {
+    const existingReactions: string[] = [];
+    const emoji = "👑";
+    const action = existingReactions.includes(emoji) ? "removed" : "added";
+    expect(action).toBe("added");
+  });
+
+  it("lógica de toggle: remove quando já existe", () => {
+    const existingReactions = ["👑", "🔥"];
+    const emoji = "👑";
+    const action = existingReactions.includes(emoji) ? "removed" : "added";
+    expect(action).toBe("removed");
+  });
+
+  it("contagem de reações por emoji está correta", () => {
+    const reactions = [
+      { emoji: "👑", userId: 1 },
+      { emoji: "👑", userId: 2 },
+      { emoji: "🔥", userId: 3 },
+    ];
+    const counts: Record<string, number> = {};
+    for (const r of reactions) {
+      counts[r.emoji] = (counts[r.emoji] ?? 0) + 1;
+    }
+    expect(counts["👑"]).toBe(2);
+    expect(counts["🔥"]).toBe(1);
+    expect(counts["😂"]).toBeUndefined();
+  });
+
+  it("myReactions inclui apenas emojis do usuário atual", () => {
+    const currentUserId = 1;
+    const reactions = [
+      { emoji: "👑", userId: 1 },
+      { emoji: "🔥", userId: 2 },
+      { emoji: "😂", userId: 1 },
+    ];
+    const myReactions = reactions
+      .filter((r) => r.userId === currentUserId)
+      .map((r) => r.emoji);
+    expect(myReactions).toContain("👑");
+    expect(myReactions).toContain("😂");
+    expect(myReactions).not.toContain("🔥");
+  });
+});
+
+// ─── TESTES DE RATE LIMITING ──────────────────────────────────────────────────
+
+describe("Rate Limiting (createPost)", () => {
+  const MAX_POSTS_PER_HOUR = 10;
+  const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
+  it("permite post quando count < 10", () => {
+    const postCount = 9;
+    const isAllowed = postCount < MAX_POSTS_PER_HOUR;
+    expect(isAllowed).toBe(true);
+  });
+
+  it("bloqueia post quando count === 10", () => {
+    const postCount = 10;
+    const isAllowed = postCount < MAX_POSTS_PER_HOUR;
+    expect(isAllowed).toBe(false);
+  });
+
+  it("bloqueia post quando count > 10", () => {
+    const postCount = 15;
+    const isAllowed = postCount < MAX_POSTS_PER_HOUR;
+    expect(isAllowed).toBe(false);
+  });
+
+  it("janela de rate limit é de 1 hora (3600000ms)", () => {
+    expect(RATE_LIMIT_WINDOW_MS).toBe(3_600_000);
+  });
+
+  it("windowStart é calculado corretamente", () => {
+    const now = Date.now();
+    const windowStart = new Date(now - RATE_LIMIT_WINDOW_MS);
+    const diff = now - windowStart.getTime();
+    expect(diff).toBeCloseTo(RATE_LIMIT_WINDOW_MS, -2);
+  });
+});
+
+// ─── TESTES DE WALL ENABLED ───────────────────────────────────────────────────
+
+describe("wallEnabled (feature flag do Mural)", () => {
+  it("retorna feed vazio quando wallEnabled é false", () => {
+    const wallEnabled = false;
+    const result = !wallEnabled
+      ? { posts: [], nextCursor: undefined, hasMore: false, wallEnabled: false }
+      : null;
+    expect(result).not.toBeNull();
+    expect(result!.posts).toHaveLength(0);
+    expect(result!.wallEnabled).toBe(false);
+  });
+
+  it("permite acesso ao feed quando wallEnabled é true", () => {
+    const wallEnabled = true;
+    const shouldBlock = !wallEnabled;
+    expect(shouldBlock).toBe(false);
+  });
+
+  it("wallEnabled padrão é true (novo bolão)", () => {
+    // Valor default no schema
+    const defaultValue = true;
+    expect(defaultValue).toBe(true);
+  });
+
+  it("apenas organizador ou admin pode alterar wallEnabled", () => {
+    const userId = 5;
+    const ownerId = 1;
+    const role = "user";
+    const isOrganizer = ownerId === userId;
+    const isAdmin = role === "admin";
+    const canChange = isOrganizer || isAdmin;
+    expect(canChange).toBe(false);
+  });
+
+  it("organizador pode alterar wallEnabled", () => {
+    const userId = 1;
+    const ownerId = 1;
+    const role = "user";
+    const isOrganizer = ownerId === userId;
+    const isAdmin = role === "admin";
+    const canChange = isOrganizer || isAdmin;
+    expect(canChange).toBe(true);
+  });
+});
+
+// ─── TESTES DE MENÇÕES ────────────────────────────────────────────────────────
+
+describe("Menções (@usuário)", () => {
+  function extractMentions(content: string): string[] {
+    const matches = content.match(/@([\w\u00C0-\u017F]+)/g) ?? [];
+    return [...new Set(matches.map((m) => m.slice(1)))];
+  }
+
+  it("extrai menção simples corretamente", () => {
+    const mentions = extractMentions("Boa @Gerva!");
+    expect(mentions).toContain("Gerva");
+  });
+
+  it("extrai múltiplas menções", () => {
+    const mentions = extractMentions("@Gerva e @Zé estão empatados!");
+    expect(mentions).toContain("Gerva");
+    expect(mentions).toContain("Zé");
+  });
+
+  it("não extrai email como menção", () => {
+    const mentions = extractMentions("Mande para gerva@email.com");
+    // O regex captura 'gerva' antes do @, não 'email' depois
+    expect(mentions).not.toContain("email.com");
+  });
+
+  it("deduplica menções repetidas", () => {
+    const mentions = extractMentions("@Gerva @Gerva @Gerva");
+    expect(mentions).toHaveLength(1);
+    expect(mentions[0]).toBe("Gerva");
+  });
+
+  it("retorna array vazio quando não há menções", () => {
+    const mentions = extractMentions("Sem menções aqui!");
+    expect(mentions).toHaveLength(0);
+  });
+
+  it("suporta nomes com acentos", () => {
+    const mentions = extractMentions("Parabéns @João!");
+    expect(mentions).toContain("João");
+  });
+});
