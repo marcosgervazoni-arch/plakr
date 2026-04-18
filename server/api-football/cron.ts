@@ -446,3 +446,191 @@ export function registerApiFootballCronJobs() {
 
 // Re-exportar para uso no adminDashboard
 export { apiFootballCronHealth };
+
+/**
+ * Regenera as análises pré-jogo de todos os jogos futuros agendados,
+ * mesmo que já tenham aiPrediction (força regeração com prompt enriquecido).
+ * Roda em segundo plano, em lotes de 10 com pausa de 5s entre lotes.
+ * Retorna imediatamente — o progresso é registrado nos logs do servidor.
+ */
+export async function regenerateAllPredictions(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const now = new Date();
+
+  // Buscar todos os jogos futuros agendados (com ou sem análise)
+  const allGames = await db
+    .select({
+      id: gamesTable.id,
+      externalId: gamesTable.externalId,
+      teamAName: gamesTable.teamAName,
+      teamBName: gamesTable.teamBName,
+      matchDate: gamesTable.matchDate,
+      tournamentId: gamesTable.tournamentId,
+      apiFootballLeagueId: tournaments.apiFootballLeagueId,
+      apiFootballSeason: tournaments.apiFootballSeason,
+    })
+    .from(gamesTable)
+    .innerJoin(tournaments, eq(gamesTable.tournamentId, tournaments.id))
+    .where(
+      and(
+        sql`${gamesTable.status} = 'scheduled'`,
+        sql`${gamesTable.matchDate} > ${now}`
+      )
+    );
+
+  if (allGames.length === 0) {
+    logger.info("[Regen] Nenhum jogo futuro encontrado para regenerar");
+    return;
+  }
+
+  logger.info(`[Regen] Iniciando regeneração de ${allGames.length} análises pré-jogo...`);
+
+  // Buscar nomes dos torneios
+  const tournamentIds = [...new Set(allGames.map(g => g.tournamentId))];
+  const tournamentRows = await db
+    .select({ id: tournaments.id, name: tournaments.name })
+    .from(tournaments)
+    .where(sql`${tournaments.id} IN (${sql.join(tournamentIds.map(id => sql`${id}`), sql`, `)})`);
+  const tournamentMap = Object.fromEntries(tournamentRows.map(t => [t.id, t.name]));
+
+  const BATCH_SIZE = 10;
+  let processed = 0;
+  let errors = 0;
+
+  for (let i = 0; i < allGames.length; i += BATCH_SIZE) {
+    const batch = allGames.slice(i, i + BATCH_SIZE);
+
+    for (const game of batch) {
+      try {
+        const fixtureId = game.externalId ? parseInt(game.externalId) : null;
+        let apiPercent: { home: number; draw: number; away: number } | null = null;
+        let apiAdvice: string | null = null;
+        let apiComparison: AiPredictionContext["apiComparison"] = null;
+
+        if (fixtureId) {
+          const apiPred = await fetchFixturePredictions(fixtureId).catch(() => null);
+          const rawPercent = apiPred?.predictions?.percent;
+          if (rawPercent) {
+            apiPercent = {
+              home: parseInt(rawPercent.home) || 0,
+              draw: parseInt(rawPercent.draw) || 0,
+              away: parseInt(rawPercent.away) || 0,
+            };
+            apiAdvice = apiPred?.predictions?.advice ?? null;
+          }
+          const rawCmp = apiPred?.comparison;
+          if (rawCmp) {
+            apiComparison = {
+              total: rawCmp.total ?? null,
+              poisson: rawCmp.poisson_distribution ?? null,
+              forme: rawCmp.forme ?? null,
+              att: rawCmp.att ?? null,
+              def: rawCmp.def ?? null,
+              h2h: rawCmp.h2h ?? null,
+              goals: rawCmp.goals ?? null,
+            };
+          }
+        }
+
+        // Lesionados/suspensos/questionáveis
+        let injuries: AiPredictionContext["injuries"] = [];
+        if (fixtureId) {
+          const rawInjuries = await fetchInjuries(fixtureId).catch(() => []);
+          injuries = rawInjuries.map(p => ({
+            name: p.player.name,
+            team: p.team.name,
+            type: p.type,
+            reason: p.reason,
+          }));
+        }
+
+        // Estatísticas da temporada
+        let homeStats: AiPredictionContext["homeStats"] = null;
+        let awayStats: AiPredictionContext["awayStats"] = null;
+        const leagueId = game.apiFootballLeagueId;
+        const season = game.apiFootballSeason;
+        if (leagueId && season) {
+          const homeTeamRow = await db
+            .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+            .from(teamsTable)
+            .where(and(eq(teamsTable.name, game.teamAName ?? ""), sql`${teamsTable.apiFootballTeamId} IS NOT NULL`))
+            .limit(1)
+            .then(r => r[0] ?? null);
+          const awayTeamRow = await db
+            .select({ apiFootballTeamId: teamsTable.apiFootballTeamId })
+            .from(teamsTable)
+            .where(and(eq(teamsTable.name, game.teamBName ?? ""), sql`${teamsTable.apiFootballTeamId} IS NOT NULL`))
+            .limit(1)
+            .then(r => r[0] ?? null);
+
+          const mapStats = (s: import("./client").TeamSeasonStats | null, teamName: string): AiPredictionContext["homeStats"] => {
+            if (!s) return null;
+            return {
+              teamName,
+              played: s.fixtures.played.total,
+              wins: s.fixtures.wins.total,
+              draws: s.fixtures.draws.total,
+              loses: s.fixtures.loses.total,
+              goalsFor: s.goals.for.total.total,
+              goalsAgainst: s.goals.against.total.total,
+              avgGoalsFor: s.goals.for.average.total,
+              avgGoalsAgainst: s.goals.against.average.total,
+              cleanSheets: s.clean_sheet.total,
+              failedToScore: s.failed_to_score.total,
+              biggestWin: s.biggest.wins.home ?? s.biggest.wins.away ?? null,
+              biggestLoss: s.biggest.loses.home ?? s.biggest.loses.away ?? null,
+              currentStreak: s.biggest.streak,
+            };
+          };
+
+          const [rawHome, rawAway] = await Promise.all([
+            homeTeamRow?.apiFootballTeamId
+              ? fetchTeamStatistics(homeTeamRow.apiFootballTeamId, leagueId, season).catch(() => null)
+              : Promise.resolve(null),
+            awayTeamRow?.apiFootballTeamId
+              ? fetchTeamStatistics(awayTeamRow.apiFootballTeamId, leagueId, season).catch(() => null)
+              : Promise.resolve(null),
+          ]);
+          homeStats = mapStats(rawHome, game.teamAName ?? "Time A");
+          awayStats = mapStats(rawAway, game.teamBName ?? "Time B");
+        }
+
+        const prediction = await buildAiPrediction({
+          homeTeam: game.teamAName ?? "Time A",
+          awayTeam: game.teamBName ?? "Time B",
+          competition: tournamentMap[game.tournamentId] ?? "Campeonato",
+          matchDate: game.matchDate?.toISOString() ?? new Date().toISOString(),
+          apiPercent,
+          apiAdvice,
+          apiComparison,
+          injuries,
+          homeStats,
+          awayStats,
+        });
+
+        if (prediction) {
+          await db.update(gamesTable).set({ aiPrediction: prediction }).where(eq(gamesTable.id, game.id));
+          processed++;
+        }
+      } catch (err) {
+        errors++;
+        logger.error({ err }, `[Regen] Erro no jogo ${game.id}`);
+      }
+    }
+
+    logger.info(`[Regen] Progresso: ${Math.min(i + BATCH_SIZE, allGames.length)}/${allGames.length} jogos processados (${processed} OK, ${errors} erros)`);
+
+    // Pausa entre lotes para não sobrecarregar a API
+    if (i + BATCH_SIZE < allGames.length) {
+      await new Promise(r => setTimeout(r, 5_000));
+    }
+  }
+
+  logger.info(`[Regen] Regeneração concluída: ${processed} análises atualizadas, ${errors} erros`);
+  await notifyOwner({
+    title: "Regeração de análises concluída",
+    content: `${processed} análises pré-jogo foram regeneradas com dados de lesões e estatísticas da temporada${errors > 0 ? ` (${errors} erros)` : ""}.`,
+  }).catch(() => {});
+}

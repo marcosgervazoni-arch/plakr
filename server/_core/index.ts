@@ -8,6 +8,7 @@ import { registerX1CronJobs } from "../jobs/x1-jobs";
 import { registerX1PredictionResolverCron } from "../jobs/x1-prediction-resolver";
 import { registerApiFootballCronJobs } from "../api-football/cron";
 import { backfillTeamForm, getTeamFormPendingCount } from "../api-football/sync";
+import { regenerateAllPredictions } from "../api-football/cron";
 import { registerStripeWebhook } from "../stripe-webhook";
 import { registerUploadRoute } from "../upload";
 import { registerOgRoutes, registerLandingOgRoute, registerApiOgRoutes } from "../og";
@@ -178,6 +179,17 @@ async function startServer() {
       console.error("[Startup] Backfill de forma falhou silenciosamente:", err);
     }
   }, 15_000); // aguarda 15s após o boot para não competir com outros workers
+
+  // Job de startup: regenerar análises pré-jogo com prompt enriquecido (injuries + teamStats)
+  // Roda uma única vez após o boot, em segundo plano, sem bloquear nada
+  setTimeout(async () => {
+    try {
+      console.log("[Startup] Iniciando regeneração de análises pré-jogo com dados enriquecidos...");
+      await regenerateAllPredictions();
+    } catch (err) {
+      console.error("[Startup] Regeneração de análises falhou silenciosamente:", err);
+    }
+  }, 30_000); // aguarda 30s para não competir com o backfill de forma
 }
 
 startServer().catch(console.error);
