@@ -63,6 +63,8 @@ import AdminSponsorReport from "./pages/admin/AdminSponsorReport";
 import X1ChallengePage from "./pages/X1ChallengePage";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import MagicLinkSent from "./pages/MagicLinkSent";
+import MagicLinkVerify from "./pages/MagicLinkVerify";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useReferralCapture } from "./hooks/useReferralCapture";
 
@@ -75,6 +77,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/terms" component={Terms} />
+      <Route path="/magic-link/sent" component={MagicLinkSent} />
+      <Route path="/magic-link/verify" component={MagicLinkVerify} />
       <Route path="/join/:token" component={JoinPool} />
       <Route path="/pools/public" component={PublicPools} />
       <Route path="/profile/:userId" component={PublicProfile} />

@@ -423,3 +423,15 @@
 ## Sprint Notificações — Link de Aprovação
 
 - [x] Notificações de "Novo pagamento pendente" devem ser clicáveis e direcionar para a tela de aprovação de pagamentos do bolão correspondente
+
+## Sprint Magic Link — Login por E-mail
+
+- [x] Tabela `magic_links` no schema (token, email, expiresAt, usedAt, returnPath)
+- [x] Procedure `sendMagicLink`: gerar token seguro (64 hex), salvar no banco, enviar e-mail
+- [x] Rota Express `/api/auth/magic-link/verify`: valida token, cria sessão, redireciona
+- [x] Função `getUserByEmail` adicionada ao db.ts
+- [x] Frontend: opção "Entrar por e-mail" na navbar + hero da Landing Page
+- [x] Frontend: modal `EmailLoginModal.tsx` com campo de e-mail e envio
+- [x] Frontend: página `/magic-link/sent` — confirmação de envio com reenvio
+- [x] Frontend: página `/magic-link/verify` — processa token e exibe erros
+- [x] Testes: envio, segurança (e-mail não revelado), sanitização, validação de token

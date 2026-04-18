@@ -1320,3 +1320,21 @@ export const aiDailyUsage = mysqlTable("ai_daily_usage", {
 }));
 export type AiDailyUsage = typeof aiDailyUsage.$inferSelect;
 export type InsertAiDailyUsage = typeof aiDailyUsage.$inferInsert;
+
+// ─── MAGIC LINKS ──────────────────────────────────────────────────────────────
+// Login por link mágico via e-mail — alternativa ao OAuth para Safari/iPhone.
+// Token: 64 chars hex, expira em 15 minutos, uso único.
+export const magicLinks = mysqlTable("magic_links", {
+  id: int("id").primaryKey().autoincrement(),
+  email: varchar("email", { length: 255 }).notNull(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  returnPath: varchar("returnPath", { length: 500 }).default("/dashboard").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  usedAt: timestamp("usedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  idxEmail: index("idx_magic_links_email").on(t.email),
+  idxToken: index("idx_magic_links_token").on(t.token),
+}));
+export type MagicLink = typeof magicLinks.$inferSelect;
+export type InsertMagicLink = typeof magicLinks.$inferInsert;

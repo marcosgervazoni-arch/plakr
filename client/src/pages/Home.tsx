@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import BadgeShowcase from "@/components/BadgeShowcase";
+import EmailLoginModal from "@/components/EmailLoginModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, Infinity as InfinityIcon, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { getLoginUrl } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
 import {
   Trophy, Users, ArrowRight, CheckCircle, Crown, Target,
-  BarChart3, Award, Settings, Globe, Share2,
+  BarChart3, Award, Settings, Globe, Share2, Mail,
 } from "lucide-react";
 
 // ─── Countdown Hook ────────────────────────────────────────────────────────────
@@ -457,6 +458,15 @@ export default function Home() {
   const ctaFinalSecondaryEnabled = config?.ctaFinalSecondaryEnabled ?? true;
 
   const countdown = useCountdown(heroCountdownDate);
+  const [emailLoginOpen, setEmailLoginOpen] = useState(false);
+
+  // Abrir modal de e-mail automaticamente se a URL tiver ?login=email
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") === "email") {
+      setEmailLoginOpen(true);
+    }
+  }, []);
 
   const freeFeatures = [
     "Bolões para Copa do Mundo, Brasileirão e mais",
@@ -487,6 +497,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen" style={{ background: "#0B0F1A", color: "#F9FAFB" }}>
+      <EmailLoginModal
+        open={emailLoginOpen}
+        onClose={() => setEmailLoginOpen(false)}
+        returnPath="/dashboard"
+      />
 
       {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 border-b" style={{ background: "rgba(11,15,26,0.95)", backdropFilter: "blur(12px)", borderColor: "rgba(255,255,255,0.06)" }} role="navigation" aria-label="Menu principal do Plakr!">
@@ -510,12 +525,23 @@ export default function Home() {
                 </Button>
               </a>
             ) : (
-              <a href={loginUrl} aria-label="Criar bolão grátis no Plakr!">
-                <Button size="sm" className="font-semibold"
-                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                  {heroCtaPrimaryText}
-                </Button>
-              </a>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setEmailLoginOpen(true)}
+                  className="hidden sm:flex items-center gap-1.5 text-xs font-medium transition-colors hover:text-white"
+                  style={{ color: "#9CA3AF" }}
+                  title="Entrar por e-mail (alternativa para Safari/iPhone)"
+                >
+                  <Mail size={13} />
+                  Entrar por e-mail
+                </button>
+                <a href={loginUrl} aria-label="Criar bolão grátis no Plakr!">
+                  <Button size="sm" className="font-semibold"
+                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+                    {heroCtaPrimaryText}
+                  </Button>
+                </a>
+              </div>
             )
           )}
         </div>
@@ -564,6 +590,16 @@ export default function Home() {
                 <p className="text-xs mt-4" style={{ color: "#6B7280" }}>
                   Gratuito para começar · Sem cartão de crédito · Pronto em 2 minutos
                 </p>
+                {!user && (
+                  <button
+                    onClick={() => setEmailLoginOpen(true)}
+                    className="flex items-center gap-1.5 text-xs mt-3 transition-colors hover:text-white mx-auto lg:mx-0"
+                    style={{ color: "#6B7280" }}
+                  >
+                    <Mail size={12} />
+                    Prefere entrar por e-mail? Clique aqui
+                  </button>
+                )}
               </div>
               <div className="flex-1 w-full max-w-md lg:max-w-none">
                 <MockRankingCard />
