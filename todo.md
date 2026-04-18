@@ -365,3 +365,6 @@
 - [x] Cron de análises pré-jogo atualizado para buscar injuries e teamStats via API-Football
 - [x] Regenerar análises pré-jogo existentes em background com prompt enriquecido (injuries + teamStats)
 - [x] Corrigir recalculateMemberStats: incluir todos os contadores de pontuação (goalDiff, oneTeamGoals, totalGoals, landslide, zebra) que estavam ausentes — ranking agora reflete todos os critérios corretamente
+- [x] Geração automática de análise de palpite (betAnalysisText) após jogo finalizado — já implementado no syncResults
+- [x] Job de startup: backfill de análises de palpite para palpites sem comentário da IA (60s após boot)
+- [x] Procedure de admin para backfill manual de análises de palpite (integrações.backfillBetAnalyses)

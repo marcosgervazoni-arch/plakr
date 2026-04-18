@@ -190,6 +190,81 @@ async function startServer() {
       console.error("[Startup] Regeneração de análises falhou silenciosamente:", err);
     }
   }, 30_000); // aguarda 30s para não competir com o backfill de forma
+
+  // Job de startup: gerar análises de palpite (game_bet_analyses) para palpites sem análise
+  // Roda 60s após o boot, processa palpites de jogos finalizados que ainda não têm comentário da IA
+  setTimeout(async () => {
+    try {
+      const { generateBetAnalysis } = await import("../api-football/ai-analysis");
+      const { getDb } = await import("../db");
+      const { gameBetAnalyses } = await import("../../drizzle/schema");
+      const { sql: drizzleSql } = await import("drizzle-orm");
+      const db = await getDb();
+      if (!db) return;
+
+      const pending = await db.execute(drizzleSql`
+        SELECT b.id, b.gameId, b.userId, b.poolId,
+               b.predictedScoreA, b.predictedScoreB,
+               b.pointsEarned, b.resultType,
+               g.teamAName, g.teamBName, g.scoreA, g.scoreB
+        FROM bets b
+        JOIN games g ON b.gameId = g.id
+        WHERE g.status = 'finished'
+        AND g.scoreA IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM game_bet_analyses gba
+          WHERE gba.gameId = b.gameId AND gba.userId = b.userId AND gba.poolId = b.poolId
+        )
+        LIMIT 200
+      `) as any;
+
+      const rows = (pending[0] ?? []) as Array<{
+        id: number; gameId: number; userId: number; poolId: number;
+        predictedScoreA: number; predictedScoreB: number;
+        pointsEarned: number; resultType: string;
+        teamAName: string; teamBName: string; scoreA: number; scoreB: number;
+      }>;
+
+      if (rows.length === 0) {
+        console.log("[Startup] BetAnalysis: nenhum palpite pendente.");
+        return;
+      }
+
+      console.log(`[Startup] BetAnalysis: ${rows.length} palpites sem análise. Iniciando geração...`);
+      let done = 0;
+      for (const row of rows) {
+        try {
+          const analysisText = await generateBetAnalysis({
+            homeTeam: row.teamAName ?? "Casa",
+            awayTeam: row.teamBName ?? "Visitante",
+            scoreA: row.scoreA,
+            scoreB: row.scoreB,
+            predictedA: row.predictedScoreA ?? 0,
+            predictedB: row.predictedScoreB ?? 0,
+            resultType: (row.resultType as "exact" | "correct_result" | "wrong") ?? "wrong",
+            totalPoints: row.pointsEarned ?? 0,
+            isZebra: false,
+            poolContext: null,
+          });
+          const dbInner = await getDb();
+          if (dbInner) {
+            await dbInner.insert(gameBetAnalyses).values({
+              gameId: row.gameId,
+              userId: row.userId,
+              poolId: row.poolId,
+              analysisText,
+            }).onDuplicateKeyUpdate({ set: { analysisText } });
+          }
+          done++;
+        } catch (err) {
+          console.error(`[Startup] BetAnalysis: erro no bet ${row.id}:`, err);
+        }
+      }
+      console.log(`[Startup] BetAnalysis: ${done}/${rows.length} análises geradas.`);
+    } catch (err) {
+      console.error("[Startup] BetAnalysis backfill falhou silenciosamente:", err);
+    }
+  }, 60_000); // aguarda 60s para não competir com os outros jobs
 }
 
 startServer().catch(console.error);

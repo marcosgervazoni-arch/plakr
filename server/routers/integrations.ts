@@ -1042,4 +1042,74 @@ export const integrationsRouter = router({
         );
       return { count: rows.length };
     }),
+
+  // ─── Backfill de análise de palpite (game_bet_analyses) ────────────────────
+  backfillBetAnalyses: adminProcedure
+    .input(z.object({}))
+    .mutation(async () => {
+      const db = await getDb();
+      if (!db) return { started: false, message: "DB indisponível" };
+
+      const { gameBetAnalyses } = await import("../../drizzle/schema");
+      const { generateBetAnalysis } = await import("../api-football/ai-analysis");
+
+      const pending = await db.execute(sql`
+        SELECT b.id, b.gameId, b.userId, b.poolId,
+               b.predictedScoreA, b.predictedScoreB,
+               b.pointsEarned, b.resultType,
+               g.teamAName, g.teamBName, g.scoreA, g.scoreB
+        FROM bets b
+        JOIN games g ON b.gameId = g.id
+        WHERE g.status = 'finished'
+        AND g.scoreA IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM game_bet_analyses gba
+          WHERE gba.gameId = b.gameId AND gba.userId = b.userId AND gba.poolId = b.poolId
+        )
+        LIMIT 100
+      `) as any;
+
+      const rows = (pending[0] ?? []) as Array<{
+        id: number; gameId: number; userId: number; poolId: number;
+        predictedScoreA: number; predictedScoreB: number;
+        pointsEarned: number; resultType: string;
+        teamAName: string; teamBName: string; scoreA: number; scoreB: number;
+      }>;
+
+      if (rows.length === 0) return { started: false, message: "Nenhum palpite pendente" };
+
+      (async () => {
+        for (const row of rows) {
+          try {
+            const analysisText = await generateBetAnalysis({
+              homeTeam: row.teamAName ?? "Casa",
+              awayTeam: row.teamBName ?? "Visitante",
+              scoreA: row.scoreA,
+              scoreB: row.scoreB,
+              predictedA: row.predictedScoreA ?? 0,
+              predictedB: row.predictedScoreB ?? 0,
+              resultType: (row.resultType as "exact" | "correct_result" | "wrong") ?? "wrong",
+              totalPoints: row.pointsEarned ?? 0,
+              isZebra: false,
+              poolContext: null,
+            });
+            const dbInner = await getDb();
+            if (dbInner) {
+              await dbInner.insert(gameBetAnalyses).values({
+                gameId: row.gameId,
+                userId: row.userId,
+                poolId: row.poolId,
+                analysisText,
+              }).onDuplicateKeyUpdate({ set: { analysisText } });
+            }
+            logger.info(`[BetAnalysisBackfill] Gerado para bet ${row.id} (jogo ${row.gameId}, user ${row.userId})`);
+          } catch (err) {
+            logger.error({ err }, `[BetAnalysisBackfill] Erro no bet ${row.id}`);
+          }
+        }
+        logger.info(`[BetAnalysisBackfill] Concluído: ${rows.length} análises geradas`);
+      })().catch(err => logger.error({ err }, "[BetAnalysisBackfill] Erro fatal"));
+
+      return { started: true, message: `Iniciado: ${rows.length} análises serão geradas em background` };
+    }),
 });
