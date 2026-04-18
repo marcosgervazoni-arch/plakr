@@ -35,6 +35,7 @@ import {
   Mail,
   Search,
   Shield,
+  Star,
   Target,
   Trash2,
   Trophy,
@@ -68,6 +69,7 @@ export default function AdminUsers() {
   const [notifTitle, setNotifTitle] = useState("");
   const [notifMessage, setNotifMessage] = useState("");
   const [activeTab, setActiveTab] = useState("actions");
+  const [vipDays, setVipDays] = useState(30);
 
   const utils = trpc.useUtils();
   const { data: usersData, isLoading, refetch } = trpc.users.list.useQuery({ limit: 100 });
@@ -125,6 +127,18 @@ export default function AdminUsers() {
       // Invalida lista e sessão: usuário removido deve ser deslogado
       refetch();
       utils.auth.me.invalidate();
+    },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const vipMutation = trpc.users.adminSetParticipantVip.useMutation({
+    onSuccess: (data) => {
+      if (data.action === "granted") {
+        toast.success(`Passe VIP concedido por ${vipDays} dias.`);
+      } else {
+        toast.success("Passe VIP revogado.");
+      }
+      utils.users.getUserActivity.invalidate({ userId: selectedUser?.id ?? 0 });
     },
     onError: (e: { message: string }) => toast.error(e.message),
   });
@@ -432,6 +446,62 @@ export default function AdminUsers() {
                             {sendNotifMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bell className="h-3.5 w-3.5" />}
                             Enviar Notificação
                           </Button>
+                        </div>
+                      </div>
+                      <Separator />
+                      {/* Passe VIP */}
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Passe VIP do Participante</p>
+                        {userActivity?.plan?.plan === "vip" && userActivity?.plan?.isActive ? (
+                          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+                            <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400 shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-yellow-400">VIP ativo</p>
+                              {userActivity.plan.planExpiresAt && (
+                                <p className="text-xs text-muted-foreground">
+                                  Expira: {format(new Date(userActivity.plan.planExpiresAt), "dd/MM/yyyy", { locale: ptBR })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Este participante não tem Passe VIP ativo.</p>
+                        )}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Duração (dias)</Label>
+                          <Input
+                            type="number" min={1} max={3650}
+                            value={vipDays}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVipDays(Number(e.target.value))}
+                            className="text-sm h-8"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Expira em: {format(new Date(Date.now() + vipDays * 86400000), "dd/MM/yyyy", { locale: ptBR })}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/10 flex-1"
+                            onClick={() => vipMutation.mutate({ userId: selectedUser.id, grant: true, durationDays: vipDays })}
+                            disabled={vipMutation.isPending}
+                          >
+                            {vipMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Star className="h-3.5 w-3.5" />}
+                            Conceder VIP
+                          </Button>
+                          {userActivity?.plan?.plan === "vip" && userActivity?.plan?.isActive && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 border-red-400/30 text-red-400 hover:bg-red-400/10"
+                              onClick={() => vipMutation.mutate({ userId: selectedUser.id, grant: false })}
+                              disabled={vipMutation.isPending}
+                            >
+                              <UserX className="h-3.5 w-3.5" />
+                              Revogar
+                            </Button>
+                          )}
                         </div>
                       </div>
                       <Separator />

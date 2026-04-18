@@ -535,7 +535,7 @@ export const adminDashboardRouter = router({
   grantPoolPro: adminProcedure
     .input(z.object({
       userId: z.number(),
-      tier: z.enum(["pro", "unlimited"]).default("pro"),
+      tier: z.enum(["pro", "unlimited", "vip"]).default("pro"),
       durationDays: z.number().min(1).max(365).default(30),
       reason: z.string().optional(),
     }))

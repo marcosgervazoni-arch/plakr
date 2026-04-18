@@ -474,7 +474,7 @@ export const usersRouter = router({
       const db = await (await import("../db")).getDb();
       if (!db) return { logs: [], adminActions: [], bets: [], pools: [], lastSignedIn: null, createdAt: null };
       const { eq, desc, and, sql } = await import("drizzle-orm");
-      const { adminLogs, bets, games, pools: poolsT, poolMembers, poolMemberStats, users: usersT } = await import("../../drizzle/schema");
+      const { adminLogs, bets, games, pools: poolsT, poolMembers, poolMemberStats, users: usersT, userPlans: userPlansT } = await import("../../drizzle/schema");
       const [userRow] = await db.select({ lastSignedIn: usersT.lastSignedIn, createdAt: usersT.createdAt })
         .from(usersT).where(eq(usersT.id, input.userId)).limit(1);
       const logsAboutUser = await db.select().from(adminLogs)
@@ -508,11 +508,13 @@ export const usersRouter = router({
         .where(and(eq(poolMembers.userId, input.userId), sql`${poolsT.status} != 'deleted'`))
         .orderBy(desc(poolMembers.joinedAt))
         .limit(20);
+      const [planRow] = await db.select().from(userPlansT).where(eq(userPlansT.userId, input.userId)).limit(1);
       return {
         logs: logsAboutUser,
         adminActions,
         lastSignedIn: userRow?.lastSignedIn ?? null,
         createdAt: userRow?.createdAt ?? null,
+        plan: planRow ?? null,
         bets: recentBets.map(({ bet, game }) => ({
           gameId: game.id,
           teamAName: game.teamAName ?? "Time A",
@@ -526,6 +528,59 @@ export const usersRouter = router({
         })),
         pools: userPools,
       };
+    }),
+
+  // ─── ATRIBUIR / REVOGAR PASSE VIP DO PARTICIPANTE ─────────────────────────
+  adminSetParticipantVip: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      grant: z.boolean(), // true = conceder VIP, false = revogar
+      durationDays: z.number().min(1).max(3650).default(30),
+      reason: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await (await import("../db")).getDb();
+      if (!db) throw Err.internal();
+      const { userPlans: plansT } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+
+      if (input.grant) {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + input.durationDays);
+        const [existing] = await db.select().from(plansT).where(eq(plansT.userId, input.userId)).limit(1);
+        if (existing) {
+          await db.update(plansT).set({
+            plan: "vip",
+            isActive: true,
+            planStartAt: new Date(),
+            planExpiresAt: expiresAt,
+          }).where(eq(plansT.userId, input.userId));
+        } else {
+          await db.insert(plansT).values({
+            userId: input.userId,
+            plan: "vip",
+            isActive: true,
+            planStartAt: new Date(),
+            planExpiresAt: expiresAt,
+          });
+        }
+        await createAdminLog(ctx.user.id, "admin_grant_vip", "user", input.userId, {
+          durationDays: input.durationDays,
+          expiresAt: expiresAt.toISOString(),
+          reason: input.reason ?? "Concessão manual pelo admin",
+        });
+        return { success: true, action: "granted" as const };
+      } else {
+        await db.update(plansT).set({
+          plan: "free",
+          isActive: false,
+          planExpiresAt: new Date(),
+        }).where(eq(plansT.userId, input.userId));
+        await createAdminLog(ctx.user.id, "admin_revoke_vip", "user", input.userId, {
+          reason: input.reason ?? "Revogação manual pelo admin",
+        });
+        return { success: true, action: "revoked" as const };
+      }
     }),
 
   updateProfile: protectedProcedure

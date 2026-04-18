@@ -411,3 +411,11 @@
 ## Sprint VIP-Badge — Badge Visual no Perfil
 
 - [x] Badge VIP dourado no perfil do usuário (PublicProfile.tsx / my-profile) — visível apenas quando participante tem Passe VIP ativo
+
+## Sprint VIP-Admin — Atribuição Manual de VIP pelo Admin
+
+- [ ] Backend: adicionar "vip" ao enum do tier em grantPoolPro (adminDashboard.ts)
+- [ ] Frontend: adicionar opção VIP no modal de concessão do AdminSubscriptions.tsx
+- [ ] Frontend: exibir badge VIP na listagem de assinaturas do AdminSubscriptions.tsx
+
+- [x] AdminUsers.tsx: adicionar seção "Passe VIP" na aba Ações com botões "Conceder VIP" e "Revogar VIP" (mesmo padrão de Tornar Admin / Bloquear)
