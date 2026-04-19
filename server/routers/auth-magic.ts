@@ -22,11 +22,14 @@ function templateMagicLink(opts: {
   name: string;
   magicUrl: string;
 }): { subject: string; html: string } {
-  const BRAND = "#22c55e";
-  const BG = "#0a0a0a";
-  const SURFACE = "#111111";
-  const TEXT = "#f5f5f5";
-  const MUTED = "#a3a3a3";
+  // Identidade visual Plakr! — paleta oficial
+  const GOLD = "#FFB800";          // primary.main — dourado Plakr!
+  const GOLD_DARK = "#FF8A00";     // primary.gradient end
+  const BG = "#0B0F1A";            // background.primary
+  const SURFACE = "#121826";       // background.surface
+  const TEXT = "#F5F5F5";
+  const MUTED = "#8A9BB5";
+  const BORDER = "#1E2A3A";
 
   return {
     subject: "🔑 Seu link de acesso ao Plakr!",
@@ -42,38 +45,65 @@ function templateMagicLink(opts: {
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- Header com logo Plakr! -->
           <tr>
-            <td style="background:${SURFACE};border-radius:16px 16px 0 0;padding:28px 32px;border-bottom:1px solid #1f1f1f;">
-              <span style="font-size:22px;font-weight:800;color:${BRAND};letter-spacing:-0.5px;">Apost<span style="color:${TEXT};">AI</span></span>
+            <td style="background:${SURFACE};border-radius:16px 16px 0 0;padding:24px 32px;border-bottom:1px solid ${BORDER};">
+              <table width="100%">
+                <tr>
+                  <td>
+                    <span style="font-size:24px;font-weight:900;color:${GOLD};letter-spacing:-0.5px;">Plakr!</span>
+                  </td>
+                  <td align="right">
+                    <span style="font-size:12px;color:${MUTED};">Bolões Esportivos</span>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
+
+          <!-- Conteúdo principal -->
           <tr>
-            <td style="background:${SURFACE};padding:32px 32px 24px;">
-              <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${TEXT};">Seu link de acesso chegou! 🔑</h2>
-              <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">
-                Olá${opts.name ? `, <strong style="color:${TEXT};">${opts.name}</strong>` : ""}! Clique no botão abaixo para entrar no Plakr! sem precisar de senha.
+            <td style="background:${SURFACE};padding:36px 32px 28px;">
+              <!-- Ícone de chave -->
+              <div style="width:56px;height:56px;background:linear-gradient(135deg,${GOLD},${GOLD_DARK});border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:28px;line-height:56px;text-align:center;">🔑</div>
+
+              <h2 style="margin:0 0 10px;font-size:26px;font-weight:800;color:${TEXT};">Seu link de acesso chegou!</h2>
+              <p style="margin:0 0 24px;color:${MUTED};line-height:1.7;font-size:15px;">
+                Olá${opts.name ? `, <strong style="color:${TEXT};">${opts.name}</strong>` : ""}! Clique no botão abaixo para entrar no <strong style="color:${GOLD};">Plakr!</strong> sem precisar de senha.
               </p>
-              <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:20px;margin-bottom:24px;">
-                <p style="margin:0 0 8px;font-size:13px;color:${MUTED};">⏰ Este link expira em <strong style="color:#f59e0b;">15 minutos</strong> e só pode ser usado uma vez.</p>
+
+              <!-- Info box -->
+              <div style="background:${BG};border:1px solid ${BORDER};border-left:3px solid ${GOLD};border-radius:10px;padding:16px 20px;margin-bottom:28px;">
+                <p style="margin:0 0 6px;font-size:13px;color:${MUTED};">⏰ Este link expira em <strong style="color:${GOLD};">15 minutos</strong> e só pode ser usado uma vez.</p>
                 <p style="margin:0;font-size:13px;color:${MUTED};">Se você não solicitou este acesso, ignore este e-mail com segurança.</p>
               </div>
-              <a href="${opts.magicUrl}" style="display:inline-block;background:${BRAND};color:#000;font-weight:700;font-size:16px;padding:14px 32px;border-radius:10px;text-decoration:none;margin-top:8px;">
+
+              <!-- Botão CTA -->
+              <a href="${opts.magicUrl}" style="display:inline-block;background:linear-gradient(135deg,${GOLD},${GOLD_DARK});color:#0B0F1A;font-weight:800;font-size:16px;padding:16px 36px;border-radius:12px;text-decoration:none;letter-spacing:0.3px;">
                 ✅ Entrar no Plakr!
               </a>
-              <p style="margin:20px 0 0;font-size:12px;color:${MUTED};">
+
+              <!-- Link fallback -->
+              <p style="margin:24px 0 0;font-size:12px;color:${MUTED};">
                 Se o botão não funcionar, copie e cole este link no navegador:<br/>
-                <a href="${opts.magicUrl}" style="color:${BRAND};word-break:break-all;font-size:11px;">${opts.magicUrl}</a>
+                <a href="${opts.magicUrl}" style="color:${GOLD};word-break:break-all;font-size:11px;">${opts.magicUrl}</a>
               </p>
             </td>
           </tr>
+
+          <!-- Footer -->
           <tr>
-            <td style="background:#0d0d0d;border-radius:0 0 16px 16px;padding:20px 32px;border-top:1px solid #1f1f1f;">
+            <td style="background:#0D1220;border-radius:0 0 16px 16px;padding:20px 32px;border-top:1px solid ${BORDER};">
               <p style="margin:0;font-size:12px;color:${MUTED};text-align:center;">
                 Você está recebendo este e-mail porque solicitou acesso ao Plakr!.<br/>
-                <a href="${ENV.appBaseUrl}" style="color:${BRAND};text-decoration:none;">Acessar plataforma</a>
+                <a href="${ENV.appBaseUrl}" style="color:${GOLD};text-decoration:none;">Acessar plataforma</a>
+                &nbsp;·&nbsp;
+                <span style="color:${MUTED};">plakr.io</span>
               </p>
             </td>
           </tr>
+
         </table>
       </td>
     </tr>
