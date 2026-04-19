@@ -688,6 +688,36 @@ export default function Home() {
         </CustomOrDefault>
       )}
 
+      {/* ── VÍDEO DEMO ─────────────────────────────────────────────────────── */}
+      <section id="video-demo" className="py-16" style={{ background: "#0B0F1A" }} aria-label="Demonstração do Plakr">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Veja o Plakr em ação
+            </h2>
+            <p className="text-gray-400 text-base">
+              Do bolão ao pódio — tudo em um só lugar.
+            </p>
+          </div>
+          <div
+            className="relative rounded-2xl overflow-hidden shadow-2xl"
+            style={{ border: "1px solid rgba(255,184,0,0.2)", background: "#121826" }}
+          >
+            <video
+              src="/manus-storage/plakr-demo_596048ef.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              className="w-full block"
+              style={{ maxHeight: "480px", objectFit: "cover" }}
+              aria-label="Vídeo de demonstração do Plakr"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* ── COMO FUNCIONA ──────────────────────────────────────────────────── */}
       {(config?.sectionHowItWorksEnabled ?? true) && (
         <CustomOrDefault customCode={config?.howItWorksCustomCode}>

@@ -594,3 +594,9 @@
 - [x] Corrigir cor do plano Unlimited de #EAB308 para #FFB800 (paleta Plakr)
 - [x] FAQ atualizado: perguntas sobre IA, X1, taxa de inscrição e VIP vs Pro
 - [x] 582 testes passando
+
+## Sprint Vídeo Demo Landing Page
+- [x] Gerar vídeo de demonstração do Plakr com IA (3 clipes concatenados, 16s, 6.4MB)
+- [x] Configurar storage proxy para servir arquivos via /manus-storage/
+- [x] Embutir vídeo na landing page (seção "Veja o Plakr em ação" entre Hero e Como Funciona)
+- [x] Autoplay mudo + loop + controles + responsivo

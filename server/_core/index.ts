@@ -19,6 +19,7 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { registerStorageProxy } from "./storageProxy";
 import { registerMagicLinkRoute } from "../magic-link";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -92,6 +93,7 @@ async function startServer() {
   registerUploadRoute(app);
 
   // OAuth callback under /api/oauth/callback
+  registerStorageProxy(app);
   registerOAuthRoutes(app);
 
   // Magic link verification under /api/auth/magic-link/verify
