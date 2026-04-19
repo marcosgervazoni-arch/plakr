@@ -246,6 +246,7 @@ export function templatePoolInviteExternal(opts: {
   inviteUrl: string;
   hasEntryFee: boolean;
   entryFee?: number;
+  expiresAt?: Date;
 }): { subject: string; html: string } {
   return {
     subject: `🏆 ${opts.organizerName} te convidou para o bolão "${opts.poolName}" no Plakr!`,
@@ -263,7 +264,7 @@ export function templatePoolInviteExternal(opts: {
       </div>
       <p style="margin:0 0 16px;font-size:14px;color:${MUTED};line-height:1.6;">Clique no botão abaixo para criar sua conta gratuita e entrar no bolão automaticamente. Leva menos de 1 minuto!</p>
       ${ctaButton("Criar conta e entrar no bolão", opts.inviteUrl)}
-      <p style="margin:16px 0 0;font-size:12px;color:${MUTED};">Este convite expira em 7 dias. Se você já tem conta no Plakr!, o mesmo link funcionará para fazer login e entrar no bolão.</p>
+      <p style="margin:16px 0 0;font-size:12px;color:${MUTED};">&#128197; Este convite expira em <strong style="color:${TEXT};">${opts.expiresAt ? opts.expiresAt.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' }) : '7 dias'}</strong>. Se você já tem conta no Plakr!, o mesmo link funcionará para fazer login e entrar no bolão.</p>
     `),
   };
 }

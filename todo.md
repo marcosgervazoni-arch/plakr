@@ -472,3 +472,7 @@
 - [x] Pós-aceite com taxa: exibe tela de pagamento pendente com chave PIX + QR Code
 - [x] Rota registrada no App.tsx: `/pool-invite/:token` (pública, compatível com Safari)
 - [x] 540 testes passando (24 arquivos)
+
+## Sprint Convite — Data de Expiração no E-mail
+
+- [x] Adicionar data de expiração explícita no e-mail de convite externo (templatePoolInviteExternal) — exibe data exata em pt-BR (ex: "25 de abril de 2026") em vez de "7 dias"

@@ -666,7 +666,7 @@ export const poolsMembersRouter = router({
       const { getTournamentById } = await import("../db");
       const tournament = pool.tournamentId ? await getTournamentById(pool.tournamentId) : null;
       const { sendEmail, templatePoolInviteExternal } = await import("../email");
-      const tpl = templatePoolInviteExternal({ organizerName: organizer?.name ?? "O organizador", poolName: pool.name, tournamentName: tournament?.name ?? "Campeonato", memberCount, inviteUrl, hasEntryFee, entryFee: hasEntryFee ? Number(pool.entryFee) : undefined });
+      const tpl = templatePoolInviteExternal({ organizerName: organizer?.name ?? "O organizador", poolName: pool.name, tournamentName: tournament?.name ?? "Campeonato", memberCount, inviteUrl, hasEntryFee, entryFee: hasEntryFee ? Number(pool.entryFee) : undefined, expiresAt });
       await sendEmail({ to: normalizedEmail, subject: tpl.subject, html: tpl.html, type: "pool_invite_external" });
       await createAdminLog(ctx.user.id, "pool_invite_external_sent", "pool", input.poolId, { invitedEmail: normalizedEmail, isResend: existingInvite.length > 0 });
       return { type: "invite_sent" as const, isResend: existingInvite.length > 0 };
