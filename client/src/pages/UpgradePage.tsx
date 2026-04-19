@@ -216,6 +216,7 @@ export default function UpgradePage() {
   const proAnnualPrice = pricing?.proAnnualPrice ?? 39900;
   const unlimitedMonthlyPrice = pricing?.unlimitedMonthlyPrice ?? 8990;
   const unlimitedAnnualPrice = pricing?.unlimitedAnnualPrice ?? 89900;
+  const vipMonthlyPrice = (pricing as any)?.vipMonthlyPrice ?? 490;
 
   // Preço exibido conforme billing selecionado
   const proDisplayPrice = billing === "annual" ? proAnnualPrice : proMonthlyPrice;
@@ -360,10 +361,16 @@ export default function UpgradePage() {
             <div>
               <p className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>Passe VIP</p>
               <div className="flex items-end gap-1 mt-1">
-                <span className="font-bold text-3xl text-yellow-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                  R$ 4,90
-                </span>
-                <span className="text-muted-foreground text-sm mb-1">/mês</span>
+                {loadingPrices ? (
+                  <PriceSkeleton />
+                ) : (
+                  <>
+                    <span className="font-bold text-3xl text-yellow-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      {formatPrice(vipMonthlyPrice)}
+                    </span>
+                    <span className="text-muted-foreground text-sm mb-1">/mês</span>
+                  </>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Por conta. Vale em todos os bolões que você participar.

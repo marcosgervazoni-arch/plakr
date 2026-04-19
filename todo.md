@@ -553,3 +553,6 @@
 - [x] Adicionar badge "Pgto. pendente" (laranja) na lista de membros (OrganizerMembers)
 - [x] Organizador marca/desmarca via menu de ações do membro (só visível em bolões com taxa)
 - [x] 8 testes automatizados adicionados — 582 total passando
+
+## Sprint Preço VIP Dinâmico
+- [x] Corrigir preço do Passe VIP na UpgradePage para ser lido do banco (getPublicPricing.vipMonthlyPrice)
