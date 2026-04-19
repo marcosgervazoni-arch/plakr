@@ -149,24 +149,46 @@ export function templateMagicLink(opts: {
 // ─── Template: Boas-vindas (estilo Caze TV) ──────────────────────────────────
 export function templateWelcome(name: string): { subject: string; html: string } {
   const firstName = esc(name).split(' ')[0];
-  // Balão Narrador 1 (esquerda, borda dourada)
+  // Balão Narrador 1 (esquerda, borda dourada) — table-based para compatibilidade com Gmail/Outlook
   const bubble1 = (text: string) => `
-    <div style="display:flex;align-items:flex-start;margin-bottom:16px;">
-      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,${GOLD},${GOLD2});display:flex;align-items:center;justify-content:center;font-size:16px;margin-right:12px;">🎙</div>
-      <div style="background:${SURFACE2};border:1.5px solid ${GOLD};border-radius:0 12px 12px 12px;padding:14px 18px;max-width:480px;position:relative;">
-        <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:${GOLD};letter-spacing:0.8px;text-transform:uppercase;">Narrador 1</p>
-        <p style="margin:0;font-size:14px;color:${TEXT};line-height:1.6;">${text}</p>
-      </div>
-    </div>`;
-  // Balão Narrador 2 (direita, borda cinza)
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+      <tr>
+        <td valign="top" width="48" style="padding-right:12px;">
+          <table cellpadding="0" cellspacing="0"><tr><td width="36" height="36" align="center" valign="middle"
+            style="width:36px;height:36px;border-radius:50%;background:${GOLD};font-size:18px;text-align:center;line-height:36px;">🎙</td></tr></table>
+        </td>
+        <td valign="top">
+          <table cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td style="background:${SURFACE2};border:1.5px solid ${GOLD};border-radius:0 12px 12px 12px;padding:14px 18px;">
+                <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:${GOLD};letter-spacing:0.8px;text-transform:uppercase;">Narrador 1</p>
+                <p style="margin:0;font-size:14px;color:${TEXT};line-height:1.6;">${text}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>`;
+  // Balão Narrador 2 (direita, borda cinza) — table-based para compatibilidade com Gmail/Outlook
   const bubble2 = (text: string) => `
-    <div style="display:flex;align-items:flex-start;justify-content:flex-end;margin-bottom:16px;">
-      <div style="background:#0f1420;border:1.5px solid #3a4055;border-radius:12px 0 12px 12px;padding:14px 18px;max-width:480px;position:relative;">
-        <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:#9CA3AF;letter-spacing:0.8px;text-transform:uppercase;text-align:right;">Narrador 2</p>
-        <p style="margin:0;font-size:14px;color:${TEXT};line-height:1.6;">${text}</p>
-      </div>
-      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:#1A2235;border:1.5px solid #3a4055;display:flex;align-items:center;justify-content:center;font-size:16px;margin-left:12px;">🎙</div>
-    </div>`;
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+      <tr>
+        <td valign="top">
+          <table cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td style="background:#0f1420;border:1.5px solid #3a4055;border-radius:12px 0 12px 12px;padding:14px 18px;">
+                <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:#9CA3AF;letter-spacing:0.8px;text-transform:uppercase;text-align:right;">Narrador 2</p>
+                <p style="margin:0;font-size:14px;color:${TEXT};line-height:1.6;">${text}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td valign="top" width="48" style="padding-left:12px;">
+          <table cellpadding="0" cellspacing="0"><tr><td width="36" height="36" align="center" valign="middle"
+            style="width:36px;height:36px;border-radius:50%;background:#1A2235;border:1.5px solid #3a4055;font-size:18px;text-align:center;line-height:36px;">🎙</td></tr></table>
+        </td>
+      </tr>
+    </table>`;
 
   return {
     subject: `${firstName}, você acabou de entrar no jogo. Bem-vindo ao Plakr! 🏆`,
