@@ -526,3 +526,11 @@
 
 - [x] Aplicar detecção de Safari e Magic Link na página /join/:token (JoinPool.tsx)
 - [x] Aplicar detecção de Safari e Magic Link na página /pool-invite/:token (PoolInviteAccept.tsx)
+
+## Sprint E-mail Boas-vindas — Estilo Caze TV
+
+- [x] Criar template `templateWelcome` no email.ts com balões de fala (Narrador 1 dourado / Narrador 2 cinza)
+- [x] Adicionar campo `welcomeEmailSent` na tabela users (migração de banco)
+- [x] Disparar e-mail automaticamente na criação da conta via Magic Link (magic-link.ts)
+- [x] Disparar e-mail automaticamente na criação da conta via OAuth (oauth.ts)
+- [ ] Validar visual do e-mail em produção após publicar (sandbox bloqueia porta SMTP)

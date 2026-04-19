@@ -84,6 +84,7 @@ export const users = mysqlTable("users", {
   telegramLink: varchar("telegramLink", { length: 255 }),
   isBlocked: boolean("isBlocked").default(false).notNull(),
   hasSeenTour: boolean("hasSeenTour").default(false).notNull(),
+  welcomeEmailSent: boolean("welcomeEmailSent").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

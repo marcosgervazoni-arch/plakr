@@ -456,6 +456,13 @@
       "when": 1776591017760,
       "tag": "0064_cloudy_quicksilver",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "5",
+      "when": 1776605859010,
+      "tag": "0065_chemical_shiver_man",
+      "breakpoints": true
     }
   ]
 }

@@ -92,6 +92,19 @@ export function registerMagicLinkRoute(app: Express) {
 
       logger.info({ userId: user.id, email: link.email }, "[MagicLink] Login bem-sucedido via magic link");
 
+      // [Welcome Email] Enviar e-mail de boas-vindas na primeira vez (welcomeEmailSent = false)
+      if (!user.welcomeEmailSent) {
+        import("./email")
+          .then(async ({ templateWelcome, sendEmail }) => {
+            const tpl = templateWelcome(user.name || link.email.split('@')[0]);
+            const sent = await sendEmail({ to: link.email, subject: tpl.subject, html: tpl.html, type: "welcome" });
+            if (sent) {
+              await db.update(users).set({ welcomeEmailSent: true }).where(eq(users.id, user.id));
+            }
+          })
+          .catch(() => {});
+      }
+
       // Redireciona para o destino
       return res.redirect(302, safePath);
     } catch (err) {

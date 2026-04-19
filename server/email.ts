@@ -146,23 +146,51 @@ export function templateMagicLink(opts: {
   };
 }
 
-// ─── Template: Boas-vindas ────────────────────────────────────────────────────
+// ─── Template: Boas-vindas (estilo Caze TV) ──────────────────────────────────
 export function templateWelcome(name: string): { subject: string; html: string } {
-  return {
-    subject: "🏆 Bem-vindo ao Plakr!! Sua conta está pronta",
-    html: baseTemplate("Bem-vindo ao Plakr!", `
-      <h2 style="margin:0 0 6px;font-size:24px;font-weight:800;color:${TEXT};">Olá, ${esc(name)}! 👋</h2>
-      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Sua conta no <strong style="color:${TEXT};">Plakr!</strong> foi criada com sucesso. Agora você pode participar de bolões esportivos, fazer seus palpites e disputar o ranking com amigos.</p>
-
-      <div style="background:${SURFACE2};border-radius:12px;padding:20px 24px;margin-bottom:24px;">
-        <p style="margin:0 0 14px;font-weight:700;font-size:14px;color:${TEXT};">O que você pode fazer agora:</p>
-        <p style="margin:0 0 10px;color:${MUTED};font-size:13px;">🏅 <strong style="color:${TEXT};">Entrar em bolões</strong> via link de convite ou código</p>
-        <p style="margin:0 0 10px;color:${MUTED};font-size:13px;">⚽ <strong style="color:${TEXT};">Fazer palpites</strong> nos jogos antes do prazo</p>
-        <p style="margin:0 0 10px;color:${MUTED};font-size:13px;">📊 <strong style="color:${TEXT};">Acompanhar o ranking</strong> em tempo real</p>
-        <p style="margin:0;color:${MUTED};font-size:13px;">🎯 <strong style="color:${TEXT};">Criar seu bolão</strong> (Plano Gratuito: 2 bolões, 50 participantes)</p>
+  const firstName = esc(name).split(' ')[0];
+  // Balão Narrador 1 (esquerda, borda dourada)
+  const bubble1 = (text: string) => `
+    <div style="display:flex;align-items:flex-start;margin-bottom:16px;">
+      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,${GOLD},${GOLD2});display:flex;align-items:center;justify-content:center;font-size:16px;margin-right:12px;">🎙</div>
+      <div style="background:${SURFACE2};border:1.5px solid ${GOLD};border-radius:0 12px 12px 12px;padding:14px 18px;max-width:480px;position:relative;">
+        <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:${GOLD};letter-spacing:0.8px;text-transform:uppercase;">Narrador 1</p>
+        <p style="margin:0;font-size:14px;color:${TEXT};line-height:1.6;">${text}</p>
       </div>
+    </div>`;
+  // Balão Narrador 2 (direita, borda cinza)
+  const bubble2 = (text: string) => `
+    <div style="display:flex;align-items:flex-start;justify-content:flex-end;margin-bottom:16px;">
+      <div style="background:#0f1420;border:1.5px solid #3a4055;border-radius:12px 0 12px 12px;padding:14px 18px;max-width:480px;position:relative;">
+        <p style="margin:0 0 4px;font-size:10px;font-weight:700;color:#9CA3AF;letter-spacing:0.8px;text-transform:uppercase;text-align:right;">Narrador 2</p>
+        <p style="margin:0;font-size:14px;color:${TEXT};line-height:1.6;">${text}</p>
+      </div>
+      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:#1A2235;border:1.5px solid #3a4055;display:flex;align-items:center;justify-content:center;font-size:16px;margin-left:12px;">🎙</div>
+    </div>`;
 
-      ${ctaButton("Acessar minha conta", ENV.appBaseUrl)}
+  return {
+    subject: `${firstName}, você acabou de entrar no jogo. Bem-vindo ao Plakr! 🏆`,
+    html: baseTemplate("Bem-vindo ao Plakr!", `
+      <h2 style="margin:0 0 24px;font-size:22px;font-weight:800;color:${TEXT};">Bem-vindo ao Plakr!, <span style="background:linear-gradient(135deg,${GOLD},${GOLD2});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${firstName}</span>! 🏆</h2>
+
+      ${bubble1(`GEEENTE! Olha quem chegou! <strong>${firstName}</strong> acabou de criar conta no Plakr! e eu já tô vibrando aqui!`)}
+
+      ${bubble2(`Calma, calma... Deixa eu ver o histórico desse apostador primeiro.`)}
+
+      ${bubble1(`Histórico? Cara, ele acabou de chegar! Dá uma chance!`)}
+
+      ${bubble2(`Tá bom. <strong>${firstName}</strong>, seja bem-vindo. Aqui no Plakr! a gente faz bolão de verdade — com placar, pontuação, ranking e aquela pressão gostosa de estar perdendo pro seu chefe na última rodada.`)}
+
+      ${bubble1(`E o melhor? Você pode criar o seu próprio bolão agora mesmo. Chama a galera, define as regras e vira o organizador que todo mundo ama odiar.`)}
+
+      ${infoBox(`
+        <p style="margin:0 0 6px;font-size:13px;color:${TEXT};font-weight:700;">Seu próximo passo:</p>
+        <p style="margin:0;font-size:13px;color:${MUTED};line-height:1.6;">Explore os bolões disponíveis, entre em um que te chamaram ou crie o seu. O apito já tocou.</p>
+      `, GOLD)}
+
+      <div style="margin-top:24px;text-align:center;">
+        ${ctaButton("Entrar em campo →", ENV.appBaseUrl)}
+      </div>
     `),
   };
 }

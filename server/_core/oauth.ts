@@ -91,6 +91,28 @@ export function registerOAuthRoutes(app: Express) {
         }
       } catch { /* não bloquear o login em caso de falha no log */ }
 
+      // [Welcome Email] Enviar e-mail de boas-vindas para novos usuários (uma única vez)
+      if (isNewUser) {
+        try {
+          const newUserData = await db.getUserByOpenId(userInfo.openId);
+          if (newUserData?.email && !newUserData.welcomeEmailSent) {
+            import("../email")
+              .then(async ({ templateWelcome, sendEmail }) => {
+                const tpl = templateWelcome(newUserData.name || newUserData.email!.split('@')[0]);
+                const sent = await sendEmail({ to: newUserData.email!, subject: tpl.subject, html: tpl.html, type: "welcome" });
+                if (sent) {
+                  const { getDb } = await import("../db");
+                  const dbConn = await getDb();
+                  const { users } = await import("../../drizzle/schema");
+                  const { eq } = await import("drizzle-orm");
+                  if (dbConn) await dbConn.update(users).set({ welcomeEmailSent: true }).where(eq(users.id, newUserData.id));
+                }
+              })
+              .catch(() => {});
+          }
+        } catch { /* não bloquear o login */ }
+      }
+
       // [Badges] Verificar badges a cada login (garante early_user e badges retroativos)
       // Rodamos para todos os logins (não apenas isNewUser) para corrigir casos
       // em que o usuário existia antes da lógica de badges ser implementada.

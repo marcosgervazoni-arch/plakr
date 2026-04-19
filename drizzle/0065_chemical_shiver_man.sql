@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `welcomeEmailSent` boolean DEFAULT false NOT NULL;
