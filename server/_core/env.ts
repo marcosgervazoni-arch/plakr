@@ -18,6 +18,13 @@ const envSchema = z.object({
   BUILT_IN_FORGE_API_URL: z.string().url("BUILT_IN_FORGE_API_URL deve ser uma URL válida"),
   BUILT_IN_FORGE_API_KEY: z.string().min(1, "BUILT_IN_FORGE_API_KEY é obrigatório"),
 
+  // SMTP — Hostinger (envio de e-mails transacionais)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM_NAME: z.string().optional(),
+
   // Optional — têm fallbacks seguros
   OWNER_OPEN_ID: z.string().optional(),
   APP_BASE_URL: z.string().url().optional(),
@@ -44,6 +51,13 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // SMTP config
+  smtpHost: process.env.SMTP_HOST ?? "smtp.hostinger.com",
+  smtpPort: parseInt(process.env.SMTP_PORT ?? "465", 10),
+  smtpUser: process.env.SMTP_USER ?? "",
+  smtpPass: process.env.SMTP_PASS ?? "",
+  smtpFromName: process.env.SMTP_FROM_NAME ?? "Plakr!",
+
   // Base URL used in e-mails and invite links.
   // Update APP_BASE_URL in Settings → Secrets when you configure a custom domain.
   // Falls back to the default Manus domain until then.

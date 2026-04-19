@@ -1,9 +1,10 @@
 /**
  * Plakr! — Serviço de E-mail
- * Usa a Manus Notification API (BUILT_IN_FORGE_API_URL) para envio de e-mails.
+ * Usa SMTP da Hostinger (nodemailer) para envio de e-mails transacionais.
  * Templates HTML responsivos para: boas-vindas, lembrete de palpite,
  * resultado disponível, expiração de plano Pro e convite de bolão.
  */
+import nodemailer from "nodemailer";
 import { ENV } from "./_core/env";
 import { getDb, createNotification } from "./db";
 import logger from "./logger";
@@ -268,8 +269,32 @@ export function templatePoolInviteExternal(opts: {
     `),
   };
 }
+// ─── Transporter SMTP (Hostinger) ─────────────────────────────────────────────────────────────────────
+let _transporter: nodemailer.Transporter | null = null;
 
-// ─── Sender via Manus Notification API ───────────────────────────────────────
+function getTransporter(): nodemailer.Transporter | null {
+  if (!ENV.smtpUser || !ENV.smtpPass) {
+    logger.warn("[Email] SMTP credentials not configured");
+    return null;
+  }
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      host: ENV.smtpHost,
+      port: ENV.smtpPort,
+      secure: ENV.smtpPort === 465, // true para 465 (SSL), false para 587 (TLS)
+      auth: {
+        user: ENV.smtpUser,
+        pass: ENV.smtpPass,
+      },
+      tls: {
+        rejectUnauthorized: false, // Hostinger aceita certificados auto-assinados
+      },
+    });
+  }
+  return _transporter;
+}
+
+// ─── Sender via SMTP (Hostinger) ─────────────────────────────────────────────────────────────────────
 export async function sendEmail(opts: {
   to: string;
   subject: string;
@@ -277,37 +302,23 @@ export async function sendEmail(opts: {
   type: string;
 }): Promise<boolean> {
   try {
-    const apiUrl = ENV.forgeApiUrl;
-    const apiKey = ENV.forgeApiKey;
-
-    if (!apiUrl || !apiKey) {
-      logger.warn("[Email] Manus API not configured, skipping email send");
+    const transporter = getTransporter();
+    if (!transporter) {
+      logger.warn("[Email] SMTP not configured, skipping email send");
       return false;
     }
 
-    const res = await fetch(`${apiUrl}/v1/notifications/email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        to: opts.to,
-        subject: opts.subject,
-        html: opts.html,
-      }),
+    await transporter.sendMail({
+      from: `"${ENV.smtpFromName}" <${ENV.smtpUser}>`,
+      to: opts.to,
+      subject: opts.subject,
+      html: opts.html,
     });
 
-    if (!res.ok) {
-      const err = await res.text();
-      logger.error({ type: opts.type, err }, "[Email] Failed to send");
-      return false;
-    }
-
-    logger.info({ type: opts.type, to: opts.to }, "[Email] Sent");
+    logger.info({ type: opts.type, to: opts.to }, "[Email] Sent via SMTP");
     return true;
   } catch (err) {
-    logger.error({ type: opts.type, err }, "[Email] Error sending");
+    logger.error({ type: opts.type, err }, "[Email] SMTP error sending");
     return false;
   }
 }

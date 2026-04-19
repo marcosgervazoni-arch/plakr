@@ -509,3 +509,15 @@
 - [x] EmailLoginModal: mensagem atualizada — funciona para quem já tem conta E para novos usuários
 - [x] Testes: 9 casos cobrindo iPhone, iPad, Safari desktop, Chrome, Firefox, Edge, CriOS, Opera, navigator undefined
 - [x] 549 testes passando (25 arquivos)
+
+## Sprint SMTP — Integração Hostinger para Envio de E-mails
+
+- [x] Diagnóstico: Manus Forge API não possui endpoint de envio de e-mail (/v1/notifications/email retorna 404)
+- [x] Instalação do nodemailer + @types/nodemailer
+- [x] Variáveis SMTP adicionadas ao env.ts (smtpHost, smtpPort, smtpUser, smtpPass, smtpFromName)
+- [x] Secrets configurados: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM_NAME
+- [x] Função sendEmail reescrita para usar nodemailer via SMTP Hostinger (porta 465 SSL)
+- [x] Transporter com lazy initialization (singleton) e tls.rejectUnauthorized: false
+- [x] Teste real de envio confirmado: e-mail chegou em marcos.gervazoni@gmail.com
+- [x] 6 testes unitários de SMTP (smtp.test.ts)
+- [x] 555 testes passando (26 arquivos)
