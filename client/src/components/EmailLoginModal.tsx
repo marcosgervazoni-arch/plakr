@@ -1,7 +1,11 @@
 /**
  * Plakr! — Modal de Login por E-mail (Magic Link)
- * Alternativa ao OAuth para usuários com Safari no iPhone ou outros navegadores
- * que bloqueiam cookies de terceiros.
+ * Método padrão de acesso ao Plakr! — funciona em todos os navegadores,
+ * incluindo Safari no iPhone (onde o OAuth é bloqueado por cookies de terceiros).
+ *
+ * Comportamento:
+ * - No Safari/iPhone: exibe badge informativo sobre compatibilidade
+ * - Para qualquer usuário: funciona para quem já tem conta E para novos usuários
  *
  * Uso:
  * <EmailLoginModal open={open} onClose={() => setOpen(false)} returnPath="/dashboard" />
@@ -12,9 +16,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, ArrowRight, Loader2 } from "lucide-react";
+import { Mail, ArrowRight, Loader2, Smartphone } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useSafariDetect } from "@/hooks/useSafariDetect";
 
 interface EmailLoginModalProps {
   open: boolean;
@@ -27,6 +32,7 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const isSafari = useSafariDetect();
 
   const sendMagicLink = trpc.authMagic.sendMagicLink.useMutation();
 
@@ -80,17 +86,29 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
         }}
       >
         <DialogHeader>
+          {/* Badge Safari — aparece apenas no Safari/iPhone */}
+          {isSafari && (
+            <div
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs mb-3"
+              style={{ background: "rgba(0,194,255,0.08)", border: "1px solid rgba(0,194,255,0.2)", color: "#00C2FF" }}
+              role="alert"
+            >
+              <Smartphone size={12} />
+              <span>Acesso por e-mail recomendado para Safari e iPhone.</span>
+            </div>
+          )}
+
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center mb-2"
-            style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.2)" }}
+            style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.3)" }}
           >
-            <Mail size={22} style={{ color: "#22c55e" }} />
+            <Mail size={22} style={{ color: "#FFB800" }} />
           </div>
           <DialogTitle className="text-xl font-black text-white">
-            Entrar por e-mail
+            Entrar no Plakr!
           </DialogTitle>
           <DialogDescription style={{ color: "#9CA3AF" }}>
-            Enviaremos um link de acesso direto para o seu e-mail — sem senha, sem complicação.
+            Informe seu e-mail e enviaremos um link de acesso direto — sem senha, sem complicação.
           </DialogDescription>
         </DialogHeader>
 
@@ -111,7 +129,7 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
               autoFocus
               autoComplete="email"
               disabled={loading}
-              className="bg-[#0D1120] border-[rgba(255,255,255,0.1)] text-white placeholder:text-[#6B7280] focus:border-[#22c55e] focus:ring-[#22c55e]/20"
+              className="bg-[#0D1120] border-[rgba(255,255,255,0.1)] text-white placeholder:text-[#6B7280] focus:border-[#FFB800] focus:ring-[#FFB800]/20"
             />
             {emailError && (
               <p className="text-xs" style={{ color: "#ef4444" }}>
@@ -120,12 +138,12 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
             )}
           </div>
 
-          {/* Aviso sobre e-mail cadastrado */}
+          {/* Dica contextual */}
           <div
             className="rounded-lg p-3 text-xs"
             style={{ background: "#0D1120", border: "1px solid rgba(255,255,255,0.04)", color: "#9CA3AF" }}
           >
-            💡 O e-mail deve ser o mesmo cadastrado na sua conta do Plakr!. Se ainda não tem conta, use o botão de login principal.
+            💡 Se já tem conta, o link vai direto para o seu painel. Se é a primeira vez, você será guiado para criar sua conta.
           </div>
 
           <Button
@@ -133,8 +151,8 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
             disabled={loading || !email.trim()}
             className="w-full font-bold"
             style={{
-              background: loading ? "rgba(34,197,94,0.3)" : "linear-gradient(135deg, #22c55e, #16a34a)",
-              color: "#000",
+              background: loading ? "rgba(255,184,0,0.3)" : "linear-gradient(135deg, #FFB800, #FF8A00)",
+              color: "#0B0F1A",
               border: "none",
             }}
           >

@@ -16,6 +16,7 @@ import DOMPurify from "dompurify";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useSafariDetect } from "@/hooks/useSafariDetect";
 import {
   Trophy, Users, ArrowRight, CheckCircle, Crown, Target,
   BarChart3, Award, Settings, Globe, Share2, Mail,
@@ -458,9 +459,10 @@ export default function Home() {
   const ctaFinalSecondaryEnabled = config?.ctaFinalSecondaryEnabled ?? true;
 
   const countdown = useCountdown(heroCountdownDate);
+  const isSafari = useSafariDetect();
   const [emailLoginOpen, setEmailLoginOpen] = useState(false);
 
-  // Abrir modal de e-mail automaticamente se a URL tiver ?login=email
+  // Abrir modal de e-mail automaticamente se a URL tiver ?login=email OU se for Safari
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("login") === "email") {
@@ -521,25 +523,40 @@ export default function Home() {
               <a href="/dashboard" aria-label="Ir para o dashboard do Plakr!">
                 <Button size="sm" className="font-semibold"
                   style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                  Entrar
+                  Meu painel
                 </Button>
               </a>
+            ) : isSafari ? (
+              // Safari/iPhone: Magic Link como único método visível na navbar
+              <button
+                onClick={() => setEmailLoginOpen(true)}
+                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+                style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                aria-label="Entrar no Plakr! por e-mail"
+              >
+                <Mail size={14} />
+                Entrar
+              </button>
             ) : (
+              // Outros navegadores: Magic Link em destaque + OAuth como alternativa
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setEmailLoginOpen(true)}
-                  className="hidden sm:flex items-center gap-1.5 text-xs font-medium transition-colors hover:text-white"
-                  style={{ color: "#9CA3AF" }}
-                  title="Entrar por e-mail (alternativa para Safari/iPhone)"
+                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                  aria-label="Entrar no Plakr! por e-mail"
                 >
-                  <Mail size={13} />
-                  Entrar por e-mail
+                  <Mail size={14} />
+                  Entrar
                 </button>
-                <a href={loginUrl} aria-label="Criar bolão grátis no Plakr!">
-                  <Button size="sm" className="font-semibold"
-                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                    {heroCtaPrimaryText}
-                  </Button>
+                <a
+                  href={loginUrl}
+                  className="hidden sm:flex items-center gap-1 text-xs transition-colors hover:text-white"
+                  style={{ color: "#6B7280" }}
+                  aria-label="Entrar com conta Manus"
+                  title="Entrar com OAuth (não compatível com Safari)"
+                >
+                  Outra conta
                 </a>
               </div>
             )
@@ -570,14 +587,28 @@ export default function Home() {
                 <p className="text-lg leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0" style={{ color: "#9CA3AF" }}>
                   {heroSubheadline}
                 </p>
+                {isSafari && !user && (
+                  // Banner de aviso Safari — aparece acima dos CTAs
+                  <div
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs mb-4"
+                    style={{ background: "rgba(0,194,255,0.08)", border: "1px solid rgba(0,194,255,0.2)", color: "#00C2FF" }}
+                    role="alert"
+                  >
+                    <Mail size={12} />
+                    <span>Detectamos que você está no Safari. Use o acesso por e-mail para entrar sem problemas.</span>
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                  <a href={loginUrl} aria-label="Criar bolão grátis — começar agora no Plakr!">
-                    <Button size="lg" className="w-full sm:w-auto font-bold text-base px-8 py-3"
-                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                      {heroCtaPrimaryText}
-                      <ArrowRight size={16} className="ml-2" aria-hidden="true" />
-                    </Button>
-                  </a>
+                  {/* CTA principal: Magic Link em destaque para todos */}
+                  <button
+                    onClick={() => setEmailLoginOpen(true)}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-base px-8 py-3 rounded-lg transition-all hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                    aria-label="Criar bolão grátis no Plakr! — entrar por e-mail"
+                  >
+                    {heroCtaPrimaryText}
+                    <ArrowRight size={16} aria-hidden="true" />
+                  </button>
                   {heroCtaSecondaryEnabled && (
                     <a href={user ? "/upgrade" : upgradeLoginUrl}>
                       <Button size="lg" variant="outline" className="w-full sm:w-auto font-semibold text-sm px-6 py-3"
@@ -590,15 +621,16 @@ export default function Home() {
                 <p className="text-xs mt-4" style={{ color: "#6B7280" }}>
                   Gratuito para começar · Sem cartão de crédito · Pronto em 2 minutos
                 </p>
-                {!user && (
-                  <button
-                    onClick={() => setEmailLoginOpen(true)}
+                {!user && !isSafari && (
+                  // Para não-Safari: mostrar OAuth como alternativa discreta
+                  <a
+                    href={loginUrl}
                     className="flex items-center gap-1.5 text-xs mt-3 transition-colors hover:text-white mx-auto lg:mx-0"
                     style={{ color: "#6B7280" }}
+                    title="Entrar com OAuth (não compatível com Safari)"
                   >
-                    <Mail size={12} />
-                    Prefere entrar por e-mail? Clique aqui
-                  </button>
+                    Prefere entrar com outra conta?
+                  </a>
                 )}
               </div>
               <div className="flex-1 w-full max-w-md lg:max-w-none">
@@ -866,13 +898,16 @@ export default function Home() {
                 Gratuito para começar. Sem cartão de crédito. Pronto em 2 minutos.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href={loginUrl} aria-label="Criar bolão grátis agora no Plakr!">
-                  <Button size="lg" className="font-bold text-base px-8 py-3"
-                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
-                    {ctaFinalPrimaryText}
-                    <ArrowRight size={16} className="ml-2" aria-hidden="true" />
-                  </Button>
-                </a>
+                {/* CTA final: Magic Link como padrão */}
+                <button
+                  onClick={() => setEmailLoginOpen(true)}
+                  className="flex items-center justify-center gap-2 font-bold text-base px-8 py-3 rounded-lg transition-all hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                  aria-label="Criar bolão grátis agora no Plakr!"
+                >
+                  {ctaFinalPrimaryText}
+                  <ArrowRight size={16} aria-hidden="true" />
+                </button>
                 {ctaFinalSecondaryEnabled && (
                   <a href={user ? "/upgrade" : upgradeLoginUrl}>
                     <Button size="lg" variant="outline" className="font-semibold text-sm px-6 py-3"

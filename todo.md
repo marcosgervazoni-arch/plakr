@@ -494,3 +494,18 @@
 - [x] Menu admin: grupo "Feedback" com link "CES + CSAT" → `/admin/feedback`
 - [x] Rota `/admin/feedback` registrada no App.tsx
 - [x] 540 testes passando (24 arquivos)
+
+## Sprint Safari — Magic Link como Método Padrão de Login
+
+- [x] Hook `useSafariDetect.ts`: detecta Safari/iPhone/iPad com base no userAgent (sem Chrome/Edg/OPR)
+- [x] Landing Page: Magic Link como CTA principal para todos os usuários (OAuth removido do botão principal)
+- [x] Landing Page: banner informativo azul para usuários Safari no hero ("Detectamos que você está no Safari...")
+- [x] Landing Page: OAuth mantido como link discreto ("Prefere entrar com outra conta?") apenas para não-Safari
+- [x] Navbar: Safari → botão "Entrar" abre Magic Link diretamente (OAuth oculto)
+- [x] Navbar: Outros navegadores → Magic Link em destaque + "Outra conta" como alternativa discreta
+- [x] CTA final da Landing Page: Magic Link como padrão (mesmo comportamento do hero)
+- [x] EmailLoginModal: badge de compatibilidade Safari (ícone Smartphone + texto informativo)
+- [x] EmailLoginModal: cores atualizadas para identidade visual Plakr! (dourado #FFB800 em vez de verde)
+- [x] EmailLoginModal: mensagem atualizada — funciona para quem já tem conta E para novos usuários
+- [x] Testes: 9 casos cobrindo iPhone, iPad, Safari desktop, Chrome, Firefox, Edge, CriOS, Opera, navigator undefined
+- [x] 549 testes passando (25 arquivos)
