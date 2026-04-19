@@ -13,10 +13,10 @@ export function useUserPlan() {
   const { data: user } = trpc.auth.me.useQuery();
   const tier: PlanTier = (user as (typeof user & { planTier?: PlanTier }) | null)?.planTier ?? "free";
 
-  // isVip: usuário tem o Passe VIP do participante (R$4,90/mês)
+  // isVip: usuário tem o VIP do participante (R$4,90/mês)
   const isVip = tier === "vip";
   // isParticipantVip: qualquer tier que dá privilégios VIP de participante
-  // (pro e unlimited também incluem os benefícios do Passe VIP)
+  // (pro e unlimited também incluem os benefícios do VIP)
   const isParticipantVip = tier === "vip" || tier === "pro" || tier === "unlimited";
 
   return {

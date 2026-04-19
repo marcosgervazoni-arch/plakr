@@ -1,11 +1,11 @@
 /**
- * VipUpgradeBanner — CTA contextual do Passe VIP do Participante
+ * VipUpgradeBanner — CTA contextual do VIP
  *
  * Exibido em dois contextos:
  *  1. Análise de IA pré-jogo bloqueada (limite diário atingido)
  *  2. Duelos X1 bloqueados (limite de 5 ativos atingido)
  *
- * Ao clicar, inicia o checkout do Passe VIP via Stripe.
+ * Ao clicar, inicia o checkout do VIP via Stripe.
  * O checkout redireciona de volta para o bolão de origem após conclusão.
  */
 import { useState } from "react";
@@ -33,20 +33,20 @@ const VARIANT_CONFIG: Record<VipBannerVariant, {
   ai: {
     icon: <Sparkles className="w-4 h-4 text-yellow-400" />,
     title: "Limite de análises atingido",
-    description: "Você usou suas 3 análises de IA de hoje. Com o Passe VIP, análises ilimitadas todo dia.",
-    cta: "Ativar Passe VIP · R$4,90/mês",
+    description: "Você usou suas 3 análises de IA de hoje. Com o VIP, análises ilimitadas todo dia.",
+    cta: "Ativar VIP · R$4,90/mês",
   },
   x1: {
     icon: <Zap className="w-4 h-4 text-yellow-400" />,
     title: "Limite de Duelos atingido",
-    description: "Você atingiu o limite de 5 duelos ativos no Free. Com o Passe VIP, duelos ilimitados.",
-    cta: "Ativar Passe VIP · R$4,90/mês",
+    description: "Você atingiu o limite de 5 duelos ativos no Free. Com o VIP, duelos ilimitados.",
+    cta: "Ativar VIP · R$4,90/mês",
   },
   ads: {
     icon: <Sparkles className="w-4 h-4 text-yellow-400" />,
     title: "Experiência sem anúncios",
-    description: "Assine o Passe VIP e navegue sem nenhum anúncio em todos os bolões.",
-    cta: "Ativar Passe VIP · R$4,90/mês",
+    description: "Assine o VIP e navegue sem nenhum anúncio em todos os bolões.",
+    cta: "Ativar VIP · R$4,90/mês",
   },
 };
 

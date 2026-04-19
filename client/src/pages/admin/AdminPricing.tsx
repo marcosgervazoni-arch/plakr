@@ -496,11 +496,11 @@ export default function AdminPricing() {
             </div>
           </div>
         </PlanAccordion>
-        {/* ── Passe VIP do Participante ─────────────────────────── */}
+        {/* ── VIP ─────────────────────────── */}
         <PlanAccordion
           id="vip"
           icon={Star}
-          title="Passe VIP do Participante"
+          title="VIP"
           subtitle="Sem anúncios · IA ilimitada · Duelos X1 ilimitados · R$ 4,90/mês"
           accentColor="bg-yellow-500"
           badgeLabel="Participante"
@@ -514,11 +514,11 @@ export default function AdminPricing() {
               Price ID — Stripe
             </p>
             <PriceIdField
-              label="Passe VIP Mensal"
+              label="VIP Mensal"
               value={form.stripePriceIdVip}
               onChange={(v) => setField("stripePriceIdVip", v)}
               required
-              hint="Assinatura recorrente mensal para o Passe VIP do participante"
+              hint="Assinatura recorrente mensal para o VIP do participante"
             />
           </div>
 
@@ -530,7 +530,7 @@ export default function AdminPricing() {
               Preço exibido na tela de upgrade
             </p>
             <PriceField
-              label="Passe VIP Mensal"
+              label="VIP Mensal"
               value={form.stripeVipMonthlyPrice}
               onChange={(v) => setField("stripeVipMonthlyPrice", v)}
               placeholder="490"
@@ -540,7 +540,7 @@ export default function AdminPricing() {
 
           <div className="rounded-lg bg-yellow-500/5 border border-yellow-500/20 p-3 text-xs text-muted-foreground">
             <p className="font-medium text-yellow-400 mb-1">⚠️ Plano independente</p>
-            <p>O Passe VIP é exclusivo para participantes. Não dá poderes de organizador. O participante paga uma vez e tem os benefícios em todos os bolões que participar enquanto a assinatura estiver ativa.</p>
+            <p>O VIP é exclusivo para participantes. Não dá poderes de organizador. O participante paga uma vez e tem os benefícios em todos os bolões que participar enquanto a assinatura estiver ativa.</p>
           </div>
         </PlanAccordion>
 

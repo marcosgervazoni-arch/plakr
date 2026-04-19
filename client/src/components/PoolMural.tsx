@@ -337,7 +337,7 @@ function PostCard({
 export default function PoolMural({ poolSlug, poolId, isOrganizer }: PoolMuralProps) {
   const { user } = useAuth();
   const { isPro, isVip } = useUserPlan();
-  // VIP também não vê anúncios (promessa do Passe VIP: zero anúncios em todos os bolões)
+  // VIP também não vê anúncios (promessa do VIP: zero anúncios em todos os bolões)
   const hideAds = isPro || isVip;
   const utils = trpc.useUtils();
 

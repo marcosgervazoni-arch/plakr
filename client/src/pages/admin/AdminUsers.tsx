@@ -134,9 +134,9 @@ export default function AdminUsers() {
   const vipMutation = trpc.users.adminSetParticipantVip.useMutation({
     onSuccess: (data) => {
       if (data.action === "granted") {
-        toast.success(`Passe VIP concedido por ${vipDays} dias.`);
+        toast.success(`VIP concedido por ${vipDays} dias.`);
       } else {
-        toast.success("Passe VIP revogado.");
+        toast.success("VIP revogado.");
       }
       utils.users.getUserActivity.invalidate({ userId: selectedUser?.id ?? 0 });
     },
@@ -449,9 +449,9 @@ export default function AdminUsers() {
                         </div>
                       </div>
                       <Separator />
-                      {/* Passe VIP */}
+                      {/* VIP */}
                       <div className="space-y-3">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Passe VIP do Participante</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">VIP</p>
                         {userActivity?.plan?.plan === "vip" && userActivity?.plan?.isActive ? (
                           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
                             <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400 shrink-0" />
@@ -465,7 +465,7 @@ export default function AdminUsers() {
                             </div>
                           </div>
                         ) : (
-                          <p className="text-xs text-muted-foreground">Este participante não tem Passe VIP ativo.</p>
+                          <p className="text-xs text-muted-foreground">Este participante não tem VIP ativo.</p>
                         )}
                         <div className="space-y-1.5">
                           <Label className="text-xs">Duração (dias)</Label>

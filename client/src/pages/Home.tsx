@@ -218,6 +218,7 @@ function LandingPricingSection({
   const proAnnual = pricing?.proAnnualPrice ?? 39900;
   const unlimitedMonthly = pricing?.unlimitedMonthlyPrice ?? 8990;
   const unlimitedAnnual = pricing?.unlimitedAnnualPrice ?? 89900;
+  const vipMonthly = (pricing as any)?.vipMonthlyPrice ?? 490;
 
   const fmt = (cents: number) =>
     (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
@@ -413,6 +414,47 @@ function LandingPricingSection({
           </a>
         </div>
       </div>
+
+      {/* Card VIP — separado, para participantes */}
+      <div className="mt-8 max-w-sm mx-auto">
+        <div className="rounded-2xl p-6 relative overflow-hidden"
+          style={{ background: "#121826", border: "1px solid rgba(255,184,0,0.3)", boxShadow: "0 0 20px rgba(255,184,0,0.06)" }}>
+          <div className="absolute top-3 right-3">
+            <span className="px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1"
+              style={{ background: "rgba(255,184,0,0.12)", color: "#FFB800" }}>
+              <Star size={10} /> Para participantes
+            </span>
+          </div>
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-white mb-1">VIP</h3>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24 mt-1" style={{ background: "rgba(255,255,255,0.08)" }} />
+            ) : (
+              <div className="flex items-baseline gap-1">
+                <div className="text-3xl font-black" style={{ color: "#FFB800" }}>
+                  {fmt(vipMonthly)}
+                </div>
+                <span style={{ color: "#6B7280" }}>/mês</span>
+              </div>
+            )}
+            <p className="text-xs mt-1" style={{ color: "#6B7280" }}>Por conta. Vale em todos os bolões que você participar.</p>
+          </div>
+          <ul className="space-y-2 mb-5">
+            {["Sem anúncios", "Análise de IA ilimitada", "Duelos X1 ilimitados", "Badge VIP no perfil"].map((f) => (
+              <li key={f} className="flex items-center gap-2 text-sm">
+                <CheckCircle size={13} style={{ color: "#FFB800", flexShrink: 0 }} />
+                <span style={{ color: "#D1D5DB" }}>{f}</span>
+              </li>
+            ))}
+          </ul>
+          <a href={user ? "/upgrade#vip" : upgradeLoginUrl} className="block">
+            <Button className="w-full font-bold text-sm"
+              style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+              <Star size={13} className="mr-1.5" /> Ativar VIP
+            </Button>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
@@ -495,7 +537,7 @@ export default function Home() {
     { q: "O que são os duelos X1?", a: "Duelos X1 são desafios diretos entre dois participantes do mesmo bolão. Você desafia um rival e aposta quem vai pontuar mais em uma rodada ou jogo específico. É uma camada extra de competição dentro do bolão." },
     { q: "Como funciona o campeonato personalizado?", a: "Com o Pro, você cria seu próprio campeonato do zero: define os times, as fases (grupos, mata-mata), os jogos e insere os resultados manualmente. Ideal para campeonatos de bairro, empresa, família ou qualquer torneio que não esteja nos campeonatos globais." },
     { q: "O que é a taxa de inscrição?", a: "Com o plano Pro, o organizador pode definir um valor de entrada para o bolão. O sistema controla quem pagou e quem está pendente, diretamente na plataforma — sem precisar de planilha ou cobrança manual." },
-    { q: "O Passe VIP é diferente do plano Pro?", a: "Sim! O plano Pro é para quem organiza bolões. O Passe VIP é para participantes: remove os anúncios, libera análise de IA ilimitada e dá acesso antecipado a novas funcionalidades. São produtos complementares." },
+    { q: "O VIP é diferente do plano Pro?", a: "Sim! O plano Pro é para quem organiza bolões. O VIP é para participantes: remove os anúncios, libera análise de IA ilimitada e dá acesso antecipado a novas funcionalidades. São produtos complementares." },
     { q: "Preciso instalar algum aplicativo?", a: "Não! O Plakr! funciona direto no navegador, em qualquer dispositivo. Basta acessar o link do bolão e pronto." },
     { q: "Como os participantes entram no bolão?", a: "Você compartilha um link de convite ou um código de 6 dígitos. Quem receber o link entra diretamente no bolão, sem precisar criar conta previamente." },
   ];
@@ -825,7 +867,7 @@ export default function Home() {
               <h3 className="text-xl font-black text-white mb-2">Aposte com mais inteligência. Ganhe com mais estilo.</h3>
               <p className="text-sm leading-relaxed mb-6" style={{ color: "#9CA3AF" }}>
                 Palpite com análises de IA antes de cada jogo. Desafie rivais em duelos X1.
-                Colecione badges e dispute o topo do ranking. Com o Passe VIP, sem anúncios e com IA ilimitada.
+                Colecione badges e dispute o topo do ranking. Com o VIP, sem anúncios e com IA ilimitada.
               </p>
               <ul className="space-y-3 mb-8">
                 {[
@@ -833,7 +875,7 @@ export default function Home() {
                   { icon: Swords, text: "Duelos X1: desafie quem você quiser dentro do bolão" },
                   { icon: Award, text: "Badges e conquistas por desempenho" },
                   { icon: Globe, text: "Campeonatos globais: Copa do Mundo, Brasileirão, Champions" },
-                  { icon: Star, text: "Passe VIP: sem anúncios, IA ilimitada, acesso antecipado" },
+                  { icon: Star, text: "VIP: sem anúncios, IA ilimitada, acesso antecipado" },
                 ].map(({ icon: Icon, text }) => (
                   <li key={text} className="flex items-center gap-3 text-sm">
                     <Icon size={15} style={{ color: "#FFB800", flexShrink: 0 }} />
@@ -845,7 +887,7 @@ export default function Home() {
                 <button className="w-full flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg transition-all hover:opacity-90"
                   style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.4)", color: "#FFB800" }}>
                   <Star size={16} />
-                  Ativar Passe VIP
+                  Ativar VIP
                 </button>
               </a>
             </div>

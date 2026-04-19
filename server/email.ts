@@ -668,7 +668,7 @@ export async function sendPlanExpiryWarnings(): Promise<void> {
         if (!plan.userEmail) continue;
 
         const isVipPlan = plan.plan === "vip";
-        const planLabel = isVipPlan ? "Passe VIP" : plan.plan === "unlimited" ? "Plano Ilimitado" : "Plano Pro";
+        const planLabel = isVipPlan ? "VIP" : plan.plan === "unlimited" ? "Plano Ilimitado" : "Plano Pro";
         const expiresAtStr = plan.expiresAt
           ? new Date(plan.expiresAt as Date).toLocaleDateString("pt-BR", {
               day: "2-digit",
@@ -1002,16 +1002,16 @@ export async function scheduleRoundReminders(): Promise<void> {
   }
 }
 
-// ─── Template: Confirmação de ativação do Passe VIP ──────────────────────────
+// ─── Template: Confirmação de ativação do VIP ──────────────────────────
 export function templateVipActivated(opts: {
   name: string;
   expiresAt: string;
 }): { subject: string; html: string } {
   return {
-    subject: `⭐ Passe VIP ativado — bem-vindo à experiência premium!`,
-    html: baseTemplate("Passe VIP Ativado", `
-      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">⭐ Seu Passe VIP está ativo!</h2>
-      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu Passe VIP foi ativado com sucesso. Aproveite todos os benefícios exclusivos até <strong style="color:${GOLD};">${esc(opts.expiresAt)}</strong>.</p>
+    subject: `⭐ VIP ativado — bem-vindo à experiência premium!`,
+    html: baseTemplate("VIP Ativado", `
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">⭐ Seu VIP está ativo!</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu VIP foi ativado com sucesso. Aproveite todos os benefícios exclusivos até <strong style="color:${GOLD};">${esc(opts.expiresAt)}</strong>.</p>
 
       <div style="background:${SURFACE2};border-radius:12px;padding:20px 24px;margin-bottom:24px;border:1px solid rgba(255,184,0,0.3);">
         <p style="margin:0 0 14px;font-weight:700;font-size:14px;color:${GOLD};">✨ Seus benefícios VIP:</p>
@@ -1022,12 +1022,12 @@ export function templateVipActivated(opts: {
       </div>
 
       ${ctaButton("Acessar o Plakr!", `${ENV.appBaseUrl}/`)}
-      <p style="margin:16px 0 0;font-size:12px;color:${MUTED2};">Seu Passe VIP renova automaticamente todo mês. Para cancelar, acesse Configurações → Minha Assinatura.</p>
+      <p style="margin:16px 0 0;font-size:12px;color:${MUTED2};">Seu VIP renova automaticamente todo mês. Para cancelar, acesse Configurações → Minha Assinatura.</p>
     `),
   };
 }
 
-// ─── Template: Aviso de expiração do Passe VIP ───────────────────────────────
+// ─── Template: Aviso de expiração do VIP ───────────────────────────────
 export function templateVipExpiring(opts: {
   name: string;
   daysLeft: number;
@@ -1035,10 +1035,10 @@ export function templateVipExpiring(opts: {
 }): { subject: string; html: string } {
   const urgency = opts.daysLeft === 1 ? "🚨 Último dia" : `⚠️ ${opts.daysLeft} dias restantes`;
   return {
-    subject: `${urgency} — Seu Passe VIP expira em breve`,
-    html: baseTemplate("Passe VIP Expirando", `
-      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">${urgency} do Passe VIP</h2>
-      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu Passe VIP expira em <strong style="color:${GOLD};">${esc(opts.expiresAt)}</strong>. Renove agora para continuar sem anúncios e com IA ilimitada.</p>
+    subject: `${urgency} — Seu VIP expira em breve`,
+    html: baseTemplate("VIP Expirando", `
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">${urgency} do VIP</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu VIP expira em <strong style="color:${GOLD};">${esc(opts.expiresAt)}</strong>. Renove agora para continuar sem anúncios e com IA ilimitada.</p>
 
       <div style="background:${SURFACE2};border-radius:12px;padding:20px 24px;margin-bottom:24px;">
         <p style="margin:0 0 14px;font-weight:700;font-size:14px;color:${TEXT};">O que você perde sem o VIP:</p>
@@ -1048,20 +1048,20 @@ export function templateVipExpiring(opts: {
         <p style="margin:0;font-size:13px;color:${ERROR};">❌ Badge VIP removido do perfil</p>
       </div>
 
-      ${ctaButton("Renovar Passe VIP", `${ENV.appBaseUrl}/upgrade`)}
+      ${ctaButton("Renovar VIP", `${ENV.appBaseUrl}/upgrade`)}
     `),
   };
 }
 
-// ─── Template: Cancelamento/expiração do Passe VIP ───────────────────────────
+// ─── Template: Cancelamento/expiração do VIP ───────────────────────────
 export function templateVipCancelled(opts: {
   name: string;
 }): { subject: string; html: string } {
   return {
-    subject: `Seu Passe VIP foi cancelado`,
-    html: baseTemplate("Passe VIP Cancelado", `
-      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">Passe VIP cancelado</h2>
-      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu Passe VIP foi cancelado. Você pode reativar a qualquer momento para voltar a ter a experiência premium.</p>
+    subject: `Seu VIP foi cancelado`,
+    html: baseTemplate("VIP Cancelado", `
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">VIP cancelado</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu VIP foi cancelado. Você pode reativar a qualquer momento para voltar a ter a experiência premium.</p>
 
       <div style="background:${SURFACE2};border-radius:12px;padding:20px 24px;margin-bottom:24px;">
         <p style="margin:0 0 14px;font-weight:700;font-size:14px;color:${MUTED};">Você perdeu acesso a:</p>
@@ -1070,7 +1070,7 @@ export function templateVipCancelled(opts: {
         <p style="margin:0;font-size:13px;color:${MUTED};">⚡ Desafios X1 ilimitados</p>
       </div>
 
-      ${ctaButton("Reativar Passe VIP", `${ENV.appBaseUrl}/upgrade`)}
+      ${ctaButton("Reativar VIP", `${ENV.appBaseUrl}/upgrade`)}
       <p style="margin:16px 0 0;font-size:12px;color:${MUTED2};">Sentimos sua falta! Se tiver alguma dúvida, entre em contato conosco.</p>
     `),
   };

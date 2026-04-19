@@ -77,7 +77,7 @@ const UNLIMITED_FEATURES = [
   { icon: Sparkles, label: "API de resultados automática (em breve)" },
 ];
 
-// Features do Passe VIP do Participante
+// Features do VIP
 const VIP_FEATURES = [
   { icon: Zap, label: "Zero anúncios em todos os bolões" },
   { icon: Sparkles, label: "Análise de IA pré-jogo ilimitada" },
@@ -110,16 +110,16 @@ const FAQ = [
     a: "Sim! Você pode criar bolões gratuitos e explorar a plataforma sem custo. O upgrade é opcional e pode ser feito a qualquer momento.",
   },
   {
-    q: "O que é o Passe VIP do Participante?",
-    a: "O Passe VIP é uma assinatura para quem participa de bolões como apostador. Com ele você navega sem nenhum anúncio, tem análises de IA ilimitadas antes de cada jogo e pode criar duelos X1 ilimitados — tudo isso em qualquer bolão que você participar.",
+    q: "O que é o VIP?",
+    a: "O VIP é uma assinatura para quem participa de bolões como apostador. Com ele você navega sem nenhum anúncio, tem análises de IA ilimitadas antes de cada jogo e pode criar duelos X1 ilimitados — tudo isso em qualquer bolão que você participar.",
   },
   {
-    q: "O Passe VIP vale em todos os bolões?",
-    a: "Sim! O Passe VIP é vinculado à sua conta, não a um bolão específico. Todos os bolões que você participar como apostador terão os benefícios VIP automaticamente.",
+    q: "O VIP vale em todos os bolões?",
+    a: "Sim! O VIP é vinculado à sua conta, não a um bolão específico. Todos os bolões que você participar como apostador terão os benefícios VIP automaticamente.",
   },
   {
-    q: "Como cancelo o Passe VIP?",
-    a: "Você pode cancelar a qualquer momento pelo portal de assinatura Stripe (acesse Configurações → Minha Assinatura). Seu Passe VIP continuará ativo até o fim do período pago.",
+    q: "Como cancelo o VIP?",
+    a: "Você pode cancelar a qualquer momento pelo portal de assinatura Stripe (acesse Configurações → Minha Assinatura). Seu VIP continuará ativo até o fim do período pago.",
   },
 ];
 
@@ -244,12 +244,12 @@ export default function UpgradePage() {
   const maxSaving = Math.max(proSaving, unlimitedSaving);
   const annualSavingLabel = maxSaving > 0 ? `-${maxSaving}%` : undefined;
 
-  // Checkout do Passe VIP
+  // Checkout do VIP
   const vipCheckoutMutation = trpc.stripe.createVipCheckout.useMutation({
     onSuccess: ({ checkoutUrl }) => {
       if (checkoutUrl) {
         window.open(checkoutUrl, "_blank");
-        toast.success("Redirecionando para o checkout do Passe VIP...");
+        toast.success("Redirecionando para o checkout do VIP...");
       }
     },
     onError: (err) => toast.error(err.message || "Erro ao iniciar checkout VIP."),
@@ -357,10 +357,10 @@ export default function UpgradePage() {
               <Star className="w-3 h-3 mr-1.5" /> Para participantes
             </Badge>
             <h2 className="font-bold text-xl" style={{ fontFamily: "'Syne', sans-serif" }}>
-              Passe VIP do Participante
+              VIP
             </h2>
             <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-              Você participa de bolões mas não organiza? O Passe VIP melhora sua experiência em qualquer bolão — sem anúncios, IA ilimitada e duelos sem restrição.
+              Você participa de bolões mas não organiza? O VIP melhora sua experiência em qualquer bolão — sem anúncios, IA ilimitada e duelos sem restrição.
             </p>
           </div>
 
@@ -371,7 +371,7 @@ export default function UpgradePage() {
               </Badge>
             </div>
             <div>
-              <p className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>Passe VIP</p>
+              <p className="font-bold text-lg" style={{ fontFamily: "'Syne', sans-serif" }}>VIP</p>
               <div className="flex items-end gap-1 mt-1">
                 {loadingPrices ? (
                   <PriceSkeleton />
@@ -400,7 +400,7 @@ export default function UpgradePage() {
             {!isAuthenticated ? (
               <a href={getLoginUrl("/upgrade")}>
                 <Button className="w-full gap-2 bg-yellow-500 hover:bg-yellow-400 text-black">
-                  <Star className="w-4 h-4" /> Ativar Passe VIP
+                  <Star className="w-4 h-4" /> Ativar VIP
                 </Button>
               </a>
             ) : currentTier === "vip" ? (
@@ -433,7 +433,7 @@ export default function UpgradePage() {
                 ) : (
                   <Star className="w-4 h-4" />
                 )}
-                Ativar Passe VIP
+                Ativar VIP
               </Button>
             )}
           </div>
@@ -709,7 +709,7 @@ export default function UpgradePage() {
             >
               Comparação detalhada
             </h2>
-            <p className="text-xs text-muted-foreground mt-1">Planos do Organizador vs Passe VIP do Participante</p>
+            <p className="text-xs text-muted-foreground mt-1">Planos do Organizador vs VIP</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

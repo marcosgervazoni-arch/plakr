@@ -27,8 +27,8 @@ export const STRIPE_PRODUCTS = {
     annualAmount: 89900,   // R$ 899,00
   },
   vip: {
-    name: "Plakr! Passe VIP",
-    description: "Passe VIP do Participante — IA ilimitada pré-jogo, zero anúncios, Duelos X1 ilimitados. Válido em todos os bolões.",
+    name: "Plakr! VIP",
+    description: "VIP — IA ilimitada pré-jogo, zero anúncios, Duelos X1 ilimitados. Válido em todos os bolões.",
     priceIdMonthly: process.env.STRIPE_VIP_PRICE_ID ?? "",
     monthlyAmount: 490,   // R$ 4,90
   },

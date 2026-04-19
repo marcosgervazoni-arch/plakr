@@ -69,9 +69,9 @@ export function registerStripeWebhook(app: Express) {
                 isActive: true,
               });
 
-              const tierLabel = tier === "unlimited" ? "Ilimitado" : tier === "vip" ? "Passe VIP" : "Pro";
+              const tierLabel = tier === "unlimited" ? "Ilimitado" : tier === "vip" ? "VIP" : "Pro";
               const tierMsg = tier === "vip"
-                ? "Seu Passe VIP está ativo! Aproveite IA ilimitada, zero anúncios e Duelos X1 ilimitados em todos os bolões."
+                ? "Seu VIP está ativo! Aproveite IA ilimitada, zero anúncios e Duelos X1 ilimitados em todos os bolões."
                 : `Sua conta foi atualizada para o Plano ${tierLabel}. Aproveite todos os recursos avançados!`;
               await createNotification({
                 userId,
@@ -244,7 +244,7 @@ export function registerStripeWebhook(app: Express) {
                   isActive: true,
                 });
 
-                const tierLabel = tier === "unlimited" ? "Ilimitado" : tier === "vip" ? "Passe VIP" : "Pro";
+                const tierLabel = tier === "unlimited" ? "Ilimitado" : tier === "vip" ? "VIP" : "Pro";
                 const expiryFormatted = newExpiry.toLocaleDateString("pt-BR");
                 await createNotification({
                   userId,

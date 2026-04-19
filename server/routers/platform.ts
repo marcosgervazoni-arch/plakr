@@ -45,7 +45,7 @@ export const platformRouter = router({
       proAnnualPrice: (settings as any)?.stripeProAnnualPrice ?? 39900,
       unlimitedMonthlyPrice: (settings as any)?.stripeUnlimitedMonthlyPrice ?? 8990,
       unlimitedAnnualPrice: (settings as any)?.stripeUnlimitedAnnualPrice ?? 89900,
-      // Passe VIP do Participante (R$4,90/mês por padrão)
+      // VIP (R$4,90/mês por padrão)
       vipMonthlyPrice: (settings as any)?.stripeVipMonthlyPrice ?? 490,
     };
   }),

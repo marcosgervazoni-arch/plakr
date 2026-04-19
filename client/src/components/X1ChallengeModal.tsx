@@ -307,11 +307,11 @@ export default function X1ChallengeModal({
                 <p className="text-sm font-semibold">Limite de duelos atingido</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Você já tem {options.activeCount} de {options.planLimit} X1s ativos.
-                  Ative o Passe VIP para duelos ilimitados.
+                  Ative o VIP para duelos ilimitados.
                 </p>
               </div>
               <div className="rounded-xl border border-[#FFB800]/30 bg-[#FFB800]/5 p-3 text-left space-y-2">
-                <p className="text-xs font-semibold text-[#FFB800]">Passe VIP</p>
+                <p className="text-xs font-semibold text-[#FFB800]">VIP</p>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   <li>✓ Duelos X1 ilimitados</li>
                   <li>✓ Análise de IA ilimitada</li>
@@ -326,7 +326,7 @@ export default function X1ChallengeModal({
                   window.location.href = "/upgrade#vip";
                 }}
               >
-                Ativar Passe VIP
+                Ativar VIP
               </Button>
             </div>
           )}

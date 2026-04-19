@@ -184,7 +184,7 @@ export async function getUserPlanTier(userId: number): Promise<"free" | "pro" | 
 }
 
 /**
- * Retorna true se o usuário tem Passe VIP ativo.
+ * Retorna true se o usuário tem VIP ativo.
  * VIP é o tier exclusivo do participante (R$4,90/mês).
  */
 export async function isUserVip(userId: number): Promise<boolean> {

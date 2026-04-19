@@ -122,7 +122,7 @@ export const platformSettings = mysqlTable("platform_settings", {
   stripePriceIdProAnnual: varchar("stripePriceIdProAnnual", { length: 128 }),
   stripePriceIdUnlimited: varchar("stripePriceIdUnlimited", { length: 128 }),
   stripePriceIdUnlimitedAnnual: varchar("stripePriceIdUnlimitedAnnual", { length: 128 }),
-  stripePriceIdVip: varchar("stripePriceIdVip", { length: 128 }),      // Passe VIP do Participante (R$ 4,90/mês)
+  stripePriceIdVip: varchar("stripePriceIdVip", { length: 128 }),      // VIP (R$ 4,90/mês)
   stripeVipMonthlyPrice: int("stripeVipMonthlyPrice").default(490),     // R$ 4,90 em centavos
   stripeMonthlyPrice: int("stripeMonthlyPrice").default(3990),
   stripeProAnnualPrice: int("stripeProAnnualPrice").default(39900),

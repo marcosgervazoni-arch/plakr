@@ -84,7 +84,7 @@ export const stripeRouter = router({
     }),
 
   /**
-   * Criar sessão de checkout para o Passe VIP do Participante (R$4,90/mês).
+   * Criar sessão de checkout para o VIP (R$4,90/mês).
    * Independente do plano de organizador — válido em todos os bolões.
    */
   createVipCheckout: protectedProcedure
@@ -98,7 +98,7 @@ export const stripeRouter = router({
       if (currentTier === "vip") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Você já possui o Passe VIP ativo.",
+          message: "Você já possui o VIP ativo.",
         });
       }
 
@@ -114,7 +114,7 @@ export const stripeRouter = router({
 
       if (!priceId) {
         throw Err.internal(
-          "Price ID do Passe VIP não configurado. Acesse Admin → Configurações e insira o Price ID do Stripe para o VIP."
+          "Price ID do VIP não configurado. Acesse Admin → Configurações e insira o Price ID do Stripe para o VIP."
         );
       }
 

@@ -1,5 +1,5 @@
 /**
- * Testes do Passe VIP do Participante
+ * Testes do VIP
  *
  * Cobre:
  *  1. getUserPlanTier retorna "vip" para usuário com plano vip
@@ -43,7 +43,7 @@ vi.mock("../shared/plans", async (importOriginal) => {
 
 // ─── Testes ───────────────────────────────────────────────────────────────────
 
-describe("Passe VIP — Limites de Participante", () => {
+describe("VIP — Limites de Participante", () => {
   it("Free tem 3 análises de IA por dia", async () => {
     const { PARTICIPANT_LIMITS } = await import("../shared/plans");
     expect(PARTICIPANT_LIMITS.free.dailyAiAnalysis).toBe(3);
@@ -75,7 +75,7 @@ describe("Passe VIP — Limites de Participante", () => {
   });
 });
 
-describe("Passe VIP — tier vip tratado como free para organizador", () => {
+describe("VIP — tier vip tratado como free para organizador", () => {
   it("organizerTier de vip é free (não tem privilégios de organizador)", () => {
     // Simula a lógica de normalização de tier em canCreatePool/canAddMember
     const normalizeTier = (tier: string): "free" | "pro" | "unlimited" =>
@@ -102,7 +102,7 @@ describe("Passe VIP — tier vip tratado como free para organizador", () => {
   });
 });
 
-describe("Passe VIP — isParticipantVip helper", () => {
+describe("VIP — isParticipantVip helper", () => {
   it("retorna true para tier vip", async () => {
     const { isParticipantVip } = await import("../shared/plans");
     expect(isParticipantVip("vip")).toBe(true);
@@ -114,7 +114,7 @@ describe("Passe VIP — isParticipantVip helper", () => {
   });
 });
 
-describe("Passe VIP — getParticipantLimits", () => {
+describe("VIP — getParticipantLimits", () => {
   it("retorna limites corretos para free", async () => {
     const { getParticipantLimits } = await import("../shared/plans");
     const limits = getParticipantLimits("free");
@@ -132,7 +132,7 @@ describe("Passe VIP — getParticipantLimits", () => {
   });
 });
 
-describe("Passe VIP — contador de IA server-side", () => {
+describe("VIP — contador de IA server-side", () => {
   it("limite diário de IA para Free é 3", async () => {
     const { PARTICIPANT_LIMITS } = await import("../shared/plans");
     expect(PARTICIPANT_LIMITS.free.dailyAiAnalysis).toBe(3);
@@ -177,7 +177,7 @@ describe("Passe VIP — contador de IA server-side", () => {
   });
 });
 
-describe("Passe VIP — supressão de anúncios", () => {
+describe("VIP — supressão de anúncios", () => {
   it("Free vê anúncios (noAds=false)", async () => {
     const { PARTICIPANT_LIMITS } = await import("../shared/plans");
     expect(PARTICIPANT_LIMITS.free.noAds).toBe(false);
