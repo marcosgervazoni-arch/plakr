@@ -1,8 +1,11 @@
 /**
  * Plakr! — Serviço de E-mail
  * Usa SMTP da Hostinger (nodemailer) para envio de e-mails transacionais.
- * Templates HTML responsivos para: boas-vindas, lembrete de palpite,
- * resultado disponível, expiração de plano Pro e convite de bolão.
+ * Templates HTML responsivos com identidade visual oficial Plakr!:
+ *   - Fundo: #0B0F1A (primário) / #121826 (superfície)
+ *   - Dourado: #FFB800 → #FF8A00 (gradiente CTA)
+ *   - Sucesso: #00FF88 | Erro: #FF3B3B | Info: #00C2FF
+ *   - Texto: #F5F5F5 | Muted: #9CA3AF
  */
 import nodemailer from "nodemailer";
 import { ENV } from "./_core/env";
@@ -12,7 +15,7 @@ import { resolveNotificationTemplate } from "./notificationTemplateHelper";
 import { emailQueue, users, games, userPlans, pools, poolMembers } from "../drizzle/schema";
 import { eq, and, lte, gte, sql } from "drizzle-orm";
 
-// ─── HTML escape (S6: previne XSS em dados de usuário interpolados nos templates) ─
+// ─── HTML escape (previne XSS em dados de usuário interpolados nos templates) ─
 function esc(str: string): string {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -22,13 +25,19 @@ function esc(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
-// ─── Brand colors ────────────────────────────────────────────────────────────
-const BRAND = "#22c55e";
-const BRAND_DARK = "#16a34a";
-const BG = "#0a0a0a";
-const SURFACE = "#111111";
-const TEXT = "#f5f5f5";
-const MUTED = "#a3a3a3";
+// ─── Brand colors (Identidade Visual Plakr!) ─────────────────────────────────
+const BG        = "#0B0F1A";   // fundo principal
+const SURFACE   = "#121826";   // cards e superfícies
+const SURFACE2  = "#1A2235";   // superfície secundária (destaques internos)
+const BORDER    = "rgba(255,255,255,0.08)";
+const GOLD      = "#FFB800";   // dourado principal
+const GOLD2     = "#FF8A00";   // dourado gradiente
+const SUCCESS   = "#00FF88";   // verde sucesso
+const ERROR     = "#FF3B3B";   // vermelho erro
+const INFO      = "#00C2FF";   // azul info
+const TEXT      = "#F5F5F5";   // texto principal
+const MUTED     = "#9CA3AF";   // texto secundário
+const MUTED2    = "#6B7280";   // texto terciário
 
 // ─── Base HTML template ───────────────────────────────────────────────────────
 function baseTemplate(title: string, content: string): string {
@@ -44,38 +53,47 @@ function baseTemplate(title: string, content: string): string {
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
           <!-- Header -->
           <tr>
-            <td style="background:${SURFACE};border-radius:16px 16px 0 0;padding:28px 32px;border-bottom:1px solid #1f1f1f;">
+            <td style="background:${SURFACE};border-radius:16px 16px 0 0;padding:24px 32px;border-bottom:1px solid ${BORDER};">
               <table width="100%">
                 <tr>
                   <td>
-                    <span style="font-size:22px;font-weight:800;color:${BRAND};letter-spacing:-0.5px;">Apost<span style="color:${TEXT};">AI</span></span>
+                    <!-- Logo Plakr! -->
+                    <span style="font-size:24px;font-weight:900;letter-spacing:-0.5px;">
+                      <span style="background:linear-gradient(135deg,${GOLD},${GOLD2});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Plakr</span><span style="color:${TEXT};">!</span>
+                    </span>
                   </td>
                   <td align="right">
-                    <span style="font-size:12px;color:${MUTED};">Plataforma de Bolões Esportivos</span>
+                    <span style="font-size:11px;color:${MUTED2};letter-spacing:0.5px;text-transform:uppercase;">Bolões Esportivos</span>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
+
           <!-- Content -->
           <tr>
-            <td style="background:${SURFACE};padding:32px 32px 24px;">
+            <td style="background:${SURFACE};padding:32px 32px 28px;">
               ${content}
             </td>
           </tr>
+
           <!-- Footer -->
           <tr>
-            <td style="background:#0d0d0d;border-radius:0 0 16px 16px;padding:20px 32px;border-top:1px solid #1f1f1f;">
-              <p style="margin:0;font-size:12px;color:${MUTED};text-align:center;">
-                Você está recebendo este e-mail porque tem uma conta no Plakr!.<br/>
-                <a href="${ENV.appBaseUrl}" style="color:${BRAND};text-decoration:none;">Acessar plataforma</a>
-                &nbsp;·&nbsp;
-                <a href="${ENV.appBaseUrl}/settings/notifications" style="color:${MUTED};text-decoration:none;">Gerenciar notificações</a>
+            <td style="background:#0D1120;border-radius:0 0 16px 16px;padding:20px 32px;border-top:1px solid ${BORDER};">
+              <p style="margin:0 0 8px;font-size:12px;color:${MUTED2};text-align:center;line-height:1.6;">
+                Você está recebendo este e-mail porque tem uma conta no Plakr!.
+              </p>
+              <p style="margin:0;font-size:12px;text-align:center;">
+                <a href="${ENV.appBaseUrl}" style="color:${GOLD};text-decoration:none;font-weight:600;">Acessar plataforma</a>
+                <span style="color:${MUTED2};margin:0 8px;">·</span>
+                <a href="${ENV.appBaseUrl}/settings/notifications" style="color:${MUTED2};text-decoration:none;">Gerenciar notificações</a>
               </p>
             </td>
           </tr>
+
         </table>
       </td>
     </tr>
@@ -84,25 +102,66 @@ function baseTemplate(title: string, content: string): string {
 </html>`;
 }
 
-// ─── Button helper ────────────────────────────────────────────────────────────
+// ─── CTA Button helper ────────────────────────────────────────────────────────
 function ctaButton(text: string, url: string): string {
-  return `<a href="${url}" style="display:inline-block;background:${BRAND};color:#000;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;margin-top:8px;">${text}</a>`;
+  return `<a href="${url}" style="display:inline-block;background:linear-gradient(135deg,${GOLD},${GOLD2});color:#0B0F1A;font-weight:800;font-size:14px;padding:14px 32px;border-radius:10px;text-decoration:none;margin-top:8px;letter-spacing:0.2px;">${text}</a>`;
+}
+
+// ─── Divider helper ───────────────────────────────────────────────────────────
+function divider(): string {
+  return `<div style="height:1px;background:${BORDER};margin:24px 0;"></div>`;
+}
+
+// ─── Info box helper ──────────────────────────────────────────────────────────
+function infoBox(content: string, color: string = GOLD): string {
+  return `<div style="background:${SURFACE2};border-left:3px solid ${color};border-radius:0 8px 8px 0;padding:16px 20px;margin:16px 0;">${content}</div>`;
+}
+
+// ─── Template: Magic Link ─────────────────────────────────────────────────────
+export function templateMagicLink(opts: {
+  name: string;
+  magicUrl: string;
+  expiresMinutes?: number;
+}): { subject: string; html: string } {
+  const minutes = opts.expiresMinutes ?? 15;
+  return {
+    subject: "🔑 Seu link de acesso ao Plakr! chegou",
+    html: baseTemplate("Acesso ao Plakr!", `
+      <h2 style="margin:0 0 6px;font-size:24px;font-weight:800;color:${TEXT};">Seu link de acesso chegou! 🔑</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Clique no botão abaixo para entrar no Plakr! sem precisar de senha.</p>
+
+      ${infoBox(`
+        <p style="margin:0 0 6px;font-size:13px;color:${MUTED};">⏱ Este link expira em <strong style="color:${GOLD};">${minutes} minutos</strong> e só pode ser usado uma vez.</p>
+        <p style="margin:0;font-size:13px;color:${MUTED};">Se você não solicitou este acesso, ignore este e-mail com segurança.</p>
+      `, INFO)}
+
+      <div style="margin-top:24px;">
+        ${ctaButton("✅ Entrar no Plakr!", opts.magicUrl)}
+      </div>
+
+      ${divider()}
+      <p style="margin:0;font-size:12px;color:${MUTED2};">Se o botão não funcionar, copie e cole este link no navegador:</p>
+      <p style="margin:6px 0 0;font-size:11px;word-break:break-all;"><a href="${opts.magicUrl}" style="color:${GOLD};text-decoration:none;">${opts.magicUrl}</a></p>
+    `),
+  };
 }
 
 // ─── Template: Boas-vindas ────────────────────────────────────────────────────
 export function templateWelcome(name: string): { subject: string; html: string } {
   return {
-    subject: "Bem-vindo ao Plakr!! 🏆",
+    subject: "🏆 Bem-vindo ao Plakr!! Sua conta está pronta",
     html: baseTemplate("Bem-vindo ao Plakr!", `
-      <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:${TEXT};">Olá, ${esc(name)}! 👋</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Sua conta no Plakr! foi criada com sucesso. Agora você pode participar de bolões esportivos, fazer seus palpites e disputar o ranking com amigos.</p>
-      <div style="background:#0d0d0d;border-radius:12px;padding:20px;margin-bottom:24px;">
-        <p style="margin:0 0 12px;font-weight:600;color:${TEXT};">O que você pode fazer:</p>
-        <p style="margin:0 0 8px;color:${MUTED};">✅ Entrar em bolões via link de convite ou código</p>
-        <p style="margin:0 0 8px;color:${MUTED};">⚽ Fazer palpites nos jogos antes do prazo</p>
-        <p style="margin:0 0 8px;color:${MUTED};">🏅 Acompanhar o ranking em tempo real</p>
-        <p style="margin:0;color:${MUTED};">🎯 Criar seu próprio bolão (Plano Gratuito: 2 bolões, 50 participantes)</p>
+      <h2 style="margin:0 0 6px;font-size:24px;font-weight:800;color:${TEXT};">Olá, ${esc(name)}! 👋</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Sua conta no <strong style="color:${TEXT};">Plakr!</strong> foi criada com sucesso. Agora você pode participar de bolões esportivos, fazer seus palpites e disputar o ranking com amigos.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+        <p style="margin:0 0 14px;font-weight:700;font-size:14px;color:${TEXT};">O que você pode fazer agora:</p>
+        <p style="margin:0 0 10px;color:${MUTED};font-size:13px;">🏅 <strong style="color:${TEXT};">Entrar em bolões</strong> via link de convite ou código</p>
+        <p style="margin:0 0 10px;color:${MUTED};font-size:13px;">⚽ <strong style="color:${TEXT};">Fazer palpites</strong> nos jogos antes do prazo</p>
+        <p style="margin:0 0 10px;color:${MUTED};font-size:13px;">📊 <strong style="color:${TEXT};">Acompanhar o ranking</strong> em tempo real</p>
+        <p style="margin:0;color:${MUTED};font-size:13px;">🎯 <strong style="color:${TEXT};">Criar seu bolão</strong> (Plano Gratuito: 2 bolões, 50 participantes)</p>
       </div>
+
       ${ctaButton("Acessar minha conta", ENV.appBaseUrl)}
     `),
   };
@@ -118,18 +177,23 @@ export function templateBetReminder(opts: {
   matchTime: string;
   minutesLeft: number;
 }): { subject: string; html: string } {
-  const urgency = opts.minutesLeft <= 30 ? "🚨 Urgente" : "⏰ Lembrete";
+  const isUrgent = opts.minutesLeft <= 30;
+  const urgencyLabel = isUrgent ? "🚨 Urgente" : "⏰ Lembrete";
+  const timeColor = isUrgent ? ERROR : GOLD;
   return {
-    subject: `${urgency}: Faça seu palpite em ${opts.homeTeam} x ${opts.awayTeam}`,
+    subject: `${urgencyLabel}: Faça seu palpite em ${opts.homeTeam} × ${opts.awayTeam}`,
     html: baseTemplate("Lembrete de Palpite", `
-      <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">${urgency}: Palpite pendente!</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.name)}! O prazo para palpitar no jogo abaixo está se encerrando.</p>
-      <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;">
-        <p style="margin:0 0 4px;font-size:12px;color:${MUTED};text-transform:uppercase;letter-spacing:1px;">Bolão: ${esc(opts.poolName)}</p>
-        <p style="margin:0 0 16px;font-size:22px;font-weight:800;color:${TEXT};">${esc(opts.homeTeam)} <span style="color:${BRAND};">×</span> ${esc(opts.awayTeam)}</p>
-        <p style="margin:0 0 4px;font-size:13px;color:${MUTED};">Início: ${opts.matchTime}</p>
-        <p style="margin:0;font-size:13px;color:${opts.minutesLeft <= 30 ? "#ef4444" : "#f59e0b"};font-weight:600;">⏱ ${opts.minutesLeft} minutos restantes para palpitar</p>
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">${urgencyLabel}: Palpite pendente!</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! O prazo para palpitar no jogo abaixo está se encerrando.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;border:1px solid ${BORDER};">
+        <p style="margin:0 0 4px;font-size:11px;color:${MUTED2};text-transform:uppercase;letter-spacing:1px;">Bolão</p>
+        <p style="margin:0 0 16px;font-size:14px;font-weight:600;color:${GOLD};">${esc(opts.poolName)}</p>
+        <p style="margin:0 0 16px;font-size:26px;font-weight:900;color:${TEXT};">${esc(opts.homeTeam)} <span style="color:${GOLD};">×</span> ${esc(opts.awayTeam)}</p>
+        <p style="margin:0 0 6px;font-size:13px;color:${MUTED};">Início: <strong style="color:${TEXT};">${opts.matchTime}</strong></p>
+        <p style="margin:0;font-size:14px;font-weight:700;color:${timeColor};">⏱ ${opts.minutesLeft} minutos restantes para palpitar</p>
       </div>
+
       ${ctaButton("Fazer meu palpite agora", `${ENV.appBaseUrl}/pool/${opts.poolSlug}`)}
     `),
   };
@@ -147,17 +211,25 @@ export function templateResultAvailable(opts: {
   pointsEarned: number;
   betDescription: string;
 }): { subject: string; html: string } {
-  const emoji = opts.pointsEarned >= 10 ? "🎯" : opts.pointsEarned >= 5 ? "✅" : "❌";
+  const isGreat = opts.pointsEarned >= 10;
+  const isOk = opts.pointsEarned >= 5;
+  const emoji = isGreat ? "🎯" : isOk ? "✅" : "❌";
+  const ptsColor = isGreat ? SUCCESS : isOk ? GOLD : ERROR;
   return {
     subject: `${emoji} Resultado: ${opts.homeTeam} ${opts.homeScore}×${opts.awayScore} ${opts.awayTeam} — ${opts.pointsEarned}pts`,
     html: baseTemplate("Resultado do Jogo", `
-      <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">Resultado apurado! ${emoji}</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.name)}! O resultado do jogo foi registrado no bolão <strong style="color:${TEXT};">${esc(opts.poolName)}</strong>.</p>
-      <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;">
-        <p style="margin:0 0 12px;font-size:26px;font-weight:800;color:${TEXT};">${esc(opts.homeTeam)} <span style="color:${BRAND};">${opts.homeScore}×${opts.awayScore}</span> ${esc(opts.awayTeam)}</p>
-        <p style="margin:0 0 4px;font-size:13px;color:${MUTED};">Seu palpite: <strong style="color:${TEXT};">${opts.betDescription}</strong></p>
-        <p style="margin:0;font-size:20px;font-weight:800;color:${opts.pointsEarned >= 10 ? BRAND : opts.pointsEarned >= 5 ? "#f59e0b" : "#ef4444"};">+${opts.pointsEarned} pontos</p>
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">Resultado apurado! ${emoji}</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! O resultado do jogo foi registrado no bolão <strong style="color:${GOLD};">${esc(opts.poolName)}</strong>.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:24px;margin-bottom:24px;text-align:center;border:1px solid ${BORDER};">
+        <p style="margin:0 0 16px;font-size:28px;font-weight:900;color:${TEXT};">
+          ${esc(opts.homeTeam)} <span style="color:${GOLD};">${opts.homeScore}×${opts.awayScore}</span> ${esc(opts.awayTeam)}
+        </p>
+        ${divider()}
+        <p style="margin:0 0 8px;font-size:13px;color:${MUTED};">Seu palpite: <strong style="color:${TEXT};">${esc(opts.betDescription)}</strong></p>
+        <p style="margin:0;font-size:32px;font-weight:900;color:${ptsColor};">+${opts.pointsEarned} pts</p>
       </div>
+
       ${ctaButton("Ver ranking do bolão", `${ENV.appBaseUrl}/pool/${opts.poolSlug}`)}
     `),
   };
@@ -173,21 +245,23 @@ export function templatePlanExpiring(opts: {
   return {
     subject: `${urgency} — Seu Plano Pro expira em breve`,
     html: baseTemplate("Plano Pro Expirando", `
-      <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">${urgency} do Plano Pro</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.name)}! Seu Plano Pro expira em <strong style="color:#f59e0b;">${opts.expiresAt}</strong>. Renove agora para não perder o acesso às funcionalidades exclusivas.</p>
-      <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:20px;margin-bottom:24px;">
-        <p style="margin:0 0 12px;font-weight:600;color:${TEXT};">O que você perde sem o Pro:</p>
-        <p style="margin:0 0 8px;color:#ef4444;">❌ Bolões ilimitados (volta ao limite de 2)</p>
-        <p style="margin:0 0 8px;color:#ef4444;">❌ Participantes ilimitados (volta ao limite de 50)</p>
-        <p style="margin:0 0 8px;color:#ef4444;">❌ Campeonatos personalizados</p>
-        <p style="margin:0;color:#ef4444;">❌ Registro de resultados próprios</p>
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">${urgency} do Plano Pro</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu Plano Pro expira em <strong style="color:${GOLD};">${opts.expiresAt}</strong>. Renove agora para não perder o acesso às funcionalidades exclusivas.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+        <p style="margin:0 0 14px;font-weight:700;font-size:14px;color:${TEXT};">O que você perde sem o Pro:</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${ERROR};">❌ Bolões ilimitados (volta ao limite de 2)</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${ERROR};">❌ Participantes ilimitados (volta ao limite de 50)</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${ERROR};">❌ Campeonatos personalizados</p>
+        <p style="margin:0;font-size:13px;color:${ERROR};">❌ Registro de resultados próprios</p>
       </div>
+
       ${ctaButton("Renovar Plano Pro", `${ENV.appBaseUrl}/subscription`)}
     `),
   };
 }
 
-// ─── Template: Convite de bolão ───────────────────────────────────────────────
+// ─── Template: Convite de bolão (usuário existente) ───────────────────────────
 export function templatePoolInvite(opts: {
   inviteeName: string;
   organizerName: string;
@@ -199,15 +273,17 @@ export function templatePoolInvite(opts: {
   return {
     subject: `🏆 ${opts.organizerName} te convidou para o bolão "${opts.poolName}"`,
     html: baseTemplate("Convite de Bolão", `
-      <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">Você foi convidado! 🏆</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.inviteeName)}! <strong style="color:${TEXT};">${esc(opts.organizerName)}</strong> te convidou para participar do bolão abaixo.</p>
-      <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;">
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">Você foi convidado! 🏆</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.inviteeName)}</strong>! <strong style="color:${GOLD};">${esc(opts.organizerName)}</strong> te convidou para participar do bolão abaixo.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:24px;margin-bottom:24px;border:1px solid ${BORDER};">
         <p style="margin:0 0 4px;font-size:20px;font-weight:800;color:${TEXT};">${esc(opts.poolName)}</p>
-        <p style="margin:0 0 12px;font-size:13px;color:${MUTED};">${esc(opts.tournamentName)}</p>
-        <p style="margin:0;font-size:13px;color:${MUTED};">👥 ${opts.memberCount} participante${opts.memberCount !== 1 ? "s" : ""} já entraram</p>
+        <p style="margin:0 0 16px;font-size:13px;color:${MUTED};">${esc(opts.tournamentName)}</p>
+        <p style="margin:0;font-size:13px;color:${MUTED};">👥 <strong style="color:${TEXT};">${opts.memberCount}</strong> participante${opts.memberCount !== 1 ? "s" : ""} já entraram</p>
       </div>
+
       ${ctaButton("Entrar no bolão", opts.inviteUrl)}
-      <p style="margin:16px 0 0;font-size:12px;color:${MUTED};">Este convite expira em 7 dias.</p>
+      <p style="margin:16px 0 0;font-size:12px;color:${MUTED2};">📅 Este convite expira em 7 dias.</p>
     `),
   };
 }
@@ -224,15 +300,17 @@ export function templateManualMemberAdd(opts: {
   return {
     subject: `🎉 Você foi adicionado ao bolão "${opts.poolName}"`,
     html: baseTemplate("Você entrou no bolão!", `
-      <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">Você foi adicionado! 🎉</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;">Olá, ${esc(opts.memberName)}! <strong style="color:${TEXT};">${esc(opts.organizerName)}</strong> adicionou você diretamente ao bolão abaixo.</p>
-      <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;">
-        <p style="margin:0 0 8px;font-size:20px;font-weight:800;color:${TEXT};">${esc(opts.poolName)}</p>
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">Você foi adicionado! 🎉</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.memberName)}</strong>! <strong style="color:${GOLD};">${esc(opts.organizerName)}</strong> adicionou você diretamente ao bolão abaixo.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:24px;margin-bottom:24px;border:1px solid ${BORDER};">
+        <p style="margin:0 0 12px;font-size:20px;font-weight:800;color:${TEXT};">${esc(opts.poolName)}</p>
         ${opts.hasEntryFee
-          ? `<p style="margin:0;font-size:13px;color:#fbbf24;">⚠️ Taxa de inscrição: R$ ${opts.entryFee?.toFixed(2).replace('.', ',')}. Aguarde a confirmação do organizador.</p>`
-          : `<p style="margin:0;font-size:13px;color:${MUTED};">✅ Você já está ativo e pode fazer seus palpites!</p>`
+          ? `<p style="margin:0;font-size:13px;color:${GOLD};">⚠️ Taxa de inscrição: <strong>R$ ${opts.entryFee?.toFixed(2).replace('.', ',')}</strong>. Aguarde a confirmação do organizador.</p>`
+          : `<p style="margin:0;font-size:13px;color:${SUCCESS};">✅ Você já está ativo e pode fazer seus palpites!</p>`
         }
       </div>
+
       ${ctaButton("Acessar o bolão", opts.poolUrl)}
     `),
   };
@@ -252,24 +330,29 @@ export function templatePoolInviteExternal(opts: {
   return {
     subject: `🏆 ${opts.organizerName} te convidou para o bolão "${opts.poolName}" no Plakr!`,
     html: baseTemplate("Convite para bolão", `
-      <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:${TEXT};">Você foi convidado! 🏆</h2>
-      <p style="margin:0 0 20px;color:${MUTED};line-height:1.6;"><strong style="color:${TEXT};">${esc(opts.organizerName)}</strong> te convidou para participar do bolão abaixo no <strong style="color:${TEXT};">Plakr!</strong> — a plataforma de bolões esportivos.</p>
-      <div style="background:#0d0d0d;border:1px solid #1f1f1f;border-radius:12px;padding:24px;margin-bottom:24px;">
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">Você foi convidado! 🏆</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;"><strong style="color:${GOLD};">${esc(opts.organizerName)}</strong> te convidou para participar do bolão abaixo no <strong style="color:${TEXT};">Plakr!</strong> — a plataforma de bolões esportivos.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:24px;margin-bottom:24px;border:1px solid ${BORDER};">
         <p style="margin:0 0 4px;font-size:20px;font-weight:800;color:${TEXT};">${esc(opts.poolName)}</p>
-        <p style="margin:0 0 12px;font-size:13px;color:${MUTED};">${esc(opts.tournamentName)}</p>
-        <p style="margin:0 0 8px;font-size:13px;color:${MUTED};">&#128101; ${opts.memberCount} participante${opts.memberCount !== 1 ? "s" : ""} já entraram</p>
+        <p style="margin:0 0 16px;font-size:13px;color:${MUTED};">${esc(opts.tournamentName)}</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${MUTED};">👥 <strong style="color:${TEXT};">${opts.memberCount}</strong> participante${opts.memberCount !== 1 ? "s" : ""} já entraram</p>
         ${opts.hasEntryFee
-          ? `<p style="margin:0;font-size:13px;color:#fbbf24;">&#9888;&#65039; Taxa de inscrição: R$ ${opts.entryFee?.toFixed(2).replace('.', ',')}. O organizador confirmará após o pagamento.</p>`
-          : `<p style="margin:0;font-size:13px;color:${MUTED};">&#10003; Entrada gratuita — faça seus palpites imediatamente após entrar!</p>`
+          ? `<p style="margin:0;font-size:13px;color:${GOLD};">⚠️ Taxa de inscrição: <strong>R$ ${opts.entryFee?.toFixed(2).replace('.', ',')}</strong>. O organizador confirmará após o pagamento.</p>`
+          : `<p style="margin:0;font-size:13px;color:${SUCCESS};">✅ Entrada gratuita — faça seus palpites imediatamente após entrar!</p>`
         }
       </div>
-      <p style="margin:0 0 16px;font-size:14px;color:${MUTED};line-height:1.6;">Clique no botão abaixo para criar sua conta gratuita e entrar no bolão automaticamente. Leva menos de 1 minuto!</p>
+
+      <p style="margin:0 0 20px;font-size:14px;color:${MUTED};line-height:1.6;">Clique no botão abaixo para criar sua conta gratuita e entrar no bolão automaticamente. Leva menos de 1 minuto!</p>
+
       ${ctaButton("Criar conta e entrar no bolão", opts.inviteUrl)}
-      <p style="margin:16px 0 0;font-size:12px;color:${MUTED};">&#128197; Este convite expira em <strong style="color:${TEXT};">${opts.expiresAt ? opts.expiresAt.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' }) : '7 dias'}</strong>. Se você já tem conta no Plakr!, o mesmo link funcionará para fazer login e entrar no bolão.</p>
+
+      <p style="margin:16px 0 0;font-size:12px;color:${MUTED2};">📅 Este convite expira em <strong style="color:${TEXT};">${opts.expiresAt ? opts.expiresAt.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'America/Sao_Paulo' }) : '7 dias'}</strong>. Se você já tem conta no Plakr!, o mesmo link funcionará para fazer login e entrar no bolão.</p>
     `),
   };
 }
-// ─── Transporter SMTP (Hostinger) ─────────────────────────────────────────────────────────────────────
+
+// ─── Transporter SMTP (Hostinger) ─────────────────────────────────────────────
 let _transporter: nodemailer.Transporter | null = null;
 
 function getTransporter(): nodemailer.Transporter | null {
@@ -281,20 +364,20 @@ function getTransporter(): nodemailer.Transporter | null {
     _transporter = nodemailer.createTransport({
       host: ENV.smtpHost,
       port: ENV.smtpPort,
-      secure: ENV.smtpPort === 465, // true para 465 (SSL), false para 587 (TLS)
+      secure: ENV.smtpPort === 465,
       auth: {
         user: ENV.smtpUser,
         pass: ENV.smtpPass,
       },
       tls: {
-        rejectUnauthorized: false, // Hostinger aceita certificados auto-assinados
+        rejectUnauthorized: false,
       },
     });
   }
   return _transporter;
 }
 
-// ─── Sender via SMTP (Hostinger) ─────────────────────────────────────────────────────────────────────
+// ─── Sender via SMTP ──────────────────────────────────────────────────────────
 export async function sendEmail(opts: {
   to: string;
   subject: string;
@@ -325,10 +408,6 @@ export async function sendEmail(opts: {
 
 // ─── Queue helpers ────────────────────────────────────────────────────────────
 
-/**
- * Enqueue an email for later sending (stored in email_queue table).
- * The cron job processes the queue every 5 minutes.
- */
 export async function enqueueEmail(opts: {
   toUserId: number;
   toEmail: string;
@@ -353,16 +432,11 @@ export async function enqueueEmail(opts: {
   }
 }
 
-/**
- * Process pending emails from the queue (called by cron every 5 min).
- * Sends up to 50 emails per batch to avoid rate limiting.
- */
 export async function processEmailQueue(): Promise<void> {
   const db = await getDb();
   if (!db) return;
 
   try {
-    const now = new Date();
     const pending = await db
       .select()
       .from(emailQueue)
@@ -395,10 +469,6 @@ export async function processEmailQueue(): Promise<void> {
   }
 }
 
-/**
- * Schedule bet reminder emails for all pools with games starting in ~1 hour.
- * Called by cron every 15 minutes.
- */
 export async function scheduleBetReminders(): Promise<void> {
   const db = await getDb();
   if (!db) return;
@@ -408,7 +478,6 @@ export async function scheduleBetReminders(): Promise<void> {
     const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
     const seventyFiveMinFromNow = new Date(now.getTime() + 75 * 60 * 1000);
 
-    // Find games starting in 60–75 minutes that haven't been reminded yet
     const upcomingGames = await db
       .select({
         gameId: games.id,
@@ -430,14 +499,12 @@ export async function scheduleBetReminders(): Promise<void> {
     logger.info({ count: upcomingGames.length }, "[Email] Found games needing bet reminders");
 
     for (const g of upcomingGames) {
-      // Buscar bolões ativos que usam este torneio
       const activePools = await db
         .select({ id: pools.id, name: pools.name, slug: pools.slug })
         .from(pools)
         .where(and(eq(pools.tournamentId, g.tournamentId), eq(pools.status, "active")));
 
       for (const pool of activePools) {
-        // Buscar membros ativos do bolão
         const members = await db
           .select({ userId: poolMembers.userId })
           .from(poolMembers)
@@ -447,7 +514,6 @@ export async function scheduleBetReminders(): Promise<void> {
         const matchTime = matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
         const matchDateStr = matchDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }) + " às " + matchTime;
 
-        // Resolver template personalizado (com fallback para texto padrão)
         const tmpl = await resolveNotificationTemplate(
           "game_reminder",
           {
@@ -478,7 +544,6 @@ export async function scheduleBetReminders(): Promise<void> {
           });
         }
 
-        // 🎯 Notificação patrocinada de lembrete de rodada (se bolão tiver patrocinador ativo com sponsoredNotificationActive)
         try {
           const { poolSponsors } = await import("../drizzle/schema");
           const { and: andOp, eq: eqOp } = await import("drizzle-orm");
@@ -516,10 +581,6 @@ export async function scheduleBetReminders(): Promise<void> {
   }
 }
 
-/**
- * Send plan expiry warnings (7 days and 1 day before expiry).
- * Called by cron daily at 9:00 AM.
- */
 export async function sendPlanExpiryWarnings(): Promise<void> {
   const db = await getDb();
   if (!db) return;
