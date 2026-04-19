@@ -1385,3 +1385,20 @@ export const feedbackResponses = mysqlTable("feedback_responses", {
 }));
 export type FeedbackResponse = typeof feedbackResponses.$inferSelect;
 export type InsertFeedbackResponse = typeof feedbackResponses.$inferInsert;
+
+// ─── CONTROLE DE LEMBRETES DE RODADA ─────────────────────────────────────────
+// Registra quais usuários já receberam o lembrete consolidado de palpite
+// para uma determinada rodada de um torneio, evitando duplicatas.
+// Chave única: (userId, tournamentId, roundNumber)
+export const roundReminderSent = mysqlTable("round_reminder_sent", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("userId").notNull().references(() => users.id),
+  tournamentId: int("tournamentId").notNull().references(() => tournaments.id),
+  roundNumber: int("roundNumber").notNull(),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+}, (t) => ({
+  idxUnique: unique("round_reminder_unique").on(t.userId, t.tournamentId, t.roundNumber),
+  idxUser: index("idx_round_reminder_user").on(t.userId),
+  idxTournament: index("idx_round_reminder_tournament").on(t.tournamentId),
+}));
+export type RoundReminderSent = typeof roundReminderSent.$inferSelect;

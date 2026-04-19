@@ -534,3 +534,10 @@
 - [x] Disparar e-mail automaticamente na criação da conta via Magic Link (magic-link.ts)
 - [x] Disparar e-mail automaticamente na criação da conta via OAuth (oauth.ts)
 - [ ] Validar visual do e-mail em produção após publicar (sandbox bloqueia porta SMTP)
+
+## Sprint Lembrete por Rodada
+- [x] Criar template `templateRoundReminder` consolidado (lista todos os jogos sem palpite da rodada)
+- [x] Criar job cron diário que identifica rodadas com primeiro jogo em ~24h
+- [x] Verificar se usuário já recebeu lembrete para aquela rodada (evitar duplicata via tabela round_reminder_sent)
+- [x] Integrar disparo no sistema de e-mail existente (emailCron.ts, 1x/hora)
+- [x] Testar e validar (14 testes passando, 569 total)

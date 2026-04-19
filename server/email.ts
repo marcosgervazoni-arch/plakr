@@ -12,8 +12,8 @@ import { ENV } from "./_core/env";
 import { getDb, createNotification } from "./db";
 import logger from "./logger";
 import { resolveNotificationTemplate } from "./notificationTemplateHelper";
-import { emailQueue, users, games, userPlans, pools, poolMembers } from "../drizzle/schema";
-import { eq, and, lte, gte, sql } from "drizzle-orm";
+import { emailQueue, users, games, userPlans, pools, poolMembers, bets, tournaments, roundReminderSent } from "../drizzle/schema";
+import { eq, and, lte, gte, sql, isNotNull, asc, notExists, inArray } from "drizzle-orm";
 
 // ─── HTML escape (previne XSS em dados de usuário interpolados nos templates) ─
 function esc(str: string): string {
@@ -691,5 +691,293 @@ export async function sendPlanExpiryWarnings(): Promise<void> {
     }
   } catch (err) {
     logger.error({ err }, "[Email] Plan expiry warning error");
+  }
+}
+
+// ─── Template: Lembrete consolidado por rodada ───────────────────────────────
+// Enviado uma vez por rodada, ~24h antes do primeiro jogo sem palpite.
+// Lista todos os jogos da rodada que o usuário ainda não apostou.
+export function templateRoundReminder(opts: {
+  name: string;
+  poolName: string;
+  poolSlug: string;
+  tournamentName: string;
+  roundNumber: number;
+  firstMatchTime: string;  // ex: "19/04 às 16:00"
+  games: Array<{
+    homeTeam: string;
+    awayTeam: string;
+    matchTime: string;  // ex: "19/04 às 16:00"
+  }>;
+}): { subject: string; html: string } {
+  const gameCount = opts.games.length;
+  const gameWord = gameCount === 1 ? "jogo" : "jogos";
+
+  // Linhas da tabela de jogos (table-based para Gmail/Outlook)
+  const gameRows = opts.games.map((g, i) => `
+    <tr>
+      <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <table cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td>
+              <p style="margin:0 0 4px;font-size:15px;font-weight:700;color:${TEXT};">
+                ${esc(g.homeTeam)} <span style="color:${GOLD};">×</span> ${esc(g.awayTeam)}
+              </p>
+              <p style="margin:0;font-size:12px;color:${MUTED};">⏰ ${esc(g.matchTime)}</p>
+            </td>
+            <td align="right" valign="middle" width="80">
+              <span style="display:inline-block;background:${SURFACE2};border:1px solid ${GOLD};border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:${GOLD};">SEM PALPITE</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>`).join("");
+
+  return {
+    subject: `⚽ Rodada ${opts.roundNumber} começa em 24h — ${gameCount} ${gameWord} sem palpite no ${opts.poolName}`,
+    html: baseTemplate(`Lembrete — Rodada ${opts.roundNumber}`, `
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">⚽ A Rodada ${opts.roundNumber} tá chegando!</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">
+        Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! O primeiro jogo da rodada começa em menos de 24 horas e você ainda tem
+        <strong style="color:${GOLD};">${gameCount} ${gameWord}</strong> sem palpite no bolão
+        <strong style="color:${GOLD};">${esc(opts.poolName)}</strong>.
+      </p>
+
+      ${infoBox(`
+        <p style="margin:0;font-size:13px;color:${MUTED};">
+          🏆 <strong style="color:${TEXT};">${esc(opts.tournamentName)}</strong> · Rodada ${opts.roundNumber}
+          &nbsp;·&nbsp; Primeiro jogo: <strong style="color:${GOLD};">${esc(opts.firstMatchTime)}</strong>
+        </p>
+      `, GOLD)}
+
+      <!-- Tabela de jogos -->
+      <table cellpadding="0" cellspacing="0" width="100%" style="background:${SURFACE2};border-radius:12px;overflow:hidden;margin:20px 0;border:1px solid rgba(255,255,255,0.08);">
+        <tr>
+          <td style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(255,184,0,0.08);">
+            <p style="margin:0;font-size:11px;font-weight:700;color:${GOLD};letter-spacing:1px;text-transform:uppercase;">Jogos sem palpite</p>
+          </td>
+        </tr>
+        ${gameRows}
+      </table>
+
+      <p style="margin:0 0 20px;font-size:13px;color:${MUTED};line-height:1.6;">
+        Não deixa pra última hora — depois que o apito tocar, não tem mais como palpitar! 🚨
+      </p>
+
+      <div style="text-align:center;">
+        ${ctaButton("Fazer meus palpites agora →", `${ENV.appBaseUrl}/pool/${opts.poolSlug}`)}
+      </div>
+    `),
+  };
+}
+
+// ─── Lembrete consolidado por rodada ─────────────────────────────────────────
+// Roda diariamente. Para cada torneio com jogos entre +23h e +25h:
+//   1. Identifica a rodada cujo primeiro jogo começa nessa janela
+//   2. Para cada bolão ativo desse torneio, busca membros que ainda não apostaram
+//      em pelo menos um jogo da rodada
+//   3. Verifica se já enviou lembrete para (userId, tournamentId, roundNumber)
+//   4. Envia um único e-mail consolidado listando todos os jogos sem palpite
+export async function scheduleRoundReminders(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  try {
+    const now = new Date();
+    const in23h = new Date(now.getTime() + 23 * 60 * 60 * 1000);
+    const in25h = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+
+    // Busca todos os jogos scheduled com roundNumber que começam entre +23h e +25h
+    const upcomingGames = await db
+      .select({
+        id: games.id,
+        tournamentId: games.tournamentId,
+        roundNumber: games.roundNumber,
+        teamAName: games.teamAName,
+        teamBName: games.teamBName,
+        matchDate: games.matchDate,
+      })
+      .from(games)
+      .where(
+        and(
+          eq(games.status, "scheduled"),
+          isNotNull(games.roundNumber),
+          gte(games.matchDate, in23h),
+          lte(games.matchDate, in25h)
+        )
+      )
+      .orderBy(asc(games.tournamentId), asc(games.roundNumber), asc(games.matchDate));
+
+    if (!upcomingGames.length) {
+      logger.info("[Email][RoundReminder] No games in 23-25h window — skipping");
+      return;
+    }
+
+    // Agrupa por (tournamentId, roundNumber) — pega o menor roundNumber por torneio
+    const roundsByTournament = new Map<number, { roundNumber: number; firstMatchDate: Date }>();
+    for (const g of upcomingGames) {
+      const key = g.tournamentId;
+      const existing = roundsByTournament.get(key);
+      if (!existing || g.roundNumber! < existing.roundNumber) {
+        roundsByTournament.set(key, {
+          roundNumber: g.roundNumber!,
+          firstMatchDate: new Date(g.matchDate as Date),
+        });
+      }
+    }
+
+    logger.info({ count: roundsByTournament.size }, "[Email][RoundReminder] Tournaments with upcoming rounds");
+
+    for (const [tournamentId, { roundNumber, firstMatchDate }] of roundsByTournament) {
+      // Todos os jogos desta rodada (não só os que caem na janela — pode ter jogos antes e depois)
+      const allRoundGames = await db
+        .select({
+          id: games.id,
+          teamAName: games.teamAName,
+          teamBName: games.teamBName,
+          matchDate: games.matchDate,
+        })
+        .from(games)
+        .where(
+          and(
+            eq(games.tournamentId, tournamentId),
+            eq(games.roundNumber, roundNumber),
+            eq(games.status, "scheduled")
+          )
+        )
+        .orderBy(asc(games.matchDate));
+
+      if (!allRoundGames.length) continue;
+
+      const allRoundGameIds = allRoundGames.map((g) => g.id);
+
+      // Busca nome do torneio
+      const [tournament] = await db
+        .select({ name: tournaments.name })
+        .from(tournaments)
+        .where(eq(tournaments.id, tournamentId))
+        .limit(1);
+
+      const tournamentName = tournament?.name ?? "Campeonato";
+
+      // Busca bolões ativos para este torneio
+      const activePools = await db
+        .select({ id: pools.id, name: pools.name, slug: pools.slug })
+        .from(pools)
+        .where(and(eq(pools.tournamentId, tournamentId), eq(pools.status, "active")));
+
+      for (const pool of activePools) {
+        // Membros ativos do bolão (não bloqueados, status active)
+        const members = await db
+          .select({ userId: poolMembers.userId })
+          .from(poolMembers)
+          .where(
+            and(
+              eq(poolMembers.poolId, pool.id),
+              eq(poolMembers.isBlocked, false),
+              eq(poolMembers.memberStatus, "active")
+            )
+          );
+
+        for (const { userId } of members) {
+          // Verifica se já enviou lembrete para esta rodada
+          const alreadySent = await db
+            .select({ id: roundReminderSent.id })
+            .from(roundReminderSent)
+            .where(
+              and(
+                eq(roundReminderSent.userId, userId),
+                eq(roundReminderSent.tournamentId, tournamentId),
+                eq(roundReminderSent.roundNumber, roundNumber)
+              )
+            )
+            .limit(1);
+
+          if (alreadySent.length > 0) continue;
+
+          // Busca quais jogos desta rodada o usuário JÁ apostou neste bolão
+          const existingBets = await db
+            .select({ gameId: bets.gameId })
+            .from(bets)
+            .where(
+              and(
+                eq(bets.poolId, pool.id),
+                eq(bets.userId, userId),
+                inArray(bets.gameId, allRoundGameIds)
+              )
+            );
+
+          const bettedGameIds = new Set(existingBets.map((b) => b.gameId));
+          const missingGames = allRoundGames.filter((g) => !bettedGameIds.has(g.id));
+
+          // Se o usuário já apostou em todos os jogos, não envia lembrete
+          if (missingGames.length === 0) continue;
+
+          // Busca dados do usuário
+          const [user] = await db
+            .select({ name: users.name, email: users.email })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+          if (!user?.email) continue;
+
+          // Formata data/hora dos jogos
+          const formatMatchTime = (d: Date) =>
+            new Date(d).toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              timeZone: "America/Sao_Paulo",
+            }) +
+            " às " +
+            new Date(d).toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "America/Sao_Paulo",
+            });
+
+          const firstMatchTime = formatMatchTime(firstMatchDate);
+
+          const { subject, html } = templateRoundReminder({
+            name: user.name ?? "Apostador",
+            poolName: pool.name,
+            poolSlug: pool.slug,
+            tournamentName,
+            roundNumber,
+            firstMatchTime,
+            games: missingGames.map((g) => ({
+              homeTeam: g.teamAName ?? "Time A",
+              awayTeam: g.teamBName ?? "Time B",
+              matchTime: formatMatchTime(new Date(g.matchDate as Date)),
+            })),
+          });
+
+          // Enfileira o e-mail
+          await db.insert(emailQueue).values({
+            userId,
+            toEmail: user.email,
+            subject,
+            htmlBody: html,
+            status: "pending",
+          });
+
+          // Registra que o lembrete foi enviado (evita duplicata)
+          await db.insert(roundReminderSent).values({
+            userId,
+            tournamentId,
+            roundNumber,
+          });
+
+          logger.info(
+            { userId, tournamentId, roundNumber, poolId: pool.id, missingCount: missingGames.length },
+            "[Email][RoundReminder] Queued reminder"
+          );
+        }
+      }
+    }
+
+    logger.info("[Email][RoundReminder] Round reminder job completed");
+  } catch (err) {
+    logger.error({ err }, "[Email][RoundReminder] Error in scheduleRoundReminders");
   }
 }

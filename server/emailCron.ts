@@ -5,18 +5,20 @@
  * - Lembretes de palpite a cada 15 minutos
  * - Alertas de expiração de plano diariamente às 9h
  */
-import { processEmailQueue, scheduleBetReminders, sendPlanExpiryWarnings } from "./email";
+import { processEmailQueue, scheduleBetReminders, sendPlanExpiryWarnings, scheduleRoundReminders } from "./email";
 import { logger } from "./logger";
 
 let emailQueueInterval: ReturnType<typeof setInterval> | null = null;
 let betReminderInterval: ReturnType<typeof setInterval> | null = null;
 let planExpiryInterval: ReturnType<typeof setInterval> | null = null;
+let roundReminderInterval: ReturnType<typeof setInterval> | null = null;
 
 // [O3] Health tracking dos crons de email
 export const emailCronHealth = {
   queue: { lastRunAt: null as Date | null, lastRunSuccess: null as boolean | null, lastError: null as string | null, runCount: 0 },
   betReminder: { lastRunAt: null as Date | null, lastRunSuccess: null as boolean | null, lastError: null as string | null, runCount: 0 },
   planExpiry: { lastRunAt: null as Date | null, lastRunSuccess: null as boolean | null, lastError: null as string | null, runCount: 0 },
+  roundReminder: { lastRunAt: null as Date | null, lastRunSuccess: null as boolean | null, lastError: null as string | null, runCount: 0 },
 };
 
 export function startEmailCrons(): void {
@@ -71,6 +73,22 @@ export function startEmailCrons(): void {
     }
   }, 60 * 60 * 1000);
 
+  // Round reminder: check every hour, runs once per day when there are rounds starting in ~24h
+  // Sends one consolidated email per round per user (deduplication via round_reminder_sent table)
+  roundReminderInterval = setInterval(async () => {
+    emailCronHealth.roundReminder.runCount++;
+    emailCronHealth.roundReminder.lastRunAt = new Date();
+    try {
+      await scheduleRoundReminders();
+      emailCronHealth.roundReminder.lastRunSuccess = true;
+      emailCronHealth.roundReminder.lastError = null;
+    } catch (err) {
+      emailCronHealth.roundReminder.lastRunSuccess = false;
+      emailCronHealth.roundReminder.lastError = err instanceof Error ? err.message : String(err);
+      logger.error({ err }, "[EmailCron] Round reminder error");
+    }
+  }, 60 * 60 * 1000);
+
   // Run queue processing immediately on startup to clear any backlog
   setTimeout(async () => {
     try {
@@ -87,5 +105,6 @@ export function stopEmailCrons(): void {
   if (emailQueueInterval) clearInterval(emailQueueInterval);
   if (betReminderInterval) clearInterval(betReminderInterval);
   if (planExpiryInterval) clearInterval(planExpiryInterval);
+  if (roundReminderInterval) clearInterval(roundReminderInterval);
   logger.info("[EmailCron] Email cron jobs stopped");
 }
