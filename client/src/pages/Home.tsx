@@ -538,26 +538,26 @@ export default function Home() {
                 Entrar
               </button>
             ) : (
-              // Outros navegadores: Magic Link em destaque + OAuth como alternativa
+              // Outros navegadores: OAuth como botão principal + Magic Link sempre visível
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setEmailLoginOpen(true)}
-                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
-                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
-                  aria-label="Entrar no Plakr! por e-mail"
-                >
-                  <Mail size={14} />
-                  Entrar
-                </button>
                 <a
                   href={loginUrl}
-                  className="hidden sm:flex items-center gap-1 text-xs transition-colors hover:text-white"
-                  style={{ color: "#6B7280" }}
-                  aria-label="Entrar com conta Manus"
-                  title="Entrar com OAuth (não compatível com Safari)"
+                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                  aria-label="Entrar no Plakr!"
                 >
-                  Outra conta
+                  Entrar
                 </a>
+                <button
+                  onClick={() => setEmailLoginOpen(true)}
+                  className="flex items-center gap-1 text-xs transition-colors hover:text-white"
+                  style={{ color: "#6B7280" }}
+                  aria-label="Entrar com e-mail"
+                  title="Entrar com link de acesso por e-mail"
+                >
+                  <Mail size={12} />
+                  E-mail
+                </button>
               </div>
             )
           )}
@@ -599,16 +599,28 @@ export default function Home() {
                   </div>
                 )}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                  {/* CTA principal: Magic Link em destaque para todos */}
-                  <button
-                    onClick={() => setEmailLoginOpen(true)}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-base px-8 py-3 rounded-lg transition-all hover:opacity-90"
-                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
-                    aria-label="Criar bolão grátis no Plakr! — entrar por e-mail"
-                  >
-                    {heroCtaPrimaryText}
-                    <ArrowRight size={16} aria-hidden="true" />
-                  </button>
+                  {/* CTA principal: Safari = Magic Link | Outros = OAuth */}
+                  {isSafari ? (
+                    <button
+                      onClick={() => setEmailLoginOpen(true)}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-base px-8 py-3 rounded-lg transition-all hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                      aria-label="Criar bolão grátis no Plakr! — entrar por e-mail"
+                    >
+                      {heroCtaPrimaryText}
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <a
+                      href={user ? "/dashboard" : loginUrl}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-base px-8 py-3 rounded-lg transition-all hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                      aria-label="Criar bolão grátis no Plakr!"
+                    >
+                      {heroCtaPrimaryText}
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </a>
+                  )}
                   {heroCtaSecondaryEnabled && (
                     <a href={user ? "/upgrade" : upgradeLoginUrl}>
                       <Button size="lg" variant="outline" className="w-full sm:w-auto font-semibold text-sm px-6 py-3"
@@ -622,15 +634,16 @@ export default function Home() {
                   Gratuito para começar · Sem cartão de crédito · Pronto em 2 minutos
                 </p>
                 {!user && !isSafari && (
-                  // Para não-Safari: mostrar OAuth como alternativa discreta
-                  <a
-                    href={loginUrl}
+                  // Para não-Safari: Magic Link como alternativa discreta ao OAuth
+                  <button
+                    onClick={() => setEmailLoginOpen(true)}
                     className="flex items-center gap-1.5 text-xs mt-3 transition-colors hover:text-white mx-auto lg:mx-0"
                     style={{ color: "#6B7280" }}
-                    title="Entrar com OAuth (não compatível com Safari)"
+                    title="Entrar com link de acesso por e-mail"
                   >
-                    Prefere entrar com outra conta?
-                  </a>
+                    <Mail size={12} />
+                    Prefere entrar por e-mail?
+                  </button>
                 )}
               </div>
               <div className="flex-1 w-full max-w-md lg:max-w-none">
