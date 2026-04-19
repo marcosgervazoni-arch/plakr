@@ -521,3 +521,8 @@
 - [x] Teste real de envio confirmado: e-mail chegou em marcos.gervazoni@gmail.com
 - [x] 6 testes unitários de SMTP (smtp.test.ts)
 - [x] 555 testes passando (26 arquivos)
+
+## Sprint Safari — Correção Página de Convite
+
+- [x] Aplicar detecção de Safari e Magic Link na página /join/:token (JoinPool.tsx)
+- [x] Aplicar detecção de Safari e Magic Link na página /pool-invite/:token (PoolInviteAccept.tsx)

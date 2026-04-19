@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { useSafariDetect } from "@/hooks/useSafariDetect";
+import EmailLoginModal from "@/components/EmailLoginModal";
 import { Button } from "@/components/ui/button";
 import { Loader2, Trophy, Users, Mail, CheckCircle2, AlertTriangle, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +22,8 @@ export default function PoolInviteAccept() {
   const [, navigate] = useLocation();
   const { user, loading: authLoading } = useAuth();
   const [accepted, setAccepted] = useState(false);
+  const [emailLoginOpen, setEmailLoginOpen] = useState(false);
+  const isSafari = useSafariDetect();
   const [acceptResult, setAcceptResult] = useState<{
     poolSlug: string;
     hasEntryFee: boolean;
@@ -187,86 +191,121 @@ export default function PoolInviteAccept() {
 
   // ── Tela de boas-vindas (usuário não logado) ───────────────────────────────
   const info = inviteInfo;
-  const loginUrl = getLoginUrl(`/pool-invite/${token}`);
-  const magicLinkUrl = `/?login=email&return=/pool-invite/${token}`;
+  const returnPath = `/pool-invite/${token}`;
+  const loginUrl = getLoginUrl(returnPath);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-6">
-        {/* Logo/ícone do bolão */}
-        <div className="text-center space-y-3">
-          {info.pool.logoUrl ? (
-            <img
-              src={info.pool.logoUrl}
-              alt={info.pool.name}
-              className="w-20 h-20 rounded-full object-cover mx-auto border-2 border-primary/30"
-            />
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-primary/15 flex items-center justify-center mx-auto">
-              <Trophy className="w-10 h-10 text-primary" />
+    <>
+      <EmailLoginModal
+        open={emailLoginOpen}
+        onClose={() => setEmailLoginOpen(false)}
+        returnPath={returnPath}
+      />
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#0B0F1A" }}>
+        <div className="max-w-md w-full space-y-6">
+          {/* Logo/ícone do bolão */}
+          <div className="text-center space-y-3">
+            {info.pool.logoUrl ? (
+              <img
+                src={info.pool.logoUrl}
+                alt={info.pool.name}
+                className="w-20 h-20 rounded-full object-cover mx-auto"
+                style={{ border: "2px solid rgba(255,184,0,0.4)" }}
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto" style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.3)" }}>
+                <Trophy className="w-10 h-10" style={{ color: "#FFB800" }} />
+              </div>
+            )}
+            <div>
+              <p className="text-sm" style={{ color: "#9CA3AF" }}>Você foi convidado para o bolão</p>
+              <h1 className="text-2xl font-bold mt-1 text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+                {info.pool.name}
+              </h1>
+              <p className="text-sm mt-1" style={{ color: "#9CA3AF" }}>
+                Organizado por <span className="text-white font-medium">{info.organizer.name}</span>
+              </p>
             </div>
-          )}
-          <div>
-            <p className="text-sm text-muted-foreground">Você foi convidado para o bolão</p>
-            <h1 className="text-2xl font-bold mt-1" style={{ fontFamily: "'Syne', sans-serif" }}>
-              {info.pool.name}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Organizado por <span className="text-foreground font-medium">{info.organizer.name}</span>
-            </p>
           </div>
-        </div>
 
-        {/* Detalhes do bolão */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-          <div className="flex items-center gap-3 text-sm">
-            <Trophy className="w-4 h-4 text-primary shrink-0" />
-            <span className="text-muted-foreground">Campeonato</span>
-            <span className="ml-auto font-medium">Copa do Mundo 2026</span>
-          </div>
-          {info.hasEntryFee && info.entryFee && (
+          {/* Detalhes do bolão */}
+          <div className="rounded-xl p-4 space-y-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="flex items-center gap-3 text-sm">
-              <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />
-              <span className="text-muted-foreground">Taxa de inscrição</span>
-              <span className="ml-auto font-bold text-yellow-400">
-                R$ {info.entryFee.toFixed(2).replace(".", ",")}
-              </span>
+              <Trophy className="w-4 h-4 shrink-0" style={{ color: "#FFB800" }} />
+              <span style={{ color: "#9CA3AF" }}>Campeonato</span>
+              <span className="ml-auto font-medium text-white">Copa do Mundo 2026</span>
             </div>
-          )}
-          <div className="flex items-center gap-3 text-sm">
-            <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
-            <span className="text-muted-foreground">Convite enviado para</span>
-            <span className="ml-auto font-medium text-xs">{info.invitedEmail}</span>
+            {info.hasEntryFee && info.entryFee && (
+              <div className="flex items-center gap-3 text-sm">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-yellow-400" />
+                <span style={{ color: "#9CA3AF" }}>Taxa de inscrição</span>
+                <span className="ml-auto font-bold text-yellow-400">
+                  R$ {info.entryFee.toFixed(2).replace(".", ",")}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-3 text-sm">
+              <Mail className="w-4 h-4 shrink-0" style={{ color: "#6B7280" }} />
+              <span style={{ color: "#9CA3AF" }}>Convite enviado para</span>
+              <span className="ml-auto font-medium text-xs text-white">{info.invitedEmail}</span>
+            </div>
           </div>
-        </div>
 
-        {/* CTAs */}
-        <div className="space-y-3">
-          <p className="text-center text-sm text-muted-foreground">
-            Para entrar no bolão, faça login ou crie sua conta:
+          {/* CTAs com detecção de Safari */}
+          <div className="space-y-3">
+            <p className="text-center text-sm" style={{ color: "#9CA3AF" }}>
+              Para entrar no bolão, faça login ou crie sua conta:
+            </p>
+
+            {isSafari ? (
+              // Safari: só Magic Link
+              <>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "rgba(0,194,255,0.08)", border: "1px solid rgba(0,194,255,0.2)", color: "#00C2FF" }}>
+                  <Mail size={12} />
+                  <span>Acesso por e-mail recomendado para Safari e iPhone.</span>
+                </div>
+                <button
+                  onClick={() => setEmailLoginOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 font-bold text-sm px-4 py-3 rounded-lg transition-all hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                >
+                  <Mail size={16} />
+                  Entrar com e-mail
+                </button>
+              </>
+            ) : (
+              // Outros navegadores: OAuth em destaque + Magic Link como alternativa
+              <>
+                <button
+                  onClick={() => { window.location.href = loginUrl; }}
+                  className="w-full flex items-center justify-center gap-2 font-bold text-sm px-4 py-3 rounded-lg transition-all hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                >
+                  Entrar com conta Manus
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+                  <span className="text-xs" style={{ color: "#6B7280" }}>ou</span>
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+                </div>
+                <button
+                  onClick={() => setEmailLoginOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 text-sm px-4 py-3 rounded-lg transition-all"
+                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "#9CA3AF" }}
+                >
+                  <Mail size={15} />
+                  Entrar com link por e-mail
+                </button>
+              </>
+            )}
+          </div>
+
+          <p className="text-center text-xs" style={{ color: "#4B5563" }}>
+            Ao entrar, você aceita os <span className="underline cursor-pointer">termos de uso</span> do Plakr!
           </p>
-          <Button
-            className="w-full gap-2"
-            onClick={() => navigate(magicLinkUrl)}
-          >
-            <Mail className="w-4 h-4" />
-            Entrar com e-mail
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full gap-2"
-            onClick={() => { window.location.href = loginUrl; }}
-          >
-            <Users className="w-4 h-4" />
-            Entrar com conta Manus
-          </Button>
         </div>
-
-        <p className="text-center text-xs text-muted-foreground">
-          Ao entrar, você aceita os termos de uso do Plakr!
-        </p>
       </div>
-    </div>
+    </>
   );
 }
 
