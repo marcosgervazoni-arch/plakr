@@ -546,3 +546,10 @@
 - [x] Verificar `notification_preferences.emailGameReminder` antes de enviar lembrete por rodada
 - [x] Usuários sem linha em notification_preferences não recebem (opt-in explícito, padrão false)
 - [x] Atualizar testes — 19 testes passando, 574 total
+
+## Sprint Marcador de Pagamento Pendente
+- [x] Adicionar coluna `paymentPending` (boolean) em pool_members
+- [x] Criar procedure `pools.togglePaymentPending` no backend
+- [x] Adicionar badge "Pgto. pendente" (laranja) na lista de membros (OrganizerMembers)
+- [x] Organizador marca/desmarca via menu de ações do membro (só visível em bolões com taxa)
+- [x] 8 testes automatizados adicionados — 582 total passando

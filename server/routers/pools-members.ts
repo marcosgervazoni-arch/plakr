@@ -745,4 +745,41 @@ export const poolsMembersRouter = router({
         expiresAt: invite.expiresAt,
       };
     }),
+
+  // ── Marcar / desmarcar pagamento pendente (organizador) ──────────────────────
+  togglePaymentPending: protectedProcedure
+    .input(z.object({
+      poolId: z.number(),
+      targetUserId: z.number(),
+      pending: z.boolean(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      if (!member || (member.role !== "organizer" && ctx.user.role !== "admin")) {
+        throw PoolErr.organizerOnly();
+      }
+      const { getDb, createAdminLog } = await import("../db");
+      const db = await getDb();
+      if (!db) throw Err.internal();
+      const { poolMembers } = await import("../../drizzle/schema");
+      const { eq, and } = await import("drizzle-orm");
+      const [target] = await db
+        .select({ id: poolMembers.id })
+        .from(poolMembers)
+        .where(and(eq(poolMembers.poolId, input.poolId), eq(poolMembers.userId, input.targetUserId)))
+        .limit(1);
+      if (!target) throw Err.notFound("Membro");
+      await db
+        .update(poolMembers)
+        .set({ paymentPending: input.pending })
+        .where(and(eq(poolMembers.poolId, input.poolId), eq(poolMembers.userId, input.targetUserId)));
+      await createAdminLog(
+        ctx.user.id,
+        input.pending ? "member_payment_marked_pending" : "member_payment_cleared_pending",
+        "pool",
+        input.poolId,
+        { targetUserId: input.targetUserId }
+      );
+      return { success: true, pending: input.pending };
+    }),
 });

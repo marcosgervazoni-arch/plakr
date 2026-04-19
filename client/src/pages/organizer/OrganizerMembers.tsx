@@ -52,6 +52,7 @@ import {
   XCircle,
   Info,
   UserPlus,
+  CircleDollarSign,
 } from "lucide-react";
 import { useParams } from "wouter";
 import { useState, useMemo } from "react";
@@ -130,6 +131,14 @@ export default function OrganizerMembers() {
       utils.pools.listPendingMembers.invalidate({ poolId: pool?.id });
     },
     onError: (err) => toast.error(err.message || "Erro ao recusar solicitação."),
+  });
+
+  const togglePaymentPendingMutation = trpc.pools.togglePaymentPending.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.pending ? "Marcado como pagamento pendente." : "Marcação de pendência removida.");
+      utils.pools.getMembers.invalidate({ poolId: pool?.id });
+    },
+    onError: (err) => toast.error(err.message || "Erro ao atualizar status de pagamento."),
   });
 
   const addMemberMutation = trpc.pools.sendPoolInvite.useMutation({
@@ -490,6 +499,11 @@ export default function OrganizerMembers() {
                                     Você
                                   </Badge>
                                 )}
+                                {member.paymentPending && hasFee && (
+                                  <Badge className="text-xs py-0 px-1.5 bg-orange-500/15 text-orange-400 border-orange-500/30 gap-1">
+                                    <CircleDollarSign className="w-3 h-3" /> Pgto. pendente
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-xs text-muted-foreground truncate">{memberUser.email ?? ""}</p>
                             </div>
@@ -524,10 +538,26 @@ export default function OrganizerMembers() {
                                   <MoreHorizontal className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuContent align="end" className="w-52">
                                 <DropdownMenuItem className="gap-2 text-sm" onClick={() => window.open(`/profile/${memberUser.id}`, '_blank')}>
                                   <ExternalLink className="w-3.5 h-3.5" /> Ver perfil
                                 </DropdownMenuItem>
+                                {hasFee && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className={`gap-2 text-sm ${member.paymentPending ? "text-green-400 focus:text-green-400" : "text-orange-400 focus:text-orange-400"}`}
+                                      onClick={() => pool?.id && togglePaymentPendingMutation.mutate({
+                                        poolId: pool.id,
+                                        targetUserId: memberUser.id,
+                                        pending: !member.paymentPending,
+                                      })}
+                                    >
+                                      <CircleDollarSign className="w-3.5 h-3.5" />
+                                      {member.paymentPending ? "Pagamento recebido" : "Marcar: não pagou"}
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="gap-2 text-sm text-yellow-400 focus:text-yellow-400"

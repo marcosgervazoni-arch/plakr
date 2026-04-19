@@ -408,7 +408,8 @@ export const poolMembers = mysqlTable(
     // Status de aprovação para bolões com taxa de inscrição (feature Pro)
     memberStatus: mysqlEnum("memberStatus", ["active", "pending_approval", "rejected"])
       .default("active").notNull(),
-    paymentRequestedAt: timestamp("paymentRequestedAt"), // quando o participante clicou em "Já paguei"
+    paymentRequestedAt: timestamp("paymentRequestedAt"),
+    paymentPending: boolean("paymentPending").default(false).notNull(),
   },
   (t) => [
     unique("pool_member_unique").on(t.poolId, t.userId),
