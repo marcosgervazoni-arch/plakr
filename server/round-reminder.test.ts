@@ -134,7 +134,7 @@ describe("templateRoundReminder", () => {
   });
 });
 
-describe("scheduleRoundReminders — lógica de deduplicação", () => {
+describe("scheduleRoundReminders — lógica de deduplicacão", () => {
   it("deve retornar sem enviar se não há jogos na janela 23-25h", async () => {
     const { getDb } = await import("./db");
     const mockDb = {
@@ -149,5 +149,84 @@ describe("scheduleRoundReminders — lógica de deduplicação", () => {
     const { scheduleRoundReminders } = await import("./email");
     // Não deve lançar erro
     await expect(scheduleRoundReminders()).resolves.not.toThrow();
+  });
+});
+
+describe("templateRoundReminder — preferências de e-mail", () => {
+  it("deve incluir nome do usuário no HTML (personalização)", () => {
+    const { html } = templateRoundReminder({
+      name: "Maria Oliveira",
+      poolName: "Bolão do Trabalho",
+      poolSlug: "bolao-do-trabalho",
+      tournamentName: "Brasileirão 2026",
+      roundNumber: 7,
+      firstMatchTime: "20/04 às 18:30",
+      games: [{ homeTeam: "Flamengo", awayTeam: "Palmeiras", matchTime: "20/04 às 18:30" }],
+    });
+    expect(html).toContain("Maria Oliveira");
+  });
+
+  it("deve incluir link correto para o bolão no CTA", () => {
+    const { html } = templateRoundReminder({
+      name: "Carlos",
+      poolName: "Bolão X",
+      poolSlug: "bolao-x-abc123",
+      tournamentName: "Copa BR",
+      roundNumber: 1,
+      firstMatchTime: "21/04 às 15:00",
+      games: [{ homeTeam: "São Paulo", awayTeam: "Santos", matchTime: "21/04 às 15:00" }],
+    });
+    expect(html).toContain("bolao-x-abc123");
+  });
+
+  it("deve exibir o assunto correto com opt-in: rodada + bolão + contagem de jogos", () => {
+    const { subject } = templateRoundReminder({
+      name: "Ana",
+      poolName: "Bolão Família",
+      poolSlug: "bolao-familia",
+      tournamentName: "Libertadores",
+      roundNumber: 2,
+      firstMatchTime: "22/04 às 21:00",
+      games: [
+        { homeTeam: "River Plate", awayTeam: "Boca Juniors", matchTime: "22/04 às 21:00" },
+        { homeTeam: "Fluminense", awayTeam: "LDU", matchTime: "22/04 às 23:00" },
+        { homeTeam: "Gremio", awayTeam: "Nacional", matchTime: "23/04 às 19:00" },
+      ],
+    });
+    expect(subject).toContain("Rodada 2");
+    expect(subject).toContain("Bolão Família");
+    expect(subject).toContain("3 jogos");
+  });
+
+  it("deve gerar badge SEM PALPITE para cada jogo sem aposta", () => {
+    const { html } = templateRoundReminder({
+      name: "Pedro",
+      poolName: "Bolão Amigos",
+      poolSlug: "bolao-amigos",
+      tournamentName: "Copa SP",
+      roundNumber: 4,
+      firstMatchTime: "25/04 às 16:00",
+      games: [
+        { homeTeam: "Corinthians", awayTeam: "São Paulo", matchTime: "25/04 às 16:00" },
+        { homeTeam: "Palmeiras", awayTeam: "Santos", matchTime: "25/04 às 18:00" },
+        { homeTeam: "Flamengo", awayTeam: "Vasco", matchTime: "25/04 às 20:00" },
+      ],
+    });
+    const badges = (html.match(/SEM PALPITE/g) || []).length;
+    expect(badges).toBe(3);
+  });
+
+  it("não deve incluir 'display:flex' ou 'display:grid' (compatibilidade Gmail)", () => {
+    const { html } = templateRoundReminder({
+      name: "Test",
+      poolName: "Bolão Test",
+      poolSlug: "test",
+      tournamentName: "Liga Test",
+      roundNumber: 1,
+      firstMatchTime: "01/01 às 12:00",
+      games: [{ homeTeam: "Time A", awayTeam: "Time B", matchTime: "01/01 às 12:00" }],
+    });
+    expect(html).not.toMatch(/display\s*:\s*flex/);
+    expect(html).not.toMatch(/display\s*:\s*grid/);
   });
 });

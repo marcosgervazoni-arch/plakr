@@ -541,3 +541,8 @@
 - [x] Verificar se usuário já recebeu lembrete para aquela rodada (evitar duplicata via tabela round_reminder_sent)
 - [x] Integrar disparo no sistema de e-mail existente (emailCron.ts, 1x/hora)
 - [x] Testar e validar (14 testes passando, 569 total)
+
+## Sprint Preferências de E-mail no Lembrete por Rodada
+- [x] Verificar `notification_preferences.emailGameReminder` antes de enviar lembrete por rodada
+- [x] Usuários sem linha em notification_preferences não recebem (opt-in explícito, padrão false)
+- [x] Atualizar testes — 19 testes passando, 574 total

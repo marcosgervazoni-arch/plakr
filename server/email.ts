@@ -12,7 +12,7 @@ import { ENV } from "./_core/env";
 import { getDb, createNotification } from "./db";
 import logger from "./logger";
 import { resolveNotificationTemplate } from "./notificationTemplateHelper";
-import { emailQueue, users, games, userPlans, pools, poolMembers, bets, tournaments, roundReminderSent } from "../drizzle/schema";
+import { emailQueue, users, games, userPlans, pools, poolMembers, bets, tournaments, roundReminderSent, notificationPreferences } from "../drizzle/schema";
 import { eq, and, lte, gte, sql, isNotNull, asc, notExists, inArray } from "drizzle-orm";
 
 // ─── HTML escape (previne XSS em dados de usuário interpolados nos templates) ─
@@ -894,6 +894,23 @@ export async function scheduleRoundReminders(): Promise<void> {
             .limit(1);
 
           if (alreadySent.length > 0) continue;
+
+          // Verifica preferência de e-mail do usuário (emailGameReminder)
+          // Padrão: false (opt-in explícito) — se não houver linha, não envia
+          const [prefs] = await db
+            .select({ emailGameReminder: notificationPreferences.emailGameReminder })
+            .from(notificationPreferences)
+            .where(eq(notificationPreferences.userId, userId))
+            .limit(1);
+
+          // Se não há linha de preferências ou o usuário desativou, pula
+          if (!prefs || !prefs.emailGameReminder) {
+            logger.debug(
+              { userId, tournamentId, roundNumber },
+              "[Email][RoundReminder] Skipped — emailGameReminder disabled or no prefs row"
+            );
+            continue;
+          }
 
           // Busca quais jogos desta rodada o usuário JÁ apostou neste bolão
           const existingBets = await db
