@@ -136,7 +136,7 @@ export function templateMagicLink(opts: {
       `, INFO)}
 
       <div style="margin-top:24px;">
-        ${ctaButton("✅ Entrar no Plakr!", opts.magicUrl)}
+        ${ctaButton("Entrar no Plakr!", opts.magicUrl)}
       </div>
 
       ${divider()}

@@ -102,7 +102,7 @@ const emails = [
         <p style="margin:0 0 6px;font-size:13px;color:${MUTED};">⏱ Este link expira em <strong style="color:${GOLD};">15 minutos</strong> e só pode ser usado uma vez.</p>
         <p style="margin:0;font-size:13px;color:${MUTED};">Se você não solicitou este acesso, ignore este e-mail com segurança.</p>
       `, INFO)}
-      <div style="margin-top:24px;">${ctaButton("✅ Entrar no Plakr!", APP_URL + "/magic-link/verify?token=EXEMPLO")}</div>
+      <div style="margin-top:24px;">${ctaButton("Entrar no Plakr!", APP_URL + "/magic-link/verify?token=EXEMPLO")}</div>
       ${divider()}
       <p style="margin:0;font-size:12px;color:${MUTED2};">Se o botão não funcionar, copie e cole o link no navegador.</p>
     `),
