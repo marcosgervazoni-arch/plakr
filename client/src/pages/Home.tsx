@@ -526,39 +526,16 @@ export default function Home() {
                   Meu painel
                 </Button>
               </a>
-            ) : isSafari ? (
-              // Safari/iPhone: Magic Link como único método visível na navbar
+            ) : (
+              // Um único botão "Entrar" — abre modal com escolha de método
               <button
                 onClick={() => setEmailLoginOpen(true)}
-                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+                className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all hover:opacity-90"
                 style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
-                aria-label="Entrar no Plakr! por e-mail"
+                aria-label="Entrar no Plakr!"
               >
-                <Mail size={14} />
                 Entrar
               </button>
-            ) : (
-              // Outros navegadores: OAuth como botão principal + Magic Link sempre visível
-              <div className="flex items-center gap-2">
-                <a
-                  href={loginUrl}
-                  className="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all"
-                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
-                  aria-label="Entrar no Plakr!"
-                >
-                  Entrar
-                </a>
-                <button
-                  onClick={() => setEmailLoginOpen(true)}
-                  className="flex items-center gap-1 text-xs transition-colors hover:text-white"
-                  style={{ color: "#6B7280" }}
-                  aria-label="Entrar com e-mail"
-                  title="Entrar com link de acesso por e-mail"
-                >
-                  <Mail size={12} />
-                  E-mail
-                </button>
-              </div>
             )
           )}
         </div>
