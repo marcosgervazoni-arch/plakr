@@ -20,6 +20,7 @@ import { useSafariDetect } from "@/hooks/useSafariDetect";
 import {
   Trophy, Users, ArrowRight, CheckCircle, Crown, Target,
   BarChart3, Award, Settings, Globe, Share2, Mail,
+  Star, Zap, DollarSign, Brain, Swords,
 } from "lucide-react";
 
 // ─── Countdown Hook ────────────────────────────────────────────────────────────
@@ -366,10 +367,10 @@ function LandingPricingSection({
 
         {/* Unlimited */}
         <div className="rounded-2xl p-8 relative overflow-hidden"
-          style={{ background: "#121826", border: "2px solid rgba(234,179,8,0.4)", boxShadow: "0 0 30px rgba(234,179,8,0.06)" }}>
+          style={{ background: "#121826", border: "2px solid rgba(255,184,0,0.4)", boxShadow: "0 0 30px rgba(255,184,0,0.06)" }}>
           <div className="absolute top-4 right-4">
             <span className="px-2 py-1 rounded-full text-xs font-bold"
-              style={{ background: "rgba(234,179,8,0.15)", color: "#EAB308" }}>
+              style={{ background: "rgba(255,184,0,0.15)", color: "#FFB800" }}>
               <span className="flex items-center gap-1"><Sparkles size={10} /> ILIMITADO</span>
             </span>
           </div>
@@ -380,7 +381,7 @@ function LandingPricingSection({
             ) : (
               <>
                 <div className="flex items-baseline gap-1">
-                  <div className="text-4xl font-black" style={{ color: "#EAB308" }}>{fmt(unlimitedDisplay)}</div>
+                  <div className="text-4xl font-black" style={{ color: "#FFB800" }}>{fmt(unlimitedDisplay)}</div>
                   <span style={{ color: "#6B7280" }}>/{billing === "annual" ? "ano" : "mês"}</span>
                 </div>
                 {billing === "annual" && unlimitedSaving > 0 && (
@@ -398,14 +399,14 @@ function LandingPricingSection({
           <ul className="space-y-3 mb-8">
             {unlimitedFeatures.map((f) => (
               <li key={f} className="flex items-center gap-3 text-sm">
-                <CheckCircle size={14} style={{ color: "#EAB308", flexShrink: 0 }} />
+                <CheckCircle size={14} style={{ color: "#FFB800", flexShrink: 0 }} />
                 <span style={{ color: "#D1D5DB" }}>{f}</span>
               </li>
             ))}
           </ul>
           <a href={user ? `/upgrade?billing=${billing}` : upgradeLoginUrl} className="block">
             <Button className="w-full font-bold"
-              style={{ background: "linear-gradient(135deg, #EAB308, #CA8A04)", color: "#0B0F1A", border: "none" }}>
+              style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
               Começar com Ilimitado
               <Sparkles size={14} className="ml-2" />
             </Button>
@@ -443,7 +444,7 @@ export default function Home() {
   const upgradeLoginUrl = getLoginUrl("/upgrade");
 
   const heroHeadline = config?.heroHeadline ?? "Faça seu bolão com a galera";
-  const heroSubheadline = config?.heroSubheadline ?? "Crie bolões para qualquer campeonato, convide seus amigos e acompanhe tudo em tempo real. Simples, divertido e gratuito.";
+  const heroSubheadline = config?.heroSubheadline ?? "Crie bolões para Copa do Mundo, Brasileirão e mais. Análise pré-jogo com IA, duelos X1 e ranking automático. Grátis para começar.";
   const heroBadgeText = config?.heroBadgeText ?? "FAÇA SEU BOLÃO PARA A COPA DO MUNDO";
   const heroBadgeEnabled = config?.heroBadgeEnabled ?? true;
   const heroCountdownEnabled = config?.heroCountdownEnabled ?? true;
@@ -473,28 +474,30 @@ export default function Home() {
   const freeFeatures = [
     "Bolões para Copa do Mundo, Brasileirão e mais",
     "Até 50 participantes por bolão",
-    "Ranking em tempo real",
-    "Palpites com prazo automático",
-    "Perfil público e conquistas",
+    "Ranking atualizado automaticamente",
+    "Análise pré-jogo com IA",
+    "Duelos X1 entre participantes",
     "Até 2 bolões simultâneos",
   ];
   const proFeatures = [
     "Tudo do plano gratuito",
     "Participantes ilimitados",
     "Bolões ilimitados",
+    "Taxa de inscrição com controle de pagamento",
     "Campeonato personalizado (seu torneio!)",
     "Regras de pontuação customizáveis",
     "Resultados inseridos pelo organizador",
-    "Retrospectiva do bolão ao final",
     "Suporte prioritário",
   ];
   const faqs = [
-    { q: "O Plakr! é gratuito?", a: "Sim! O plano gratuito permite criar bolões para campeonatos globais com até 50 participantes e 2 bolões simultâneos. O Pro adiciona participantes ilimitados, bolões ilimitados e a criação de campeonatos personalizados." },
+    { q: "O Plakr! é gratuito?", a: "Sim! O plano gratuito permite criar bolões para campeonatos globais com até 50 participantes e 2 bolões simultâneos. O Pro adiciona participantes ilimitados, bolões ilimitados, taxa de inscrição e a criação de campeonatos personalizados." },
+    { q: "Como funciona a análise pré-jogo com IA?", a: "Antes de cada jogo, o Plakr! exibe probabilidades reais baseadas no histórico dos times, forma recente e confrontos diretos. Um texto gerado por IA resume os pontos mais importantes para você palpitar com mais inteligência." },
+    { q: "O que são os duelos X1?", a: "Duelos X1 são desafios diretos entre dois participantes do mesmo bolão. Você desafia um rival e aposta quem vai pontuar mais em uma rodada ou jogo específico. É uma camada extra de competição dentro do bolão." },
     { q: "Como funciona o campeonato personalizado?", a: "Com o Pro, você cria seu próprio campeonato do zero: define os times, as fases (grupos, mata-mata), os jogos e insere os resultados manualmente. Ideal para campeonatos de bairro, empresa, família ou qualquer torneio que não esteja nos campeonatos globais." },
+    { q: "O que é a taxa de inscrição?", a: "Com o plano Pro, o organizador pode definir um valor de entrada para o bolão. O sistema controla quem pagou e quem está pendente, diretamente na plataforma — sem precisar de planilha ou cobrança manual." },
+    { q: "O Passe VIP é diferente do plano Pro?", a: "Sim! O plano Pro é para quem organiza bolões. O Passe VIP é para participantes: remove os anúncios, libera análise de IA ilimitada e dá acesso antecipado a novas funcionalidades. São produtos complementares." },
     { q: "Preciso instalar algum aplicativo?", a: "Não! O Plakr! funciona direto no navegador, em qualquer dispositivo. Basta acessar o link do bolão e pronto." },
     { q: "Como os participantes entram no bolão?", a: "Você compartilha um link de convite ou um código de 6 dígitos. Quem receber o link entra diretamente no bolão, sem precisar criar conta previamente." },
-    { q: "Posso mudar as regras de pontuação?", a: "No plano Pro, sim! Você define quantos pontos valem placar exato, resultado correto, goleada, zebra e muito mais. No plano gratuito, as regras padrão da plataforma são aplicadas." },
-    { q: "O que acontece quando o bolão termina?", a: "O bolão é encerrado automaticamente quando todos os jogos têm resultado. O organizador confirma o encerramento e todos os participantes recebem uma retrospectiva com os melhores momentos e o ranking final." },
   ];
 
   return (
@@ -764,7 +767,93 @@ export default function Home() {
         </CustomOrDefault>
       )}
 
-      {/* ── FEATURES ───────────────────────────────────────────────────────── */}
+      {/* ── PARA QUEM É ──────────────────────────────────────────────── */}
+      <section className="py-20" style={{ background: "#0D1120" }} aria-labelledby="section-para-quem-e">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-14">
+            <h2 id="section-para-quem-e" className="text-3xl md:text-4xl font-black mb-4">
+              Para quem é o{" "}
+              <span style={{ color: "#FFB800" }}>Plakr!</span>
+            </h2>
+            <p className="text-lg" style={{ color: "#9CA3AF" }}>
+              Dois perfis. Duas experiências. Uma plataforma.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Card Organizador */}
+            <div className="rounded-2xl p-8" style={{ background: "#121826", border: "2px solid #FFB800", boxShadow: "0 0 40px rgba(255,184,0,0.08)" }}>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
+                style={{ background: "rgba(255,184,0,0.1)", border: "1px solid rgba(255,184,0,0.3)", color: "#FFB800" }}>
+                <Crown size={12} />
+                Para organizadores
+              </div>
+              <h3 className="text-xl font-black text-white mb-2">Você organiza. A plataforma cuida do resto.</h3>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: "#9CA3AF" }}>
+                Crie o bolão, convide a galera e acompanhe tudo sem planilha, sem cobrança manual, sem dor de cabeça.
+                Com o Pro, crie seu próprio campeonato — do bairro à empresa.
+              </p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  { icon: Trophy, text: "Bolões para qualquer campeonato global" },
+                  { icon: Crown, text: "Campeonato personalizado com seus times e fases" },
+                  { icon: DollarSign, text: "Taxa de inscrição com controle de pagamento integrado" },
+                  { icon: BarChart3, text: "Ranking atualizado automaticamente a cada resultado" },
+                  { icon: Users, text: "Convite por link ou código de 6 dígitos" },
+                ].map(({ icon: Icon, text }) => (
+                  <li key={text} className="flex items-center gap-3 text-sm">
+                    <Icon size={15} style={{ color: "#FFB800", flexShrink: 0 }} />
+                    <span style={{ color: "#D1D5DB" }}>{text}</span>
+                  </li>
+                ))}
+              </ul>
+              <a href={loginUrl} className="block">
+                <button className="w-full flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg transition-all hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}>
+                  Criar bolão grátis
+                  <ArrowRight size={16} />
+                </button>
+              </a>
+            </div>
+
+            {/* Card Participante */}
+            <div className="rounded-2xl p-8" style={{ background: "#121826", border: "2px solid rgba(255,184,0,0.3)", boxShadow: "0 0 30px rgba(255,184,0,0.04)" }}>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-5"
+                style={{ background: "rgba(255,184,0,0.08)", border: "1px solid rgba(255,184,0,0.2)", color: "#FFB800" }}>
+                <Star size={12} />
+                Para participantes
+              </div>
+              <h3 className="text-xl font-black text-white mb-2">Aposte com mais inteligência. Ganhe com mais estilo.</h3>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: "#9CA3AF" }}>
+                Palpite com análises de IA antes de cada jogo. Desafie rivais em duelos X1.
+                Colecione badges e dispute o topo do ranking. Com o Passe VIP, sem anúncios e com IA ilimitada.
+              </p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  { icon: Brain, text: "Análise pré-jogo com probabilidades reais geradas por IA" },
+                  { icon: Swords, text: "Duelos X1: desafie quem você quiser dentro do bolão" },
+                  { icon: Award, text: "Badges e conquistas por desempenho" },
+                  { icon: Globe, text: "Campeonatos globais: Copa do Mundo, Brasileirão, Champions" },
+                  { icon: Star, text: "Passe VIP: sem anúncios, IA ilimitada, acesso antecipado" },
+                ].map(({ icon: Icon, text }) => (
+                  <li key={text} className="flex items-center gap-3 text-sm">
+                    <Icon size={15} style={{ color: "#FFB800", flexShrink: 0 }} />
+                    <span style={{ color: "#D1D5DB" }}>{text}</span>
+                  </li>
+                ))}
+              </ul>
+              <a href={user ? "/upgrade#vip" : upgradeLoginUrl} className="block">
+                <button className="w-full flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg transition-all hover:opacity-90"
+                  style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.4)", color: "#FFB800" }}>
+                  <Star size={16} />
+                  Ativar Passe VIP
+                </button>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ─────────────────────────────────────────────────────── */}
       {(config?.sectionFeaturesEnabled ?? true) && (
         <CustomOrDefault customCode={config?.featuresCustomCode}>
           <section className="py-20" aria-labelledby="section-features">
@@ -779,22 +868,22 @@ export default function Home() {
                 </p>
               </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <FeatureCard icon={Trophy} title="Ranking em tempo real"
+                <FeatureCard icon={Trophy} title="Ranking automático"
                   description="Pontuação calculada automaticamente após cada resultado. Acompanhe a disputa jogo a jogo." highlight />
-                <FeatureCard icon={Target} title="Palpites com prazo"
-                  description="O sistema bloqueia palpites automaticamente quando o jogo começa. Sem trapaça." />
+                <FeatureCard icon={Brain} title="Análise pré-jogo com IA"
+                  description="Probabilidades reais, forma dos times e confrontos diretos. Palpite com mais inteligência." highlight />
+                <FeatureCard icon={Swords} title="Duelos X1"
+                  description="Desafie um rival direto dentro do bolão. Quem pontuar mais na rodada, vence o duelo." highlight />
                 <FeatureCard icon={Users} title="Convite fácil"
                   description="Link direto ou código de 6 dígitos. A galera entra em segundos, sem precisar criar conta antes." />
+                <FeatureCard icon={DollarSign} title="Taxa de inscrição"
+                  description="Defina um valor de entrada e controle quem pagou diretamente na plataforma. Sem planilha." />
                 <FeatureCard icon={BarChart3} title="Estatísticas detalhadas"
                   description="Aproveitamento, placares exatos, zebras acertadas, goleadas. Perfil completo de cada apostador." />
                 <FeatureCard icon={Award} title="Conquistas e badges"
                   description="Sistema de gamificação com badges por desempenho. Quem acerta mais, sobe de nível." />
-                <FeatureCard icon={Share2} title="Retrospectiva do bolão"
-                  description="Ao final do campeonato, cada participante recebe um card para compartilhar com seu resultado." />
                 <FeatureCard icon={Settings} title="Regras customizáveis"
                   description="No Pro, você define quantos pontos vale cada tipo de acerto. Deixe o bolão do seu jeito." />
-                <FeatureCard icon={Globe} title="Campeonatos globais"
-                  description="Copa do Mundo, Brasileirão, Champions e muito mais. Sempre atualizados pela plataforma." />
                 <FeatureCard icon={Crown} title="Campeonato personalizado"
                   description="Crie seu próprio torneio com times, fases e resultados. Exclusivo do plano Pro." highlight />
               </div>

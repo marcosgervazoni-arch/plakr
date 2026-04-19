@@ -582,3 +582,15 @@
 - [ ] [B-3] Log de admin para cancelamento VIP via webhook (BACKLOG)
 - [ ] [O-2] Métrica de e-mails de ativação VIP no emailCronHealth (BACKLOG)
 - [ ] [C-3] Toggle Admin para habilitar/desabilitar Passe VIP no AdminPricing (BACKLOG)
+
+## Sprint Página de Vendas — Atualização VIP + Posicionamento
+- [x] Corrigir "Ranking em tempo real" para "Ranking automático" (sem promessa falsa)
+- [x] Remover "Palpites com prazo" dos destaques de features
+- [x] Remover "Retrospectiva do bolão" dos cards principais de features
+- [x] Adicionar "Taxa de inscrição" como feature destacada (organizador)
+- [x] Adicionar "Análise pré-jogo com IA" e "Duelos X1" como features destacadas
+- [x] Nova seção "Para quem é" com cards Organizador e Participante
+- [x] Atualizar hero subheadline com IA, X1 e ranking automático
+- [x] Corrigir cor do plano Unlimited de #EAB308 para #FFB800 (paleta Plakr)
+- [x] FAQ atualizado: perguntas sobre IA, X1, taxa de inscrição e VIP vs Pro
+- [x] 582 testes passando
