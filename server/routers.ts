@@ -23,6 +23,7 @@ import { integrationsRouter } from "./routers/integrations";
 import { muralRouter } from "./routers/mural";
 import { aiUsageRouter } from "./routers/ai-usage";
 import { authMagicRouter } from "./routers/auth-magic";
+import { feedbackRouter } from "./routers/feedback";
 import { router } from "./_core/trpc";
 
 export const appRouter = router({
@@ -46,6 +47,7 @@ export const appRouter = router({
   mural: muralRouter,
   aiUsage: aiUsageRouter,
   authMagic: authMagicRouter,
+  feedback: feedbackRouter,
 });
 
 export type AppRouter = typeof appRouter;

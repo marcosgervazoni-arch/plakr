@@ -81,9 +81,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { GameCard } from "@/components/GameCard";
+import { FeedbackBanner } from "@/components/FeedbackBanner";
+import { FeedbackModal } from "@/components/FeedbackModal";
+import { useFeedback } from "@/hooks/useFeedback";
 
 export default function PoolPage() {
   const analytics = useAnalytics();
+  const { feedback, requestFeedback, dismiss: dismissFeedback, submit: submitFeedback, isSubmitting: feedbackSubmitting } = useFeedback();
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const [, navigate] = useLocation();
@@ -168,6 +172,11 @@ export default function PoolPage() {
       toast.success("Palpite salvo!");
       utils.bets.myBets.invalidate();
       utils.rankings.myPoolPosition.invalidate({ poolId: data?.pool.id });
+      // CES: disparar após o 1º palpite no bolão (myBets estava vazio antes)
+      const prevBetCount = myBets?.items?.length ?? 0;
+      if (prevBetCount === 0) {
+        setTimeout(() => requestFeedback("ces", "first_bet", data?.pool.id), 1500);
+      }
     },
     onError: (err) => {
       toast.error("Erro ao salvar palpite", { description: err.message });
@@ -1339,6 +1348,26 @@ export default function PoolPage() {
         slug={slug}
       />
     </div>
+
+    {/* Feedback CES (banner rodapé) */}
+    {feedback?.type === "ces" && (
+      <FeedbackBanner
+        context={feedback.context}
+        onSubmit={submitFeedback}
+        onDismiss={dismissFeedback}
+        isSubmitting={feedbackSubmitting}
+      />
+    )}
+
+    {/* Feedback CSAT (modal) */}
+    {feedback?.type === "csat" && (
+      <FeedbackModal
+        context={feedback.context}
+        onSubmit={submitFeedback}
+        onDismiss={dismissFeedback}
+        isSubmitting={feedbackSubmitting}
+      />
+    )}
     </AppShell>
   );
 }

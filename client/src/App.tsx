@@ -60,6 +60,7 @@ import AdminX1Duels from "./pages/admin/AdminX1Duels";
 import AdminShareCard from "./pages/admin/AdminShareCard";
 import AdminSponsorship from "./pages/admin/AdminSponsorship";
 import AdminSponsorReport from "./pages/admin/AdminSponsorReport";
+import AdminFeedback from "./pages/admin/AdminFeedback";
 import X1ChallengePage from "./pages/X1ChallengePage";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -137,6 +138,7 @@ function Router() {
       <Route path="/admin/pricing" component={AdminPricing} />
       <Route path="/admin/x1-duels" component={AdminX1Duels} />
       <Route path="/admin/share-card" component={AdminShareCard} />
+      <Route path="/admin/feedback" component={AdminFeedback} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

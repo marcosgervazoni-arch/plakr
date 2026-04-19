@@ -1360,3 +1360,27 @@ export const poolInvites = mysqlTable("pool_invites", {
 }));
 export type PoolInvite = typeof poolInvites.$inferSelect;
 export type InsertPoolInvite = typeof poolInvites.$inferInsert;
+
+// ─── FEEDBACK RESPONSES (CES + CSAT) ─────────────────────────────────────────
+// Coleta de feedback dos usuários via CES (esforço) e CSAT (satisfação).
+// type: 'ces' = Customer Effort Score, 'csat' = Customer Satisfaction Score
+// context: identificador do gatilho (create_pool, first_bet, invite_member, accept_invite, pool_ended, game_result)
+// score: 1-5 (1=muito difícil/péssimo, 5=muito fácil/incrível)
+// comment: texto opcional para notas baixas (CES ≤2, CSAT ≤3)
+export const feedbackResponses = mysqlTable("feedback_responses", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("userId").notNull().references(() => users.id),
+  type: varchar("type", { length: 10 }).notNull(), // 'ces' | 'csat'
+  context: varchar("context", { length: 64 }).notNull(),
+  score: int("score").notNull(), // 1-5
+  comment: text("comment"),
+  poolId: int("poolId").references(() => pools.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  idxUser: index("idx_feedback_user").on(t.userId),
+  idxType: index("idx_feedback_type").on(t.type),
+  idxContext: index("idx_feedback_context").on(t.context),
+  idxCreatedAt: index("idx_feedback_created_at").on(t.createdAt),
+}));
+export type FeedbackResponse = typeof feedbackResponses.$inferSelect;
+export type InsertFeedbackResponse = typeof feedbackResponses.$inferInsert;

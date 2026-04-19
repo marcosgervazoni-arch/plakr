@@ -19,6 +19,7 @@ import {
   LayoutTemplate,
   Megaphone,
   Menu,
+  MessageSquare,
   Palette,
   Settings,
   Shield,
@@ -56,7 +57,8 @@ export type AdminSection =
   | "x1-duels"
   | "share-card"
   | "sponsorship"
-  | "sponsorship-report";
+  | "sponsorship-report"
+  | "feedback";
 
 interface NavItem {
   id: AdminSection;
@@ -99,6 +101,14 @@ const NAV_GROUPS: NavGroup[] = [
       { id: "users", label: "Usuários", icon: Users, path: "/admin/users" },
       { id: "badges", label: "Badges", icon: Award, path: "/admin/badges" },
       // { id: "x1-duels", label: "Duelos X1", icon: Swords, path: "/admin/x1-duels" }, // PENDENTE: funcionalidade incompleta
+    ],
+  },
+  {
+    id: "feedback",
+    label: "Feedback",
+    icon: MessageSquare,
+    items: [
+      { id: "feedback", label: "CES + CSAT", icon: MessageSquare, path: "/admin/feedback" },
     ],
   },
   {

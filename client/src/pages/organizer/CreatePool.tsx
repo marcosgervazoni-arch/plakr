@@ -37,6 +37,8 @@ import { Link, useLocation } from "wouter";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { FeedbackBanner } from "@/components/FeedbackBanner";
+import { useFeedback } from "@/hooks/useFeedback";
 
 type AccessType = "public" | "private_link";
 
@@ -131,6 +133,7 @@ function PointsControl({
 
 export default function CreatePool() {
   const [, navigate] = useLocation();
+  const { feedback, requestFeedback, dismiss: dismissFeedback, submit: submitFeedback, isSubmitting: feedbackSubmitting } = useFeedback();
   const { user } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const qrFileRef = useRef<HTMLInputElement>(null);
@@ -208,6 +211,8 @@ export default function CreatePool() {
   const createMutation = trpc.pools.create.useMutation({
     onSuccess: (data: any) => {
       toast.success("Bolão criado com sucesso!");
+      // CES: disparar 2s após criar o bolão (fluxo mais crítico para retenção do organizador)
+      setTimeout(() => requestFeedback("ces", "create_pool"), 2000);
       navigate(`/pool/${data.slug}/manage`);
     },
     onError: (err) => toast.error(err.message || "Erro ao criar bolão."),
@@ -928,6 +933,16 @@ export default function CreatePool() {
         </div>
       </div>
     </div>
+
+    {/* Feedback CES (banner rodapé) */}
+    {feedback?.type === "ces" && (
+      <FeedbackBanner
+        context={feedback.context}
+        onSubmit={submitFeedback}
+        onDismiss={dismissFeedback}
+        isSubmitting={feedbackSubmitting}
+      />
+    )}
     </AppShell>
   );
 }

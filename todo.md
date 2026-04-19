@@ -476,3 +476,21 @@
 ## Sprint Convite — Data de Expiração no E-mail
 
 - [x] Adicionar data de expiração explícita no e-mail de convite externo (templatePoolInviteExternal) — exibe data exata em pt-BR (ex: "25 de abril de 2026") em vez de "7 dias"
+
+## Sprint Feedback CES + CSAT
+
+- [x] Tabela `feedback_responses` criada no banco (userId, type: ces|csat, context, score, comment, poolId, createdAt)
+- [x] Migration SQL aplicada no banco
+- [x] Procedure `submit`: salva resposta, respeita janela de silêncio 30 dias por tipo+contexto por usuário
+- [x] Procedure `getStats` (admin): score médio, distribuição, por contexto, comentários, tendência diária, alerta automático (CSAT <3 em >20%)
+- [x] Procedure `getComments` (admin): lista de comentários com filtros por tipo, dias e nota máxima
+- [x] Componente `FeedbackBanner.tsx` (CES): banner fixo no rodapé, 5 emojis 😫😕😐🙂😄, campo de texto opcional para notas ≤2
+- [x] Componente `FeedbackModal.tsx` (CSAT): modal com backdrop, 5 emojis 😠😞😐😊🤩, campo de texto opcional para notas ≤3
+- [x] Hook `useFeedback.ts`: gerencia estado, janela de silêncio (localStorage), submit e dismiss
+- [x] Gatilho CES: após criar bolão (CreatePool.tsx — 2s após sucesso, contexto `create_pool`)
+- [x] Gatilho CES: após primeiro palpite (PoolPage.tsx — 1.5s após sucesso, contexto `first_bet`)
+- [x] Gatilho CSAT: após encerramento do bolão (PoolPage.tsx — quando status = finished, contexto `pool_ended`)
+- [x] Painel admin `/admin/feedback`: score cards CES/CSAT, gráfico de distribuição, breakdown por contexto, comentários qualitativos ordenados por criticidade
+- [x] Menu admin: grupo "Feedback" com link "CES + CSAT" → `/admin/feedback`
+- [x] Rota `/admin/feedback` registrada no App.tsx
+- [x] 540 testes passando (24 arquivos)
