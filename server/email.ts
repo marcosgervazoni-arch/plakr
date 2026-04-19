@@ -461,7 +461,7 @@ export async function sendEmail(opts: {
 export async function enqueueEmail(opts: {
   toUserId: number;
   toEmail: string;
-  type: "welcome" | "bet_reminder" | "result_available" | "plan_expiring" | "pool_invite";
+  type: "welcome" | "bet_reminder" | "result_available" | "plan_expiring" | "pool_invite" | "vip_activated" | "vip_expiring" | "vip_cancelled";
   subject: string;
   html: string;
   scheduledFor?: Date;
@@ -648,6 +648,7 @@ export async function sendPlanExpiryWarnings(): Promise<void> {
       const expiringPlans = await db
         .select({
           userId: userPlans.userId,
+          plan: userPlans.plan,
           expiresAt: userPlans.planExpiresAt,
           userName: users.name,
           userEmail: users.email,
@@ -656,7 +657,7 @@ export async function sendPlanExpiryWarnings(): Promise<void> {
         .innerJoin(users, eq(users.id, userPlans.userId))
         .where(
           and(
-            eq(userPlans.plan, "pro"),
+            inArray(userPlans.plan, ["pro", "unlimited", "vip"]),
             eq(userPlans.isActive, true),
             gte(userPlans.planExpiresAt, targetStart),
             lte(userPlans.planExpiresAt, targetEnd)
@@ -666,28 +667,30 @@ export async function sendPlanExpiryWarnings(): Promise<void> {
       for (const plan of expiringPlans) {
         if (!plan.userEmail) continue;
 
-        const { subject, html } = templatePlanExpiring({
-          name: plan.userName ?? "Usuário",
-          daysLeft,
-          expiresAt: plan.expiresAt
-            ? new Date(plan.expiresAt as Date).toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric",
-              })
-            : "em breve",
-        });
+        const isVipPlan = plan.plan === "vip";
+        const planLabel = isVipPlan ? "Passe VIP" : plan.plan === "unlimited" ? "Plano Ilimitado" : "Plano Pro";
+        const expiresAtStr = plan.expiresAt
+          ? new Date(plan.expiresAt as Date).toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            })
+          : "em breve";
+
+        const { subject, html } = isVipPlan
+          ? templateVipExpiring({ name: plan.userName ?? "Usuário", daysLeft, expiresAt: expiresAtStr })
+          : templatePlanExpiring({ name: plan.userName ?? "Usuário", daysLeft, expiresAt: expiresAtStr });
 
         await enqueueEmail({
           toUserId: plan.userId,
           toEmail: plan.userEmail,
-          type: "plan_expiring",
+          type: isVipPlan ? "vip_expiring" : "plan_expiring",
           subject,
           html,
         });
       }
 
-      logger.info({ count: expiringPlans.length, daysLeft }, "[Email] Queued plan expiry warnings");
+      logger.info({ count: expiringPlans.length, daysLeft }, "[Email] Queued plan expiry warnings (pro+unlimited+vip)");
     }
   } catch (err) {
     logger.error({ err }, "[Email] Plan expiry warning error");
@@ -996,5 +999,116 @@ export async function scheduleRoundReminders(): Promise<void> {
     logger.info("[Email][RoundReminder] Round reminder job completed");
   } catch (err) {
     logger.error({ err }, "[Email][RoundReminder] Error in scheduleRoundReminders");
+  }
+}
+
+// ─── Template: Confirmação de ativação do Passe VIP ──────────────────────────
+export function templateVipActivated(opts: {
+  name: string;
+  expiresAt: string;
+}): { subject: string; html: string } {
+  return {
+    subject: `⭐ Passe VIP ativado — bem-vindo à experiência premium!`,
+    html: baseTemplate("Passe VIP Ativado", `
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">⭐ Seu Passe VIP está ativo!</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu Passe VIP foi ativado com sucesso. Aproveite todos os benefícios exclusivos até <strong style="color:${GOLD};">${esc(opts.expiresAt)}</strong>.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:20px 24px;margin-bottom:24px;border:1px solid rgba(255,184,0,0.3);">
+        <p style="margin:0 0 14px;font-weight:700;font-size:14px;color:${GOLD};">✨ Seus benefícios VIP:</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${TEXT};">⭐ Sem anúncios em todas as telas</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${TEXT};">🤖 Análises de IA ilimitadas nos jogos</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${TEXT};">⚡ Desafios X1 ilimitados por rodada</p>
+        <p style="margin:0;font-size:13px;color:${TEXT};">🏅 Badge VIP exclusivo no seu perfil</p>
+      </div>
+
+      ${ctaButton("Acessar o Plakr!", `${ENV.appBaseUrl}/`)}
+      <p style="margin:16px 0 0;font-size:12px;color:${MUTED2};">Seu Passe VIP renova automaticamente todo mês. Para cancelar, acesse Configurações → Minha Assinatura.</p>
+    `),
+  };
+}
+
+// ─── Template: Aviso de expiração do Passe VIP ───────────────────────────────
+export function templateVipExpiring(opts: {
+  name: string;
+  daysLeft: number;
+  expiresAt: string;
+}): { subject: string; html: string } {
+  const urgency = opts.daysLeft === 1 ? "🚨 Último dia" : `⚠️ ${opts.daysLeft} dias restantes`;
+  return {
+    subject: `${urgency} — Seu Passe VIP expira em breve`,
+    html: baseTemplate("Passe VIP Expirando", `
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">${urgency} do Passe VIP</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu Passe VIP expira em <strong style="color:${GOLD};">${esc(opts.expiresAt)}</strong>. Renove agora para continuar sem anúncios e com IA ilimitada.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+        <p style="margin:0 0 14px;font-weight:700;font-size:14px;color:${TEXT};">O que você perde sem o VIP:</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${ERROR};">❌ Anúncios voltam em todas as telas</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${ERROR};">❌ Limite de análises de IA por rodada</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${ERROR};">❌ Limite de desafios X1 por rodada</p>
+        <p style="margin:0;font-size:13px;color:${ERROR};">❌ Badge VIP removido do perfil</p>
+      </div>
+
+      ${ctaButton("Renovar Passe VIP", `${ENV.appBaseUrl}/upgrade`)}
+    `),
+  };
+}
+
+// ─── Template: Cancelamento/expiração do Passe VIP ───────────────────────────
+export function templateVipCancelled(opts: {
+  name: string;
+}): { subject: string; html: string } {
+  return {
+    subject: `Seu Passe VIP foi cancelado`,
+    html: baseTemplate("Passe VIP Cancelado", `
+      <h2 style="margin:0 0 6px;font-size:22px;font-weight:800;color:${TEXT};">Passe VIP cancelado</h2>
+      <p style="margin:0 0 24px;color:${MUTED};line-height:1.6;">Olá, <strong style="color:${TEXT};">${esc(opts.name)}</strong>! Seu Passe VIP foi cancelado. Você pode reativar a qualquer momento para voltar a ter a experiência premium.</p>
+
+      <div style="background:${SURFACE2};border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+        <p style="margin:0 0 14px;font-weight:700;font-size:14px;color:${MUTED};">Você perdeu acesso a:</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${MUTED};">⭐ Experiência sem anúncios</p>
+        <p style="margin:0 0 10px;font-size:13px;color:${MUTED};">🤖 Análises de IA ilimitadas</p>
+        <p style="margin:0;font-size:13px;color:${MUTED};">⚡ Desafios X1 ilimitados</p>
+      </div>
+
+      ${ctaButton("Reativar Passe VIP", `${ENV.appBaseUrl}/upgrade`)}
+      <p style="margin:16px 0 0;font-size:12px;color:${MUTED2};">Sentimos sua falta! Se tiver alguma dúvida, entre em contato conosco.</p>
+    `),
+  };
+}
+
+// ─── Disparar e-mail de confirmação de ativação VIP ──────────────────────────
+// Chamado pelo webhook Stripe após checkout.session.completed com plan=vip
+export async function sendVipActivationEmail(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  try {
+    const [user] = await db.select({ id: users.id, name: users.name, email: users.email })
+      .from(users).where(eq(users.id, userId)).limit(1);
+
+    if (!user?.email) return;
+
+    const [plan] = await db.select({ planExpiresAt: userPlans.planExpiresAt })
+      .from(userPlans)
+      .where(and(eq(userPlans.userId, userId), eq(userPlans.plan, "vip"), eq(userPlans.isActive, true)))
+      .limit(1);
+
+    const expiresAt = plan?.planExpiresAt
+      ? new Date(plan.planExpiresAt as Date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
+      : "em 30 dias";
+
+    const { subject, html } = templateVipActivated({ name: user.name ?? "Apostador", expiresAt });
+
+    await enqueueEmail({
+      toUserId: userId,
+      toEmail: user.email,
+      type: "vip_activated",
+      subject,
+      html,
+    });
+
+    logger.info({ userId }, "[Email][VIP] Activation email queued");
+  } catch (err) {
+    logger.error({ err, userId }, "[Email][VIP] Failed to queue activation email");
   }
 }

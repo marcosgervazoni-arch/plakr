@@ -162,7 +162,8 @@ export const adminDashboardRouter = router({
 
     const settings = await getPlatformSettings();
     const monthlyPrice = settings?.stripeMonthlyPrice ?? 3990;
-    const unlimitedPrice = 8990;
+    const unlimitedPrice = settings?.stripeUnlimitedMonthlyPrice ?? 8990;
+    const vipPrice = settings?.stripeVipMonthlyPrice ?? 490;
 
     const now = new Date();
     const sevenDaysFromNow = new Date(now);
@@ -185,6 +186,7 @@ export const adminDashboardRouter = router({
 
     const proCount = proPlans.filter(p => p.plan === "pro").length;
     const unlimitedCount = proPlans.filter(p => p.plan === "unlimited").length;
+    const vipCount = proPlans.filter(p => p.plan === "vip").length;
 
     // Novos no último mês
     const newThisMonth = proPlans.filter(p =>
@@ -216,8 +218,8 @@ export const adminDashboardRouter = router({
       userMap = Object.fromEntries(owners.map(o => [o.id, o.name ?? o.email ?? `#${o.id}`]));
     }
 
-    const mrrCents = (proCount * monthlyPrice) + (unlimitedCount * unlimitedPrice);
-    const totalPaid = proCount + unlimitedCount;
+    const mrrCents = (proCount * monthlyPrice) + (unlimitedCount * unlimitedPrice) + (vipCount * vipPrice);
+    const totalPaid = proCount + unlimitedCount + vipCount;
     const ticketMedio = totalPaid > 0 ? mrrCents / totalPaid / 100 : 0;
     const prevMonthPaid = totalPaid - newThisMonth + churned;
     const churnRate = prevMonthPaid > 0 ? Math.round((churned / prevMonthPaid) * 100) : 0;
@@ -226,6 +228,7 @@ export const adminDashboardRouter = router({
       totalPro: totalPaid,
       proCount,
       unlimitedCount,
+      vipCount,
       newThisMonth,
       churned,
       churnRate,

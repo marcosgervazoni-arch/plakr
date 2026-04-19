@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   DollarSign, TrendingDown, TrendingUp, Crown, AlertTriangle,
-  ExternalLink, Gift, XCircle, Search, RefreshCw,
+  ExternalLink, Gift, XCircle, Search, RefreshCw, Star,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,7 +120,14 @@ export default function AdminSubscriptions() {
     ? [
         { title: "MRR", value: fmtBrl(data.mrrBrl), sub: "Receita mensal recorrente", icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10" },
         { title: "ARR", value: fmtBrl(data.arrBrl), sub: "Receita anual projetada", icon: TrendingUp, color: "text-brand", bg: "bg-brand/10" },
-        { title: "Ticket Médio", value: fmtBrl(data.ticketMedio), sub: "Por bolão Pro/mês", icon: Crown, color: "text-yellow-400", bg: "bg-yellow-500/10" },
+        {
+          title: "Assinantes",
+          value: String(data.totalPro),
+          sub: `Pro: ${data.proCount} · Ilimitado: ${data.unlimitedCount} · VIP: ${(data as any).vipCount ?? 0}`,
+          icon: Crown,
+          color: "text-yellow-400",
+          bg: "bg-yellow-500/10",
+        },
         { title: "Churn Rate", value: `${data.churnRate}%`, sub: `${data.churned} cancelamentos este mês`, icon: TrendingDown, color: data.churnRate > 10 ? "text-red-400" : "text-muted-foreground", bg: "bg-muted/20" },
       ]
     : [];
@@ -130,8 +137,8 @@ export default function AdminSubscriptions() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">Assinaturas Pro</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Gestão financeira e de planos</p>
+            <h1 className="text-xl font-bold">Assinaturas</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Gestão financeira e de planos (Pro · Ilimitado · VIP)</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => utils.adminDashboard.getSubscriptionStats.invalidate()}>
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
@@ -182,7 +189,7 @@ export default function AdminSubscriptions() {
         <Card className="border-border/50">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <CardTitle className="text-base">Bolões Pro ({data?.totalPro ?? 0})</CardTitle>
+              <CardTitle className="text-base">Assinaturas ({data?.totalPro ?? 0})</CardTitle>
               <div className="flex items-center gap-1 flex-wrap">
                 {(["all", "active", "expiring_soon", "expired"] as const).map((f) => (
                   <Button key={f} variant={filter === f ? "default" : "ghost"} size="sm" className="text-xs h-7 px-2" onClick={() => setFilter(f)}>
@@ -209,6 +216,19 @@ export default function AdminSubscriptions() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm truncate">{sub.userName}</span>
                         <StatusBadge status={sub.status} />
+                        {sub.plan === "vip" ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">
+                            <Star className="w-2.5 h-2.5" />VIP
+                          </span>
+                        ) : sub.plan === "unlimited" ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                            <Crown className="w-2.5 h-2.5" />Ilimitado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-primary/15 text-primary border border-primary/30">
+                            <Crown className="w-2.5 h-2.5" />Pro
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
                         <a href={`/profile/${sub.userId}`} target="_blank" rel="noopener noreferrer" className="text-xs text-muted-foreground hover:text-primary transition-colors">ID: {sub.userId}</a>

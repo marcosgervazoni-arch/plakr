@@ -24,6 +24,7 @@ import {
   Award,
   UserCircle,
   Settings,
+  Star,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
@@ -110,6 +111,8 @@ export default function AppShell({ children }: AppShellProps) {
       (userData?.plan?.plan === "pro" || userData?.plan?.plan === "unlimited") && userData?.plan?.isActive === true ||
       userData?.plan?.plan === "vip" && userData?.plan?.isActive === true
     );
+  const isVip = !isAdmin && userData?.plan?.plan === "vip" && userData?.plan?.isActive === true;
+  const isUnlimited = !isAdmin && userData?.plan?.plan === "unlimited" && userData?.plan?.isActive === true;
   const isBlocked = userData?.user?.isBlocked === true;
 
   // Redirecionar usuários bloqueados
@@ -165,7 +168,17 @@ export default function AppShell({ children }: AppShellProps) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{user?.name}</p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  {isPro ? (
+                  {isVip ? (
+                    <Badge className="text-xs py-0 px-1.5 bg-yellow-500/15 text-yellow-400 border-yellow-500/30 h-4">
+                      <Star className="w-2.5 h-2.5 mr-1" />
+                      VIP
+                    </Badge>
+                  ) : isUnlimited ? (
+                    <Badge className="text-xs py-0 px-1.5 bg-purple-500/15 text-purple-400 border-purple-500/30 h-4">
+                      <Crown className="w-2.5 h-2.5 mr-1" />
+                      Ilimitado
+                    </Badge>
+                  ) : isPro ? (
                     <Badge className="text-xs py-0 px-1.5 bg-primary/10 text-primary border-primary/20 h-4">
                       <Crown className="w-2.5 h-2.5 mr-1" />
                       Pro

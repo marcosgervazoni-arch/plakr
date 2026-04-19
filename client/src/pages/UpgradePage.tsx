@@ -109,6 +109,18 @@ const FAQ = [
     q: "Posso testar antes de pagar?",
     a: "Sim! Você pode criar bolões gratuitos e explorar a plataforma sem custo. O upgrade é opcional e pode ser feito a qualquer momento.",
   },
+  {
+    q: "O que é o Passe VIP do Participante?",
+    a: "O Passe VIP é uma assinatura para quem participa de bolões como apostador. Com ele você navega sem nenhum anúncio, tem análises de IA ilimitadas antes de cada jogo e pode criar duelos X1 ilimitados — tudo isso em qualquer bolão que você participar.",
+  },
+  {
+    q: "O Passe VIP vale em todos os bolões?",
+    a: "Sim! O Passe VIP é vinculado à sua conta, não a um bolão específico. Todos os bolões que você participar como apostador terão os benefícios VIP automaticamente.",
+  },
+  {
+    q: "Como cancelo o Passe VIP?",
+    a: "Você pode cancelar a qualquer momento pelo portal de assinatura Stripe (acesse Configurações → Minha Assinatura). Seu Passe VIP continuará ativo até o fim do período pago.",
+  },
 ];
 
 // ─── Toggle Mensal/Anual ──────────────────────────────────────────────────────
@@ -697,6 +709,7 @@ export default function UpgradePage() {
             >
               Comparação detalhada
             </h2>
+            <p className="text-xs text-muted-foreground mt-1">Planos do Organizador vs Passe VIP do Participante</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -714,19 +727,26 @@ export default function UpgradePage() {
                   <th className="text-center px-4 py-3 font-medium text-yellow-400">
                     Ilimitado
                   </th>
+                  <th className="text-center px-4 py-3 font-medium" style={{ color: "#FFB800" }}>
+                    ⭐ VIP
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/20">
                 {[
-                  ["Bolões simultâneos", "2", "10", "Ilimitado"],
-                  ["Participantes por bolão", "30", "200", "Ilimitado"],
-                  ["Campeonatos globais", "✓", "✓", "✓"],
-                  ["Campeonatos personalizados", "—", "✓", "✓"],
-                  ["Regras de pontuação", "Padrão", "Customizável", "Customizável"],
-                  ["Prazo de palpite", "1h padrão", "Configurável", "Configurável"],
-                  ["API de resultados automática", "—", "—", "Em breve"],
-                  ["Suporte", "Comunidade", "Prioritário", "Prioritário"],
-                ].map(([feature, free, pro, unlimited]) => (
+                  ["Bolões simultâneos", "2", "10", "Ilimitado", "—"],
+                  ["Participantes por bolão", "30", "200", "Ilimitado", "—"],
+                  ["Campeonatos globais", "✓", "✓", "✓", "✓"],
+                  ["Campeonatos personalizados", "—", "✓", "✓", "—"],
+                  ["Regras de pontuação", "Padrão", "Customizável", "Customizável", "—"],
+                  ["Prazo de palpite", "1h padrão", "Configurável", "Configurável", "—"],
+                  ["Análise de IA pré-jogo", "3/dia", "3/dia", "3/dia", "Ilimitada"],
+                  ["Duelos X1", "5 ativos", "5 ativos", "5 ativos", "Ilimitados"],
+                  ["Anúncios", "Sim", "Sim", "Sim", "Zero"],
+                  ["Badge VIP no perfil", "—", "—", "—", "✓"],
+                  ["API de resultados automática", "—", "—", "Em breve", "—"],
+                  ["Suporte", "Comunidade", "Prioritário", "Prioritário", "Comunidade"],
+                ].map(([feature, free, pro, unlimited, vip]) => (
                   <tr
                     key={feature}
                     className="hover:bg-muted/20 transition-colors"
@@ -740,6 +760,9 @@ export default function UpgradePage() {
                     </td>
                     <td className="px-4 py-3 text-center text-yellow-400 font-medium text-sm">
                       {unlimited}
+                    </td>
+                    <td className="px-4 py-3 text-center font-medium text-sm" style={{ color: "#FFB800" }}>
+                      {vip}
                     </td>
                   </tr>
                 ))}

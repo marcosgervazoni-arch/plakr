@@ -34,6 +34,7 @@
  */
 
 import { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
@@ -310,7 +311,7 @@ export default function X1ChallengeModal({
                 </p>
               </div>
               <div className="rounded-xl border border-[#FFB800]/30 bg-[#FFB800]/5 p-3 text-left space-y-2">
-                <p className="text-xs font-semibold text-[#FFB800]">Passe VIP — R$ 4,90/mês</p>
+                <p className="text-xs font-semibold text-[#FFB800]">Passe VIP</p>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   <li>✓ Duelos X1 ilimitados</li>
                   <li>✓ Análise de IA ilimitada</li>
@@ -322,11 +323,7 @@ export default function X1ChallengeModal({
                 className="w-full bg-[#FFB800] hover:bg-[#FFB800]/90 text-black font-semibold"
                 onClick={() => {
                   onClose();
-                  // Scroll para o card VIP na PoolPage (se existir) ou redirecionar
-                  const vipCard = document.getElementById("vip-upgrade-card");
-                  if (vipCard) {
-                    vipCard.scrollIntoView({ behavior: "smooth", block: "center" });
-                  }
+                  window.location.href = "/upgrade#vip";
                 }}
               >
                 Ativar Passe VIP

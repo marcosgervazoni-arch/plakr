@@ -556,3 +556,29 @@
 
 ## Sprint Preço VIP Dinâmico
 - [x] Corrigir preço do Passe VIP na UpgradePage para ser lido do banco (getPublicPricing.vipMonthlyPrice)
+
+## Sprint VIP-A — Visibilidade, Retenção e Percepção de Valor (Alta Prioridade)
+- [x] [M-1/C-1] KPIs de VIP no AdminDashboard (vipCount + MRR VIP)
+- [x] [M-3/C-2] Assinantes VIP na lista do AdminSubscriptions com badge
+- [x] [E-2/B-1/O-1] sendPlanExpiryWarnings cobre VIP e Unlimited
+- [x] [E-1] E-mail transacional de confirmação de ativação VIP (templateVipActivated + webhook)
+- [x] [U-1] Badge VIP no sidebar do AppShell (estrela dourada)
+- [x] [M-6] CTA do X1ChallengeModal corrigido (redireciona para /upgrade#vip)
+
+## Sprint VIP-B — Conversão, UX e Comunicação (Média Prioridade)
+- [x] [M-4] Preço dinâmico em VipUpgradeBanner
+- [x] [M-5] Preço dinâmico em X1ChallengeModal (hardcode removido)
+- [x] [E-3] Templates de cancelamento (templateVipCancelled) e expiração (templateVipExpiring) criados e integrados
+- [x] [E-4] FAQ sobre Passe VIP na UpgradePage (3 novas perguntas)
+- [x] [E-5] Coluna VIP na tabela de comparação de features (12 linhas)
+- [x] [U-3] SubscriptionPage do organizador reescrita com Free/Pro/Unlimited e preços dinâmicos
+- [ ] [M-7] Exibir VipUpgradeBanner variante "ads" para usuários free (BACKLOG)
+- [ ] [U-2] Status VIP no Dashboard do usuário (BACKLOG)
+
+## Sprint VIP-C — Qualidade e Manutenibilidade (Baixa Prioridade)
+- [ ] [T-1] Documentar separação intencional PlanTier / ParticipantTier em shared/plans.ts (BACKLOG)
+- [ ] [T-2] Remover VIP_PRICE.monthly hardcoded de shared/plans.ts (BACKLOG)
+- [ ] [U-4] Tela /minha-assinatura para participante VIP (BACKLOG)
+- [ ] [B-3] Log de admin para cancelamento VIP via webhook (BACKLOG)
+- [ ] [O-2] Métrica de e-mails de ativação VIP no emailCronHealth (BACKLOG)
+- [ ] [C-3] Toggle Admin para habilitar/desabilitar Passe VIP no AdminPricing (BACKLOG)

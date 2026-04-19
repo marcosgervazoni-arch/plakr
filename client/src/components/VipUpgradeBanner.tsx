@@ -58,7 +58,14 @@ export function VipUpgradeBanner({
 }: VipUpgradeBannerProps) {
   const [loading, setLoading] = useState(false);
   const createVipCheckout = trpc.stripe.createVipCheckout.useMutation();
-  const config = VARIANT_CONFIG[variant];
+  const { data: pricing } = trpc.platform.getPublicPricing.useQuery();
+  const vipPrice = pricing?.vipMonthlyPrice
+    ? `R$${(pricing.vipMonthlyPrice / 100).toFixed(2).replace('.', ',')}/mês`
+    : "R$4,90/mês";
+  const config = {
+    ...VARIANT_CONFIG[variant],
+    cta: VARIANT_CONFIG[variant].cta.replace("R$4,90/mês", vipPrice),
+  };
 
   const handleActivate = async () => {
     setLoading(true);

@@ -8,6 +8,7 @@ import { Express, Request, Response } from "express";
 import express from "express";
 import Stripe from "stripe";
 import { createAdminLog, createNotification, upsertUserPlan, getUserPlan, getPlatformSettings } from "./db";
+import { sendVipActivationEmail, templateVipCancelled, enqueueEmail } from "./email";
 import logger from "./logger";
 
 export function registerStripeWebhook(app: Express) {
@@ -86,6 +87,11 @@ export function registerStripeWebhook(app: Express) {
                 billing,
               });
 
+              // E-mail transacional de confirmação de ativação VIP
+              if (tier === "vip") {
+                await sendVipActivationEmail(userId);
+              }
+
               logger.info({ userId, tier }, "[Webhook] Plan activated");
             }
             break;
@@ -116,13 +122,34 @@ export function registerStripeWebhook(app: Express) {
                   "Seu plano pago foi cancelado. Sua conta continua ativa no plano gratuito com funcionalidades limitadas.",
               });
 
+              // Detectar se era VIP para enviar e-mail de cancelamento correto
+              const cancelledTier = subscription.metadata?.tier ?? "pro";
+              if (cancelledTier === "vip") {
+                try {
+                  const { users: usersT } = await import("../drizzle/schema");
+                  const { eq: eqOp } = await import("drizzle-orm");
+                  const db = await (await import("./db")).getDb();
+                  if (db) {
+                    const [user] = await db.select({ name: usersT.name, email: usersT.email })
+                      .from(usersT).where(eqOp(usersT.id, userId)).limit(1);
+                    if (user?.email) {
+                      const { subject, html } = templateVipCancelled({ name: user.name ?? "Apostador" });
+                      await enqueueEmail({ toUserId: userId, toEmail: user.email, type: "vip_cancelled", subject, html });
+                    }
+                  }
+                } catch (emailErr) {
+                  logger.warn({ emailErr }, "[Webhook] VIP cancellation email failed (non-critical)");
+                }
+              }
+
               await createAdminLog(userId, "stripe_subscription_cancelled", "user", userId, {
                 subscriptionId: subscription.id,
                 canceledAt: new Date().toISOString(),
                 reason: subscription.cancellation_details?.reason ?? "unknown",
+                tier: cancelledTier,
               }, undefined, { level: "warn" });
 
-              logger.info({ userId }, "[Webhook] Plan cancelled, downgraded to free");
+              logger.info({ userId, tier: cancelledTier }, "[Webhook] Plan cancelled, downgraded to free");
             }
             break;
           }

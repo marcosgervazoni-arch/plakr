@@ -16,6 +16,7 @@ import {
   Trophy,
   Users,
   Zap,
+  Minus,
 } from "lucide-react";
 import { useEffect } from "react";
 import { useParams, useSearch } from "wouter";
@@ -23,50 +24,55 @@ import { toast } from "sonner";
 import OrganizerLayout from "@/components/OrganizerLayout";
 import { useUserPlan } from "@/hooks/useUserPlan";
 
-const PRO_FEATURES = [
+const PLAN_FEATURES = [
   {
     icon: Users,
-    title: "Participantes ilimitados",
-    description: "Sem limite de membros no seu bolão.",
-    free: "Máx. 50",
-    pro: "Ilimitado",
+    title: "Participantes por bolão",
+    free: "Máx. 30",
+    pro: "Máx. 200",
+    unlimited: "Ilimitado",
   },
   {
     icon: Infinity,
     title: "Bolões simultâneos",
-    description: "Crie quantos bolões quiser ao mesmo tempo.",
     free: "Máx. 2",
-    pro: "Ilimitado",
+    pro: "Máx. 10",
+    unlimited: "Ilimitado",
   },
   {
     icon: Trophy,
     title: "Campeonatos personalizados",
-    description: "Crie seus próprios campeonatos com times e jogos customizados.",
     free: "Não",
     pro: "Sim",
+    unlimited: "Sim",
   },
   {
     icon: Settings,
-    title: "Regras de pontuação customizáveis",
-    description: "Defina seus próprios critérios de pontuação e desempate.",
+    title: "Regras de pontuação",
     free: "Padrão",
-    pro: "Total",
+    pro: "Customizável",
+    unlimited: "Customizável",
   },
   {
     icon: Zap,
-    title: "Prazo de palpite personalizado",
-    description: "Configure o prazo de palpite para cada jogo.",
+    title: "Prazo de palpite",
     free: "1h padrão",
     pro: "Configurável",
+    unlimited: "Configurável",
   },
   {
     icon: Star,
     title: "Registro de resultados",
-    description: "Registre os resultados dos jogos diretamente no painel.",
     free: "Não",
     pro: "Sim",
+    unlimited: "Sim",
   },
 ];
+
+function formatPrice(cents: number | undefined, fallback: string) {
+  if (!cents) return fallback;
+  return `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
+}
 
 export default function SubscriptionPage() {
   const analytics = useAnalytics();
@@ -80,6 +86,8 @@ export default function SubscriptionPage() {
     { enabled: !!slug }
   );
   const pool = poolData;
+
+  const { data: pricing } = trpc.platform.getPublicPricing.useQuery();
 
   const checkoutMutation = trpc.stripe.createCheckout.useMutation({
     onSuccess: (data) => {
@@ -109,27 +117,32 @@ export default function SubscriptionPage() {
     const params = new URLSearchParams(search);
     if (params.get("checkout") === "success") {
       analytics.trackPurchase({ currency: "BRL" });
-      toast.success("Plano ativado com sucesso! Bem-vindo ao Pro.");
+      const upgradedTier = params.get("tier") ?? "pro";
+      const label = upgradedTier === "unlimited" ? "Ilimitado" : "Pro";
+      toast.success(`Plano ${label} ativado com sucesso!`);
     } else if (params.get("checkout") === "cancelled") {
       toast.info("Checkout cancelado. Você pode assinar a qualquer momento.");
     }
   }, [search]);
 
-  const handleUpgrade = () => {
+  const handleUpgrade = (targetTier: "pro" | "unlimited") => {
     analytics.trackUpgradeClicked({ source: "organizer_subscription", pool_slug: slug ?? undefined });
     checkoutMutation.mutate({
-      tier: "pro",
+      tier: targetTier,
       origin: window.location.origin,
     });
   };
 
   const handleManageSubscription = () => {
-    portalMutation.mutate({
-      origin: window.location.origin,
-    });
+    portalMutation.mutate({ origin: window.location.origin });
   };
 
-  const isProExpired = false; // Gerenciado pelo Stripe — sem expiração local
+  const isProExpired = false;
+
+  const proPrice = formatPrice(pricing?.proMonthlyPrice, "R$ --");
+  const unlimitedPrice = formatPrice(pricing?.unlimitedMonthlyPrice, "R$ --");
+
+  const activeTierLabel = isUnlimited ? "Ilimitado" : isPro ? "Pro" : null;
 
   return (
     <OrganizerLayout
@@ -145,35 +158,36 @@ export default function SubscriptionPage() {
         <div className="text-center space-y-3">
           <div className="flex items-center justify-center gap-2">
             <Crown className="h-8 w-8 text-yellow-400" />
-            <h1 className="text-3xl font-bold font-display">Plano Pro</h1>
+            <h1 className="text-3xl font-bold font-display">Planos do Organizador</h1>
           </div>
           <p className="text-muted-foreground text-lg">
             Desbloqueie o potencial completo do seu bolão
           </p>
-          {isPro && (
+          {activeTierLabel && (
             <Badge className="bg-yellow-400/20 text-yellow-400 border-yellow-400/30 text-sm px-4 py-1">
               <Crown className="h-3.5 w-3.5 mr-1.5" />
-              Plano Pro Ativo
+              Plano {activeTierLabel} Ativo
             </Badge>
           )}
         </div>
 
-        {/* Comparativo de planos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Plano Gratuito */}
+        {/* Comparativo de planos — 3 colunas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Gratuito */}
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-muted-foreground">Plano Gratuito</CardTitle>
+              <CardTitle className="text-base text-muted-foreground">Gratuito</CardTitle>
               <p className="text-3xl font-bold font-mono">R$ 0</p>
+              <p className="text-xs text-muted-foreground">Para começar</p>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {PRO_FEATURES.map((f) => (
-                <div key={f.title} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center mt-0.5 shrink-0">
-                    <span className="text-muted-foreground text-xs">—</span>
+            <CardContent className="space-y-2.5">
+              {PLAN_FEATURES.map((f) => (
+                <div key={f.title} className="flex items-start gap-2.5">
+                  <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center mt-0.5 shrink-0">
+                    <Minus className="w-2.5 h-2.5 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{f.title}</p>
+                    <p className="text-xs font-medium">{f.title}</p>
                     <p className="text-xs text-muted-foreground">{f.free}</p>
                   </div>
                 </div>
@@ -181,32 +195,56 @@ export default function SubscriptionPage() {
             </CardContent>
           </Card>
 
-          {/* Plano Pro */}
-          <Card className="border-brand/40 bg-brand/5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-yellow-400 text-black text-xs font-bold px-3 py-1 rounded-bl-lg">
-              RECOMENDADO
-            </div>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Crown className="h-5 w-5 text-yellow-400" />
-                Plano Pro
-              </CardTitle>
-              <div>
-                <p className="text-3xl font-bold font-mono">
-                  Preço por bolão
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Cobrado por bolão ativo via Stripe
-                </p>
+          {/* Pro */}
+          <Card className={`border-primary/40 relative overflow-hidden ${tier === "pro" ? "bg-primary/5" : ""}`}>
+            {tier !== "unlimited" && (
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
+                POPULAR
               </div>
+            )}
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-1.5">
+                <Crown className="h-4 w-4 text-primary" />
+                Pro
+              </CardTitle>
+              <p className="text-3xl font-bold font-mono">{proPrice}<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+              <p className="text-xs text-muted-foreground">Para organizadores sérios</p>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {PRO_FEATURES.map((f) => (
-                <div key={f.title} className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-green-400 mt-0.5 shrink-0" />
+            <CardContent className="space-y-2.5">
+              {PLAN_FEATURES.map((f) => (
+                <div key={f.title} className="flex items-start gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-sm font-medium">{f.title}</p>
+                    <p className="text-xs font-medium">{f.title}</p>
                     <p className="text-xs text-muted-foreground">{f.pro}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Ilimitado */}
+          <Card className={`border-yellow-500/40 relative overflow-hidden ${isUnlimited ? "bg-yellow-500/5" : ""}`}>
+            {isUnlimited && (
+              <div className="absolute top-0 right-0 bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-bl-lg">
+                ATIVO
+              </div>
+            )}
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-1.5">
+                <Crown className="h-4 w-4 text-yellow-400" />
+                Ilimitado
+              </CardTitle>
+              <p className="text-3xl font-bold font-mono">{unlimitedPrice}<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+              <p className="text-xs text-muted-foreground">Sem limites, sem compromisso</p>
+            </CardHeader>
+            <CardContent className="space-y-2.5">
+              {PLAN_FEATURES.map((f) => (
+                <div key={f.title} className="flex items-start gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-yellow-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium">{f.title}</p>
+                    <p className="text-xs text-muted-foreground">{f.unlimited}</p>
                   </div>
                 </div>
               ))}
@@ -220,22 +258,22 @@ export default function SubscriptionPage() {
             <CardTitle className="text-lg">Recursos em detalhe</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {PRO_FEATURES.map((f, i) => (
+            {PLAN_FEATURES.map((f, i) => (
               <div key={f.title}>
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-brand/10 flex items-center justify-center shrink-0">
-                    <f.icon className="h-5 w-5 text-brand" />
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <f.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1">
                     <p className="font-medium">{f.title}</p>
-                    <p className="text-sm text-muted-foreground">{f.description}</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs text-muted-foreground">Gratuito: {f.free}</p>
-                    <p className="text-xs text-green-400 font-medium">Pro: {f.pro}</p>
+                  <div className="text-right shrink-0 space-y-0.5">
+                    <p className="text-xs text-muted-foreground">Free: {f.free}</p>
+                    <p className="text-xs text-primary font-medium">Pro: {f.pro}</p>
+                    <p className="text-xs text-yellow-400 font-medium">Ilimitado: {f.unlimited}</p>
                   </div>
                 </div>
-                {i < PRO_FEATURES.length - 1 && <Separator className="mt-4" />}
+                {i < PLAN_FEATURES.length - 1 && <Separator className="mt-4" />}
               </div>
             ))}
           </CardContent>
@@ -246,8 +284,23 @@ export default function SubscriptionPage() {
           {isPro ? (
             <div className="space-y-3">
               <p className="text-muted-foreground">
-                Seu bolão está no Plano Pro. Gerencie sua assinatura pelo portal Stripe.
+                Seu bolão está no Plano <strong>{activeTierLabel}</strong>. Gerencie sua assinatura pelo portal Stripe.
               </p>
+              {!isUnlimited && (
+                <Button
+                  size="lg"
+                  onClick={() => handleUpgrade("unlimited")}
+                  disabled={checkoutMutation.isPending}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold gap-2 px-8 mr-3"
+                >
+                  {checkoutMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Crown className="h-4 w-4" />
+                  )}
+                  Fazer upgrade para Ilimitado
+                </Button>
+              )}
               <Button
                 size="lg"
                 variant="outline"
@@ -265,19 +318,34 @@ export default function SubscriptionPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              <Button
-                size="lg"
-                onClick={handleUpgrade}
-                disabled={checkoutMutation.isPending}
-                className="bg-brand hover:bg-brand/90 gap-2 px-8"
-              >
-                {checkoutMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Crown className="h-4 w-4" />
-                )}
-                Assinar Plano Pro
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  size="lg"
+                  onClick={() => handleUpgrade("pro")}
+                  disabled={checkoutMutation.isPending}
+                  className="gap-2 px-8"
+                >
+                  {checkoutMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Crown className="h-4 w-4" />
+                  )}
+                  Assinar Pro — {proPrice}/mês
+                </Button>
+                <Button
+                  size="lg"
+                  onClick={() => handleUpgrade("unlimited")}
+                  disabled={checkoutMutation.isPending}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-black font-semibold gap-2 px-8"
+                >
+                  {checkoutMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Crown className="h-4 w-4" />
+                  )}
+                  Assinar Ilimitado — {unlimitedPrice}/mês
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Pagamento seguro via Stripe. Cancele a qualquer momento.
               </p>
