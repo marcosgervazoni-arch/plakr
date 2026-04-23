@@ -55,7 +55,7 @@ interface SponsorForm {
   popupImageUrl: string;
   popupButtonText: string;
   popupButtonUrl: string;
-  popupFrequency: "once_per_member" | "once_per_session" | "always";
+  popupFrequency: "once_per_member" | "once_per_session" | "twice_daily" | "always";
   popupDelaySeconds: number;
   popupActive: boolean;
   showLogoOnShareCard: boolean;
@@ -965,6 +965,7 @@ export default function AdminSponsorship() {
                         <SelectContent>
                           <SelectItem value="once_per_member">Uma vez por membro</SelectItem>
                           <SelectItem value="once_per_session">Uma vez por sessão</SelectItem>
+                          <SelectItem value="twice_daily">2× por dia (manhã e tarde/noite)</SelectItem>
                           <SelectItem value="always">Sempre</SelectItem>
                         </SelectContent>
                       </Select>

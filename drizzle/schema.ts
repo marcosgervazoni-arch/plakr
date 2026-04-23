@@ -1097,7 +1097,7 @@ export const poolSponsors = mysqlTable("pool_sponsors", {
   popupImageUrl: text("popupImageUrl"),
   popupButtonText: varchar("popupButtonText", { length: 100 }),
   popupButtonUrl: text("popupButtonUrl"),
-  popupFrequency: mysqlEnum("popupFrequency", ["once_per_member", "once_per_session", "always"])
+  popupFrequency: mysqlEnum("popupFrequency", ["once_per_member", "once_per_session", "twice_daily", "always"])
     .default("once_per_session"),
   popupDelaySeconds: int("popupDelaySeconds").default(3).notNull(),
   popupActive: boolean("popupActive").default(false).notNull(),

@@ -26,7 +26,7 @@ const sponsorBaseSchema = z.object({
   popupImageUrl: z.string().url().nullable().optional(),
   popupButtonText: z.string().max(100).nullable().optional(),
   popupButtonUrl: z.string().url().nullable().optional(),
-  popupFrequency: z.enum(["once_per_member", "once_per_session", "always"]).optional(),
+  popupFrequency: z.enum(["once_per_member", "once_per_session", "twice_daily", "always"]).optional(),
   popupDelaySeconds: z.number().int().min(0).max(60).optional(),
   popupActive: z.boolean().optional(),
   showLogoOnShareCard: z.boolean().optional(),

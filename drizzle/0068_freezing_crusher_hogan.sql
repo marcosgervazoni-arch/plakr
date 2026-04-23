@@ -1,0 +1,1 @@
+ALTER TABLE `pool_sponsors` MODIFY COLUMN `popupFrequency` enum('once_per_member','once_per_session','twice_daily','always') DEFAULT 'once_per_session';

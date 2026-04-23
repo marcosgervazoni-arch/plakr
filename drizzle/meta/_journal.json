@@ -477,6 +477,13 @@
       "when": 1776904517494,
       "tag": "0067_plain_richard_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "5",
+      "when": 1776951790116,
+      "tag": "0068_freezing_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

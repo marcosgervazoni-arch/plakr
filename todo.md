@@ -610,3 +610,10 @@
 - [x] `AdminAds.tsx`: tipo `AdForm.popupFrequency` e Select com opção "2× por dia (manhã e tarde/noite)"
 - [x] `AdminIntegrations.tsx`: tipo e Select de frequência Adsterra com opção "2× por dia", descrição explicativa
 - [x] 582 testes passando (nenhum quebrado)
+
+## PENDENTE — Sprint Popup Patrocinado 2× por Dia
+
+- [x] Schema Drizzle pool_sponsors: adicionado `twice_daily` no enum `popupFrequency` (migration aplicada)
+- [x] Router pools-sponsor.ts (Zod): `twice_daily` adicionado no enum
+- [x] SponsorDisplay.tsx: lógica `twice_daily` no useEffect e handleClose (morning/afternoon via localStorage)
+- [x] AdminSponsorship.tsx: tipo SponsorForm e Select com opção "2× por dia (manhã e tarde/noite)"

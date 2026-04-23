@@ -203,7 +203,11 @@ export function SponsorPopup({ poolId, userId, sponsorId }: SponsorPopupProps) {
     const freq = sponsor.popupFrequency ?? "once_per_session";
     if (freq === "once_per_member" && localStorage.getItem(lsKey)) return;
     if (freq === "once_per_session" && sessionStorage.getItem(sessionKey)) return;
-
+    if (freq === "twice_daily") {
+      const period = new Date().getHours() < 12 ? "morning" : "afternoon";
+      const twiceKey = `${lsKey}_${new Date().toDateString()}_${period}`;
+      if (localStorage.getItem(twiceKey)) return;
+    }
     const delay = (sponsor.popupDelaySeconds ?? 3) * 1000;
     timerRef.current = setTimeout(() => setVisible(true), delay);
 
@@ -226,6 +230,11 @@ export function SponsorPopup({ poolId, userId, sponsorId }: SponsorPopupProps) {
     const freq = sponsor.popupFrequency ?? "once_per_session";
     if (freq === "once_per_member") localStorage.setItem(lsKey, "1");
     if (freq === "once_per_session") sessionStorage.setItem(sessionKey, "1");
+    if (freq === "twice_daily") {
+      const period = new Date().getHours() < 12 ? "morning" : "afternoon";
+      const twiceKey = `${lsKey}_${new Date().toDateString()}_${period}`;
+      localStorage.setItem(twiceKey, "1");
+    }
   };
 
   if (!visible || !sponsor || !sponsor.popupActive || !sponsor.popupTitle) return null;
