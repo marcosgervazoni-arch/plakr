@@ -600,3 +600,13 @@
 - [x] Configurar storage proxy para servir arquivos via /manus-storage/
 - [x] Embutir vídeo na landing page (seção "Veja o Plakr em ação" entre Hero e Como Funciona)
 - [x] Autoplay mudo + loop + controles + responsivo
+
+## CONCLUÍDO — Sprint Popup 2× por Dia
+
+- [x] Enum `popupFrequency` no banco: adicionado valor `twice_daily` (migration aplicada)
+- [x] Schema Drizzle atualizado: `["session", "twice_daily", "daily", "always"]`
+- [x] Router `ads.ts` (Zod): `twice_daily` nos schemas de `create` e `update`
+- [x] `AdBanner.tsx`: função `getDayPeriod()` (morning 0h–11h / afternoon 12h–23h), `canShowPopup` e `markPopupShown` com lógica `twice_daily`, lógica Adsterra com `twice_daily`
+- [x] `AdminAds.tsx`: tipo `AdForm.popupFrequency` e Select com opção "2× por dia (manhã e tarde/noite)"
+- [x] `AdminIntegrations.tsx`: tipo e Select de frequência Adsterra com opção "2× por dia", descrição explicativa
+- [x] 582 testes passando (nenhum quebrado)

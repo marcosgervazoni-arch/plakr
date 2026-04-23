@@ -59,7 +59,7 @@ export default function AdminIntegrations() {
   const [adBottomDesktop, setAdBottomDesktop] = useState("");
   const [adBottomMobile, setAdBottomMobile] = useState("");
   const [adPopup, setAdPopup] = useState("");
-  const [adPopupFrequency, setAdPopupFrequency] = useState<"session" | "daily" | "always">("session");
+  const [adPopupFrequency, setAdPopupFrequency] = useState<"session" | "twice_daily" | "daily" | "always">("session");
   const [adNative, setAdNative] = useState("");
 
   useEffect(() => {
@@ -78,8 +78,8 @@ export default function AdminIntegrations() {
       setAdPopup(str(scripts["popup"]));
       setAdNative(str(scripts["native"]));
       const freq = scripts["popup_frequency"];
-      if (freq === "daily" || freq === "always" || freq === "session") {
-        setAdPopupFrequency(freq);
+      if (freq === "daily" || freq === "always" || freq === "session" || freq === "twice_daily") {
+        setAdPopupFrequency(freq as "session" | "twice_daily" | "daily" | "always");
       }
     }
   }, [settings]);
@@ -637,18 +637,19 @@ export default function AdminIntegrations() {
                     />
                     <div className="space-y-2">
                       <Label className="text-xs font-medium text-muted-foreground">Frequência do Popup</Label>
-                      <Select value={adPopupFrequency} onValueChange={(v) => setAdPopupFrequency(v as "session" | "daily" | "always")}>
+                      <Select value={adPopupFrequency} onValueChange={(v) => setAdPopupFrequency(v as "session" | "twice_daily" | "daily" | "always")}>
                         <SelectTrigger className="h-9 bg-card border-border/50 text-sm">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="session">1× por sessão (recomendado)</SelectItem>
+                          <SelectItem value="twice_daily">2× por dia (manhã e tarde/noite)</SelectItem>
                           <SelectItem value="daily">1× por dia</SelectItem>
                           <SelectItem value="always">Sempre (toda navegação)</SelectItem>
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground">
-                        Controla com que frequência o popup aparece para cada usuário free.
+                        Controla com que frequência o popup aparece para cada usuário free. Com "2× por dia", o popup é exibido uma vez no período da manhã (0h–11h) e uma vez à tarde/noite (12h–23h).
                       </p>
                     </div>
                   </div>

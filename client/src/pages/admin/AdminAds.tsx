@@ -125,7 +125,7 @@ type AdForm = {
   startAt: string;
   endAt: string;
   sortOrder: number;
-  popupFrequency: "session" | "daily" | "always";
+  popupFrequency: "session" | "twice_daily" | "daily" | "always";
 };
 const defaultForm: AdForm = {
   title: "", assetUrl: "", linkUrl: "", type: "banner", position: "sidebar",
@@ -203,7 +203,7 @@ export default function AdminAds() {
       startAt: (ad as { startAt?: Date | null }).startAt ? new Date((ad as { startAt: Date }).startAt).toISOString().slice(0, 16) : "",
       endAt: (ad as { endAt?: Date | null }).endAt ? new Date((ad as { endAt: Date }).endAt).toISOString().slice(0, 16) : "",
       sortOrder: (ad as { sortOrder?: number }).sortOrder ?? 0,
-      popupFrequency: ((ad as { popupFrequency?: string }).popupFrequency as "session" | "daily" | "always") ?? "session",
+      popupFrequency: ((ad as { popupFrequency?: string }).popupFrequency as "session" | "twice_daily" | "daily" | "always") ?? "session",
     });
   };
   const adsGlobalEnabled = settings?.adsEnabled ?? true;
@@ -651,8 +651,9 @@ function AdFormDialog({
               <Select value={form.popupFrequency} onValueChange={(v) => update({ popupFrequency: v as AdForm["popupFrequency"] })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="session">Uma vez por sessão (recomendado)</SelectItem>
-                  <SelectItem value="daily">Uma vez por dia</SelectItem>
+                  <SelectItem value="session">1× por sessão (recomendado)</SelectItem>
+                  <SelectItem value="twice_daily">2× por dia (manhã e tarde/noite)</SelectItem>
+                  <SelectItem value="daily">1× por dia</SelectItem>
                   <SelectItem value="always">Sempre que a página carregar</SelectItem>
                 </SelectContent>
               </Select>

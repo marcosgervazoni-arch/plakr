@@ -1,0 +1,2 @@
+ALTER TABLE `ads` MODIFY COLUMN `popupFrequency` enum('session','twice_daily','daily','always') DEFAULT 'session';--> statement-breakpoint
+ALTER TABLE `pool_members` ADD `paymentPending` boolean DEFAULT false NOT NULL;

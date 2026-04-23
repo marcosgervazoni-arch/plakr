@@ -470,6 +470,13 @@
       "when": 1776607443705,
       "tag": "0066_complex_goliath",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "5",
+      "when": 1776904517494,
+      "tag": "0067_plain_richard_fisk",
+      "breakpoints": true
     }
   ]
 }

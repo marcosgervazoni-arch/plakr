@@ -39,7 +39,7 @@ type Ad = {
   position: "sidebar" | "top" | "between_sections" | "bottom" | "popup";
   device: "all" | "desktop" | "mobile";
   carouselInterval: number;
-  popupFrequency: "session" | "daily" | "always" | null;
+  popupFrequency: "session" | "daily" | "twice_daily" | "always" | null;
 };
 
 // ─── Dimensões fixas por posição (padrão IAB) ───────────────────────────────
@@ -80,6 +80,10 @@ function filterByDevice(ads: Ad[], isMobile: boolean): Ad[] {
   );
 }
 
+// Retorna o "período do dia": "morning" (0–11h) ou "afternoon" (12–23h)
+function getDayPeriod(): string {
+  return new Date().getHours() < 12 ? "morning" : "afternoon";
+}
 function canShowPopup(ad: Ad): boolean {
   const key = `popup_shown_${ad.id}`;
   if (ad.popupFrequency === "always") return true;
@@ -88,13 +92,20 @@ function canShowPopup(ad: Ad): boolean {
     const stored = localStorage.getItem(key);
     return stored !== new Date().toDateString();
   }
+  if (ad.popupFrequency === "twice_daily") {
+    const stored = localStorage.getItem(key);
+    const expected = `${new Date().toDateString()}_${getDayPeriod()}`;
+    return stored !== expected;
+  }
   return true;
 }
-
 function markPopupShown(ad: Ad): void {
   const key = `popup_shown_${ad.id}`;
   if (ad.popupFrequency === "session") sessionStorage.setItem(key, "1");
   else if (ad.popupFrequency === "daily") localStorage.setItem(key, new Date().toDateString());
+  else if (ad.popupFrequency === "twice_daily") {
+    localStorage.setItem(key, `${new Date().toDateString()}_${getDayPeriod()}`);
+  }
 }
 
 // ─── Componente Adsterra: iframe srcdoc ─────────────────────────────────────
@@ -208,7 +219,7 @@ export function AdBanner({ position, className, adConfig: adConfigProp }: AdBann
       }
     } else if (adsterraCode) {
       // Sem banner próprio: usar Adsterra como interstitial
-      // Frequência configurada no Admin (popup_frequency): session | daily | always
+      // Frequência configurada no Admin (popup_frequency): session | twice_daily | daily | always
       const freq = (adNetworkScripts["popup_frequency"] as string) || "session";
       const popupKey = "adsterra_popup_shown";
       let canShow = false;
@@ -217,6 +228,11 @@ export function AdBanner({ position, className, adConfig: adConfigProp }: AdBann
       } else if (freq === "session") {
         canShow = !sessionStorage.getItem(popupKey);
         if (canShow) sessionStorage.setItem(popupKey, "1");
+      } else if (freq === "twice_daily") {
+        const stored = localStorage.getItem(popupKey);
+        const expected = `${new Date().toDateString()}_${getDayPeriod()}`;
+        canShow = stored !== expected;
+        if (canShow) localStorage.setItem(popupKey, expected);
       } else if (freq === "daily") {
         const stored = localStorage.getItem(popupKey);
         canShow = stored !== new Date().toDateString();

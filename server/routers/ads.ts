@@ -31,7 +31,7 @@ export const adsRouter = router({
       startAt: z.date().optional().nullable(),
       endAt: z.date().optional().nullable(),
       sortOrder: z.number().default(0),
-      popupFrequency: z.enum(["session", "daily", "always"]).default("session"),
+      popupFrequency: z.enum(["session", "twice_daily", "daily", "always"]).default("session"),
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();
@@ -122,7 +122,7 @@ export const adsRouter = router({
       startAt: z.date().optional().nullable(),
       endAt: z.date().optional().nullable(),
       sortOrder: z.number().optional(),
-      popupFrequency: z.enum(["session", "daily", "always"]).optional(),
+      popupFrequency: z.enum(["session", "twice_daily", "daily", "always"]).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await (await import("../db")).getDb();

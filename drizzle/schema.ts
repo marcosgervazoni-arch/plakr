@@ -655,7 +655,7 @@ export const ads = mysqlTable("ads", {
   sortOrder: int("sortOrder").default(0).notNull(),
   startAt: timestamp("startAt"),
   endAt: timestamp("endAt"),
-  popupFrequency: mysqlEnum("popupFrequency", ["session", "daily", "always"]).default("session"),
+  popupFrequency: mysqlEnum("popupFrequency", ["session", "twice_daily", "daily", "always"]).default("session"),
   device: mysqlEnum("device", ["all", "desktop", "mobile"]).default("all").notNull(),
   carouselInterval: int("carouselInterval").default(5000).notNull(),
   createdBy: int("createdBy").references(() => users.id),
