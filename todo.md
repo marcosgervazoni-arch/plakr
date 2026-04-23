@@ -617,3 +617,7 @@
 - [x] Router pools-sponsor.ts (Zod): `twice_daily` adicionado no enum
 - [x] SponsorDisplay.tsx: lógica `twice_daily` no useEffect e handleClose (morning/afternoon via localStorage)
 - [x] AdminSponsorship.tsx: tipo SponsorForm e Select com opção "2× por dia (manhã e tarde/noite)"
+
+## PENDENTE — Bug: Inconsistência Mural vs Ranking
+
+- [x] **BUG CORRIGIDO:** `placeBet` não chamava `recalculateMemberStats` — badge era concedido mas `pool_member_stats` nunca era criado. Adicionado `await recalculateMemberStats()` após `upsertBet` no `bets.ts`

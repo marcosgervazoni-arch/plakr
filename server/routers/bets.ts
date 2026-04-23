@@ -12,6 +12,7 @@ import {
   getPoolMember,
   getPoolScoringRules,
   upsertBet,
+  recalculateMemberStats,
 } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
@@ -111,6 +112,12 @@ export const betsRouter = router({
         predictedScoreA: input.predictedScoreA,
         predictedScoreB: input.predictedScoreB,
       });
+
+      // [Stats] Atualizar pool_member_stats imediatamente após palpite
+      // Garante que o ranking mostre "X palpites" em vez de "Ainda não fez palpites"
+      await recalculateMemberStats(input.poolId, ctx.user.id).catch((e: unknown) =>
+        logger.warn({ err: e }, "[Stats] Erro ao recalcular stats após palpite")
+      );
 
       // [Badges] Verificar e conceder badges após palpite (ex: Boas-Vindas)
       import("../badges")
