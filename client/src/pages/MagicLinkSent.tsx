@@ -31,9 +31,9 @@ export default function MagicLinkSent() {
         returnPath,
         origin: window.location.origin,
       });
-      if (result && !result.sent && (result as any).reason === "email_not_found") {
-        toast.error("E-mail não cadastrado", {
-          description: "Este endereço não está cadastrado na plataforma. Verifique o e-mail ou contate o organizador.",
+      if (result && !result.sent) {
+        toast.error("Erro ao reenviar", {
+          description: "Não foi possível enviar o link. Tente novamente.",
         });
       } else {
         setResent(true);

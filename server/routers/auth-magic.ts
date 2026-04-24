@@ -10,7 +10,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { getDb, getUserByEmail } from "../db";
-import { emailQueue, magicLinks } from "../../drizzle/schema";
+import { emailQueue, magicLinks, users } from "../../drizzle/schema";
 import { sendEmail } from "../email";
 import { ENV } from "../_core/env";
 import logger from "../logger";
@@ -135,13 +135,34 @@ export const authMagicRouter = router({
       const returnPath = input.returnPath.startsWith("/") ? input.returnPath : "/dashboard";
 
       // Busca o usuário pelo e-mail
-      const user = await getUserByEmail(email);
+      let user = await getUserByEmail(email);
 
-      // Se o usuário não existe, retornamos sent:false para que o frontend
-      // possa orientar o usuário a verificar o e-mail digitado
+      // Se o usuário não existe, cria a conta automaticamente.
+      // Isso é necessário para o fluxo de convite de bolão, onde o convidado
+      // ainda não tem conta na plataforma.
       if (!user) {
-        logger.info({ email }, "[MagicLink] E-mail não encontrado");
-        return { sent: false, reason: "email_not_found" };
+        logger.info({ email }, "[MagicLink] E-mail não encontrado — criando conta automaticamente");
+        // Gera um openId único para o novo usuário (prefixo magic_ para identificar origem)
+        const openId = `magic_${crypto.randomBytes(16).toString("hex")}`;
+        // Deriva um nome amigável a partir do e-mail (parte antes do @)
+        const nameFromEmail = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        try {
+          await db.insert(users).values({
+            openId,
+            email,
+            name: nameFromEmail,
+            loginMethod: "magic_link",
+          });
+          user = await getUserByEmail(email);
+          logger.info({ email, openId }, "[MagicLink] Conta criada automaticamente");
+        } catch (createErr) {
+          logger.error({ email, err: createErr }, "[MagicLink] Falha ao criar conta automaticamente");
+          return { sent: false, reason: "account_creation_failed" };
+        }
+        if (!user) {
+          logger.error({ email }, "[MagicLink] Usuário não encontrado após criação");
+          return { sent: false, reason: "account_creation_failed" };
+        }
       }
 
       // Gera token seguro (64 chars hex = 32 bytes)

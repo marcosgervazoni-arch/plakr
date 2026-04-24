@@ -73,9 +73,9 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
         returnPath,
         origin: window.location.origin,
       });
-      // E-mail não cadastrado — exibe mensagem clara sem revelar dados sensíveis
-      if (result && !result.sent && (result as any).reason === "email_not_found") {
-        setEmailError("Este e-mail não está cadastrado. Verifique o endereço ou entre em contato com o organizador do bolão.");
+      // Falha na criação de conta (erro interno)
+      if (result && !result.sent) {
+        setEmailError("Não foi possível enviar o link. Tente novamente ou entre em contato com o organizador.");
         setLoading(false);
         return;
       }

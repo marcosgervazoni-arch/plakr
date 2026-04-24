@@ -72,9 +72,14 @@ describe("authMagic.sendMagicLink", () => {
     vi.clearAllMocks();
   });
 
-  it("retorna { sent: false, reason: 'email_not_found' } quando o e-mail não está cadastrado", async () => {
-    vi.mocked(getDb).mockResolvedValue(makeDb() as any);
-    vi.mocked(getUserByEmail).mockResolvedValue(undefined);
+  it("cria conta automaticamente e envia magic link quando o e-mail não está cadastrado", async () => {
+    // Primeiro getUserByEmail retorna undefined (não existe), segundo retorna o usuário criado
+    const mockUser = { id: 99, openId: "magic_abc123", name: "Naoexiste", email: "naoexiste@test.com", isBlocked: false };
+    vi.mocked(getUserByEmail)
+      .mockResolvedValueOnce(undefined)   // primeira chamada: não existe
+      .mockResolvedValueOnce(mockUser as any); // segunda chamada: após criação
+    const mockDb = makeDb();
+    vi.mocked(getDb).mockResolvedValue(mockDb as any);
 
     // Importa o router após os mocks estarem configurados
     const { authMagicRouter } = await import("./routers/auth-magic");
@@ -86,9 +91,10 @@ describe("authMagic.sendMagicLink", () => {
       origin: "https://plakr.io",
     });
 
-    expect(result).toEqual({ sent: false, reason: "email_not_found" });
-    // Não deve ter enviado e-mail
-    expect(sendEmail).not.toHaveBeenCalled();
+    // Deve ter criado a conta (insert chamado) e enviado o e-mail
+    expect(mockDb.insert).toHaveBeenCalled();
+    expect(result).toEqual({ sent: true });
+    expect(sendEmail).toHaveBeenCalledOnce();
   });
 
   it("retorna { sent: true } e envia e-mail quando o usuário existe", async () => {

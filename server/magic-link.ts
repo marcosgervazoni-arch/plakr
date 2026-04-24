@@ -13,7 +13,7 @@ import type { Express, Request, Response } from "express";
 import { COOKIE_NAME, THIRTY_DAYS_MS } from "@shared/const";
 import { getDb } from "./db";
 import { magicLinks, users } from "../drizzle/schema";
-import { eq, and, isNull, gt } from "drizzle-orm";
+import { eq, and, isNull, gt, sql } from "drizzle-orm";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { sdk } from "./_core/sdk";
 import logger from "./logger";
@@ -58,11 +58,11 @@ export function registerMagicLinkRoute(app: Express) {
         .set({ usedAt: now })
         .where(eq(magicLinks.id, link.id));
 
-      // Busca o usuário pelo e-mail
+      // Busca o usuário pelo e-mail (case-insensitive)
       const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.email, link.email))
+        .where(sql`LOWER(${users.email}) = LOWER(${link.email})`)
         .limit(1);
 
       if (!user) {
