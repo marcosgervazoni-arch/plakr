@@ -268,7 +268,42 @@ class SDKServer {
     } as GetUserInfoWithJwtResponse;
   }
 
-  async authenticateRequest(req: Request): Promise<User> {
+  /**
+   * Renova o cookie de sessão se estiver próximo de expirar (sliding session).
+   * Garante que usuários ativos nunca sejam deslogados — a sessão só expira
+   * após 30 dias de inatividade completa.
+   */
+  async renewSessionIfNeeded(
+    req: Request,
+    res: import("express").Response,
+    cookieValue: string,
+    openId: string,
+    name: string
+  ): Promise<void> {
+    try {
+      const secretKey = this.getSessionSecret();
+      const { payload } = await jwtVerify(cookieValue, secretKey, { algorithms: ["HS256"] });
+      const exp = payload.exp as number | undefined;
+      if (!exp) return;
+      const msUntilExpiry = exp * 1000 - Date.now();
+      const FIFTEEN_DAYS_MS = 15 * 24 * 60 * 60 * 1000;
+      // Renova se restar menos de 15 dias (metade do prazo de 30 dias)
+      if (msUntilExpiry < FIFTEEN_DAYS_MS) {
+        const newToken = await this.createSessionToken(openId, {
+          name,
+          expiresInMs: THIRTY_DAYS_MS,
+        });
+        const { getSessionCookieOptions } = await import("./cookies");
+        const cookieOptions = getSessionCookieOptions(req);
+        res.cookie(COOKIE_NAME, newToken, { ...cookieOptions, maxAge: THIRTY_DAYS_MS });
+        logger.info({ openId }, "[Auth] Sessão renovada automaticamente (sliding session)");
+      }
+    } catch {
+      // Falha silenciosa — não interrompe a requisição
+    }
+  }
+
+  async authenticateRequest(req: Request, res?: import("express").Response): Promise<User> {
     // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
@@ -308,6 +343,11 @@ class SDKServer {
       openId: user.openId,
       lastSignedIn: signedInAt,
     });
+
+    // Sliding session: renova o cookie se estiver próximo de expirar
+    if (res && sessionCookie) {
+      this.renewSessionIfNeeded(req, res, sessionCookie, user.openId, user.name || "").catch(() => {});
+    }
 
     return user;
   }

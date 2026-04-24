@@ -19,6 +19,7 @@
 - [x] Planos por conta (Pro por Conta): shared/plans.ts, getUserPlanTier, canCreatePool, canAddMember
 - [x] Super Admin: bypass de limites de plano, badge "Super Admin" no perfil
 - [x] Sessão: cookie de 30 dias, logout manual
+- [x] Sessão: renovação automática (sliding session) — expira apenas após 30 dias de inatividade
 
 ---
 
