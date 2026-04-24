@@ -2,7 +2,7 @@
  * Página de aceite de convite externo — /pool-invite/:token
  * Fluxo:
  *  1. Carrega informações do convite (nome do bolão, organizador, taxa)
- *  2. Se não logado: exibe boas-vindas + botão de login via magic link
+ *  2. Se não logado: exibe boas-vindas + opções de acesso claras para usuário novo
  *  3. Se logado: chama acceptPoolInvite automaticamente
  *  4. Se bolão tem taxa: exibe tela de pagamento pendente com PIX
  */
@@ -14,7 +14,10 @@ import { getLoginUrl } from "@/const";
 import { useSafariDetect } from "@/hooks/useSafariDetect";
 import EmailLoginModal from "@/components/EmailLoginModal";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trophy, Users, Mail, CheckCircle2, AlertTriangle, Copy, ExternalLink } from "lucide-react";
+import {
+  Loader2, Trophy, Mail, CheckCircle2, AlertTriangle, Copy,
+  ExternalLink, Smartphone, ArrowRight, Shield, Zap,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export default function PoolInviteAccept() {
@@ -48,7 +51,7 @@ export default function PoolInviteAccept() {
         return;
       }
       if (!data.hasEntryFee) {
-        toast.success("Você entrou no bolão! Boas apostas!");
+        toast.success("Você entrou no bolão! Boas apostas! 🎯");
         navigate(`/pool/${data.poolSlug}`);
         return;
       }
@@ -75,89 +78,94 @@ export default function PoolInviteAccept() {
   // ── Estados de carregamento ────────────────────────────────────────────────
   if (inviteLoading || authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0B0F1A" }}>
+        <div className="text-center space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto" style={{ color: "#FFB800" }} />
+          <p className="text-sm" style={{ color: "#6B7280" }}>Carregando convite...</p>
+        </div>
       </div>
     );
   }
 
   // ── Convite inválido / expirado / já usado ─────────────────────────────────
   if (inviteError || !inviteInfo) {
-    return <InviteErrorState message="Convite não encontrado ou inválido." />;
+    return <InviteErrorState message="Convite não encontrado ou inválido." hint="Verifique se o link está correto ou peça ao organizador que envie um novo convite." />;
   }
   if (inviteInfo.status === "expired") {
-    return <InviteErrorState message="Este convite expirou. Peça ao organizador que envie um novo convite." />;
+    return <InviteErrorState message="Este convite expirou." hint="Peça ao organizador que envie um novo link de convite para você." />;
   }
   if (inviteInfo.status === "used") {
-    return <InviteErrorState message="Este convite já foi utilizado." />;
+    return <InviteErrorState message="Este convite já foi utilizado." hint="Se você já tem conta, acesse o bolão diretamente pelo app." />;
   }
 
   // ── Tela de pagamento pendente (pós-aceite com taxa) ──────────────────────
   if (acceptResult?.hasEntryFee) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="max-w-md w-full space-y-6">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#0B0F1A" }}>
+        <div className="max-w-md w-full space-y-5">
           {/* Header */}
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-full bg-yellow-500/15 flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)" }}>
               <AlertTriangle className="w-8 h-8 text-yellow-400" />
             </div>
-            <h1 className="text-2xl font-bold" style={{ fontFamily: "'Syne', sans-serif" }}>
+            <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
               Pagamento pendente
             </h1>
-            <p className="text-muted-foreground text-sm">
-              Você foi adicionado ao bolão, mas precisa pagar a taxa de inscrição para ter acesso.
+            <p className="text-sm" style={{ color: "#9CA3AF" }}>
+              Você foi adicionado ao bolão! Agora só falta pagar a taxa de inscrição.
             </p>
           </div>
 
           {/* Card de pagamento */}
-          <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          <div className="rounded-2xl p-5 space-y-4" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Taxa de inscrição</span>
-              <span className="text-xl font-bold text-primary">
+              <span className="text-sm" style={{ color: "#9CA3AF" }}>Taxa de inscrição</span>
+              <span className="text-2xl font-black" style={{ color: "#FFB800" }}>
                 R$ {acceptResult.entryFee?.toFixed(2).replace(".", ",")}
               </span>
             </div>
 
             {acceptResult.pixKey && (
               <div className="space-y-2">
-                <p className="text-sm font-medium">Chave PIX do organizador</p>
-                <div className="flex items-center gap-2 bg-muted/40 rounded-lg px-3 py-2">
-                  <code className="text-sm flex-1 break-all">{acceptResult.pixKey}</code>
+                <p className="text-sm font-semibold text-white">Chave PIX do organizador</p>
+                <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: "#0D1120", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <code className="text-sm flex-1 break-all text-white">{acceptResult.pixKey}</code>
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-7 w-7 shrink-0"
+                    className="h-7 w-7 shrink-0 hover:bg-white/10"
                     onClick={() => {
                       navigator.clipboard.writeText(acceptResult.pixKey!);
                       toast.success("Chave PIX copiada!");
                     }}
                   >
-                    <Copy className="w-3.5 h-3.5" />
+                    <Copy className="w-3.5 h-3.5 text-white" />
                   </Button>
                 </div>
               </div>
             )}
 
             {acceptResult.entryQrCodeUrl && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">QR Code PIX</p>
+              <div className="space-y-2 text-center">
+                <p className="text-sm font-semibold text-white">QR Code PIX</p>
                 <img
                   src={acceptResult.entryQrCodeUrl}
                   alt="QR Code PIX"
-                  className="w-40 h-40 mx-auto rounded-lg border border-border"
+                  className="w-44 h-44 mx-auto rounded-xl"
+                  style={{ border: "1px solid rgba(255,255,255,0.08)" }}
                 />
               </div>
             )}
 
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-sm text-blue-300">
-              Após realizar o pagamento, aguarde a confirmação do organizador. Você receberá uma notificação quando seu acesso for liberado.
+            <div className="rounded-xl p-3 text-sm" style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)", color: "#93C5FD" }}>
+              💬 Após o pagamento, aguarde a confirmação do organizador. Você receberá uma notificação quando seu acesso for liberado.
             </div>
           </div>
 
           <Button
-            className="w-full"
+            className="w-full font-bold"
             variant="outline"
+            style={{ borderColor: "rgba(255,255,255,0.12)", color: "#9CA3AF" }}
             onClick={() => navigate(`/pool/${acceptResult.poolSlug}`)}
           >
             <ExternalLink className="w-4 h-4 mr-2" />
@@ -171,17 +179,18 @@ export default function PoolInviteAccept() {
   // ── Processando aceite (usuário logado) ────────────────────────────────────
   if (user && (acceptMutation.isPending || accepted)) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-3">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0B0F1A" }}>
+        <div className="text-center space-y-4">
           {acceptMutation.isPending ? (
             <>
-              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-              <p className="text-muted-foreground">Entrando no bolão...</p>
+              <Loader2 className="w-10 h-10 animate-spin mx-auto" style={{ color: "#FFB800" }} />
+              <p className="font-semibold text-white">Entrando no bolão...</p>
+              <p className="text-sm" style={{ color: "#6B7280" }}>Só um momento!</p>
             </>
           ) : (
             <>
-              <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto" />
-              <p className="font-medium">Tudo certo!</p>
+              <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: "#22c55e" }} />
+              <p className="font-bold text-white text-lg">Tudo certo! 🎯</p>
             </>
           )}
         </div>
@@ -202,38 +211,41 @@ export default function PoolInviteAccept() {
         returnPath={returnPath}
       />
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#0B0F1A" }}>
-        <div className="max-w-md w-full space-y-6">
-          {/* Logo/ícone do bolão */}
+        <div className="w-full max-w-sm space-y-5">
+
+          {/* Logo + nome do bolão */}
           <div className="text-center space-y-3">
             {info.pool.logoUrl ? (
               <img
                 src={info.pool.logoUrl}
                 alt={info.pool.name}
-                className="w-20 h-20 rounded-full object-cover mx-auto"
+                className="w-20 h-20 rounded-2xl object-cover mx-auto"
                 style={{ border: "2px solid rgba(255,184,0,0.4)" }}
               />
             ) : (
-              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto" style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.3)" }}>
+              <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto" style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.3)" }}>
                 <Trophy className="w-10 h-10" style={{ color: "#FFB800" }} />
               </div>
             )}
             <div>
-              <p className="text-sm" style={{ color: "#9CA3AF" }}>Você foi convidado para o bolão</p>
-              <h1 className="text-2xl font-bold mt-1 text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#FFB800" }}>
+                Convite para o bolão
+              </p>
+              <h1 className="text-2xl font-black text-white leading-tight" style={{ fontFamily: "'Syne', sans-serif" }}>
                 {info.pool.name}
               </h1>
               <p className="text-sm mt-1" style={{ color: "#9CA3AF" }}>
-                Organizado por <span className="text-white font-medium">{info.organizer.name}</span>
+                Organizado por <span className="text-white font-semibold">{info.organizer.name}</span>
               </p>
             </div>
           </div>
 
           {/* Detalhes do bolão */}
-          <div className="rounded-xl p-4 space-y-3" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="rounded-2xl p-4 space-y-2.5" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="flex items-center gap-3 text-sm">
               <Trophy className="w-4 h-4 shrink-0" style={{ color: "#FFB800" }} />
               <span style={{ color: "#9CA3AF" }}>Campeonato</span>
-              <span className="ml-auto font-medium text-white">Copa do Mundo 2026</span>
+              <span className="ml-auto font-semibold text-white text-right">Copa do Mundo 2026</span>
             </div>
             {info.hasEntryFee && info.entryFee && (
               <div className="flex items-center gap-3 text-sm">
@@ -244,64 +256,87 @@ export default function PoolInviteAccept() {
                 </span>
               </div>
             )}
-            <div className="flex items-center gap-3 text-sm">
-              <Mail className="w-4 h-4 shrink-0" style={{ color: "#6B7280" }} />
-              <span style={{ color: "#9CA3AF" }}>Convite enviado para</span>
-              <span className="ml-auto font-medium text-xs text-white">{info.invitedEmail}</span>
-            </div>
           </div>
 
-          {/* CTAs com detecção de Safari */}
+          {/* Seção de acesso — foco total no e-mail para usuário novo */}
           <div className="space-y-3">
-            <p className="text-center text-sm" style={{ color: "#9CA3AF" }}>
-              Para entrar no bolão, faça login ou crie sua conta:
-            </p>
+            <div className="text-center">
+              <p className="text-base font-bold text-white">Como você quer entrar?</p>
+              <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
+                Não precisa criar conta — é rápido e sem senha
+              </p>
+            </div>
 
-            {isSafari ? (
-              // Safari: só Magic Link
+            {/* Botão principal: E-mail (sempre em destaque) */}
+            <button
+              onClick={() => setEmailLoginOpen(true)}
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all hover:opacity-90 active:scale-[0.98]"
+              style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(0,0,0,0.15)" }}>
+                <Mail size={18} />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-black text-sm">Entrar com e-mail</p>
+                <p className="text-xs font-medium opacity-70">Receba um link de acesso na sua caixa de entrada</p>
+              </div>
+              <ArrowRight size={16} className="shrink-0 opacity-70" />
+            </button>
+
+            {/* Botão secundário: Google (só para não-Safari) */}
+            {!isSafari && (
               <>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "rgba(0,194,255,0.08)", border: "1px solid rgba(0,194,255,0.2)", color: "#00C2FF" }}>
-                  <Mail size={12} />
-                  <span>Acesso por e-mail recomendado para Safari e iPhone.</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                  <span className="text-xs" style={{ color: "#4B5563" }}>ou</span>
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
                 </div>
-                <button
-                  onClick={() => setEmailLoginOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 font-bold text-sm px-4 py-3 rounded-lg transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
-                >
-                  <Mail size={16} />
-                  Entrar com e-mail
-                </button>
-              </>
-            ) : (
-              // Outros navegadores: OAuth em destaque + Magic Link como alternativa
-              <>
                 <button
                   onClick={() => { window.location.href = loginUrl; }}
-                  className="w-full flex items-center justify-center gap-2 font-bold text-sm px-4 py-3 rounded-lg transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
-                >
-                  Entrar com conta Manus
-                </button>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-                  <span className="text-xs" style={{ color: "#6B7280" }}>ou</span>
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-                </div>
-                <button
-                  onClick={() => setEmailLoginOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 text-sm px-4 py-3 rounded-lg transition-all"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all hover:border-white/20 active:scale-[0.98]"
                   style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "#9CA3AF" }}
                 >
-                  <Mail size={15} />
-                  Entrar com link por e-mail
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <Smartphone size={16} />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-sm text-white">Entrar com Google</p>
+                    <p className="text-xs opacity-60">Use sua conta Google existente</p>
+                  </div>
+                  <ArrowRight size={14} className="shrink-0 opacity-40" />
                 </button>
               </>
             )}
+
+            {/* Aviso Safari */}
+            {isSafari && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs" style={{ background: "rgba(0,194,255,0.06)", border: "1px solid rgba(0,194,255,0.15)", color: "#67E8F9" }}>
+                <Smartphone size={12} className="shrink-0" />
+                <span>No iPhone/Safari, o acesso por e-mail é o método recomendado.</span>
+              </div>
+            )}
           </div>
 
-          <p className="text-center text-xs" style={{ color: "#4B5563" }}>
-            Ao entrar, você aceita os <span className="underline cursor-pointer">termos de uso</span> do Plakr!
+          {/* Garantias de segurança */}
+          <div className="flex items-center justify-center gap-4 text-xs" style={{ color: "#4B5563" }}>
+            <span className="flex items-center gap-1">
+              <Shield size={11} />
+              Sem senha
+            </span>
+            <span className="flex items-center gap-1">
+              <Zap size={11} />
+              Acesso em segundos
+            </span>
+            <span className="flex items-center gap-1">
+              <CheckCircle2 size={11} />
+              100% seguro
+            </span>
+          </div>
+
+          <p className="text-center text-xs" style={{ color: "#374151" }}>
+            Ao entrar, você aceita os{" "}
+            <span className="underline cursor-pointer hover:text-gray-400 transition-colors">termos de uso</span>{" "}
+            do Plakr!
           </p>
         </div>
       </div>
@@ -309,17 +344,23 @@ export default function PoolInviteAccept() {
   );
 }
 
-function InviteErrorState({ message }: { message: string }) {
+function InviteErrorState({ message, hint }: { message: string; hint?: string }) {
   const [, navigate] = useLocation();
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#0B0F1A" }}>
       <div className="max-w-sm w-full text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-red-500/15 flex items-center justify-center mx-auto">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}>
           <AlertTriangle className="w-8 h-8 text-red-400" />
         </div>
-        <h1 className="text-xl font-bold">Convite inválido</h1>
-        <p className="text-muted-foreground text-sm">{message}</p>
-        <Button variant="outline" onClick={() => navigate("/")}>
+        <div>
+          <h1 className="text-xl font-bold text-white">{message}</h1>
+          {hint && <p className="text-sm mt-2" style={{ color: "#9CA3AF" }}>{hint}</p>}
+        </div>
+        <Button
+          variant="outline"
+          style={{ borderColor: "rgba(255,255,255,0.12)", color: "#9CA3AF" }}
+          onClick={() => navigate("/")}
+        >
           Voltar ao início
         </Button>
       </div>

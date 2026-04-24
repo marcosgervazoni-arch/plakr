@@ -1330,6 +1330,7 @@ export const magicLinks = mysqlTable("magic_links", {
   id: int("id").primaryKey().autoincrement(),
   email: varchar("email", { length: 255 }).notNull(),
   token: varchar("token", { length: 128 }).notNull().unique(),
+  otpCode: varchar("otpCode", { length: 6 }),
   returnPath: varchar("returnPath", { length: 500 }).default("/dashboard").notNull(),
   expiresAt: timestamp("expiresAt").notNull(),
   usedAt: timestamp("usedAt"),

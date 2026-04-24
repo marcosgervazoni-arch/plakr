@@ -21,6 +21,13 @@
 - [x] Sessão: cookie de 30 dias, logout manual
 - [x] Sessão: renovação automática (sliding session) — expira apenas após 30 dias de inatividade
 
+## CONCLUÍDO — Melhoria do Fluxo de Inscrição via Convite
+- [x] Tela de convite (PoolInviteAccept): UX melhorada com orientações claras para usuário novo
+- [x] Formulário de magic link (EmailLoginModal): instruções mais claras, dica de verificar spam
+- [x] Tela de confirmação (MagicLinkSent): passo a passo, aviso de spam, botão para OTP
+- [x] Template do e-mail de magic link: identidade visual Plakr!, código OTP em destaque + link
+- [x] Código de 6 dígitos (OTP): tela /magic-link/otp com auto-submit, paste e reenvio
+
 ---
 
 ## CONCLUÍDO — Funcionalidades Core

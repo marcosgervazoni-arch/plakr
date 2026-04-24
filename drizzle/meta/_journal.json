@@ -484,6 +484,13 @@
       "when": 1776951790116,
       "tag": "0068_freezing_crusher_hogan",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "5",
+      "when": 1777072183160,
+      "tag": "0069_far_black_tom",
+      "breakpoints": true
     }
   ]
 }
