@@ -10,7 +10,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { getDb, getUserByEmail } from "../db";
-import { magicLinks } from "../../drizzle/schema";
+import { emailQueue, magicLinks } from "../../drizzle/schema";
 import { sendEmail } from "../email";
 import { ENV } from "../_core/env";
 import logger from "../logger";
@@ -137,11 +137,11 @@ export const authMagicRouter = router({
       // Busca o usuário pelo e-mail
       const user = await getUserByEmail(email);
 
-      // Se o usuário não existe, retornamos { sent: true } por segurança
-      // (não revelamos se o e-mail está ou não cadastrado)
+      // Se o usuário não existe, retornamos sent:false para que o frontend
+      // possa orientar o usuário a verificar o e-mail digitado
       if (!user) {
-        logger.info({ email }, "[MagicLink] E-mail não encontrado, retornando sent:true por segurança");
-        return { sent: true };
+        logger.info({ email }, "[MagicLink] E-mail não encontrado");
+        return { sent: false, reason: "email_not_found" };
       }
 
       // Gera token seguro (64 chars hex = 32 bytes)
@@ -168,8 +168,21 @@ export const authMagicRouter = router({
       const sent = await sendEmail({ to: email, subject, html, type: "magic_link" });
 
       if (!sent) {
-        logger.error({ email }, "[MagicLink] Falha ao enviar e-mail");
-        // Não lançamos erro para não revelar se o e-mail existe
+        logger.error({ email }, "[MagicLink] Falha no SMTP direto — enfileirando para retry");
+        // Fallback: enfileira para o worker processar nos próximos minutos
+        try {
+          await db.insert(emailQueue).values({
+            userId: user.id,
+            toEmail: email,
+            toName: user.name ?? "",
+            subject,
+            htmlBody: html,
+            status: "pending",
+          });
+          logger.info({ email }, "[MagicLink] E-mail enfileirado para retry");
+        } catch (qErr) {
+          logger.error({ email, err: qErr }, "[MagicLink] Falha ao enfileirar e-mail");
+        }
       }
 
       logger.info({ email, userId: user.id }, "[MagicLink] Link enviado");

@@ -35,6 +35,7 @@ vi.mock("./logger", async (importOriginal) => {
 // Mock do schema do banco
 vi.mock("../drizzle/schema", () => ({
   magicLinks: { id: "id", email: "email", token: "token", returnPath: "returnPath", expiresAt: "expiresAt", usedAt: "usedAt" },
+  emailQueue: { id: "id", userId: "userId", toEmail: "toEmail", toName: "toName", subject: "subject", htmlBody: "htmlBody", status: "status" },
   users: { id: "id", email: "email", openId: "openId", name: "name", isBlocked: "isBlocked" },
 }));
 
@@ -71,7 +72,7 @@ describe("authMagic.sendMagicLink", () => {
     vi.clearAllMocks();
   });
 
-  it("retorna { sent: true } quando o e-mail não está cadastrado (segurança — não revela existência)", async () => {
+  it("retorna { sent: false, reason: 'email_not_found' } quando o e-mail não está cadastrado", async () => {
     vi.mocked(getDb).mockResolvedValue(makeDb() as any);
     vi.mocked(getUserByEmail).mockResolvedValue(undefined);
 
@@ -85,7 +86,7 @@ describe("authMagic.sendMagicLink", () => {
       origin: "https://plakr.io",
     });
 
-    expect(result).toEqual({ sent: true });
+    expect(result).toEqual({ sent: false, reason: "email_not_found" });
     // Não deve ter enviado e-mail
     expect(sendEmail).not.toHaveBeenCalled();
   });

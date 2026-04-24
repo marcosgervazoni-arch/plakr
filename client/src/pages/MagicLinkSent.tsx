@@ -26,15 +26,21 @@ export default function MagicLinkSent() {
     if (!email || resending) return;
     setResending(true);
     try {
-      await sendMagicLink.mutateAsync({
+      const result = await sendMagicLink.mutateAsync({
         email,
         returnPath,
         origin: window.location.origin,
       });
-      setResent(true);
-      toast.success("E-mail reenviado!", {
-        description: "Verifique sua caixa de entrada novamente.",
-      });
+      if (result && !result.sent && (result as any).reason === "email_not_found") {
+        toast.error("E-mail não cadastrado", {
+          description: "Este endereço não está cadastrado na plataforma. Verifique o e-mail ou contate o organizador.",
+        });
+      } else {
+        setResent(true);
+        toast.success("E-mail reenviado!", {
+          description: "Verifique sua caixa de entrada novamente.",
+        });
+      }
     } catch {
       toast.error("Erro ao reenviar", {
         description: "Tente novamente em alguns instantes.",

@@ -104,7 +104,8 @@ export async function getUserByOpenId(openId: string): Promise<User | undefined>
 export async function getUserByEmail(email: string): Promise<User | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  // Busca case-insensitive: evita falha silenciosa quando o usuário digita e-mail com maiúsculas
+  const result = await db.select().from(users).where(sql`LOWER(${users.email}) = LOWER(${email})`).limit(1);
   return result[0];
 }
 

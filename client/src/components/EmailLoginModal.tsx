@@ -68,11 +68,17 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
 
     setLoading(true);
     try {
-      await sendMagicLink.mutateAsync({
+      const result = await sendMagicLink.mutateAsync({
         email: trimmedEmail,
         returnPath,
         origin: window.location.origin,
       });
+      // E-mail não cadastrado — exibe mensagem clara sem revelar dados sensíveis
+      if (result && !result.sent && (result as any).reason === "email_not_found") {
+        setEmailError("Este e-mail não está cadastrado. Verifique o endereço ou entre em contato com o organizador do bolão.");
+        setLoading(false);
+        return;
+      }
       handleClose();
       navigate(`/magic-link/sent?email=${encodeURIComponent(trimmedEmail)}&returnPath=${encodeURIComponent(returnPath)}`);
     } catch (err: any) {
