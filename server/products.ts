@@ -29,7 +29,7 @@ export const STRIPE_PRODUCTS = {
   vip: {
     name: "Plakr! VIP",
     description: "VIP — IA ilimitada pré-jogo, zero anúncios, Duelos X1 ilimitados. Válido em todos os bolões.",
-    priceIdMonthly: process.env.STRIPE_VIP_PRICE_ID ?? "",
+    priceIdMonthly: process.env.STRIPE_VIP_PRICE_ID ?? "price_1TQ5HOPD2Oz1qW8S2EDZuiEp",
     monthlyAmount: 490,   // R$ 4,90
   },
 } as const;

@@ -629,3 +629,12 @@
 ## PENDENTE — Bug: Inconsistência Mural vs Ranking
 
 - [x] **BUG CORRIGIDO:** `placeBet` não chamava `recalculateMemberStats` — badge era concedido mas `pool_member_stats` nunca era criado. Adicionado `await recalculateMemberStats()` após `upsertBet` no `bets.ts`
+
+## Sprint Stripe VIP — Configuração do Produto e Price ID
+
+- [x] Produto "Plakr! VIP" criado no Stripe (modo LIVE): `prod_UOt31RG5l8ZgH5`
+- [x] Preço recorrente R$4,90/mês (BRL) criado no Stripe: `price_1TQ5HOPD2Oz1qW8S2EDZuiEp`
+- [x] `stripePriceIdVip` atualizado no banco (`platform_settings` id=1)
+- [x] Fallback em `server/products.ts` atualizado com o novo Price ID
+- [x] `createVipCheckout` confirmado: lê Price ID do banco corretamente (sem hardcode)
+- [x] 582 testes passando (nenhum quebrado)
