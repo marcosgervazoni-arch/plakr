@@ -23,11 +23,12 @@ interface EmailLoginModalProps {
   open: boolean;
   onClose: () => void;
   returnPath?: string;
+  subtitle?: string;
 }
 
 type Step = "choose" | "email";
 
-export default function EmailLoginModal({ open, onClose, returnPath = "/dashboard" }: EmailLoginModalProps) {
+export default function EmailLoginModal({ open, onClose, returnPath = "/dashboard", subtitle }: EmailLoginModalProps) {
   const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -116,7 +117,7 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
                 Entrar no Plakr!
               </DialogTitle>
               <DialogDescription style={{ color: "#9CA3AF" }}>
-                Escolha como prefere acessar sua conta.
+                {subtitle ?? "Escolha como prefere acessar sua conta."}
               </DialogDescription>
             </DialogHeader>
 

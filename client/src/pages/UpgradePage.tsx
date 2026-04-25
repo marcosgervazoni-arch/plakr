@@ -13,6 +13,7 @@ import { trpc } from "@/lib/trpc";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { getLoginUrl } from "@/const";
 import AppShell from "@/components/AppShell";
+import EmailLoginModal from "@/components/EmailLoginModal";
 import {
   Crown,
   CheckCircle2,
@@ -284,8 +285,51 @@ export default function UpgradePage() {
     }
   }, [checkoutStatus]);
 
+  // [UX] Auto-checkout: quando usuário chega logado com ?autoCheckout=vip|pro|unlimited
+  const autoCheckoutIntent = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("autoCheckout") as "vip" | "pro" | "unlimited" | null;
+  }, []);
+  const autoCheckoutTriggered = useMemo(() => ({ done: false }), []);
+  useEffect(() => {
+    if (!isAuthenticated || !autoCheckoutIntent || autoCheckoutTriggered.done) return;
+    if (!myPlanData) return;
+    autoCheckoutTriggered.done = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("autoCheckout");
+    url.searchParams.delete("billing");
+    window.history.replaceState({}, "", url.toString());
+    if (autoCheckoutIntent === "vip") {
+      handleVipCheckout();
+    } else if (autoCheckoutIntent === "pro" || autoCheckoutIntent === "unlimited") {
+      handleCheckout(autoCheckoutIntent);
+    }
+  }, [isAuthenticated, autoCheckoutIntent, myPlanData]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // [UX] Modal Magic Link para usuários não autenticados que clicam em "Comprar"
+  const [emailLoginOpen, setEmailLoginOpen] = useState(false);
+  const [emailLoginReturnPath, setEmailLoginReturnPath] = useState("/upgrade");
+  const [emailLoginSubtitle, setEmailLoginSubtitle] = useState<string | undefined>(undefined);
+  const INTENT_LABELS: Record<string, string> = {
+    vip: "Entre para ativar o VIP — sem anúncios, IA ilimitada e Duelos X1.",
+    pro: "Entre para assinar o plano Pro e criar bolões sem limites.",
+    unlimited: "Entre para assinar o plano Ilimitado e ter tudo sem restrições.",
+  };
+  function handleBuyIntent(intent: "vip" | "pro" | "unlimited") {
+    const billingParam = intent !== "vip" ? `&billing=${billing}` : "";
+    setEmailLoginReturnPath(`/upgrade?autoCheckout=${intent}${billingParam}`);
+    setEmailLoginSubtitle(INTENT_LABELS[intent]);
+    setEmailLoginOpen(true);
+  }
+
   return (
     <AppShell>
+      <EmailLoginModal
+        open={emailLoginOpen}
+        onClose={() => setEmailLoginOpen(false)}
+        returnPath={emailLoginReturnPath}
+        subtitle={emailLoginSubtitle}
+      />
       <div className="max-w-5xl mx-auto px-4 py-8 lg:py-12 space-y-12">
 
         {/* ── Banner pós-checkout ── */}
@@ -398,11 +442,10 @@ export default function UpgradePage() {
             </div>
 
             {!isAuthenticated ? (
-              <a href={getLoginUrl("/upgrade")}>
-                <Button className="w-full gap-2 bg-yellow-500 hover:bg-yellow-400 text-black">
-                  <Star className="w-4 h-4" /> Ativar VIP
-                </Button>
-              </a>
+              <Button className="w-full gap-2 bg-yellow-500 hover:bg-yellow-400 text-black"
+                onClick={() => handleBuyIntent("vip")}>
+                <Star className="w-4 h-4" /> Ativar VIP
+              </Button>
             ) : currentTier === "vip" ? (
               <div className="space-y-2">
                 <Button className="w-full bg-yellow-500 hover:bg-yellow-400 text-black" disabled>

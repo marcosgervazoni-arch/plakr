@@ -638,3 +638,10 @@
 - [x] Fallback em `server/products.ts` atualizado com o novo Price ID
 - [x] `createVipCheckout` confirmado: lê Price ID do banco corretamente (sem hardcode)
 - [x] 582 testes passando (nenhum quebrado)
+
+## Sprint Magic Link no Checkout — Fluxo de Compra Sem Atrito
+
+- [x] Abrir modal Magic Link ao clicar em botões de compra na Home (VIP, Pro, Ilimitado) para usuários não logados
+- [x] Abrir modal Magic Link ao clicar em botões de compra na UpgradePage para usuários não logados
+- [x] Após login via magic link, redirecionar automaticamente ao checkout Stripe do plano escolhido
+- [x] Parâmetro `?autoCheckout=vip|pro|unlimited` na URL de retorno para acionar checkout automático

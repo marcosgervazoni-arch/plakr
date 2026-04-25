@@ -203,13 +203,14 @@ function MockCustomTournamentCard() {
 type BillingPeriod = "monthly" | "annual";
 
 function LandingPricingSection({
-  user, upgradeLoginUrl, loginUrl, freeFeatures, proFeatures,
+  user, upgradeLoginUrl, loginUrl, freeFeatures, proFeatures, onOpenCheckoutModal,
 }: {
   user: { id: number } | null | undefined;
   upgradeLoginUrl: string;
   loginUrl: string;
   freeFeatures: string[];
   proFeatures: string[];
+  onOpenCheckoutModal: (intent: "pro" | "unlimited" | "vip", billing?: "monthly" | "annual") => void;
 }) {
   const [billing, setBilling] = useState<BillingPeriod>("monthly");
   const { data: pricing, isLoading } = trpc.platform.getPublicPricing.useQuery();
@@ -504,7 +505,13 @@ export default function Home() {
   const countdown = useCountdown(heroCountdownDate);
   const isSafari = useSafariDetect();
   const [emailLoginOpen, setEmailLoginOpen] = useState(false);
-
+  const [checkoutReturnPath, setCheckoutReturnPath] = useState("/dashboard");
+  const [checkoutSubtitle, setCheckoutSubtitle] = useState<string | undefined>(undefined);
+  const INTENT_LABELS: Record<string, string> = {
+    vip: "Entre para ativar o VIP — sem anúncios, IA ilimitada e Duelos X1.",
+    pro: "Entre para assinar o plano Pro e criar bolões sem limites.",
+    unlimited: "Entre para assinar o plano Ilimitado e ter tudo sem restrições.",
+  };
   // Abrir modal de e-mail automaticamente se a URL tiver ?login=email OU se for Safari
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -512,6 +519,13 @@ export default function Home() {
       setEmailLoginOpen(true);
     }
   }, []);
+  // Abre o modal de Magic Link com o intent de checkout correto
+  function handleOpenCheckoutModal(intent: "pro" | "unlimited" | "vip", billing?: "monthly" | "annual") {
+    const billingParam = billing ? `&billing=${billing}` : "";
+    setCheckoutReturnPath(`/upgrade?autoCheckout=${intent}${billingParam}`);
+    setCheckoutSubtitle(INTENT_LABELS[intent]);
+    setEmailLoginOpen(true);
+  };
 
   const freeFeatures = [
     "Bolões para Copa do Mundo, Brasileirão e mais",
@@ -547,7 +561,8 @@ export default function Home() {
       <EmailLoginModal
         open={emailLoginOpen}
         onClose={() => setEmailLoginOpen(false)}
-        returnPath="/dashboard"
+        returnPath={checkoutReturnPath}
+        subtitle={checkoutSubtitle}
       />
 
       {/* ── NAVBAR ─────────────────────────────────────────────────────────── */}
@@ -883,13 +898,24 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <a href={user ? "/upgrade#vip" : upgradeLoginUrl} className="block">
-                <button className="w-full flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg transition-all hover:opacity-90"
-                  style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.4)", color: "#FFB800" }}>
+              {user ? (
+                <a href="/upgrade#vip" className="block">
+                  <button className="w-full flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg transition-all hover:opacity-90"
+                    style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.4)", color: "#FFB800" }}>
+                    <Star size={16} />
+                    Ativar VIP
+                  </button>
+                </a>
+              ) : (
+                <button
+                  className="w-full flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg transition-all hover:opacity-90"
+                  style={{ background: "rgba(255,184,0,0.12)", border: "1px solid rgba(255,184,0,0.4)", color: "#FFB800" }}
+                  onClick={() => handleOpenCheckoutModal("vip")}
+                >
                   <Star size={16} />
                   Ativar VIP
                 </button>
-              </a>
+              )}
             </div>
           </div>
         </div>
@@ -944,6 +970,7 @@ export default function Home() {
               loginUrl={loginUrl}
               freeFeatures={freeFeatures}
               proFeatures={proFeatures}
+              onOpenCheckoutModal={handleOpenCheckoutModal}
             />
           </section>
         </CustomOrDefault>
@@ -1030,13 +1057,22 @@ export default function Home() {
                   <ArrowRight size={16} aria-hidden="true" />
                 </button>
                 {ctaFinalSecondaryEnabled && (
-                  <a href={user ? "/upgrade" : upgradeLoginUrl}>
+                  user ? (
+                    <a href="/upgrade">
+                      <Button size="lg" variant="outline" className="font-semibold text-sm px-6 py-3"
+                        style={{ borderColor: "rgba(255,184,0,0.3)", color: "#FFB800", background: "transparent" }}>
+                        {ctaFinalSecondaryText}
+                        <Crown size={14} className="ml-2" />
+                      </Button>
+                    </a>
+                  ) : (
                     <Button size="lg" variant="outline" className="font-semibold text-sm px-6 py-3"
-                      style={{ borderColor: "rgba(255,184,0,0.3)", color: "#FFB800", background: "transparent" }}>
+                      style={{ borderColor: "rgba(255,184,0,0.3)", color: "#FFB800", background: "transparent" }}
+                      onClick={() => handleOpenCheckoutModal("pro")}>
                       {ctaFinalSecondaryText}
                       <Crown size={14} className="ml-2" />
                     </Button>
-                  </a>
+                  )
                 )}
               </div>
             </div>
