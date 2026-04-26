@@ -119,47 +119,33 @@ export default function JoinPool() {
               <h1 className="font-bold text-xl text-white">Entre para confirmar seu ingresso</h1>
             </div>
 
-            {/* Safari: só Magic Link */}
-            {isSafari ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style={{ background: "rgba(0,194,255,0.08)", border: "1px solid rgba(0,194,255,0.2)", color: "#00C2FF" }}>
-                  <Mail size={12} />
-                  <span>Acesso por e-mail recomendado para Safari e iPhone.</span>
-                </div>
-                <button
-                  onClick={() => setEmailLoginOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 font-bold text-sm px-4 py-3 rounded-lg transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
-                >
-                  <Mail size={16} />
-                  Entrar com e-mail
-                </button>
-              </div>
-            ) : (
-              // Outros navegadores: OAuth em destaque + Magic Link como alternativa
-              <div className="space-y-3">
-                <a
-                  href={loginUrl}
-                  className="w-full flex items-center justify-center gap-2 font-bold text-sm px-4 py-3 rounded-lg transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", display: "flex" }}
-                >
-                  Entrar com conta Manus
-                </a>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-                  <span className="text-xs" style={{ color: "#6B7280" }}>ou</span>
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-                </div>
-                <button
-                  onClick={() => setEmailLoginOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 text-sm px-4 py-3 rounded-lg transition-all"
-                  style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "#9CA3AF" }}
-                >
-                  <Mail size={15} />
-                  Entrar com link por e-mail
-                </button>
-              </div>
-            )}
+            {/* E-mail como método principal para todos os navegadores */}
+            <div className="space-y-3">
+              <button
+                onClick={() => setEmailLoginOpen(true)}
+                className="w-full flex items-center justify-center gap-2 font-bold text-sm px-4 py-3 rounded-lg transition-all hover:opacity-90"
+                style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+              >
+                <Mail size={16} />
+                Entrar com e-mail
+              </button>
+              {!isSafari && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+                    <span className="text-xs" style={{ color: "#6B7280" }}>ou</span>
+                    <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+                  </div>
+                  <a
+                    href={loginUrl}
+                    className="w-full flex items-center justify-center gap-2 text-sm px-4 py-3 rounded-lg transition-all"
+                    style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "#9CA3AF", display: "flex" }}
+                  >
+                    Entrar com conta Manus
+                  </a>
+                </>
+              )}
+            </div>
 
             <p className="text-xs" style={{ color: "#4B5563" }}>Sem senha · Acesso seguro · Funciona em qualquer dispositivo</p>
           </div>

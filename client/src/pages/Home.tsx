@@ -313,12 +313,23 @@ function LandingPricingSection({
               </li>
             ))}
           </ul>
-          <a href={loginUrl} className="block">
-            <Button className="w-full font-bold" variant="outline"
-              style={{ borderColor: "rgba(255,255,255,0.15)", color: "white", background: "rgba(255,255,255,0.04)" }}>
+          {user ? (
+            <a href="/dashboard" className="block">
+              <Button className="w-full font-bold" variant="outline"
+                style={{ borderColor: "rgba(255,255,255,0.15)", color: "white", background: "rgba(255,255,255,0.04)" }}>
+                Criar bolão grátis
+              </Button>
+            </a>
+          ) : (
+            <Button
+              className="w-full font-bold"
+              variant="outline"
+              style={{ borderColor: "rgba(255,255,255,0.15)", color: "white", background: "rgba(255,255,255,0.04)" }}
+              onClick={() => onOpenCheckoutModal("pro")}
+            >
               Criar bolão grátis
             </Button>
-          </a>
+          )}
         </div>
 
         {/* Pro */}
@@ -636,8 +647,18 @@ export default function Home() {
                   </div>
                 )}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-                  {/* CTA principal: Safari = Magic Link | Outros = OAuth */}
-                  {isSafari ? (
+                  {/* CTA principal: e-mail em destaque para todos os navegadores */}
+                  {user ? (
+                    <a
+                      href="/dashboard"
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-base px-8 py-3 rounded-lg transition-all hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                      aria-label="Ir para o dashboard"
+                    >
+                      {heroCtaPrimaryText}
+                      <ArrowRight size={16} aria-hidden="true" />
+                    </a>
+                  ) : (
                     <button
                       onClick={() => setEmailLoginOpen(true)}
                       className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-base px-8 py-3 rounded-lg transition-all hover:opacity-90"
@@ -647,16 +668,6 @@ export default function Home() {
                       {heroCtaPrimaryText}
                       <ArrowRight size={16} aria-hidden="true" />
                     </button>
-                  ) : (
-                    <a
-                      href={user ? "/dashboard" : loginUrl}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-base px-8 py-3 rounded-lg transition-all hover:opacity-90"
-                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
-                      aria-label="Criar bolão grátis no Plakr!"
-                    >
-                      {heroCtaPrimaryText}
-                      <ArrowRight size={16} aria-hidden="true" />
-                    </a>
                   )}
                   {heroCtaSecondaryEnabled && (
                     <a href={user ? "/upgrade" : upgradeLoginUrl}>
@@ -670,18 +681,6 @@ export default function Home() {
                 <p className="text-xs mt-4" style={{ color: "#6B7280" }}>
                   Gratuito para começar · Sem cartão de crédito · Pronto em 2 minutos
                 </p>
-                {!user && !isSafari && (
-                  // Para não-Safari: Magic Link como alternativa discreta ao OAuth
-                  <button
-                    onClick={() => setEmailLoginOpen(true)}
-                    className="flex items-center gap-1.5 text-xs mt-3 transition-colors hover:text-white mx-auto lg:mx-0"
-                    style={{ color: "#6B7280" }}
-                    title="Entrar com link de acesso por e-mail"
-                  >
-                    <Mail size={12} />
-                    Prefere entrar por e-mail?
-                  </button>
-                )}
               </div>
               <div className="flex-1 w-full max-w-md lg:max-w-none">
                 <MockRankingCard />
@@ -810,13 +809,24 @@ export default function Home() {
                       </li>
                     ))}
                   </ul>
-                  <a href={loginUrl}>
-                    <Button className="font-bold"
-                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+                  {user ? (
+                    <a href="/dashboard">
+                      <Button className="font-bold"
+                        style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}>
+                        Criar campeonato personalizado
+                        <Crown size={14} className="ml-2" />
+                      </Button>
+                    </a>
+                  ) : (
+                    <Button
+                      className="font-bold"
+                      style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}
+                      onClick={() => handleOpenCheckoutModal("pro")}
+                    >
                       Criar campeonato personalizado
                       <Crown size={14} className="ml-2" />
                     </Button>
-                  </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -863,13 +873,24 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <a href={loginUrl} className="block">
-                <button className="w-full flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg transition-all hover:opacity-90"
-                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}>
+              {user ? (
+                <a href="/dashboard" className="block">
+                  <button className="w-full flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg transition-all hover:opacity-90"
+                    style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}>
+                    Criar bolão grátis
+                    <ArrowRight size={16} />
+                  </button>
+                </a>
+              ) : (
+                <button
+                  onClick={() => setEmailLoginOpen(true)}
+                  className="w-full flex items-center justify-center gap-2 font-bold text-base px-6 py-3 rounded-lg transition-all hover:opacity-90"
+                  style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                >
                   Criar bolão grátis
                   <ArrowRight size={16} />
                 </button>
-              </a>
+              )}
             </div>
 
             {/* Card Participante */}

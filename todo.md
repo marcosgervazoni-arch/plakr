@@ -663,3 +663,6 @@
 
 ## Sprint Prioridade Visual — Acesso por E-mail
 - [x] Modal de login: tornar o acesso por e-mail o método principal (botão dourado em destaque) e o login via Manus a opção secundária discreta
+
+## Sprint Consistência de Prioridade de Acesso por E-mail
+- [x] Garantir que o acesso por e-mail seja o método principal em TODOS os pontos de entrada de login da plataforma
