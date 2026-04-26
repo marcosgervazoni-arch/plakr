@@ -651,3 +651,9 @@
 - [x] Remover link de acesso direto do e-mail de magic link — manter apenas OTP de 6 dígitos como método de confirmação
 - [x] Corrigir duplicidade no modal da tela de convite: clicar em "entrar com link por e-mail" deve ir direto para o formulário de e-mail, não abrir outro modal
 - [x] Melhorar instruções do modal de taxa de inscrição: deixar claro que é necessário pagar, onde está a chave PIX/dados de pagamento e que deve clicar em "Já paguei" após a transação
+
+## Sprint Nome no Cadastro + Correção Definitiva Duplicidade Modal
+- [x] Adicionar campo de nome completo no formulário de magic link (EmailLoginModal)
+- [x] Salvar nome informado pelo usuário ao criar conta via magic link (prioridade sobre nome derivado do e-mail)
+- [x] Corrigir definitivamente a duplicidade de modal: useEffect sincroniza o step ao abrir, resolvendo bug do useState travado no primeiro render
+- [x] 582 testes passando (nenhum quebrado)

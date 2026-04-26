@@ -2,18 +2,21 @@
  * Plakr! — Modal de Login
  * Apresenta as opções de acesso ao Plakr! de forma organizada:
  * - Etapa 1: Escolha do método (OAuth ou Magic Link por e-mail)
- * - Etapa 2: Formulário de e-mail (quando Magic Link selecionado)
+ * - Etapa 2: Formulário de nome completo + e-mail (quando Magic Link selecionado)
  *
- * No Safari/iPhone: etapa 1 é pulada, vai direto para o e-mail.
+ * No Safari/iPhone: etapa 1 é pulada, vai direto para o formulário de e-mail.
  * Para outros navegadores: OAuth em destaque, Magic Link como alternativa.
+ *
+ * Correção: useEffect sincroniza o step sempre que o modal abre,
+ * evitando que o useState fique travado no valor inicial do primeiro render.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, ArrowRight, Loader2, ChevronLeft } from "lucide-react";
+import { Mail, ArrowRight, Loader2, ChevronLeft, User } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useSafariDetect } from "@/hooks/useSafariDetect";
@@ -33,22 +36,37 @@ type Step = "choose" | "email";
 export default function EmailLoginModal({ open, onClose, returnPath = "/dashboard", subtitle, initialStep }: EmailLoginModalProps) {
   const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [nameError, setNameError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const isSafari = useSafariDetect();
 
-  // Prioridade: initialStep > Safari > choose
-  const defaultStep: Step = initialStep ?? (isSafari ? "email" : "choose");
-  const [step, setStep] = useState<Step>(defaultStep);
+  // Calcula o step padrão considerando a prop e o Safari
+  const getDefaultStep = (): Step => initialStep ?? (isSafari ? "email" : "choose");
+  const [step, setStep] = useState<Step>(getDefaultStep);
+
+  // Sincroniza o step sempre que o modal ABRE — corrige o bug do useState travado no primeiro render
+  useEffect(() => {
+    if (open) {
+      setStep(getDefaultStep());
+      setEmail("");
+      setName("");
+      setEmailError("");
+      setNameError("");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const sendMagicLink = trpc.authMagic.sendMagicLink.useMutation();
   const loginUrl = getLoginUrl(returnPath);
 
   function handleClose() {
-    // Resetar estado ao fechar
     setEmail("");
+    setName("");
     setEmailError("");
-    setStep(defaultStep);
+    setNameError("");
+    setStep(getDefaultStep());
     onClose();
   }
 
@@ -59,8 +77,19 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setEmailError("");
+    setNameError("");
 
     const trimmedEmail = email.trim().toLowerCase();
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      setNameError("Digite seu nome completo para continuar.");
+      return;
+    }
+    if (trimmedName.length < 2) {
+      setNameError("Nome muito curto. Digite seu nome completo.");
+      return;
+    }
     if (!trimmedEmail) {
       setEmailError("Digite seu e-mail para continuar.");
       return;
@@ -74,19 +103,19 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
     try {
       const result = await sendMagicLink.mutateAsync({
         email: trimmedEmail,
+        name: trimmedName,
         returnPath,
         origin: window.location.origin,
       });
-      // Falha na criação de conta (erro interno)
       if (result && !result.sent) {
-        setEmailError("Não foi possível enviar o link. Tente novamente ou entre em contato com o organizador.");
+        setEmailError("Não foi possível enviar o código. Tente novamente ou entre em contato com o organizador.");
         setLoading(false);
         return;
       }
       handleClose();
       navigate(`/magic-link/sent?email=${encodeURIComponent(trimmedEmail)}&returnPath=${encodeURIComponent(returnPath)}`);
     } catch (err: any) {
-      toast.error("Erro ao enviar o link", {
+      toast.error("Erro ao enviar o código", {
         description: err?.message ?? "Tente novamente em alguns instantes.",
       });
     } finally {
@@ -165,14 +194,14 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
           </>
         )}
 
-        {/* ── ETAPA 2: Formulário de e-mail ──────────────────────────────── */}
+        {/* ── ETAPA 2: Formulário de nome + e-mail ───────────────────────── */}
         {step === "email" && (
           <>
             <DialogHeader>
-              {/* Botão voltar — só aparece se não for Safari */}
-              {!isSafari && (
+              {/* Botão voltar — só aparece se não for Safari e se initialStep não forçou "email" */}
+              {!isSafari && !initialStep && (
                 <button
-                  onClick={() => { setEmail(""); setEmailError(""); setStep("choose"); }}
+                  onClick={() => { setEmail(""); setName(""); setEmailError(""); setNameError(""); setStep("choose"); }}
                   className="flex items-center gap-1 text-xs mb-3 transition-colors hover:text-white w-fit"
                   style={{ color: "#6B7280" }}
                   aria-label="Voltar para escolha de método"
@@ -204,11 +233,36 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
                 Acesso por e-mail
               </DialogTitle>
               <DialogDescription style={{ color: "#9CA3AF" }}>
-                Enviaremos um link de acesso direto — sem senha, sem complicação.
+                {subtitle ?? "Enviaremos um código de acesso — sem senha, sem complicação."}
               </DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+              {/* Campo: Nome completo */}
+              <div className="space-y-1.5">
+                <Label htmlFor="magic-link-name" className="text-sm font-medium text-white">
+                  Seu nome completo
+                </Label>
+                <div className="relative">
+                  <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "#6B7280" }} />
+                  <Input
+                    id="magic-link-name"
+                    type="text"
+                    placeholder="Ex: João Silva"
+                    value={name}
+                    onChange={(e) => { setName(e.target.value); setNameError(""); }}
+                    autoFocus
+                    autoComplete="name"
+                    disabled={loading}
+                    className="pl-9 bg-[#0D1120] border-[rgba(255,255,255,0.1)] text-white placeholder:text-[#6B7280] focus:border-[#FFB800] focus:ring-[#FFB800]/20"
+                  />
+                </div>
+                {nameError && (
+                  <p className="text-xs" style={{ color: "#ef4444" }}>{nameError}</p>
+                )}
+              </div>
+
+              {/* Campo: E-mail */}
               <div className="space-y-1.5">
                 <Label htmlFor="magic-link-email" className="text-sm font-medium text-white">
                   Seu e-mail
@@ -219,7 +273,6 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
                   placeholder="seuemail@exemplo.com"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
-                  autoFocus
                   autoComplete="email"
                   disabled={loading}
                   className="bg-[#0D1120] border-[rgba(255,255,255,0.1)] text-white placeholder:text-[#6B7280] focus:border-[#FFB800] focus:ring-[#FFB800]/20"
@@ -229,16 +282,9 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
                 )}
               </div>
 
-              <div
-                className="rounded-lg p-3 text-xs"
-                style={{ background: "#0D1120", border: "1px solid rgba(255,255,255,0.04)", color: "#9CA3AF" }}
-              >
-                💡 Se já tem conta, o link vai direto para o seu painel. Se é a primeira vez, você será guiado para criar sua conta.
-              </div>
-
               <Button
                 type="submit"
-                disabled={loading || !email.trim()}
+                disabled={loading || !email.trim() || !name.trim()}
                 className="w-full font-bold"
                 style={{
                   background: loading ? "rgba(255,184,0,0.3)" : "linear-gradient(135deg, #FFB800, #FF8A00)",
@@ -247,14 +293,14 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
                 }}
               >
                 {loading ? (
-                  <><Loader2 size={16} className="mr-2 animate-spin" />Enviando link...</>
+                  <><Loader2 size={16} className="mr-2 animate-spin" />Enviando código...</>
                 ) : (
-                  <>Enviar link de acesso<ArrowRight size={16} className="ml-2" /></>
+                  <>Enviar código de acesso<ArrowRight size={16} className="ml-2" /></>
                 )}
               </Button>
 
               <p className="text-xs text-center" style={{ color: "#6B7280" }}>
-                ⏰ O link expira em 15 minutos e só pode ser usado uma vez.
+                ⏰ O código expira em 15 minutos e só pode ser usado uma vez.
               </p>
             </form>
           </>

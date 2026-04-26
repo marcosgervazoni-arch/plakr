@@ -119,6 +119,7 @@ export const authMagicRouter = router({
     .input(
       z.object({
         email: z.string().email("E-mail inválido"),
+        name: z.string().min(2, "Nome muito curto").max(100, "Nome muito longo").optional(),
         returnPath: z.string().optional().default("/dashboard"),
         origin: z.string().url("Origin inválida"),
       })
@@ -137,7 +138,8 @@ export const authMagicRouter = router({
       if (!user) {
         logger.info({ email }, "[MagicLink] E-mail não encontrado — criando conta automaticamente");
         const openId = `magic_${crypto.randomBytes(16).toString("hex")}`;
-        const nameFromEmail = email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        // Prioridade: nome informado pelo usuário > nome derivado do e-mail
+        const nameFromEmail = input.name?.trim() || email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
         try {
           await db.insert(users).values({
             openId,
