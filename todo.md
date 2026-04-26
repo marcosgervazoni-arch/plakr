@@ -666,3 +666,6 @@
 
 ## Sprint Consistência de Prioridade de Acesso por E-mail
 - [x] Garantir que o acesso por e-mail seja o método principal em TODOS os pontos de entrada de login da plataforma
+
+## Sprint Correção Definitiva Duplicidade Modal Convite
+- [x] Corrigir duplicidade: ao clicar em "Entrar com e-mail" na tela /join, o modal abre direto no formulário de e-mail (etapa "choose" eliminada da raiz)
