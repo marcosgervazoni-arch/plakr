@@ -39,7 +39,7 @@ function templateMagicLink(opts: {
   const BORDER = "#1E2A3A";
 
   return {
-    subject: "🔑 Seu acesso ao Plakr! está aqui",
+    subject: "🔑 Seu código de acesso ao Plakr!",
     html: `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -70,43 +70,22 @@ function templateMagicLink(opts: {
             <td style="background:${SURFACE};padding:36px 32px 28px;">
               <div style="width:56px;height:56px;background:linear-gradient(135deg,${GOLD},${GOLD_DARK});border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:28px;line-height:56px;text-align:center;">🔑</div>
 
-              <h2 style="margin:0 0 10px;font-size:26px;font-weight:800;color:${TEXT};">Seu acesso chegou!</h2>
-              <p style="margin:0 0 24px;color:${MUTED};line-height:1.7;font-size:15px;">
-                Olá${opts.name ? `, <strong style="color:${TEXT};">${opts.name}</strong>` : ""}! Use o botão <strong style="color:${GOLD};">ou</strong> o código abaixo para entrar no Plakr! sem precisar de senha.
+              <h2 style="margin:0 0 10px;font-size:26px;font-weight:800;color:${TEXT};">Seu código de acesso chegou!</h2>
+              <p style="margin:0 0 28px;color:${MUTED};line-height:1.7;font-size:15px;">
+                Olá${opts.name ? `, <strong style="color:${TEXT};">${opts.name}</strong>` : ""}! Digite o código abaixo na tela do Plakr! para confirmar seu acesso. Sem senha, sem complicação.
               </p>
 
-              <!-- Botão CTA -->
-              <div style="text-align:center;margin-bottom:28px;">
-                <a href="${opts.magicUrl}" style="display:inline-block;background:linear-gradient(135deg,${GOLD},${GOLD_DARK});color:#0B0F1A;font-weight:800;font-size:16px;padding:16px 40px;border-radius:12px;text-decoration:none;letter-spacing:0.3px;">
-                  ✅ Entrar no Plakr!
-                </a>
-              </div>
-
-              <!-- Separador -->
-              <div style="display:flex;align-items:center;margin-bottom:24px;">
-                <div style="flex:1;height:1px;background:${BORDER};"></div>
-                <span style="margin:0 12px;font-size:12px;color:${MUTED};">ou use o código</span>
-                <div style="flex:1;height:1px;background:${BORDER};"></div>
-              </div>
-
-              <!-- Código OTP em destaque -->
-              <div style="background:${BG};border:2px solid ${GOLD};border-radius:16px;padding:24px;text-align:center;margin-bottom:24px;">
-                <p style="margin:0 0 8px;font-size:12px;color:${MUTED};text-transform:uppercase;letter-spacing:1px;">Código de acesso</p>
-                <p style="margin:0;font-size:42px;font-weight:900;color:${GOLD};letter-spacing:10px;font-family:monospace;">${opts.otpCode}</p>
-                <p style="margin:8px 0 0;font-size:11px;color:${MUTED};">Digite este código na tela do Plakr!</p>
+              <!-- Código OTP — elemento principal e único -->
+              <div style="background:${BG};border:2px solid ${GOLD};border-radius:16px;padding:32px 24px;text-align:center;margin-bottom:24px;">
+                <p style="margin:0 0 12px;font-size:12px;color:${MUTED};text-transform:uppercase;letter-spacing:1.5px;">Código de acesso</p>
+                <p style="margin:0;font-size:48px;font-weight:900;color:${GOLD};letter-spacing:12px;font-family:monospace;">${opts.otpCode}</p>
+                <p style="margin:16px 0 0;font-size:12px;color:${MUTED};">⏰ Este código expira em <strong style="color:${GOLD};">15 minutos</strong> e só pode ser usado uma vez.</p>
               </div>
 
               <!-- Info box -->
               <div style="background:${BG};border:1px solid ${BORDER};border-left:3px solid ${GOLD};border-radius:10px;padding:16px 20px;">
-                <p style="margin:0 0 6px;font-size:13px;color:${MUTED};">⏰ O link e o código expiram em <strong style="color:${GOLD};">15 minutos</strong>.</p>
-                <p style="margin:0;font-size:13px;color:${MUTED};">Se você não solicitou este acesso, ignore este e-mail.</p>
+                <p style="margin:0;font-size:13px;color:${MUTED};">Se você não solicitou este acesso, ignore este e-mail com segurança.</p>
               </div>
-
-              <!-- Link fallback -->
-              <p style="margin:20px 0 0;font-size:12px;color:${MUTED};">
-                Se o botão não funcionar, copie e cole este link no navegador:<br/>
-                <a href="${opts.magicUrl}" style="color:${GOLD};word-break:break-all;font-size:11px;">${opts.magicUrl}</a>
-              </p>
             </td>
           </tr>
 

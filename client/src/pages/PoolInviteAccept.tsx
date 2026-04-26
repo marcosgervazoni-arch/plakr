@@ -209,6 +209,7 @@ export default function PoolInviteAccept() {
         open={emailLoginOpen}
         onClose={() => setEmailLoginOpen(false)}
         returnPath={returnPath}
+        initialStep="email"
       />
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "#0B0F1A" }}>
         <div className="w-full max-w-sm space-y-5">

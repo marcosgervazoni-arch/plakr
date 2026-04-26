@@ -116,11 +116,11 @@ describe("authMagic.sendMagicLink", () => {
     expect(result).toEqual({ sent: true });
     expect(sendEmail).toHaveBeenCalledOnce();
 
-    // Verifica que o e-mail enviado contém o link correto
+    // Verifica que o e-mail enviado contém o código OTP (o link direto foi removido — apenas OTP)
     const emailCall = vi.mocked(sendEmail).mock.calls[0][0];
     expect(emailCall.to).toBe("joao@test.com");
     expect(emailCall.type).toBe("magic_link");
-    expect(emailCall.html).toContain("https://plakr.io/magic-link/verify?token=");
+    expect(emailCall.html).toContain("Código de acesso");
   });
 
   it("normaliza o e-mail para minúsculas antes de buscar", async () => {

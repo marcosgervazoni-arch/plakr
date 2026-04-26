@@ -645,3 +645,9 @@
 - [x] Abrir modal Magic Link ao clicar em botões de compra na UpgradePage para usuários não logados
 - [x] Após login via magic link, redirecionar automaticamente ao checkout Stripe do plano escolhido
 - [x] Parâmetro `?autoCheckout=vip|pro|unlimited` na URL de retorno para acionar checkout automático
+
+## Sprint Melhorias UX — Convite, Magic Link e Taxa de Inscrição
+
+- [x] Remover link de acesso direto do e-mail de magic link — manter apenas OTP de 6 dígitos como método de confirmação
+- [x] Corrigir duplicidade no modal da tela de convite: clicar em "entrar com link por e-mail" deve ir direto para o formulário de e-mail, não abrir outro modal
+- [x] Melhorar instruções do modal de taxa de inscrição: deixar claro que é necessário pagar, onde está a chave PIX/dados de pagamento e que deve clicar em "Já paguei" após a transação

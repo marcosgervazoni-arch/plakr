@@ -24,19 +24,22 @@ interface EmailLoginModalProps {
   onClose: () => void;
   returnPath?: string;
   subtitle?: string;
+  /** Quando "email", pula a etapa de escolha de método e vai direto para o formulário de e-mail */
+  initialStep?: "choose" | "email";
 }
 
 type Step = "choose" | "email";
 
-export default function EmailLoginModal({ open, onClose, returnPath = "/dashboard", subtitle }: EmailLoginModalProps) {
+export default function EmailLoginModal({ open, onClose, returnPath = "/dashboard", subtitle, initialStep }: EmailLoginModalProps) {
   const [, navigate] = useLocation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const isSafari = useSafariDetect();
 
-  // Safari vai direto para e-mail; outros começam na escolha
-  const [step, setStep] = useState<Step>(isSafari ? "email" : "choose");
+  // Prioridade: initialStep > Safari > choose
+  const defaultStep: Step = initialStep ?? (isSafari ? "email" : "choose");
+  const [step, setStep] = useState<Step>(defaultStep);
 
   const sendMagicLink = trpc.authMagic.sendMagicLink.useMutation();
   const loginUrl = getLoginUrl(returnPath);
@@ -45,7 +48,7 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
     // Resetar estado ao fechar
     setEmail("");
     setEmailError("");
-    setStep(isSafari ? "email" : "choose");
+    setStep(defaultStep);
     onClose();
   }
 

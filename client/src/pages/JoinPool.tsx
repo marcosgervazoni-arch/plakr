@@ -324,13 +324,22 @@ export default function JoinPool() {
           {/* Entry fee section */}
           {hasFee ? (
             <>
-              {/* Fee badge */}
-              <div className="px-6 py-3 bg-yellow-500/5 border-b border-yellow-500/20">
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-yellow-400 font-bold text-lg">
-                    R$ {Number(preview.entryFee).toFixed(2).replace(".", ",")}
-                  </span>
-                  <span className="text-sm text-muted-foreground">de taxa de inscrição</span>
+              {/* Alerta de taxa — destaque visual */}
+              <div className="px-6 py-4 bg-yellow-500/10 border-b border-yellow-500/30">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-base">⚠️</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-yellow-400 text-sm">Este bolão possui taxa de inscrição!</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Para participar, é necessário realizar o pagamento de{" "}
+                      <strong className="text-yellow-400">
+                        R$ {Number(preview.entryFee).toFixed(2).replace(".", ",")}
+                      </strong>{" "}
+                      antes de ser aprovado pelo organizador.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -389,11 +398,31 @@ export default function JoinPool() {
                 </div>
               )}
 
-              {/* Info note */}
-              <div className="px-6 py-3 bg-muted/20 border-b border-border/30">
-                <p className="text-xs text-muted-foreground text-center">
-                  Após o pagamento, clique em "Já paguei" e aguarde a aprovação do organizador.
-                  Solicitações não aprovadas em 7 dias são canceladas automaticamente.
+              {/* Instruções em 3 passos */}
+              <div className="px-6 py-4 border-b border-border/30 space-y-3">
+                <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Como participar:</p>
+                <ol className="space-y-2.5">
+                  <li className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Faça o pagamento usando o <strong className="text-foreground">QR Code ou a chave PIX</strong> acima.
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Volte aqui e clique em <strong className="text-yellow-400">“Confirmo a realização do pagamento!”</strong>.
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Aguarde a confirmação do organizador — você receberá um aviso assim que for aprovado.
+                    </p>
+                  </li>
+                </ol>
+                <p className="text-xs text-muted-foreground/70 pt-1">
+                  ⚠️ Solicitações não confirmadas em 7 dias são canceladas automaticamente.
                 </p>
               </div>
 
@@ -408,7 +437,7 @@ export default function JoinPool() {
                   {requestEntryMutation.isPending ? (
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando solicitação...</>
                   ) : (
-                    <>✓ Já paguei — aguardar aprovação</>
+                    <>✅ Confirmo a realização do pagamento!</>
                   )}
                 </Button>
                 <Link href="/dashboard" className="block text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
