@@ -657,3 +657,6 @@
 - [x] Salvar nome informado pelo usuário ao criar conta via magic link (prioridade sobre nome derivado do e-mail)
 - [x] Corrigir definitivamente a duplicidade de modal: useEffect sincroniza o step ao abrir, resolvendo bug do useState travado no primeiro render
 - [x] 582 testes passando (nenhum quebrado)
+
+## Sprint Redirecionamento Automático no Convite
+- [x] Tela de convite: se usuário já está logado e já é membro aprovado do bolão, redirecionar diretamente para o bolão sem mostrar a tela de inscrição

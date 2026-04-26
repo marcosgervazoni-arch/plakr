@@ -721,7 +721,7 @@ export const poolsMembersRouter = router({
   // ── Buscar informações pública do convite (sem autenticação) ─────────────────────────────────────────────────────────────────────
   getPoolInviteInfo: protectedProcedure
     .input(z.object({ token: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { getDb } = await import("../db");
       const db = await getDb();
       if (!db) throw Err.internal();
@@ -735,6 +735,9 @@ export const poolsMembersRouter = router({
       if (!pool) throw Err.notFound("Bolão");
       const organizer = await getUserById(invite.invitedBy);
       const hasEntryFee = pool.entryFee !== null && Number(pool.entryFee) > 0;
+      // Verifica se o usuário logado já é membro ativo do bolão
+      const existingMember = await getPoolMember(pool.id, ctx.user.id);
+      const isMember = !!existingMember && existingMember.memberStatus !== "pending_approval";
       return {
         status: "valid" as const,
         pool: { id: pool.id, name: pool.name, slug: pool.slug, logoUrl: pool.logoUrl ?? null, tournamentId: pool.tournamentId },
@@ -743,6 +746,7 @@ export const poolsMembersRouter = router({
         entryFee: hasEntryFee ? Number(pool.entryFee) : null,
         invitedEmail: invite.invitedEmail,
         expiresAt: invite.expiresAt,
+        isMember,
       };
     }),
 

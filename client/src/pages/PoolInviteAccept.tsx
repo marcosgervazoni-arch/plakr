@@ -68,12 +68,19 @@ export default function PoolInviteAccept() {
     },
   });
 
-  // Aceitar automaticamente após login
+  // Se já é membro aprovado, redirecionar diretamente para o bolão sem mostrar a tela de inscrição
   useEffect(() => {
-    if (!authLoading && user && inviteInfo?.status === "valid" && !accepted && !acceptMutation.isPending) {
+    if (!authLoading && user && inviteInfo?.status === "valid" && inviteInfo.isMember && inviteInfo.pool?.slug) {
+      navigate(`/pool/${inviteInfo.pool.slug}`);
+    }
+  }, [authLoading, user, inviteInfo?.status, (inviteInfo as any)?.isMember]);
+
+  // Aceitar automaticamente após login (apenas para quem ainda não é membro)
+  useEffect(() => {
+    if (!authLoading && user && inviteInfo?.status === "valid" && !(inviteInfo as any).isMember && !accepted && !acceptMutation.isPending) {
       acceptMutation.mutate({ token: token! });
     }
-  }, [authLoading, user, inviteInfo?.status, accepted]);
+  }, [authLoading, user, inviteInfo?.status, (inviteInfo as any)?.isMember, accepted]);
 
   // ── Estados de carregamento ────────────────────────────────────────────────
   if (inviteLoading || authLoading) {
