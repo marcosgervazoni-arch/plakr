@@ -154,42 +154,42 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
             </DialogHeader>
 
             <div className="flex flex-col gap-3 mt-2">
-              {/* OAuth — método principal para não-Safari */}
-              <a
-                href={loginUrl}
+              {/* Magic Link — método principal (destaque dourado) */}
+              <button
+                onClick={() => setStep("email")}
                 className="w-full flex items-center justify-center gap-2 font-bold text-sm px-4 py-3 rounded-lg transition-all hover:opacity-90"
                 style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}
+                aria-label="Entrar com código por e-mail"
+              >
+                <Mail size={15} />
+                Entrar com código por e-mail
+                <ArrowRight size={15} />
+              </button>
+
+              <p className="text-xs text-center" style={{ color: "#4B5563" }}>
+                Sem senha · Acesso seguro · Funciona em qualquer dispositivo
+              </p>
+
+              {/* Divisor */}
+              <div className="flex items-center gap-3 mt-1">
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+                <span className="text-xs" style={{ color: "#4B5563" }}>ou</span>
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+              </div>
+
+              {/* OAuth — opção secundária discreta */}
+              <a
+                href={loginUrl}
+                className="w-full flex items-center justify-center gap-2 text-xs px-4 py-2.5 rounded-lg transition-all"
+                style={{
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  color: "#6B7280",
+                }}
                 aria-label="Entrar com conta Manus"
               >
                 Entrar com conta Manus
-                <ArrowRight size={15} />
               </a>
-
-              {/* Divisor */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-                <span className="text-xs" style={{ color: "#6B7280" }}>ou</span>
-                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-              </div>
-
-              {/* Magic Link — alternativa por e-mail */}
-              <button
-                onClick={() => setStep("email")}
-                className="w-full flex items-center justify-center gap-2 text-sm px-4 py-3 rounded-lg transition-all hover:border-white/20"
-                style={{
-                  background: "transparent",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  color: "#9CA3AF",
-                }}
-                aria-label="Entrar com link por e-mail"
-              >
-                <Mail size={15} />
-                Entrar com link por e-mail
-              </button>
-
-              <p className="text-xs text-center mt-1" style={{ color: "#4B5563" }}>
-                Sem senha · Acesso seguro · Funciona em qualquer dispositivo
-              </p>
             </div>
           </>
         )}

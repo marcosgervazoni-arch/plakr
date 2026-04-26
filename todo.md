@@ -660,3 +660,6 @@
 
 ## Sprint Redirecionamento Automático no Convite
 - [x] Tela de convite: se usuário já está logado e já é membro aprovado do bolão, redirecionar diretamente para o bolão sem mostrar a tela de inscrição
+
+## Sprint Prioridade Visual — Acesso por E-mail
+- [x] Modal de login: tornar o acesso por e-mail o método principal (botão dourado em destaque) e o login via Manus a opção secundária discreta
