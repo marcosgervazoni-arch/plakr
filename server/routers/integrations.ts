@@ -1058,9 +1058,11 @@ export const integrationsRouter = router({
         SELECT b.id, b.gameId, b.userId, b.poolId,
                b.predictedScoreA, b.predictedScoreB,
                b.pointsEarned, b.resultType,
-               g.teamAName, g.teamBName, g.scoreA, g.scoreB
+               g.teamAName, g.teamBName, g.scoreA, g.scoreB,
+               t.apiFootballLeagueId
         FROM bets b
         JOIN games g ON b.gameId = g.id
+        JOIN tournaments t ON g.tournamentId = t.id
         WHERE g.status = 'finished'
         AND g.scoreA IS NOT NULL
         LIMIT 500
@@ -1071,6 +1073,7 @@ export const integrationsRouter = router({
         predictedScoreA: number; predictedScoreB: number;
         pointsEarned: number; resultType: string;
         teamAName: string; teamBName: string; scoreA: number; scoreB: number;
+        apiFootballLeagueId: number | null;
       }>;
 
       if (rows.length === 0) return { started: false, message: "Nenhum palpite encontrado" };
@@ -1112,6 +1115,7 @@ export const integrationsRouter = router({
               userRank: rankRow?.rank ?? 0,
             } : null;
 
+            const { isNeutralVenueLeague: isNeutral } = await import("../../shared/tournamentFormat");
             const analysisText = await generateBetAnalysis({
               homeTeam: row.teamAName ?? "Casa",
               awayTeam: row.teamBName ?? "Visitante",
@@ -1122,6 +1126,7 @@ export const integrationsRouter = router({
               resultType: (row.resultType as "exact" | "correct_result" | "wrong") ?? "wrong",
               totalPoints: row.pointsEarned ?? 0,
               isZebra: false,
+              isNeutralVenue: isNeutral(row.apiFootballLeagueId),
               poolContext,
             });
             await dbBg.insert(gameBetAnalyses).values({
@@ -1158,9 +1163,11 @@ export const integrationsRouter = router({
         SELECT b.id, b.gameId, b.userId, b.poolId,
                b.predictedScoreA, b.predictedScoreB,
                b.pointsEarned, b.resultType,
-               g.teamAName, g.teamBName, g.scoreA, g.scoreB
+               g.teamAName, g.teamBName, g.scoreA, g.scoreB,
+               t.apiFootballLeagueId
         FROM bets b
         JOIN games g ON b.gameId = g.id
+        JOIN tournaments t ON g.tournamentId = t.id
         WHERE g.status = 'finished'
         AND g.scoreA IS NOT NULL
         AND NOT EXISTS (
@@ -1175,6 +1182,7 @@ export const integrationsRouter = router({
         predictedScoreA: number; predictedScoreB: number;
         pointsEarned: number; resultType: string;
         teamAName: string; teamBName: string; scoreA: number; scoreB: number;
+        apiFootballLeagueId: number | null;
       }>;
 
       if (rows.length === 0) return { started: false, message: "Nenhum palpite pendente" };
@@ -1182,6 +1190,7 @@ export const integrationsRouter = router({
       (async () => {
         for (const row of rows) {
           try {
+            const { isNeutralVenueLeague: isNeutral2 } = await import("../../shared/tournamentFormat");
             const analysisText = await generateBetAnalysis({
               homeTeam: row.teamAName ?? "Casa",
               awayTeam: row.teamBName ?? "Visitante",
@@ -1192,6 +1201,7 @@ export const integrationsRouter = router({
               resultType: (row.resultType as "exact" | "correct_result" | "wrong") ?? "wrong",
               totalPoints: row.pointsEarned ?? 0,
               isZebra: false,
+              isNeutralVenue: isNeutral2(row.apiFootballLeagueId),
               poolContext: null,
             });
             const dbInner = await getDb();

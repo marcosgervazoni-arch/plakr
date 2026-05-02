@@ -32,7 +32,7 @@ import { syncFixtures, syncResults, syncTeamsForTournament, backfillTeamForm } f
 import { getDb } from "../db";
 import { tournaments, games as gamesTable, teams as teamsTable } from "../../drizzle/schema";
 import { eq, isNull, and, sql } from "drizzle-orm";
-import { inferTournamentFormat, inferTournamentFormatFromPhases } from "../../shared/tournamentFormat";
+import { inferTournamentFormat, inferTournamentFormatFromPhases, isNeutralVenueLeague } from "../../shared/tournamentFormat";
 import { apiFootballRequest, fetchFixturePredictions, fetchInjuries, fetchTeamStatistics } from "./client";
 import { buildAiPrediction, type AiPredictionContext } from "./ai-analysis";
 import { notifyOwner } from "../_core/notification";
@@ -406,6 +406,7 @@ export function registerApiFootballCronJobs() {
             awayTeam: game.teamBName ?? "Time B",
             competition: tournamentMap[game.tournamentId] ?? "Campeonato",
             matchDate: game.matchDate?.toISOString() ?? new Date().toISOString(),
+            isNeutralVenue: isNeutralVenueLeague(game.apiFootballLeagueId),
             apiPercent,
             apiAdvice,
             apiComparison,
@@ -651,6 +652,7 @@ export async function regenerateAllPredictions(): Promise<void> {
           awayTeam: game.teamBName ?? "Time B",
           competition: tournamentMap[game.tournamentId] ?? "Campeonato",
           matchDate: game.matchDate?.toISOString() ?? new Date().toISOString(),
+          isNeutralVenue: isNeutralVenueLeague(game.apiFootballLeagueId),
           apiPercent,
           apiAdvice,
           apiComparison,

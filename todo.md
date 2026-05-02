@@ -681,3 +681,6 @@
 
 ## Sprint Posicionamento Avatares no Card
 - [x] Mover linha de avatares empilhados para o rodapé do GameCard (abaixo de Compartilhar e Ver análise)
+
+## Sprint Bug — Time da Casa Incorreto no Prompt da IA
+- [x] BUG: Prompt da IA chama teamA de "time da casa" mesmo em jogos de campo neutro (ex: Copa do Mundo) — corrigir para omitir/neutralizar referência a mandante quando não há sede real

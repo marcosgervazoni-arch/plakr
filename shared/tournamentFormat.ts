@@ -146,6 +146,33 @@ const REGULAR_SEASON_PATTERNS = [
 ];
 
 /**
+ * IDs de ligas de seleções / competições em campo neutro.
+ * Nesses torneios não existe "time da casa" real — os jogos são em sede neutra.
+ * Usado para ajustar o prompt da IA e não chamar o teamA de "time da casa".
+ */
+export const NEUTRAL_VENUE_LEAGUE_IDS = new Set<number>([
+  1,   // World Cup
+  4,   // Euro Championship
+  9,   // Copa América
+  10,  // AFC Asian Cup
+  29,  // Africa Cup of Nations
+  30,  // Gold Cup (CONCACAF)
+  34,  // FIFA Club World Cup
+  531, // UEFA Nations League
+  667, // Olympic Games (Men)
+  668, // Olympic Games (Women)
+]);
+
+/**
+ * Retorna true quando a liga é disputada em campo neutro (competições de seleções
+ * ou torneios com sede pré-definida), onde não há mandante real.
+ */
+export function isNeutralVenueLeague(leagueId: number | null | undefined): boolean {
+  if (leagueId == null) return false;
+  return NEUTRAL_VENUE_LEAGUE_IDS.has(leagueId);
+}
+
+/**
  * Verifica se um round corresponde a uma fase de grupos.
  */
 function isGroupStageRound(round: string): boolean {

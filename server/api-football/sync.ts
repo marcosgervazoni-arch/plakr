@@ -29,6 +29,7 @@ import {
   gameBetAnalyses,
 } from "../../drizzle/schema";
 import { getPhaseLabel, getPhaseOrder, isKnockoutPhase } from "../../shared/phaseNames";
+import { isNeutralVenueLeague } from "../../shared/tournamentFormat";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import {
   getBetsByGameAllPools,
@@ -497,6 +498,7 @@ export async function syncFixturesForTournament(options: {
                   awayTeam: fixture.teams.away.name,
                   competition: fixture.league.name,
                   matchDate: fixture.fixture.date,
+                  isNeutralVenue: isNeutralVenueLeague(fixture.league.id),
                   apiPercent,
                   apiAdvice: apiPred?.predictions?.advice ?? null,
                   homeForm,
@@ -759,7 +761,8 @@ async function applyGameResult(
   existingGame: { id: number; status: string | null; scoreA: number | null; externalId: string | null; teamAName: string | null; teamBName: string | null },
   scoreA: number,
   scoreB: number,
-  syncStatusRef: { value: "success" | "error" | "partial" | "skipped" }
+  syncStatusRef: { value: "success" | "error" | "partial" | "skipped" },
+  leagueId?: number | null,
 ): Promise<boolean> {
   // Pular se já tem resultado final
   if (existingGame.status === "finished" && existingGame.scoreA !== null) return false;
@@ -861,6 +864,7 @@ async function applyGameResult(
     goalsTimeline,
     matchStatistics,
     betsByPool,
+    isNeutralVenue: isNeutralVenueLeague(leagueId),
   }).catch((e) => logger.error({ err: e, gameId: existingGame.id }, "[AI] Error generating AI texts"));
 
   return true;
@@ -876,6 +880,8 @@ async function generateAiTextsForGame(ctx: {
   goalsTimeline: Array<{ min: string; team: "home" | "away"; player: string; type: "goal" | "own_goal" | "penalty" }>;
   matchStatistics: ReturnType<typeof parseMatchStatistics>;
   betsByPool: Map<number, Array<{ id: number; userId: number; predictedScoreA: number | null; predictedScoreB: number | null; poolId: number }>>;
+  /** true para competições em campo neutro (Copa do Mundo, Euro etc.) */
+  isNeutralVenue?: boolean;
 }): Promise<void> {
   const db = await getDb();
   if (!db) return;
@@ -893,6 +899,7 @@ async function generateAiTextsForGame(ctx: {
       homeShots: ctx.matchStatistics.homeShots,
       awayShots: ctx.matchStatistics.awayShots,
     } : null,
+    isNeutralVenue: ctx.isNeutralVenue,
   });
 
   // 1b. Gerar narração do narrador (para usuários sem palpite)
@@ -957,6 +964,7 @@ async function generateAiTextsForGame(ctx: {
             resultType: breakdown.resultType,
             totalPoints: breakdown.total,
             isZebra: false,
+            isNeutralVenue: ctx.isNeutralVenue,
             poolContext: { ...poolContext, userRank },
           });
 
@@ -992,6 +1000,7 @@ async function generateAiTextsForGame(ctx: {
             resultType: breakdown.resultType,
             totalPoints: breakdown.total,
             isZebra: false,
+            isNeutralVenue: ctx.isNeutralVenue,
             poolContext: { totalParticipants: poolBets.length, exactCount: exactCountPartial, correctCount: correctCountPartial, totalBets: poolBets.length, userRank: 0 },
           });
           await db.insert(gameBetAnalyses).values({
@@ -1098,7 +1107,7 @@ export async function syncResults(options: {
           continue;
         }
 
-        const applied = await applyGameResult(existingGame, scoreA, scoreB, syncStatusRef);
+        const applied = await applyGameResult(existingGame, scoreA, scoreB, syncStatusRef, leagueId);
         if (applied) resultsApplied++;
       }
 
@@ -1181,8 +1190,10 @@ export async function backfillGameData(options: {
       teamBName: games.teamBName,
       scoreA: games.scoreA,
       scoreB: games.scoreB,
+      apiFootballLeagueId: tournaments.apiFootballLeagueId,
     })
     .from(games)
+    .innerJoin(tournaments, eq(games.tournamentId, tournaments.id))
     .where(
       and(
         eq(games.status, "finished"),
@@ -1245,6 +1256,7 @@ export async function backfillGameData(options: {
         goalsTimeline,
         matchStatistics,
         betsByPool,
+        isNeutralVenue: isNeutralVenueLeague(game.apiFootballLeagueId),
       }).catch((e) => logger.error({ err: e, gameId: game.id }, "[AI][Backfill] Error generating AI texts"));
 
       succeeded++;
@@ -1303,8 +1315,10 @@ export async function backfillAiSummaries(options: {
       scoreB: games.scoreB,
       goalsTimeline: games.goalsTimeline,
       matchStatistics: games.matchStatistics,
+      apiFootballLeagueId: tournaments.apiFootballLeagueId,
     })
     .from(games)
+    .innerJoin(tournaments, eq(games.tournamentId, tournaments.id))
     .where(
       and(
         eq(games.status, "finished"),
@@ -1337,6 +1351,7 @@ export async function backfillAiSummaries(options: {
         goalsTimeline: (game.goalsTimeline as Array<{ min: string; team: "home" | "away"; player: string; type: "goal" | "own_goal" | "penalty" }>) ?? [],
         matchStatistics: game.matchStatistics as ReturnType<typeof parseMatchStatistics>,
         betsByPool,
+        isNeutralVenue: isNeutralVenueLeague(game.apiFootballLeagueId),
       });
       succeeded++;
       logger.info(`[BackfillAiSummary] Game ${game.id} OK`);

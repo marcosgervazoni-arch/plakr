@@ -25,6 +25,8 @@ export interface GameSummaryContext {
     homePossession: number; awayPossession: number;
     homeShots: number; awayShots: number;
   } | null;
+  /** true para competições em campo neutro (Copa do Mundo, Euro etc.) — sem mandante real */
+  isNeutralVenue?: boolean;
 }
 
 export interface BetAnalysisContext {
@@ -37,6 +39,8 @@ export interface BetAnalysisContext {
   resultType: "exact" | "correct_result" | "wrong";
   totalPoints: number;
   isZebra: boolean;
+  /** true para competições em campo neutro (Copa do Mundo, Euro etc.) — sem mandante real */
+  isNeutralVenue?: boolean;
   // Contexto do bolão — sempre buscar para gerar comentário comparativo
   poolContext?: {
     totalParticipants: number;
@@ -211,16 +215,20 @@ Contexto do bolão (use de forma natural, sem citar números diretamente):
 
   const zebraLine = ctx.isZebra ? "- O resultado foi uma zebra \u2014 a maioria apostou no outro lado." : "";
 
+  // Em campo neutro (Copa do Mundo, Euro etc.) não há mandante real
+  const teamALabel = ctx.isNeutralVenue ? ctx.homeTeam : `Time da casa: ${ctx.homeTeam}`;
+  const teamBLabel = ctx.isNeutralVenue ? ctx.awayTeam : `Time visitante: ${ctx.awayTeam}`;
+  const neutralNote = ctx.isNeutralVenue ? "- Jogo em campo neutro (sem mandante)" : "";
+
   const prompt = `Analise o palpite do usuário para o jogo:
-- Time da casa: ${ctx.homeTeam}
-- Time visitante: ${ctx.awayTeam}
-- Placar final: ${ctx.scoreA} x ${ctx.scoreB}
+- ${teamALabel}
+- ${teamBLabel}
+${neutralNote ? neutralNote + "\n" : ""}- Placar final: ${ctx.scoreA} x ${ctx.scoreB}
 - Palpite: ${ctx.predictedA} x ${ctx.predictedB}
 - Tipo de resultado: ${resultLabel}
 - Pontos ganhos: ${ctx.totalPoints}
 ${zebraLine}
 ${poolBlock}
-
 Escreva apenas a análise, sem título, sem emojis.`;
 
   const systemPrompt = `Você é um comentarista esportivo com o tom da CazéTV: casual, animado e direto, como um amigo que entende de bola.
@@ -330,6 +338,8 @@ export interface AiPredictionContext {
   awayTeam: string;
   competition: string;
   matchDate: string; // ISO string
+  /** true para competições em campo neutro (Copa do Mundo, Euro etc.) — sem mandante real */
+  isNeutralVenue?: boolean;
   // Probabilidades do modelo simplificado da API (3 buckets fixos)
   apiPercent?: { home: number; draw: number; away: number } | null;
   apiAdvice?: string | null;
@@ -506,7 +516,11 @@ export async function buildAiPrediction(ctx: AiPredictionContext): Promise<AiPre
 
   // LLM redige apenas o texto narrativo — com base nos dados reais da API
   const favoriteLabel = homeWin > awayWin ? ctx.homeTeam : awayWin > homeWin ? ctx.awayTeam : "equilíbrio";
-  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use os dados abaixo para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. Se houver desfalques importantes, mencione-os de forma natural na narrativa. NÃO sugira apostas, NÃO mencione odds ou percentuais diretamente, NÃO diga qual time apostar. NUNCA use expressões temporais relativas como "hoje", "amanhã", "agora", "neste momento" — o jogo pode ser em dias ou semanas. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.
+  const neutralInstruction = ctx.isNeutralVenue
+    ? " IMPORTANTE: este jogo é em campo neutro — NÃO mencione 'time da casa', 'mandante' ou 'vantagem de campo'. Trate os dois times como iguais em termos de localização."
+    : "";
+
+  const prompt = `Escreva uma análise pré-jogo animada para um bolão de futebol. Máximo 3 linhas. Tom de narrador empolgado estilo CazéTV — energético, com personalidade, sem clichês. Use os dados abaixo para comentar quem está em melhor momento, o que esperar do confronto, o que pode ser decisivo. Se houver desfalques importantes, mencione-os de forma natural na narrativa. NÃO sugira apostas, NÃO mencione odds ou percentuais diretamente, NÃO diga qual time apostar. NUNCA use expressões temporais relativas como "hoje", "amanhã", "agora", "neste momento" — o jogo pode ser em dias ou semanas. Deixe o leitor animado para fazer o próprio palpite. Sem emojis.${neutralInstruction}
 Jogo: ${ctx.homeTeam} × ${ctx.awayTeam}
 Competição: ${ctx.competition}
 Data: ${dateStr}
@@ -525,7 +539,7 @@ Escreva apenas a análise, sem título.`;
   try {
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "Você é um narrador de futebol brasileiro com energia de transmissão ao vivo — estilo CazéTV. Escreve análises pré-jogo animadas e envolventes para bolões de palpites. Foca no contexto esportivo: momento dos times, o que esperar do jogo, o que pode ser decisivo. NUNCA sugere apostas, NUNCA menciona odds ou percentuais, NUNCA diz qual resultado escolher. NUNCA usa expressões temporais relativas como 'hoje', 'amanhã', 'agora', 'neste momento' — o texto será lido em datas diferentes da geração. O objetivo é deixar o usuário animado para fazer o próprio palpite. Escreve em português brasileiro, sem emojis." },
+        { role: "system", content: `Você é um narrador de futebol brasileiro com energia de transmissão ao vivo — estilo CazéTV. Escreve análises pré-jogo animadas e envolventes para bolões de palpites. Foca no contexto esportivo: momento dos times, o que esperar do jogo, o que pode ser decisivo. NUNCA sugere apostas, NUNCA menciona odds ou percentuais, NUNCA diz qual resultado escolher. NUNCA usa expressões temporais relativas como 'hoje', 'amanhã', 'agora', 'neste momento' — o texto será lido em datas diferentes da geração. O objetivo é deixar o usuário animado para fazer o próprio palpite. Escreve em português brasileiro, sem emojis.${ctx.isNeutralVenue ? " Quando o jogo for em campo neutro, NUNCA use termos como 'time da casa', 'mandante' ou 'vantagem de campo'." : ""}` },
         { role: "user", content: prompt },
       ],
     });
