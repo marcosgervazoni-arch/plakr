@@ -675,3 +675,6 @@
 - [x] Frontend: avatares empilhados + contador no rodapé do card (visível sempre após ter apostas)
 - [x] Frontend: card expansível com lista de nome + palpite apenas após fechamento do jogo
 - [x] Regra: antes do fechamento, apenas avatares + número; após fechamento, lista completa com palpites
+
+## Sprint Bug — Avatares Não Aparecem no Card
+- [x] BUG CORRIGIDO: betCount não era calculado no getBySlug (só no getGames) — adicionado cálculo de betCount por jogo no getBySlug do pools-core.ts

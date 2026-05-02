@@ -174,7 +174,21 @@ export const poolsCoreRouter = router({
       const predictionReliable = tournament?.apiFootballLeagueId
         ? await getPredictionReliability(tournament.apiFootballLeagueId)
         : false;
-      return { pool, tournament, games: gameList, rules, memberCount, myRole: member?.role, phases, predictionReliable, redirectedTo };
+      // Contar palpites por jogo neste bolão (para exibir avatares empilhados no GameCard)
+      const db = await (await import("../db")).getDb();
+      let betCountMap = new Map<number, number>();
+      if (db) {
+        const { bets: betsTable } = await import("../../drizzle/schema");
+        const { eq, sql } = await import("drizzle-orm");
+        const betCounts = await db
+          .select({ gameId: betsTable.gameId, count: sql<number>`COUNT(*)` })
+          .from(betsTable)
+          .where(eq(betsTable.poolId, pool.id))
+          .groupBy(betsTable.gameId);
+        betCountMap = new Map(betCounts.map((r) => [r.gameId, Number(r.count)]));
+      }
+      const gamesWithBetCount = gameList.map((g) => ({ ...g, betCount: betCountMap.get(g.id) ?? 0 }));
+      return { pool, tournament, games: gamesWithBetCount, rules, memberCount, myRole: member?.role, phases, predictionReliable, redirectedTo };
     }),
 
   // ── Listar bolões públicos ─────────────────────────────────────────────────
