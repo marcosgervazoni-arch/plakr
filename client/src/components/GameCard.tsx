@@ -122,7 +122,15 @@ function GameCard({
   betInputs, setBetInputs, handleBetSubmit, placeBetPending, myRankPosition, showPhaseLabel, shareCardConfig, predictionReliable, poolSlug,
 }: GameCardProps) {
   const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [bettorsExpanded, setBettorsExpanded] = useState(false);
   const [vipBannerDismissed, setVipBannerDismissed] = useState(false);
+  // Query de palpites dos membros — carregada apenas quando há apostas
+  const { data: memberBetsData } = trpc.pools.getGameMemberBets.useQuery(
+    { poolId, gameId: game.id },
+    { enabled: (game.betCount ?? 0) > 0, staleTime: 30_000 }
+  );
+  const bettors = memberBetsData?.bettors ?? [];
+  const deadlinePassed = memberBetsData?.deadlinePassed ?? false;
   const [shareOpen, setShareOpen] = useState(false);
   const [shareVisible, setShareVisible] = useState(false); // controla animação slide-up
   const [cardPreviewUrl, setCardPreviewUrl] = useState<string | null>(null);
@@ -450,13 +458,81 @@ function GameCard({
           </div>
         )}
 
-        {/* Contador de palpites — exibido quando há dados */}
-        {(game.betCount ?? 0) > 0 && !finished && (
-          <div className="mt-2 flex justify-center">
-            <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-              {game.betCount} {game.betCount === 1 ? "palpite feito" : "palpites feitos"}
-            </span>
+        {/* Avatares empilhados + contador de apostadores */}
+        {bettors.length > 0 && (
+          <div className="mt-3">
+            {/* Linha clicável: avatares + contador */}
+            <button
+              onClick={() => deadlinePassed && setBettorsExpanded((v) => !v)}
+              className={`w-full flex items-center gap-2 px-1 py-1 rounded-lg transition-colors ${
+                deadlinePassed ? "cursor-pointer hover:bg-muted/20" : "cursor-default"
+              }`}
+              disabled={!deadlinePassed}
+            >
+              {/* Avatares empilhados (máx 3) */}
+              <div className="flex -space-x-2">
+                {bettors.slice(0, 3).map((b, i) => (
+                  <div
+                    key={b.userId}
+                    className="w-6 h-6 rounded-full border-2 border-background flex items-center justify-center text-[9px] font-bold overflow-hidden flex-shrink-0"
+                    style={{ zIndex: 3 - i, background: b.avatarUrl ? undefined : "rgba(255,184,0,0.2)", color: "#FFB800" }}
+                  >
+                    {b.avatarUrl ? (
+                      <img src={b.avatarUrl} alt={b.name} className="w-full h-full object-cover" />
+                    ) : (
+                      (b.name?.[0] ?? "?").toUpperCase()
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Contador */}
+              <span className="text-[11px] text-muted-foreground flex-1 text-left">
+                {bettors.length} {bettors.length === 1 ? "apostou" : "apostaram"}
+                {!deadlinePassed && <span className="ml-1 text-[10px] opacity-50">(palpites visíveis após o fechamento)</span>}
+              </span>
+              {/* Chevron — só quando expansível */}
+              {deadlinePassed && (
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-muted-foreground transition-transform flex-shrink-0 ${
+                    bettorsExpanded ? "rotate-180" : ""
+                  }`}
+                />
+              )}
+            </button>
+
+            {/* Lista expansível — apenas após o deadline */}
+            {deadlinePassed && bettorsExpanded && (
+              <div className="mt-1 rounded-lg overflow-hidden border border-border/20">
+                {bettors.map((b) => (
+                  <div
+                    key={b.userId}
+                    className="flex items-center gap-2.5 px-3 py-2 border-b border-border/10 last:border-0 hover:bg-muted/10 transition-colors"
+                  >
+                    {/* Avatar */}
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 overflow-hidden"
+                      style={{ background: b.avatarUrl ? undefined : "rgba(255,184,0,0.15)", color: "#FFB800" }}
+                    >
+                      {b.avatarUrl ? (
+                        <img src={b.avatarUrl} alt={b.name} className="w-full h-full object-cover" />
+                      ) : (
+                        (b.name?.[0] ?? "?").toUpperCase()
+                      )}
+                    </div>
+                    {/* Nome */}
+                    <span className="text-xs text-foreground/80 flex-1 truncate">{b.name}</span>
+                    {/* Palpite */}
+                    {b.predictedScoreA !== null && b.predictedScoreB !== null ? (
+                      <span className="text-xs font-mono font-bold text-primary/80 flex-shrink-0">
+                        {b.predictedScoreA} × {b.predictedScoreB}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground/40">—</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

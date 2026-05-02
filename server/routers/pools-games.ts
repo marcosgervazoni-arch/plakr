@@ -329,4 +329,69 @@ export const poolsGamesRouter = router({
         .limit(1);
       return row?.analysisText ?? null;
     }),
+
+  /**
+   * getGameMemberBets
+   * Retorna os palpites dos membros de um bolão para um jogo específico.
+   * - avatarUrl, name e userId: sempre retornados (para exibir avatares empilhados + contador)
+   * - predictedScoreA/B: retornados apenas se o prazo de apostas já encerrou
+   */
+  getGameMemberBets: protectedProcedure
+    .input(z.object({ poolId: z.number(), gameId: z.number() }))
+    .query(async ({ input, ctx }) => {
+      const member = await getPoolMember(input.poolId, ctx.user.id);
+      if (!member && ctx.user.role !== "admin") throw Err.forbidden();
+      if (member && member.memberStatus && member.memberStatus !== "active" && ctx.user.role !== "admin") throw Err.forbidden();
+
+      const db = await getDb();
+      if (!db) return { bettors: [], deadlinePassed: false };
+
+      const { users: usersTable } = await import("../../drizzle/schema");
+      const { and, eq: eqOp, inArray } = await import("drizzle-orm");
+
+      // Buscar o jogo para saber a data e calcular o deadline
+      const game = await getGameById(input.gameId);
+      if (!game) throw Err.notFound("Jogo");
+
+      // Buscar regras do bolão para saber o bettingDeadlineMinutes
+      const rules = await getPoolScoringRules(input.poolId);
+      const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
+      const deadline = new Date(new Date(game.matchDate).getTime() - deadlineMinutes * 60 * 1000);
+      const deadlinePassed = new Date() > deadline;
+
+      // Buscar todos os palpites deste jogo neste bolão
+      const gameBets = await db
+        .select({
+          userId: bets.userId,
+          predictedScoreA: bets.predictedScoreA,
+          predictedScoreB: bets.predictedScoreB,
+        })
+        .from(bets)
+        .where(and(eqOp(bets.poolId, input.poolId), eqOp(bets.gameId, input.gameId)));
+
+      if (gameBets.length === 0) return { bettors: [], deadlinePassed };
+
+      // Buscar dados dos usuários que apostaram
+      const userIds = gameBets.map((b) => b.userId);
+      const userRows = await db
+        .select({ id: usersTable.id, name: usersTable.name, avatarUrl: usersTable.avatarUrl })
+        .from(usersTable)
+        .where(inArray(usersTable.id, userIds));
+
+      const userMap = new Map(userRows.map((u) => [u.id, u]));
+
+      const bettors = gameBets.map((b) => {
+        const user = userMap.get(b.userId);
+        return {
+          userId: b.userId,
+          name: user?.name ?? "Participante",
+          avatarUrl: user?.avatarUrl ?? null,
+          // Palpite só revelado após o deadline
+          predictedScoreA: deadlinePassed ? b.predictedScoreA : null,
+          predictedScoreB: deadlinePassed ? b.predictedScoreB : null,
+        };
+      });
+
+      return { bettors, deadlinePassed };
+    }),
 });

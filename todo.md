@@ -669,3 +669,9 @@
 
 ## Sprint Correção Definitiva Duplicidade Modal Convite
 - [x] Corrigir duplicidade: ao clicar em "Entrar com e-mail" na tela /join, o modal abre direto no formulário de e-mail (etapa "choose" eliminada da raiz)
+
+## Sprint Palpites dos Membros no Card do Jogo
+- [x] Backend: endpoint para retornar palpites dos membros por jogo (com avatar, nome e palpite)
+- [x] Frontend: avatares empilhados + contador no rodapé do card (visível sempre após ter apostas)
+- [x] Frontend: card expansível com lista de nome + palpite apenas após fechamento do jogo
+- [x] Regra: antes do fechamento, apenas avatares + número; após fechamento, lista completa com palpites
