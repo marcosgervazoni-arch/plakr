@@ -458,9 +458,46 @@ function GameCard({
           </div>
         )}
 
+        {/* Badges compactos de pontuação */}
+        {finished && hasBet && (
+          <div className="mt-3 flex flex-wrap justify-center gap-1">
+            <BetBreakdownBadges bet={myBet!} compact />
+          </div>
+        )}
+
+        {/* Barra de ações — Compartilhar + Ver análise */}
+        {(hasBet || finished || !finished) && (
+          <div className="mt-3 border-t border-border/20 pt-2 flex items-center justify-between">
+            <button
+              onClick={() => { if (shareOpen) closeShare(); else openShare(); }}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-muted/30"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              Compartilhar
+            </button>
+            {(finished || !finished) && (
+              <button
+                onClick={() => {
+                  const opening = !analysisOpen;
+                  setAnalysisOpen(opening);
+                  // Incrementar contador de IA apenas ao abrir (não ao fechar) e apenas para Free
+                  if (opening && !finished && !isParticipantVip) {
+                    incrementAiUsage();
+                  }
+                }}
+                className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors px-2 py-1.5 rounded-lg hover:bg-primary/10"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                {analysisOpen ? "Fechar análise" : "Ver análise"}
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${analysisOpen ? "rotate-180" : ""}`} />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Avatares empilhados + contador de apostadores */}
         {bettors.length > 0 && (
-          <div className="mt-3">
+          <div className="mt-2 border-t border-border/20 pt-2">
             {/* Linha clicável: avatares + contador */}
             <button
               onClick={() => deadlinePassed && setBettorsExpanded((v) => !v)}
@@ -532,43 +569,6 @@ function GameCard({
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-
-        {/* Badges compactos de pontuação */}
-        {finished && hasBet && (
-          <div className="mt-3 flex flex-wrap justify-center gap-1">
-            <BetBreakdownBadges bet={myBet!} compact />
-          </div>
-        )}
-
-        {/* Barra de ações — Compartilhar + Ver análise */}
-        {(hasBet || finished || !finished) && (
-          <div className="mt-3 border-t border-border/20 pt-2 flex items-center justify-between">
-            <button
-              onClick={() => { if (shareOpen) closeShare(); else openShare(); }}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-lg hover:bg-muted/30"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              Compartilhar
-            </button>
-            {(finished || !finished) && (
-              <button
-                onClick={() => {
-                  const opening = !analysisOpen;
-                  setAnalysisOpen(opening);
-                  // Incrementar contador de IA apenas ao abrir (não ao fechar) e apenas para Free
-                  if (opening && !finished && !isParticipantVip) {
-                    incrementAiUsage();
-                  }
-                }}
-                className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors px-2 py-1.5 rounded-lg hover:bg-primary/10"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                {analysisOpen ? "Fechar análise" : "Ver análise"}
-                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${analysisOpen ? "rotate-180" : ""}`} />
-              </button>
             )}
           </div>
         )}

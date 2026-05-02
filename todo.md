@@ -678,3 +678,6 @@
 
 ## Sprint Bug — Avatares Não Aparecem no Card
 - [x] BUG CORRIGIDO: betCount não era calculado no getBySlug (só no getGames) — adicionado cálculo de betCount por jogo no getBySlug do pools-core.ts
+
+## Sprint Posicionamento Avatares no Card
+- [x] Mover linha de avatares empilhados para o rodapé do GameCard (abaixo de Compartilhar e Ver análise)
