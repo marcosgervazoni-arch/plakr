@@ -114,6 +114,8 @@ export default function PoolPage() {
     return () => window.removeEventListener('pool-tab-change', handler);
   }, []);
   const [betInputs, setBetInputs] = useState<Record<number, { a: string; b: string }>>({});
+  // Rastreia qual gameId está sendo salvo — evita bloquear todos os cards ao mesmo tempo
+  const [pendingBetGameId, setPendingBetGameId] = useState<number | null>(null);
   // Animações de ranking — pódio (confetti/enter) + subida/descida de posição
   const [podiumAnimation, setPodiumAnimation] = useState<"idle" | "enter" | "confetti" | "rise" | "drop">("idle");
   const podiumChecked = useRef(false);
@@ -137,7 +139,7 @@ export default function PoolPage() {
   }, [data?.redirectedTo, slug]);
 
   const { data: myBets } = trpc.bets.myBets.useQuery(
-    { poolId: data?.pool.id ?? 0 },
+    { poolId: data?.pool.id ?? 0, limit: 200 },
     { enabled: !!data?.pool.id }
   );
 
@@ -170,6 +172,7 @@ export default function PoolPage() {
     onSuccess: (_, vars) => {
       analytics.trackBetSubmitted({ pool_slug: slug ?? undefined, game_id: vars.gameId });
       toast.success("Palpite salvo!");
+      setPendingBetGameId(null);
       utils.bets.myBets.invalidate();
       utils.rankings.myPoolPosition.invalidate({ poolId: data?.pool.id });
       // CES: disparar após o 1º palpite no bolão (myBets estava vazio antes)
@@ -179,6 +182,7 @@ export default function PoolPage() {
       }
     },
     onError: (err) => {
+      setPendingBetGameId(null);
       toast.error("Erro ao salvar palpite", { description: err.message });
     },
   });
@@ -436,11 +440,13 @@ export default function PoolPage() {
   };
 
   const handleBetSubmit = (gameId: number) => {
+    if (pendingBetGameId !== null) return; // evita submissões concorrentes
     const input = betInputs[gameId];
     if (!input?.a || !input?.b) return toast.error("Preencha os dois placares.");
     const a = parseInt(input.a);
     const b = parseInt(input.b);
     if (isNaN(a) || isNaN(b) || a < 0 || b < 0) return toast.error("Placar inválido.");
+    setPendingBetGameId(gameId);
     placeBet.mutate({ poolId: pool.id, gameId, predictedScoreA: a, predictedScoreB: b });
   };
 
@@ -930,7 +936,7 @@ export default function PoolPage() {
                                   betInputs={betInputs}
                                   setBetInputs={setBetInputs}
                                   handleBetSubmit={handleBetSubmit}
-                                  placeBetPending={placeBet.isPending}
+                                  placeBetPending={pendingBetGameId === game.id}
                                   myRankPosition={myPosition?.position}
                                   shareCardConfig={adConfig?.shareCardConfig}
                                   predictionReliable={data?.predictionReliable ?? false}
@@ -983,7 +989,7 @@ export default function PoolPage() {
                         betInputs={betInputs}
                         setBetInputs={setBetInputs}
                         handleBetSubmit={handleBetSubmit}
-                        placeBetPending={placeBet.isPending}
+                        placeBetPending={pendingBetGameId === game.id}
                         myRankPosition={myPosition?.position}
                         showPhaseLabel
                         shareCardConfig={adConfig?.shareCardConfig}

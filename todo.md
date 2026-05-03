@@ -684,3 +684,11 @@
 
 ## Sprint Bug — Time da Casa Incorreto no Prompt da IA
 - [x] BUG: Prompt da IA chama teamA de "time da casa" mesmo em jogos de campo neutro (ex: Copa do Mundo) — corrigir para omitir/neutralizar referência a mandante quando não há sede real
+
+## Sprint Bug — Fragilidades no Salvamento de Palpites
+
+- [x] BUG CRÍTICO: `placeBetPending` era global (único `useMutation`) — bloqueia TODOS os cards enquanto um palpite está sendo salvo; corrigido com `pendingBetGameId` por card
+- [x] BUG CRÍTICO: `myBets` tinha limite padrão de 50 itens — Copa do Mundo tem 64 jogos; corrigido para limite 200 no frontend e backend
+- [ ] BUG: Sem feedback visual de "palpite em fila" — se o usuário clica em vários cards rapidamente, as mutações concorrem sem serialização
+- [x] MELHORIA: Aumentar limite do myBets para 200 no PoolPage para cobrir torneios grandes
+- [x] MELHORIA: Usar `pendingBetGameId` por card em vez de `isPending` global para não bloquear outros cards

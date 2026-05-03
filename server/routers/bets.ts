@@ -22,7 +22,7 @@ export const betsRouter = router({
   myBets: protectedProcedure
     .input(z.object({
       poolId: z.number(),
-      limit: z.number().min(1).max(100).default(50),
+      limit: z.number().min(1).max(200).default(200),
       cursor: z.number().optional(), // ID do último bet retornado
     }))
     .query(async ({ input, ctx }) => {
