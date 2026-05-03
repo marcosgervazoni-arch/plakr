@@ -139,7 +139,7 @@ export default function PoolPage() {
   }, [data?.redirectedTo, slug]);
 
   const { data: myBets } = trpc.bets.myBets.useQuery(
-    { poolId: data?.pool.id ?? 0, limit: 200 },
+    { poolId: data?.pool.id ?? 0 },
     { enabled: !!data?.pool.id }
   );
 

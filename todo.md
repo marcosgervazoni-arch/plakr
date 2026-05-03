@@ -688,9 +688,9 @@
 ## Sprint Bug — Fragilidades no Salvamento de Palpites
 
 - [x] BUG CRÍTICO: `placeBetPending` era global (único `useMutation`) — bloqueia TODOS os cards enquanto um palpite está sendo salvo; corrigido com `pendingBetGameId` por card
-- [x] BUG CRÍTICO: `myBets` tinha limite padrão de 50 itens — Copa do Mundo tem 64 jogos; corrigido para limite 200 no frontend e backend
+- [x] BUG CRÍTICO: `myBets` tinha limite padrão de 50 itens — Copa do Mundo tem 64 jogos; limite removido completamente (retorna todos os palpites sem restrição)
 - [ ] BUG: Sem feedback visual de "palpite em fila" — se o usuário clica em vários cards rapidamente, as mutações concorrem sem serialização
-- [x] MELHORIA: Aumentar limite do myBets para 200 no PoolPage para cobrir torneios grandes
+- [x] MELHORIA: Remover limite do myBets — retorna todos os palpites sem paginação (volume por usuário/bolão é sempre pequeno)
 - [x] MELHORIA: Usar `pendingBetGameId` por card em vez de `isPending` global para não bloquear outros cards
 
 ## Sprint Auditoria de Palpites

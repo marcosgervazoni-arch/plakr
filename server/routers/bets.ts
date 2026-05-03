@@ -18,12 +18,12 @@ import { protectedProcedure, router } from "../_core/trpc";
 import { Err, PoolErr, TournamentErr, UserErr } from "../errors";
 
 export const betsRouter = router({
-  // [T3] paginação cursor-based adicionada
+  // Retorna todos os palpites do usuário em um bolão sem limite de paginação.
+  // Volume por usuário/bolão é sempre pequeno (máx. ~150 jogos por torneio),
+  // então paginação não traz benefício e pode ocultar palpites já feitos.
   myBets: protectedProcedure
     .input(z.object({
       poolId: z.number(),
-      limit: z.number().min(1).max(200).default(200),
-      cursor: z.number().optional(), // ID do último bet retornado
     }))
     .query(async ({ input, ctx }) => {
       const member = await getPoolMember(input.poolId, ctx.user.id);
@@ -32,31 +32,18 @@ export const betsRouter = router({
       if (member.memberStatus && member.memberStatus !== "active") throw Err.forbidden();
 
       const db = await (await import("../db")).getDb();
-      if (!db) return { items: [], nextCursor: undefined, hasMore: false };
+      if (!db) return { items: [] };
 
       const { bets: betsT } = await import("../../drizzle/schema");
-      const { eq, and, lt, desc } = await import("drizzle-orm");
+      const { eq, and, asc } = await import("drizzle-orm");
 
-      const conditions = [
-        eq(betsT.poolId, input.poolId),
-        eq(betsT.userId, ctx.user.id),
-      ];
-      if (input.cursor) {
-        conditions.push(lt(betsT.id, input.cursor));
-      }
-
-      const rows = await db
+      const items = await db
         .select()
         .from(betsT)
-        .where(and(...conditions))
-        .orderBy(desc(betsT.id))
-        .limit(input.limit + 1);
+        .where(and(eq(betsT.poolId, input.poolId), eq(betsT.userId, ctx.user.id)))
+        .orderBy(asc(betsT.gameId));
 
-      const hasMore = rows.length > input.limit;
-      const items = hasMore ? rows.slice(0, input.limit) : rows;
-      const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
-
-      return { items, nextCursor, hasMore };
+      return { items };
     }),
 
   placeBet: protectedProcedure
