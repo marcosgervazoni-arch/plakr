@@ -67,33 +67,66 @@ export const betsRouter = router({
       predictedScoreB: z.number().min(0).max(99),
     }))
     .mutation(async ({ input, ctx }) => {
+      // Helper para gravar auditoria sem bloquear o fluxo principal
+      const auditBet = async (action: "create" | "update" | "error", extra?: { errorCode?: string; errorMessage?: string }) => {
+        try {
+          const db = await (await import("../db")).getDb();
+          if (!db) return;
+          const { betAuditLog } = await import("../../drizzle/schema");
+          const ip = (ctx.req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ?? ctx.req.ip ?? null;
+          const ua = (ctx.req.headers["user-agent"] as string)?.slice(0, 512) ?? null;
+          await db.insert(betAuditLog).values({
+            userId: ctx.user.id,
+            poolId: input.poolId,
+            gameId: input.gameId,
+            action,
+            predictedScoreA: input.predictedScoreA,
+            predictedScoreB: input.predictedScoreB,
+            errorCode: extra?.errorCode ?? null,
+            errorMessage: extra?.errorMessage ?? null,
+            ipAddress: ip,
+            userAgent: ua,
+          });
+        } catch (e) {
+          logger.warn({ err: e }, "[BetAudit] Falha ao gravar auditoria");
+        }
+      };
+
       const member = await getPoolMember(input.poolId, ctx.user.id);
-      if (!member || member.isBlocked) throw Err.forbidden();
+      if (!member || member.isBlocked) {
+        await auditBet("error", { errorCode: "FORBIDDEN", errorMessage: "Membro bloqueado ou não encontrado" });
+        throw Err.forbidden();
+      }
       // [SEC] Bloquear palpites de membros com pagamento pendente ou rejeitado
       if (member.memberStatus && member.memberStatus !== "active") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: member.memberStatus === "pending_approval"
-            ? "Sua inscrição está aguardando aprovação do organizador. Você poderá fazer palpites após a confirmação do pagamento."
-            : "Sua inscrição foi recusada. Você não pode fazer palpites neste bolão.",
-        });
+        const msg = member.memberStatus === "pending_approval"
+          ? "Sua inscrição está aguardando aprovação do organizador. Você poderá fazer palpites após a confirmação do pagamento."
+          : "Sua inscrição foi recusada. Você não pode fazer palpites neste bolão.";
+        await auditBet("error", { errorCode: "PAYMENT_PENDING", errorMessage: msg });
+        throw new TRPCError({ code: "FORBIDDEN", message: msg });
       }
 
       const game = await getGameById(input.gameId);
-      if (!game) throw Err.notFound("Recurso");
+      if (!game) {
+        await auditBet("error", { errorCode: "NOT_FOUND", errorMessage: "Jogo não encontrado" });
+        throw Err.notFound("Recurso");
+      }
       // [S9] Validar que o jogo pertence ao torneio do bolão
       const pool = await getPoolById(input.poolId);
       if (!pool || game.tournamentId !== pool.tournamentId) {
+        await auditBet("error", { errorCode: "GAME_NOT_IN_POOL", errorMessage: "Jogo não pertence ao torneio do bolão" });
         throw PoolErr.gameNotInPool();
       }
       // [SEC] Bloquear palpites em bolões encerrados ou aguardando conclusão
       if (pool.status !== "active") {
+        await auditBet("error", { errorCode: "POOL_CLOSED", errorMessage: "Bolão encerrado" });
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
           message: "Este bolão já foi encerrado. Não é possível fazer novos palpites.",
         });
       }
       if (game.status === "finished" || game.status === "live") {
+        await auditBet("error", { errorCode: "GAME_STARTED", errorMessage: `Jogo já iniciado ou encerrado (status=${game.status})` });
         throw PoolErr.gameStarted();
       }
 
@@ -102,8 +135,21 @@ export const betsRouter = router({
       const deadlineMinutes = rules?.bettingDeadlineMinutes ?? 60;
       const deadline = new Date(game.matchDate.getTime() - deadlineMinutes * 60 * 1000);
       if (new Date() > deadline) {
+        await auditBet("error", { errorCode: "DEADLINE_PASSED", errorMessage: `Prazo encerrado (deadline=${deadline.toISOString()})` });
         throw Err.badRequest("Prazo para palpites encerrado.");
       }
+
+      // Verificar se é criação ou atualização
+      const { getDb } = await import("../db");
+      const db = await getDb();
+      const isUpdate = db ? await (async () => {
+        const { bets: betsT } = await import("../../drizzle/schema");
+        const { eq, and } = await import("drizzle-orm");
+        const existing = await db.select({ id: betsT.id }).from(betsT)
+          .where(and(eq(betsT.poolId, input.poolId), eq(betsT.userId, ctx.user.id), eq(betsT.gameId, input.gameId)))
+          .limit(1);
+        return existing.length > 0;
+      })() : false;
 
       await upsertBet({
         poolId: input.poolId,
@@ -112,6 +158,9 @@ export const betsRouter = router({
         predictedScoreA: input.predictedScoreA,
         predictedScoreB: input.predictedScoreB,
       });
+
+      // [Audit] Registrar sucesso
+      await auditBet(isUpdate ? "update" : "create");
 
       // [Stats] Atualizar pool_member_stats imediatamente após palpite
       // Garante que o ranking mostre "X palpites" em vez de "Ainda não fez palpites"

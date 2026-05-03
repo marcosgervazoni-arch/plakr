@@ -1404,3 +1404,30 @@ export const roundReminderSent = mysqlTable("round_reminder_sent", {
   idxTournament: index("idx_round_reminder_tournament").on(t.tournamentId),
 }));
 export type RoundReminderSent = typeof roundReminderSent.$inferSelect;
+
+// ─── AUDITORIA DE PALPITES ────────────────────────────────────────────────────
+// Registra cada tentativa de salvar/editar palpite para diagnóstico e suporte.
+export const betAuditLog = mysqlTable(
+  "bet_audit_log",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().references(() => users.id),
+    poolId: int("poolId").notNull().references(() => pools.id),
+    gameId: int("gameId").notNull().references(() => games.id),
+    action: mysqlEnum("action", ["create", "update", "error"]).notNull(),
+    predictedScoreA: int("predictedScoreA"),
+    predictedScoreB: int("predictedScoreB"),
+    errorCode: varchar("errorCode", { length: 64 }),
+    errorMessage: text("errorMessage"),
+    ipAddress: varchar("ipAddress", { length: 64 }),
+    userAgent: varchar("userAgent", { length: 512 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (t) => [
+    index("bet_audit_userId_idx").on(t.userId),
+    index("bet_audit_poolId_idx").on(t.poolId),
+    index("bet_audit_gameId_idx").on(t.gameId),
+    index("bet_audit_createdAt_idx").on(t.createdAt),
+  ]
+);
+export type BetAuditLog = typeof betAuditLog.$inferSelect;

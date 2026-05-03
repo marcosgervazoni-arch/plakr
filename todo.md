@@ -692,3 +692,10 @@
 - [ ] BUG: Sem feedback visual de "palpite em fila" — se o usuário clica em vários cards rapidamente, as mutações concorrem sem serialização
 - [x] MELHORIA: Aumentar limite do myBets para 200 no PoolPage para cobrir torneios grandes
 - [x] MELHORIA: Usar `pendingBetGameId` por card em vez de `isPending` global para não bloquear outros cards
+
+## Sprint Auditoria de Palpites
+
+- [x] Verificar banco de produção: palpites do Augusto Dalmas Guerra (userId, contagem, jogos faltantes)
+- [x] Implementar tabela bet_audit_log (schema + migração)
+- [x] Registrar no servidor cada placeBet (sucesso e erro) com userId, gameId, poolId, ação, timestamp e IP
+- [ ] Expor endpoint admin para consultar auditoria de palpites por usuário
