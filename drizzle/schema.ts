@@ -148,6 +148,10 @@ export const platformSettings = mysqlTable("platform_settings", {
   apiFootballLastSync: timestamp("apiFootballLastSync"),                           // última sync bem-sucedida
   apiFootballCircuitOpen: boolean("apiFootballCircuitOpen").default(false).notNull(), // circuit breaker aberto?
   apiFootballCircuitOpenAt: timestamp("apiFootballCircuitOpenAt"),                 // quando o circuit abriu
+  // ─── GOOGLE OAUTH (configurado pelo Super Admin) ───────────────────────────────
+  googleClientId: varchar("googleClientId", { length: 256 }),           // Client ID do Google OAuth
+  googleClientSecret: varchar("googleClientSecret", { length: 256 }),   // Client Secret do Google OAuth
+  googleOAuthEnabled: boolean("googleOAuthEnabled").default(false).notNull(), // exibir botão "Entrar com Google"
   // ─── CARD DE COMPARTILHAMENTO STORIES ──────────────────────────────────────
   shareCardConfig: json("shareCardConfig").$type<ShareCardStateConfig>(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

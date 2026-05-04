@@ -704,3 +704,18 @@
 - [x] Atualizar webhook secret no banco de produção (whsec novo do Stripe)
 - [x] Verificar que stripeWebhookSecret é configurável via Super Admin → Configurações
 - [x] Reforçar segurança do endpoint webhook (rate limit, logs de tentativas inválidas com IP/UA)
+
+## Sprint Google OAuth Login
+- [ ] Implementar rota backend /api/oauth/google e /api/oauth/google/callback
+- [ ] Salvar googleClientId e googleClientSecret criptografados no banco (platform_settings)
+- [ ] Criar/vincular conta de usuário ao fazer login com Google
+- [ ] Botão "Entrar com Google" na tela de login
+- [ ] Campos Google Client ID e Secret configuráveis no Super Admin (mascarados)
+- [ ] Redirecionar para o app após login Google (não para a LP)
+
+## Sprint H — Google OAuth
+- [x] H1: Migração do banco — campos googleClientId, googleClientSecret, googleOAuthEnabled em platform_settings
+- [x] H2: Backend — rotas /api/oauth/google (redirect) e /api/oauth/google/callback (token exchange + sessão)
+- [x] H3: Super Admin — seção "Google OAuth" no AdminSettings com toggle, campos mascarados e instruções
+- [x] H4: Frontend — botão "Entrar com Google" no EmailLoginModal (exibido condicionalmente via getAuthConfig)
+- [x] H5: Credenciais salvas no banco (Client ID + Secret + enabled=true)

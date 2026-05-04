@@ -498,6 +498,13 @@
       "when": 1777814200015,
       "tag": "0070_material_jasper_sitwell",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "5",
+      "when": 1777927212458,
+      "tag": "0071_friendly_harrier",
+      "breakpoints": true
     }
   ]
 }

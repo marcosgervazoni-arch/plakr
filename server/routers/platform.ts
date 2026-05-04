@@ -66,9 +66,18 @@ export const platformRouter = router({
   // Retorna apenas campos seguros e não sensíveis para usuários autenticados
   getPublicSettings: protectedProcedure.query(async () => {
     const settings = await getPlatformSettings();
-    if (!settings) return { restrictedInviteMessage: null };
+    if (!settings) return { restrictedInviteMessage: null, googleOAuthEnabled: false };
     return {
       restrictedInviteMessage: settings.restrictedInviteMessage ?? null,
+      googleOAuthEnabled: settings.googleOAuthEnabled ?? false,
+    };
+  }),
+
+  // Retorna se Google OAuth está habilitado (público — sem dados sensíveis)
+  getAuthConfig: publicProcedure.query(async () => {
+    const settings = await getPlatformSettings();
+    return {
+      googleOAuthEnabled: settings?.googleOAuthEnabled ?? false,
     };
   }),
 
@@ -127,6 +136,10 @@ export const platformRouter = router({
       stripeUnlimitedMonthlyPrice: z.number().optional(),
       stripeUnlimitedAnnualPrice: z.number().optional(),
       stripeVipMonthlyPrice: z.number().optional(),
+      // Google OAuth
+      googleClientId: z.string().optional(),
+      googleClientSecret: z.string().optional(),
+      googleOAuthEnabled: z.boolean().optional(),
       // VAPID / Push
       vapidPublicKey: z.string().optional(),
       vapidPrivateKey: z.string().optional(),

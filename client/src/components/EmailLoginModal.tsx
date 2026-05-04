@@ -2,8 +2,8 @@
  * Plakr! — Modal de Login por E-mail
  *
  * Vai direto para o formulário de nome + e-mail (magic link).
- * O login via Manus OAuth aparece como link discreto abaixo do formulário,
- * disponível para quem preferir, mas sem disputar atenção com o método principal.
+ * O login via Google OAuth aparece como opção secundária quando habilitado no Super Admin.
+ * O login via Manus OAuth aparece como link discreto abaixo do formulário.
  *
  * Simplificação: a etapa "choose" foi eliminada para evitar o bug de closure
  * no useEffect que causava a exibição da etapa errada ao abrir o modal.
@@ -49,6 +49,12 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
   const sendMagicLink = trpc.authMagic.sendMagicLink.useMutation();
   const loginUrl = getLoginUrl(returnPath);
 
+  // Verificar se Google OAuth está habilitado (consulta pública, sem auth)
+  const { data: authConfig } = trpc.platform.getAuthConfig.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000, // 5 minutos de cache
+  });
+  const googleOAuthEnabled = authConfig?.googleOAuthEnabled ?? false;
+
   function handleClose() {
     setEmail("");
     setName("");
@@ -59,6 +65,12 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
 
   function validateEmail(value: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }
+
+  function handleGoogleLogin() {
+    const origin = window.location.origin;
+    const googleUrl = `/api/oauth/google?origin=${encodeURIComponent(origin)}&returnPath=${encodeURIComponent(returnPath)}`;
+    window.location.href = googleUrl;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -210,25 +222,53 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
             ⏰ O código expira em 15 minutos e só pode ser usado uma vez.
           </p>
 
-          {/* Opção secundária: Manus OAuth */}
+          {/* Opções secundárias: Google + Manus */}
           <div className="flex items-center gap-3 pt-1">
             <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
             <span className="text-xs" style={{ color: "#4B5563" }}>ou</span>
             <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
           </div>
-          <a
-            href={loginUrl}
-            className="w-full flex items-center justify-center gap-2 text-xs px-4 py-2.5 rounded-lg transition-all"
-            style={{
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.07)",
-              color: "#6B7280",
-              display: "flex",
-            }}
-            aria-label="Entrar com conta Manus"
-          >
-            Entrar com conta Manus
-          </a>
+
+          <div className="space-y-2">
+            {/* Botão Google OAuth — exibido apenas quando habilitado no Super Admin */}
+            {googleOAuthEnabled && (
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="w-full flex items-center justify-center gap-2.5 text-sm px-4 py-2.5 rounded-lg transition-all hover:bg-white/5 active:scale-[0.98]"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "#E5E7EB",
+                }}
+                aria-label="Entrar com Google"
+              >
+                {/* Google "G" SVG */}
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+                  <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+                  <path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+                  <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+                </svg>
+                Entrar com Google
+              </button>
+            )}
+
+            {/* Link Manus OAuth — sempre discreto */}
+            <a
+              href={loginUrl}
+              className="w-full flex items-center justify-center gap-2 text-xs px-4 py-2.5 rounded-lg transition-all"
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.07)",
+                color: "#6B7280",
+                display: "flex",
+              }}
+              aria-label="Entrar com conta Manus"
+            >
+              Entrar com conta Manus
+            </a>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

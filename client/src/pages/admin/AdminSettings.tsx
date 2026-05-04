@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   CreditCard,
   Loader2,
+  LogIn,
   RefreshCw,
   Save,
   Settings,
@@ -37,6 +38,8 @@ export default function AdminSettings() {
   const [stripeKeys, setStripeKeys] = useState({ publishableKey: "", secretKey: "", webhookSecret: "" });
   const [showStripeSecret, setShowStripeSecret] = useState(false);
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
+  const [googleForm, setGoogleForm] = useState({ clientId: "", clientSecret: "", enabled: false });
+  const [showGoogleSecret, setShowGoogleSecret] = useState(false);
 
   const [form, setForm] = useState({
     freeMaxParticipants: 50,
@@ -107,6 +110,11 @@ export default function AdminSettings() {
         secretKey: (settings as any).stripeSecretKey ? "••••••••••••••••••••" : "",
         webhookSecret: (settings as any).stripeWebhookSecret ? "••••••••••••••••••••" : "",
       });
+      setGoogleForm({
+        clientId: (settings as any).googleClientId ?? "",
+        clientSecret: (settings as any).googleClientSecret ? "••••••••••••••••••••" : "",
+        enabled: (settings as any).googleOAuthEnabled ?? false,
+      });
     }
   }, [settings]);
 
@@ -123,6 +131,7 @@ export default function AdminSettings() {
   const handleSaveAll = () => {
     const secretToSave = stripeKeys.secretKey && !stripeKeys.secretKey.startsWith("•") ? stripeKeys.secretKey : undefined;
     const webhookSecretToSave = stripeKeys.webhookSecret && !stripeKeys.webhookSecret.startsWith("•") ? stripeKeys.webhookSecret : undefined;
+    const googleSecretToSave = googleForm.clientSecret && !googleForm.clientSecret.startsWith("•") ? googleForm.clientSecret : undefined;
     updateMutation.mutate({
       ...form,
       ...pushForm,
@@ -131,6 +140,9 @@ export default function AdminSettings() {
       stripePublishableKey: stripeKeys.publishableKey || undefined,
       stripeSecretKey: secretToSave,
       stripeWebhookSecret: webhookSecretToSave,
+      googleClientId: googleForm.clientId || undefined,
+      googleClientSecret: googleSecretToSave,
+      googleOAuthEnabled: googleForm.enabled,
     });
   };
 
@@ -495,7 +507,82 @@ export default function AdminSettings() {
             </AccordionItem>
 
             {/* ══════════════════════════════════════════════════════════════
-                GRUPO 4 — MENSAGENS E BADGES
+                GRUPO 4 — GOOGLE OAUTH
+            ══════════════════════════════════════════════════════════════ */}
+            <AccordionItem value="google-oauth" className="border border-border/50 rounded-xl overflow-hidden">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20 [&>svg]:text-muted-foreground">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <LogIn className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Google OAuth</p>
+                    <p className="text-xs text-muted-foreground font-normal">Botão "Entrar com Google" nas telas de login</p>
+                  </div>
+                  <div className="ml-2 shrink-0">
+                    {googleForm.enabled ? (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs gap-1"><CheckCircle2 className="h-3 w-3" /> Ativo</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground text-xs">Inativo</Badge>
+                    )}
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-5 pt-2 space-y-4">
+                {/* Toggle ativar Google OAuth */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-card/50">
+                  <div>
+                    <p className="text-sm font-medium">Exibir botão "Entrar com Google"</p>
+                    <p className="text-xs text-muted-foreground">Quando ativo, o botão do Google aparece nas telas de login. Requer Client ID e Client Secret configurados.</p>
+                  </div>
+                  <Switch
+                    checked={googleForm.enabled}
+                    onCheckedChange={(v) => setGoogleForm((g) => ({ ...g, enabled: v }))}
+                    disabled={!googleForm.clientId}
+                  />
+                </div>
+
+                {/* Instruções */}
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300">
+                  <strong>Como configurar:</strong> Acesse{" "}
+                  <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="underline">Google Cloud Console → APIs &amp; Services → Credentials</a>.
+                  Crie um <strong>OAuth 2.0 Client ID</strong> do tipo <em>Web application</em> e adicione{" "}
+                  <code className="bg-blue-500/20 px-1 rounded">https://plakr.io/api/oauth/google/callback</code>{" "}
+                  como Authorized redirect URI.
+                </div>
+
+                {/* Campos */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-1.5">
+                    <Label>Client ID</Label>
+                    <Input
+                      value={googleForm.clientId}
+                      onChange={(e) => setGoogleForm((g) => ({ ...g, clientId: e.target.value }))}
+                      placeholder="51938292248-xxxx.apps.googleusercontent.com"
+                      className="font-mono text-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">Identificador público do app no Google Cloud Console.</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Client Secret</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type={showGoogleSecret ? "text" : "password"}
+                        value={googleForm.clientSecret}
+                        onChange={(e) => setGoogleForm((g) => ({ ...g, clientSecret: e.target.value }))}
+                        placeholder="GOCSPX-..."
+                        className="font-mono text-xs flex-1"
+                      />
+                      <Button type="button" variant="outline" size="sm" onClick={() => setShowGoogleSecret((s) => !s)} className="shrink-0">
+                        {showGoogleSecret ? "Ocultar" : "Mostrar"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Chave secreta do app. Nunca compartilhe este valor.</p>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ══════════════════════════════════════════════════════════════
+                GRUPO 5 — MENSAGENS E BADGES
             ══════════════════════════════════════════════════════════════ */}
             <AccordionItem value="mensagens" className="border border-border/50 rounded-xl overflow-hidden">
               <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20 [&>svg]:text-muted-foreground">
