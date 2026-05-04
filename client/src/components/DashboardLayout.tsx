@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
+import GoogleLoginButton from "@/components/GoogleLoginButton";
+import AppleLoginButton from "@/components/AppleLoginButton";
 import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -58,25 +60,25 @@ export default function DashboardLayout({
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
-          <div className="flex flex-col items-center gap-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-center">
-              Sign in to continue
-            </h1>
-            <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
-            </p>
+      <div className="flex items-center justify-center min-h-screen" style={{ background: "#0B0F1A" }}>
+        <div className="flex flex-col items-center gap-6 p-8 max-w-sm w-full rounded-xl" style={{ background: "#121826", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black" style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A" }}>P!</div>
+            <h1 className="text-xl font-bold text-white">Acesso restrito</h1>
+            <p className="text-sm" style={{ color: "#9CA3AF" }}>Faça login para continuar.</p>
           </div>
-          <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
-            size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
-          >
-            Sign in
-          </Button>
+          <div className="w-full space-y-2">
+            <Button
+              onClick={() => { window.location.href = getLoginUrl(); }}
+              size="lg"
+              className="w-full"
+              style={{ background: "linear-gradient(135deg, #FFB800, #FF8A00)", color: "#0B0F1A", border: "none" }}
+            >
+              Entrar
+            </Button>
+            <GoogleLoginButton returnPath="/dashboard" />
+            <AppleLoginButton returnPath="/dashboard" />
+          </div>
         </div>
       </div>
     );

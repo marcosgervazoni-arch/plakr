@@ -20,6 +20,7 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerGoogleOAuthRoutes } from "./google-oauth";
+import { registerAppleOAuthRoutes } from "./apple-oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerMagicLinkRoute } from "../magic-link";
 import { appRouter } from "../routers";
@@ -100,6 +101,7 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerGoogleOAuthRoutes(app);
+  registerAppleOAuthRoutes(app);
 
   // Magic link verification under /api/auth/magic-link/verify
   registerMagicLinkRoute(app);

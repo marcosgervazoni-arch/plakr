@@ -49,11 +49,18 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
   const sendMagicLink = trpc.authMagic.sendMagicLink.useMutation();
   const loginUrl = getLoginUrl(returnPath);
 
-  // Verificar se Google OAuth está habilitado (consulta pública, sem auth)
+  // Verificar se Google/Apple OAuth estão habilitados (consulta pública, sem auth)
   const { data: authConfig } = trpc.platform.getAuthConfig.useQuery(undefined, {
     staleTime: 5 * 60 * 1000, // 5 minutos de cache
   });
   const googleOAuthEnabled = authConfig?.googleOAuthEnabled ?? false;
+  const appleOAuthEnabled = authConfig?.appleOAuthEnabled ?? false;
+
+  function handleAppleLogin() {
+    const origin = window.location.origin;
+    const appleUrl = `/api/oauth/apple?origin=${encodeURIComponent(origin)}&returnPath=${encodeURIComponent(returnPath)}`;
+    window.location.href = appleUrl;
+  }
 
   function handleClose() {
     setEmail("");
@@ -251,6 +258,27 @@ export default function EmailLoginModal({ open, onClose, returnPath = "/dashboar
                   <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
                 </svg>
                 Entrar com Google
+              </button>
+            )}
+
+            {/* Botão Apple Sign In — exibido apenas quando habilitado no Super Admin */}
+            {appleOAuthEnabled && (
+              <button
+                type="button"
+                onClick={handleAppleLogin}
+                className="w-full flex items-center justify-center gap-2.5 text-sm px-4 py-2.5 rounded-lg transition-all hover:bg-white/5 active:scale-[0.98]"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  color: "#E5E7EB",
+                }}
+                aria-label="Entrar com Apple"
+              >
+                {/* Apple logo SVG */}
+                <svg width="14" height="17" viewBox="0 0 814 1000" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.8 0 663.9 0 541.8c0-207.3 135.3-316.9 268.4-316.9 71 0 130.1 46.9 175.1 46.9 42.9 0 110.2-50 192.6-50 31.2 0 108.2 2.6 168.7 81.1zm-208-181.3c31.2-36.9 53.8-88.1 53.8-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 134.8-71.3z"/>
+                </svg>
+                Entrar com Apple
               </button>
             )}
 

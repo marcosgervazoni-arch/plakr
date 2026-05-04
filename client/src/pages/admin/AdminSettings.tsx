@@ -40,6 +40,8 @@ export default function AdminSettings() {
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
   const [googleForm, setGoogleForm] = useState({ clientId: "", clientSecret: "", enabled: false });
   const [showGoogleSecret, setShowGoogleSecret] = useState(false);
+  const [appleForm, setAppleForm] = useState({ clientId: "", teamId: "", keyId: "", privateKey: "", enabled: false });
+  const [showApplePrivateKey, setShowApplePrivateKey] = useState(false);
 
   const [form, setForm] = useState({
     freeMaxParticipants: 50,
@@ -115,6 +117,13 @@ export default function AdminSettings() {
         clientSecret: (settings as any).googleClientSecret ? "••••••••••••••••••••" : "",
         enabled: (settings as any).googleOAuthEnabled ?? false,
       });
+      setAppleForm({
+        clientId: (settings as any).appleClientId ?? "",
+        teamId: (settings as any).appleTeamId ?? "",
+        keyId: (settings as any).appleKeyId ?? "",
+        privateKey: (settings as any).applePrivateKey ? "••••••••••••••••••••" : "",
+        enabled: (settings as any).appleOAuthEnabled ?? false,
+      });
     }
   }, [settings]);
 
@@ -132,6 +141,7 @@ export default function AdminSettings() {
     const secretToSave = stripeKeys.secretKey && !stripeKeys.secretKey.startsWith("•") ? stripeKeys.secretKey : undefined;
     const webhookSecretToSave = stripeKeys.webhookSecret && !stripeKeys.webhookSecret.startsWith("•") ? stripeKeys.webhookSecret : undefined;
     const googleSecretToSave = googleForm.clientSecret && !googleForm.clientSecret.startsWith("•") ? googleForm.clientSecret : undefined;
+    const applePrivateKeyToSave = appleForm.privateKey && !appleForm.privateKey.startsWith("•") ? appleForm.privateKey : undefined;
     updateMutation.mutate({
       ...form,
       ...pushForm,
@@ -143,6 +153,11 @@ export default function AdminSettings() {
       googleClientId: googleForm.clientId || undefined,
       googleClientSecret: googleSecretToSave,
       googleOAuthEnabled: googleForm.enabled,
+      appleClientId: appleForm.clientId || undefined,
+      appleTeamId: appleForm.teamId || undefined,
+      appleKeyId: appleForm.keyId || undefined,
+      applePrivateKey: applePrivateKeyToSave,
+      appleOAuthEnabled: appleForm.enabled,
     });
   };
 
@@ -581,9 +596,135 @@ export default function AdminSettings() {
               </AccordionContent>
             </AccordionItem>
 
-            {/* ══════════════════════════════════════════════════════════════
+                {/* ══════════════════════════════════════════════════════
+                GRUPO 4B — APPLE SIGN IN
+            ══════════════════════════════════════════════════════ */}
+            <AccordionItem value="apple-oauth" className="border border-border/50 rounded-xl overflow-hidden">
+              <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20 [&>svg]:text-muted-foreground">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {/* Apple logo */}
+                  <svg width="14" height="17" viewBox="0 0 814 1000" fill="currentColor" className="text-muted-foreground shrink-0" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.8 0 663.9 0 541.8c0-207.3 135.3-316.9 268.4-316.9 71 0 130.1 46.9 175.1 46.9 42.9 0 110.2-50 192.6-50 31.2 0 108.2 2.6 168.7 81.1zm-208-181.3c31.2-36.9 53.8-88.1 53.8-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 134.8-71.3z"/>
+                  </svg>
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-semibold">Apple Sign In</p>
+                    <p className="text-xs text-muted-foreground font-normal">Botão "Entrar com Apple" nas telas de login</p>
+                  </div>
+                  <div className="ml-2 shrink-0">
+                    {appleForm.enabled ? (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs gap-1"><CheckCircle2 className="h-3 w-3" /> Ativo</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground text-xs">Inativo</Badge>
+                    )}
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-5 pb-5 pt-2 space-y-5">
+
+                {/* Aviso sobre requisitos Apple */}
+                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                  <p className="text-xs text-amber-400 font-medium mb-1">Requisitos Apple Developer</p>
+                  <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>Conta Apple Developer ativa (US$ 99/ano)</li>
+                    <li>App ID com "Sign In with Apple" habilitado</li>
+                    <li>Services ID registrado (ex: <code className="font-mono">com.plakr.web</code>)</li>
+                    <li>Chave privada .p8 gerada no Apple Developer Portal</li>
+                    <li>Domnío <code className="font-mono">plakr.io</code> registrado como Return URL no Services ID</li>
+                  </ul>
+                </div>
+
+                {/* Toggle ativar Apple Sign In */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-card/50">
+                  <div>
+                    <p className="text-sm font-medium">Exibir botão "Entrar com Apple"</p>
+                    <p className="text-xs text-muted-foreground">Quando ativo, o botão da Apple aparece nas telas de login. Requer todos os campos configurados.</p>
+                  </div>
+                  <Switch
+                    checked={appleForm.enabled}
+                    onCheckedChange={(v) => setAppleForm((a) => ({ ...a, enabled: v }))}
+                    disabled={!appleForm.clientId || !appleForm.teamId || !appleForm.keyId}
+                  />
+                </div>
+
+                {/* Campos de configuração */}
+                <div className="space-y-4">
+
+                  {/* Services ID (Client ID) */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Services ID (Client ID)</Label>
+                    <Input
+                      value={appleForm.clientId}
+                      onChange={(e) => setAppleForm((a) => ({ ...a, clientId: e.target.value }))}
+                      placeholder="com.plakr.web"
+                      className="font-mono text-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">O identificador do Services ID criado no Apple Developer Portal (não é o Bundle ID do app).</p>
+                  </div>
+
+                  {/* Team ID */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Team ID</Label>
+                    <Input
+                      value={appleForm.teamId}
+                      onChange={(e) => setAppleForm((a) => ({ ...a, teamId: e.target.value }))}
+                      placeholder="ABCDE12345"
+                      className="font-mono text-xs"
+                      maxLength={10}
+                    />
+                    <p className="text-xs text-muted-foreground">10 caracteres. Visível em <strong>Apple Developer → Membership</strong>.</p>
+                  </div>
+
+                  {/* Key ID */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Key ID</Label>
+                    <Input
+                      value={appleForm.keyId}
+                      onChange={(e) => setAppleForm((a) => ({ ...a, keyId: e.target.value }))}
+                      placeholder="FGHIJ67890"
+                      className="font-mono text-xs"
+                      maxLength={10}
+                    />
+                    <p className="text-xs text-muted-foreground">10 caracteres. ID da chave .p8 gerada em <strong>Apple Developer → Keys</strong>.</p>
+                  </div>
+
+                  {/* Private Key (.p8) */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">Chave Privada (.p8)</Label>
+                    <div className="flex gap-2">
+                      <textarea
+                        value={appleForm.privateKey}
+                        onChange={(e) => setAppleForm((a) => ({ ...a, privateKey: e.target.value }))}
+                        placeholder={`-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg...\n-----END PRIVATE KEY-----`}
+                        className="font-mono text-xs flex-1 min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+                        style={{ filter: showApplePrivateKey ? "none" : "blur(4px)", transition: "filter 0.2s" }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="self-start"
+                        onClick={() => setShowApplePrivateKey((v) => !v)}
+                      >
+                        {showApplePrivateKey ? "Ocultar" : "Mostrar"}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Cole o conteúdo completo do arquivo <code className="font-mono">.p8</code> baixado do Apple Developer Portal. Inclua as linhas <code>-----BEGIN PRIVATE KEY-----</code> e <code>-----END PRIVATE KEY-----</code>.</p>
+                  </div>
+
+                  {/* Callback URI */}
+                  <div className="rounded-lg border border-border/40 bg-muted/20 p-3 space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">URI de Callback (Return URL)</p>
+                    <p className="text-xs font-mono text-foreground select-all">https://plakr.io/api/oauth/apple/callback</p>
+                    <p className="text-xs text-muted-foreground">Adicione esta URL como <strong>Return URL</strong> no Services ID no Apple Developer Portal.</p>
+                  </div>
+
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ══════════════════════════════════════════════════════
                 GRUPO 5 — MENSAGENS E BADGES
-            ══════════════════════════════════════════════════════════════ */}
+            ══════════════════════════════════════════════════════ */}
             <AccordionItem value="mensagens" className="border border-border/50 rounded-xl overflow-hidden">
               <AccordionTrigger className="px-5 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20 [&>svg]:text-muted-foreground">
                 <div className="flex items-center gap-3 flex-1 min-w-0">

@@ -66,18 +66,20 @@ export const platformRouter = router({
   // Retorna apenas campos seguros e não sensíveis para usuários autenticados
   getPublicSettings: protectedProcedure.query(async () => {
     const settings = await getPlatformSettings();
-    if (!settings) return { restrictedInviteMessage: null, googleOAuthEnabled: false };
+    if (!settings) return { restrictedInviteMessage: null, googleOAuthEnabled: false, appleOAuthEnabled: false };
     return {
       restrictedInviteMessage: settings.restrictedInviteMessage ?? null,
       googleOAuthEnabled: settings.googleOAuthEnabled ?? false,
+      appleOAuthEnabled: settings.appleOAuthEnabled ?? false,
     };
   }),
 
-  // Retorna se Google OAuth está habilitado (público — sem dados sensíveis)
+  // Retorna se Google/Apple OAuth estão habilitados (público — sem dados sensíveis)
   getAuthConfig: publicProcedure.query(async () => {
     const settings = await getPlatformSettings();
     return {
       googleOAuthEnabled: settings?.googleOAuthEnabled ?? false,
+      appleOAuthEnabled: settings?.appleOAuthEnabled ?? false,
     };
   }),
 
@@ -140,6 +142,12 @@ export const platformRouter = router({
       googleClientId: z.string().optional(),
       googleClientSecret: z.string().optional(),
       googleOAuthEnabled: z.boolean().optional(),
+      // Apple Sign In
+      appleClientId: z.string().optional(),
+      appleTeamId: z.string().optional(),
+      appleKeyId: z.string().optional(),
+      applePrivateKey: z.string().optional(),
+      appleOAuthEnabled: z.boolean().optional(),
       // VAPID / Push
       vapidPublicKey: z.string().optional(),
       vapidPrivateKey: z.string().optional(),

@@ -152,6 +152,12 @@ export const platformSettings = mysqlTable("platform_settings", {
   googleClientId: varchar("googleClientId", { length: 256 }),           // Client ID do Google OAuth
   googleClientSecret: varchar("googleClientSecret", { length: 256 }),   // Client Secret do Google OAuth
   googleOAuthEnabled: boolean("googleOAuthEnabled").default(false).notNull(), // exibir botão "Entrar com Google"
+  // ─── APPLE OAUTH (configurado pelo Super Admin) ───────────────────────────────────────────────────────
+  appleClientId: varchar("appleClientId", { length: 256 }),           // Services ID (ex: com.plakr.web)
+  appleTeamId: varchar("appleTeamId", { length: 32 }),                // Team ID (10 caracteres)
+  appleKeyId: varchar("appleKeyId", { length: 32 }),                  // Key ID da chave privada
+  applePrivateKey: text("applePrivateKey"),                           // Chave privada .p8 (PEM)
+  appleOAuthEnabled: boolean("appleOAuthEnabled").default(false).notNull(), // exibir botão "Entrar com Apple"
   // ─── CARD DE COMPARTILHAMENTO STORIES ──────────────────────────────────────
   shareCardConfig: json("shareCardConfig").$type<ShareCardStateConfig>(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

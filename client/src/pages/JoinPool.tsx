@@ -11,6 +11,8 @@ import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { useSafariDetect } from "@/hooks/useSafariDetect";
 import EmailLoginModal from "@/components/EmailLoginModal";
+import GoogleLoginButton from "@/components/GoogleLoginButton";
+import AppleLoginButton from "@/components/AppleLoginButton";
 import {
   Trophy,
   Users,
@@ -129,13 +131,22 @@ export default function JoinPool() {
                 <Mail size={16} />
                 Entrar com e-mail
               </button>
-              {!isSafari && (
-                <>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-                    <span className="text-xs" style={{ color: "#6B7280" }}>ou</span>
-                    <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-                  </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+                <span className="text-xs" style={{ color: "#6B7280" }}>ou</span>
+                <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+              </div>
+
+              <div className="space-y-2">
+                {/* Botão Google OAuth — condicional via authConfig */}
+                <GoogleLoginButton returnPath={returnPath} />
+
+                {/* Botão Apple Sign In — condicional via authConfig */}
+                <AppleLoginButton returnPath={returnPath} />
+
+                {/* Manus OAuth — oculto no Safari */}
+                {!isSafari && (
                   <a
                     href={loginUrl}
                     className="w-full flex items-center justify-center gap-2 text-sm px-4 py-3 rounded-lg transition-all"
@@ -143,8 +154,8 @@ export default function JoinPool() {
                   >
                     Entrar com conta Manus
                   </a>
-                </>
-              )}
+                )}
+              </div>
             </div>
 
             <p className="text-xs" style={{ color: "#4B5563" }}>Sem senha · Acesso seguro · Funciona em qualquer dispositivo</p>

@@ -719,3 +719,12 @@
 - [x] H3: Super Admin — seção "Google OAuth" no AdminSettings com toggle, campos mascarados e instruções
 - [x] H4: Frontend — botão "Entrar com Google" no EmailLoginModal (exibido condicionalmente via getAuthConfig)
 - [x] H5: Credenciais salvas no banco (Client ID + Secret + enabled=true)
+
+## Sprint I — OAuth em Todas as Telas + Apple OAuth
+- [ ] I1: Adicionar botão Google em JoinPool.tsx (tela de convite)
+- [ ] I2: Adicionar botão Google em Dashboard.tsx (branch não autenticado)
+- [ ] I3: Adicionar botão Google em DashboardLayout.tsx (fallback de auth)
+- [ ] I4: Backend Apple OAuth — rotas /api/oauth/apple e /api/oauth/apple/callback
+- [ ] I5: Banco — campos appleOAuthEnabled, appleClientId, appleTeamId, appleKeyId, applePrivateKey em platform_settings
+- [ ] I6: Super Admin — seção Apple OAuth no AdminSettings
+- [ ] I7: Frontend — botão "Entrar com Apple" nas telas de login (exibido condicionalmente, incluindo Safari)
