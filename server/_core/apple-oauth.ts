@@ -183,11 +183,27 @@ export function registerAppleOAuthRoutes(app: Express) {
       // openId para Apple: prefixo "apple:" + sub
       const openId = `apple:${appleUser.sub}`;
 
-      // Verificar se é novo usuário
-      const existingUser = await db.getUserByOpenId(openId);
-      const isNewUser = !existingUser;
+      // ── Merge de conta por e-mail ──────────────────────────────────────────
+      // Cenário: usuário já tem conta via magic link com o mesmo e-mail.
+      // Vinculamos o openId do Apple à conta existente em vez de criar duplicata.
+      // Nota: Apple só envia o e-mail no primeiro login; em logins subsequentes
+      // appleUser.email pode ser null — por isso usamos o e-mail apenas quando disponível.
+      let existingUser = await db.getUserByOpenId(openId);
+      if (!existingUser && appleUser.email) {
+        const userByEmail = await db.getUserByEmail(appleUser.email);
+        if (userByEmail) {
+          logger.info(
+            { userId: userByEmail.id, email: appleUser.email },
+            "[AppleOAuth] Conta existente encontrada pelo e-mail — vinculando openId Apple"
+          );
+          await db.mergeUserOpenId(userByEmail.id, openId, "apple");
+          existingUser = await db.getUserByOpenId(openId);
+        }
+      }
+      // ──────────────────────────────────────────────────────────────────────
 
-      // Criar/atualizar usuário no banco
+      const isNewUser = !existingUser;
+      // Criar/atualizar usuário no banco (upsert: cria se novo, atualiza se existente)
       await db.upsertUser({
         openId,
         name: fullName || (existingUser?.name ?? null),

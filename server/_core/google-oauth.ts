@@ -202,11 +202,25 @@ export function registerGoogleOAuthRoutes(app: Express) {
       // openId para Google: prefixo "google:" + sub (ID único do Google)
       const openId = `google:${googleUser.sub}`;
 
-      // Verificar se é novo usuário
-      const existingUser = await db.getUserByOpenId(openId);
-      const isNewUser = !existingUser;
+      // ── Merge de conta por e-mail ──────────────────────────────────────────
+      // Cenário: usuário já tem conta via magic link com o mesmo e-mail.
+      // Vinculamos o openId do Google à conta existente em vez de criar duplicata.
+      let existingUser = await db.getUserByOpenId(openId);
+      if (!existingUser && googleUser.email) {
+        const userByEmail = await db.getUserByEmail(googleUser.email);
+        if (userByEmail) {
+          logger.info(
+            { userId: userByEmail.id, email: googleUser.email },
+            "[GoogleOAuth] Conta existente encontrada pelo e-mail — vinculando openId Google"
+          );
+          await db.mergeUserOpenId(userByEmail.id, openId, "google");
+          existingUser = await db.getUserByOpenId(openId);
+        }
+      }
+      // ──────────────────────────────────────────────────────────────────────
 
-      // Criar/atualizar usuário no banco
+      const isNewUser = !existingUser;
+      // Criar/atualizar usuário no banco (upsert: cria se novo, atualiza se existente)
       await db.upsertUser({
         openId,
         name: googleUser.name || null,

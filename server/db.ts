@@ -128,6 +128,24 @@ export async function getAllUsers(limit = 50, cursor?: number) {
     .limit(limit);
 }
 
+/**
+ * Vincula um novo openId (ex: "google:12345") a uma conta existente encontrada pelo e-mail.
+ * Usado quando o usuário já tem conta via magic link e faz login pela primeira vez via OAuth.
+ * Atualiza também o loginMethod para refletir o último método usado.
+ */
+export async function mergeUserOpenId(
+  userId: number,
+  newOpenId: string,
+  loginMethod: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(users)
+    .set({ openId: newOpenId, loginMethod, lastSignedIn: new Date() })
+    .where(eq(users.id, userId));
+}
+
 export async function updateUserBlocked(userId: number, isBlocked: boolean) {
   const db = await getDb();
   if (!db) return;

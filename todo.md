@@ -161,6 +161,9 @@
 
 ## PENDENTE — Bugs Ativos
 
+- [x] **BUG:** Google OAuth cria conta duplicada quando usuário já existe com mesmo e-mail (magic link) — corrigido com merge por e-mail (mergeUserOpenId)
+- [x] **BUG:** Apple OAuth tinha o mesmo problema — mesma correção aplicada
+
 - [ ] **BUG:** Bolão finalizado ainda permite participação (ex: plakr.io/pool/bol-o-teste-excluir-efljTA) — revisar após conclusão do card dos jogos
 
 - [x] **BUG:** Estatísticas e análises não aparecem nos cards — causa raiz: 328 jogos sem aiSummary no banco; backfill loop automático implementado no painel admin (processa até zerar pendentes em lotes de 50)
