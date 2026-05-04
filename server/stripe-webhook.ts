@@ -25,11 +25,20 @@ export function registerStripeWebhook(app: Express) {
 
       let event: Stripe.Event;
 
+      // Rejeitar imediatamente se não há assinatura (possível ataque ou requisição direta)
+      if (!sig) {
+        const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+        logger.warn({ ip }, "[Webhook] Request without Stripe-Signature header rejected");
+        return res.status(400).send("Missing Stripe-Signature header");
+      }
+
       try {
         event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Unknown error";
-        logger.error({ message }, "[Webhook] Signature verification failed");
+        const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+        const ua = req.headers["user-agent"] || "unknown";
+        logger.error({ message, ip, ua }, "[Webhook] Signature verification failed — possible spoofing attempt");
         return res.status(400).send(`Webhook Error: ${message}`);
       }
 

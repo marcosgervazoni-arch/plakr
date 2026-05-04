@@ -699,3 +699,8 @@
 - [x] Implementar tabela bet_audit_log (schema + migração)
 - [x] Registrar no servidor cada placeBet (sucesso e erro) com userId, gameId, poolId, ação, timestamp e IP
 - [ ] Expor endpoint admin para consultar auditoria de palpites por usuário
+
+## Sprint Stripe Webhook
+- [x] Atualizar webhook secret no banco de produção (whsec novo do Stripe)
+- [x] Verificar que stripeWebhookSecret é configurável via Super Admin → Configurações
+- [x] Reforçar segurança do endpoint webhook (rate limit, logs de tentativas inválidas com IP/UA)

@@ -81,6 +81,9 @@ async function startServer() {
   // [S6] Rate limiting para API pública v1 (60 req/min por IP)
   app.use("/api/v1", rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false }));
 
+  // [S7] Rate limiting para webhook Stripe (máx 60 req/min por IP — Stripe nunca excede isso)
+  app.use("/api/stripe/webhook", rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false }));
+
   // ⚠️ Stripe webhook MUST be registered BEFORE express.json() for signature verification
   registerStripeWebhook(app);
 
